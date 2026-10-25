@@ -2651,14 +2651,14 @@ body {
     </div>
   </section>
 
-    <section id="view-intra-modul-rpm" class="app-view hidden">
+      <section id="view-intra-modul-rpm" class="app-view hidden">
     <div class="card no-print" style="background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%); color: #ffffff; border: none;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">SUB-PILAR 6 — GENERATOR MODUL RPM OTOMATIS (SISTEM 8-3-3-4)</span>
-          <h2 style="font-size: 1.4rem; font-weight: 800;">Penyusunan Rencana Pembelajaran Mendalam (RPM) & Instrumen Soal AI</h2>
+          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">SUB-PILAR 6 — GENERATOR MODUL RPM & SOAL AI AKADEMIK (SISTEM 8-3-3-4)</span>
+          <h2 style="font-size: 1.4rem; font-weight: 800;">Penyusunan Rencana Pembelajaran Mendalam (RPM) & Instrumen Soal Kontekstual</h2>
           <p style="font-size: 0.88rem; color: #dbeafe;">
-            Susun Modul RPM secara otomatis dengan integrasi sistem 8-3-3-4, Taksonomi SOLO, Tujuan Pembelajaran otomatis, editor Pengalaman Belajar fleksibel, serta pembuatan soal multi-jenis.
+            Sistem AI Profesional Akademik menganalisis keterkaitan antara <strong>Capaian Pembelajaran (CP)</strong>, <strong>Tujuan Pembelajaran (TP)</strong>, <strong>Materi Soal</strong>, <strong>Kelas/Fase</strong>, <strong>Ranah Taksonomi SOLO</strong>, dan <strong>Jenis Soal</strong> untuk menghasilkan modul serta butir soal yang akurat dan mudah dipahami siswa.
           </p>
         </div>
         <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
@@ -2672,10 +2672,10 @@ body {
     <div id="rpm-builder-form-card" class="card no-print">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Formulir Pengisian Penyusunan Modul RPM Otomatis</h3>
-          <p class="card-subtitle">Lengkapi identitas modul, ranah Taksonomi SOLO, Dimensi Profil Lulusan, serta opsi pembuatan soal otomatis di bawah ini.</p>
+          <h3 class="card-title">Formulir Pengisian Penyusunan Modul RPM & Parameter Soal Otomatis</h3>
+          <p class="card-subtitle">Lengkapi identitas modul, Materi Pokok, Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), Ranah Taksonomi SOLO, serta Jenis Soal di bawah ini.</p>
         </div>
-        <span class="badge badge-primary">Engine AI Profesional Akademik</span>
+        <span class="badge badge-primary">Analisis 5 Kata Kunci AI Akademik</span>
       </div>
 
       <form id="form-generate-rpm" onsubmit="RpmApp.handleGenerateRpm(event)">
@@ -2721,16 +2721,45 @@ body {
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="rpm-input-materi">7. Topik / Materi Pokok Pembelajaran :</label>
-          <input type="text" id="rpm-input-materi" class="form-control" placeholder="Contoh: Ekosistem dan Rantai Makanan / Operasi Hitung Pecahan / Teks Eksplanasi" required>
-          <div class="form-hint">AI Akademik akan menyusun Tujuan Pembelajaran, Kerangka 8-3-3-4, serta Butir Soal secara spesifik sesuai materi pokok ini.</div>
+        <div class="card" style="background: #f0fdfa; border: 2px solid #5eead4; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px dashed #5eead4;">
+            <div>
+              <span class="badge badge-success" style="margin-bottom: 0.25rem;">KATA KUNCI UTAMA ANALISIS AI AKADEMIK</span>
+              <h4 style="font-size: 1rem; color: var(--dark);">Parameter Materi Pokok, Capaian Pembelajaran (CP), & Tujuan Pembelajaran (TP)</h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Isi ketiga kolom di bawah ini secara spesifik. AI Akademik akan membedah kalimat CP, TP, dan Materi Anda untuk merangkai modul serta butir soal yang relevan dan kontekstual bagi siswa.
+              </p>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm write-action-btn" onclick="RpmApp.autoSuggestCpAndTp()">
+              ✨ Bantu Susun Draft CP & TP Sesuai Materi
+            </button>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="rpm-input-materi">7. Topik / Materi Pokok & Ruang Lingkup Materi Soal :</label>
+            <input type="text" id="rpm-input-materi" class="form-control" placeholder="Contoh: Rantai Makanan pada Ekosistem Sawah (Produsen, Konsumen, dan Dekomposer)" required>
+            <div class="form-hint">Tips: Anda dapat menuliskan sub-topik di dalam tanda kurung atau dipisahkan koma agar cakupan soal semakin kaya dan spesifik.</div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="rpm-input-cp">8. Capaian Pembelajaran (CP) — Wajib Diisi :</label>
+              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Tuliskan atau tempelkan Capaian Pembelajaran (CP) sesuai fase kelas. Contoh: Peserta didik memahami hubungan antarkomponen biotik dan abiotik serta peran makhluk hidup dalam rantai makanan pada suatu ekosistem..." required></textarea>
+              <div class="form-hint">Menjadi landasan kompetensi akhir fase dalam penyusunan modul dan soal evaluasi.</div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="rpm-input-tp">9. Tujuan Pembelajaran (TP) — Wajib Diisi (Pisahkan per baris jika lebih dari satu) :</label>
+              <textarea id="rpm-input-tp" class="form-control" rows="4" placeholder="1. Mengidentifikasi peran produsen, konsumen, dan pengurai dalam rantai makanan.&#10;2. Menganalisis dampak perubahan populasi salah satu makhluk hidup terhadap keseimbangan ekosistem sawah." required></textarea>
+              <div class="form-hint">Setiap baris Tujuan Pembelajaran akan dijadikan indikator langsung dalam pembuatan butir soal.</div>
+            </div>
+          </div>
         </div>
 
         <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
             <div>
-              <strong style="font-size: 0.92rem; color: var(--dark);">8. Pilih Dimensi Profil Lulusan (Sistem 8 Dimensi) :</strong>
+              <strong style="font-size: 0.92rem; color: var(--dark);">10. Pilih Dimensi Profil Lulusan (Sistem 8 Dimensi) :</strong>
               <p style="font-size: 0.8rem; color: var(--text-muted);">Pilih satu atau lebih Dimensi Profil Lulusan yang akan diintegrasikan ke dalam Modul RPM.</p>
             </div>
             <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.selectAllDplCheckboxes(true)">Pilih Semua 8 Dimensi</button>
@@ -2776,14 +2805,14 @@ body {
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
             <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 1rem; font-weight: 800; color: var(--primary); cursor: pointer;">
               <input type="checkbox" id="rpm-enable-auto-questions" style="width: 18px; height: 18px;" onchange="RpmApp.toggleAutoQuestionBuilder(this.checked)" checked>
-              Aktifkan Fitur Buat Soal Otomatis (AI Profesional Akademik)
+              11. Aktifkan Fitur Buat Soal Otomatis (AI Profesional Akademik Berbasis CP, TP, Materi, & SOLO)
             </label>
-            <span class="badge badge-primary">Menyesuaikan TP, Materi, Kelas/Fase, & Taksonomi SOLO</span>
+            <span class="badge badge-primary">Soal Kontekstual Siap Ujian Siswa</span>
           </div>
 
           <div id="rpm-auto-questions-panel" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #93c5fd;">
             <p style="font-size: 0.85rem; color: var(--text); margin-bottom: 0.85rem;">
-              Ceklis satu atau lebih jenis soal di bawah ini, lalu tentukan <strong>Jumlah Soal</strong> yang ingin dimunculkan pada halaman lampiran soal:
+              Ceklis satu atau lebih jenis soal di bawah ini, lalu tentukan <strong>Jumlah Soal</strong> yang ingin disusun untuk mengukur ketercapaian TP dan CP:
             </p>
 
             <div class="grid-2" id="rpm-question-types-grid">
@@ -2853,8 +2882,11 @@ body {
           </div>
 
           <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <button type="button" id="btn-toggle-teacher-key" class="btn btn-secondary btn-sm" onclick="RpmApp.toggleAnswerKeyVisibility()">
+              Sembunyikan Kunci Jawaban (Mode Lembar Siswa)
+            </button>
             <button type="button" class="btn btn-warning btn-sm" onclick="RpmApp.reopenBuilderForm()">
-              &larr; Ubah Parameter Modul
+              &larr; Ubah Parameter CP/TP & Modul
             </button>
             <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
               Cetak / Simpan PDF
@@ -2885,10 +2917,15 @@ body {
       </div>
 
       <div id="rpm-result-page-2" class="card hidden">
+        <div class="no-print alert-box alert-info" style="margin-top: 0; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div>
+            <strong>Tips Penyuntingan Cepat:</strong> Seluruh teks soal dan pilihan jawaban di bawah ini disusun otomatis dari analisis CP, TP, Materi, dan Taksonomi SOLO Anda. Anda juga dapat <strong>mengklik langsung teks soal</strong> jika ingin menyunting kalimat tertentu sebelum dicetak.
+          </div>
+        </div>
         <div id="rpm-questions-document-content"></div>
       </div>
     </div>
-  </section>
+      </section>
 
     <section id="view-intra-analisis-rapor" class="app-view hidden">
     <div class="card no-print" style="background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #0f766e 100%); color: #ffffff; border: none;">
@@ -9220,40 +9257,121 @@ const IntraApp = {
     if (s.includes('pre-structural')) {
       return {
         level: 'Pre-structural',
+        shortDesc: 'Pengenalan Dasar',
         verbs: 'mengenali, menyebutkan, dan mengamati informasi dasar',
         cognitiveTarget: 'pengenalan konsep dasar awal secara terarah',
-        questionStemPrefix: 'Perhatikan pernyataan dasar berikut mengenai'
+        taskFocus: 'mengenali pengertian dasar dan ciri utama yang tampak jelas'
       };
     }
     if (s.includes('uni-structural')) {
       return {
         level: 'Uni-structural',
+        shortDesc: 'Identifikasi Satu Konsep Inti',
         verbs: 'mengidentifikasi, mendefinisikan, dan menentukan satu aspek kunci',
         cognitiveTarget: 'penguasaan satu informasi tunggal yang esensial',
-        questionStemPrefix: 'Identifikasilah satu konsep utama yang paling tepat terkait'
+        taskFocus: 'menentukan satu fungsi, fakta utama, atau arti pokok secara tepat'
       };
     }
     if (s.includes('multi-structural')) {
       return {
         level: 'Multi-structural',
+        shortDesc: 'Penguraian Beberapa Konsep',
         verbs: 'menguraikan, mengklasifikasikan, dan mendeskripsikan beberapa aspek penting',
-        cognitiveTarget: 'pemahaman beberapa fakta dan prosedur relevan secara terstruktur',
-        questionStemPrefix: 'Uraikan beberapa komponen penting yang membangun konsep'
+        cognitiveTarget: 'pemahaman beberapa fakta, ciri-ciri, dan prosedur relevan secara terstruktur',
+        taskFocus: 'mengelompokkan beberapa ciri, komponen, atau urutan tahapan yang benar'
       };
     }
     if (s.includes('extended abstract')) {
       return {
         level: 'Extended Abstract',
-        verbs: 'mengevaluasi, merumuskan generalisasi, memprediksi dampak, dan mencipta solusi inovatif',
+        shortDesc: 'Evaluasi, Prediksi, & Kreasi Solusi (HOTS)',
+        verbs: 'mengevaluasi, merumuskan simpulan umum, memprediksi dampak, dan mencipta solusi inovatif',
         cognitiveTarget: 'transfer pengetahuan tingkat tinggi (HOTS) pada situasi baru yang kompleks',
-        questionStemPrefix: 'Evaluasilah fenomena kontekstual dan rumuskan gagasan solutif terkait'
+        taskFocus: 'memprediksi dampak jangka panjang, mengevaluasi tindakan, serta merumuskan solusi terbaik'
       };
     }
     return {
       level: 'Relational',
+      shortDesc: 'Analisis Hubungan Sebab-Akibat & Integrasi Konsep',
       verbs: 'menghubungkan, menganalisis keterkaitan sebab-akibat, dan mengintegrasikan konsep',
       cognitiveTarget: 'kemampuan mengaitkan berbagai elemen konsep menjadi kesatuan makna yang utuh',
-      questionStemPrefix: 'Analisislah hubungan sebab-akibat serta keterkaitan konsep pada'
+      taskFocus: 'menganalisis hubungan sebab-akibat dan menerapkan konsep pada pemecahan masalah sehari-hari'
+    };
+  },
+
+  parseTpList(rawTp, materi, mapel, soloMeta) {
+    if (!rawTp || !String(rawTp).trim()) {
+      return [
+        `Mengidentifikasi konsep inti dan komponen utama pada materi ${materi} dalam mata pelajaran ${mapel}.`,
+        `Menganalisis keterkaitan serta penerapan materi ${materi} dalam kehidupan sehari-hari sesuai ranah ${soloMeta.level}.`
+      ];
+    }
+
+    const lines = String(rawTp)
+      .split(/\r?\n|;|\b(?=\d+\.\s)/)
+      .map(l => l.replace(/^(\d+[\.\)]|\-|\•|\*)\s*/, '').trim())
+      .filter(l => l.length > 5);
+
+    return lines.length > 0 ? lines : [String(rawTp).trim()];
+  },
+
+  cleanObjectivePhrase(tpSentence) {
+    if (!tpSentence) return '';
+    let s = String(tpSentence).trim();
+    s = s.replace(/^(melalui\s+[^,]+,\s*)/i, '');
+    s = s.replace(/^(peserta\s+didik\s+|siswa\s+)(mampu\s+|dapat\s+)?/i, '');
+    s = s.replace(/\.$/, '').trim();
+    if (s.length > 0) {
+      s = s.charAt(0).toLowerCase() + s.slice(1);
+    }
+    return s;
+  },
+
+  cleanCpPhrase(cpSentence) {
+    if (!cpSentence) return '';
+    let s = String(cpSentence).trim();
+    s = s.replace(/^(pada\s+akhir\s+[^,]+,\s*)/i, '');
+    s = s.replace(/^(peserta\s+didik\s+|siswa\s+)(mampu\s+|dapat\s+|memiliki\s+kemampuan\s+)?/i, '');
+    s = s.replace(/\.$/, '').trim();
+    if (s.length > 0) {
+      s = s.charAt(0).toLowerCase() + s.slice(1);
+    }
+    return s;
+  },
+
+  extractSubTopics(materi, tpList, cpText) {
+    const rawMateri = String(materi || '').trim();
+    const subSet = new Set();
+
+    const parenMatch = rawMateri.match(/\(([^)]+)\)/);
+    const mainTopic = rawMateri.replace(/\([^)]*\)/g, '').trim() || rawMateri;
+
+    if (parenMatch && parenMatch[1]) {
+      parenMatch[1].split(/,|\/|\bdan\b/i).forEach(part => {
+        const clean = part.trim();
+        if (clean.length > 2) subSet.add(clean);
+      });
+    }
+
+    rawMateri.replace(/\([^)]*\)/g, '').split(/,|\/|;|\bdan\b/i).forEach(part => {
+      const clean = part.trim();
+      if (clean.length > 2) subSet.add(clean);
+    });
+
+    (tpList || []).forEach(tp => {
+      const cleaned = this.cleanObjectivePhrase(tp);
+      if (cleaned.length > 4) subSet.add(cleaned);
+    });
+
+    const subArray = Array.from(subSet);
+    if (subArray.length === 0) {
+      subArray.push(mainTopic);
+    }
+
+    return {
+      mainTopic,
+      subTopics: subArray,
+      cpEssence: this.cleanCpPhrase(cpText) || `memahami dan menerapkan konsep ${mainTopic}`
     };
   },
 
@@ -9265,6 +9383,8 @@ const IntraApp = {
       semester,
       mapel,
       materi,
+      cpInput,
+      tpInput,
       soloLevel,
       selectedDpl
     } = params;
@@ -9274,42 +9394,56 @@ const IntraApp = {
       ? selectedDpl
       : ['Keimanan dan Ketakwaan terhadap Tuhan YME', 'Penalaran Kritis', 'Kolaborasi', 'Komunikasi'];
 
-    const capaianPembelajaran = `Pada akhir ${kelasFase}, peserta didik memiliki kemampuan komprehensif dalam mata pelajaran ${mapel}, khususnya dalam memahami konsep esensial, menerapkan prinsip keilmuan pada materi "${materi}", serta merefleksikan nilai-nilai Dimensi Profil Lulusan (${dplList.join(', ')}) dalam kehidupan sehari-hari secara kontekstual.`;
+    const parsedTpList = this.parseTpList(tpInput, materi, mapel, soloMeta);
+    const { mainTopic, cpEssence } = this.extractSubTopics(materi, parsedTpList, cpInput);
 
-    const tujuanPembelajaran = [
-      `Melalui pengamatan media interaktif dan tanya jawab terbimbing (Mindful Learning), peserta didik mampu ${soloMeta.verbs} tentang materi "${materi}" pada mata pelajaran ${mapel} dengan tepat.`,
-      `Melalui diskusi kolaboratif dan penyelidikan berbasis masalah kontekstual (Meaningful Learning), peserta didik mampu mengaplikasikan konsep "${materi}" untuk menyelesaikan lembar kerja dan studi kasus sesuai ranah Taksonomi SOLO tingkat ${soloMeta.level}.`,
-      `Melalui kegiatan presentasi karya dan refleksi bersama (Joyful Learning), peserta didik mampu menyimpulkan kebermaknaan materi "${materi}" serta menunjukkan karakter ${dplList.join(', ')} secara aktif.`
-    ];
+    const capaianPembelajaran = cpInput && String(cpInput).trim()
+      ? String(cpInput).trim()
+      : `Pada akhir ${kelasFase}, peserta didik mampu ${cpEssence} pada mata pelajaran ${mapel}, khususnya terkait materi "${materi}", serta menginternalisasi nilai ${dplList.join(', ')} dalam kehidupan sehari-hari.`;
+
+    const tujuanPembelajaran = parsedTpList.map((tpItem, idx) => {
+      const hasPrefix = /^(melalui|peserta didik|siswa)/i.test(tpItem);
+      if (hasPrefix) return tpItem;
+      const cleanTp = tpItem.charAt(0).toLowerCase() + tpItem.slice(1);
+      if (idx === 0) {
+        return `Melalui kegiatan pengamatan terarah dan eksplorasi konsep (Mindful Learning), peserta didik mampu ${cleanTp}`;
+      } else if (idx === 1) {
+        return `Melalui diskusi kelompok dan penyelidikan kontekstual berbasis Taksonomi SOLO tingkat ${soloMeta.level} (Meaningful Learning), peserta didik mampu ${cleanTp}`;
+      }
+      return `Melalui unjuk kerja dan refleksi kolaboratif (Joyful Learning), peserta didik mampu ${cleanTp}`;
+    });
+
+    const firstTpClean = this.cleanObjectivePhrase(parsedTpList[0] || `memahami materi ${mainTopic}`);
+    const secondTpClean = this.cleanObjectivePhrase(parsedTpList[1] || parsedTpList[0] || `menerapkan konsep ${mainTopic}`);
 
     const prinsip3 = {
-      mindful: `Guru mengondisikan kesiapan psikologis dan fokus penuh peserta didik melalui teknik kesadaran penuh (mindfulness), pertanyaan pemantik reflektif tentang "${materi}", serta pemetaan kesiapan belajar awal.`,
-      meaningful: `Materi "${materi}" dikaitkan langsung dengan fenomena nyata di lingkungan sekitar peserta didik (${sekolah}) sehingga siswa memahami manfaat praktis ilmu yang dipelajari.`,
-      joyful: `Proses pembelajaran dirancang secara interaktif, apresiatif, dan menggembirakan melalui eksplorasi kelompok, kuis kolaboratif, serta penghargaan terhadap setiap proses kemajuan siswa.`
+      mindful: `Guru membangun kesadaran penuh (mindfulness) dan kesiapan belajar peserta didik di ${kelasFase} dengan mengajukan pertanyaan pemantik kontekstual seputar "${mainTopic}" untuk mengaktifkan pengetahuan awal menuju kemampuan ${firstTpClean}.`,
+      meaningful: `Pembelajaran dikaitkan langsung dengan pengalaman nyata peserta didik di lingkungan ${sekolah} dan rumah, sehingga siswa menyadari manfaat mempelajari "${mainTopic}" guna mencapai target Capaian Pembelajaran (${cpEssence}).`,
+      joyful: `Suasana belajar dirancang interaktif, inklusif, dan menggembirakan melalui kerja kelompok kolaboratif, media visual/nyata, serta apresiasi atas keberhasilan siswa dalam ${secondTpClean}.`
     };
 
     const kerangka4 = {
-      pedagogis: `Model Problem-Based Learning (PBL) terintegrasi Pembelajaran Mendalam (Deep Learning) dengan pendekatan diferensiasi berbasis Taksonomi SOLO (${soloMeta.level}).`,
-      kemitraan: `Kolaborasi aktif antar peserta didik dalam kelompok belajar, fasilitasi intensif oleh guru (${penyusun}), serta pelibatan orang tua/lingkungan sekitar sebagai sumber belajar kontekstual.`,
-      lingkungan: `Penataan ruang kelas yang fleksibel, aman, inklusif, dan mendukung diskusi kelompok maupun eksplorasi pengamatan langsung di lingkungan ${sekolah}.`,
-      digital: `Pemanfaatan tayangan visual/multimedia interaktif, bahan bacaan terstruktur, serta instrumen asesmen digital terstandar pada platform akademik.`
+      pedagogis: `Pembelajaran Mendalam (Deep Learning) berbasis Problem/Inquiry Learning yang diselaraskan dengan Taksonomi SOLO tingkat ${soloMeta.level} (${soloMeta.shortDesc}).`,
+      kemitraan: `Kolaborasi aktif antarsiswa dalam diskusi kelompok, bimbingan terdiferensiasi (scaffolding) oleh guru (${penyusun}), serta keterlibatan lingkungan/orang tua dalam penguatan materi "${mainTopic}".`,
+      lingkungan: `Penataan ruang belajar ${kelasFase} di ${sekolah} yang aman, kondusif, dan mendorong keberanian siswa bertanya, mencoba, serta berpendapat secara santun.`,
+      digital: `Pemanfaatan media peraga visual/interaktif, lembar kerja terstruktur, dan instrumen asesmen akademik terstandar untuk mengukur ketercapaian TP dan CP.`
     };
 
     const pengalaman3 = {
       memahami: [
-        `Guru membuka pelajaran dengan salam, doa bersama, pemeriksaan kehadiran, dan latihan fokus singkat (Mindful Check-in) untuk membangun kesiapan belajar.`,
-        `Guru menyampaikan apersepsi dengan mengaitkan pengalaman sehari-hari siswa terhadap topik "${materi}" serta menjelaskan Tujuan Pembelajaran yang akan dicapai.`,
-        `Peserta didik mengamati stimulus berupa wacana/gambar/fenomena kontekstual mengenai "${materi}" pada mata pelajaran ${mapel}, kemudian melakukan tanya jawab eksploratif untuk mencapai target ${soloMeta.cognitiveTarget}.`
+        `Guru membuka pembelajaran dengan salam, doa bersama, pemeriksaan kehadiran, dan pengondisian fokus belajar (Mindful Check-in).`,
+        `Guru melakukan apersepsi dengan mengaitkan fenomena sehari-hari yang dekat dengan siswa terhadap topik "${mainTopic}" serta menyampaikan Tujuan Pembelajaran: ${parsedTpList.join(' | ')}.`,
+        `Peserta didik mengamati contoh nyata, teks, atau ilustrasi mengenai "${mainTopic}" pada mata pelajaran ${mapel}, kemudian melakukan tanya jawab terbimbing untuk membangun pemahaman dasar dalam ${firstTpClean}.`
       ],
       mengaplikasi: [
-        `Peserta didik dibagi ke dalam kelompok kolaboratif untuk menyelidiki permasalahan nyata yang berkaitan dengan "${materi}" menggunakan Lembar Kerja Peserta Didik (LKPD).`,
-        `Setiap kelompok berdiskusi menganalisis data/informasi, menghubungkan konsep inti (${soloMeta.level}), dan merumuskan solusi atau produk pemahaman atas materi "${materi}".`,
-        `Guru melakukan pendampingan terdiferensiasi (scaffolding) kepada kelompok yang membutuhkan bimbingan sekaligus melakukan observasi formatif Dimensi Profil Lulusan (${dplList.join(', ')}).`
+        `Peserta didik dibagi ke dalam kelompok belajar kolaboratif untuk mengerjakan Lembar Kerja Peserta Didik (LKPD) yang memuat studi kasus kontekstual tentang "${mainTopic}".`,
+        `Dalam kelompok, peserta didik berdiskusi untuk ${soloMeta.taskFocus} guna membuktikan ketercapaian indikator: ${secondTpClean}.`,
+        `Guru memfasilitasi jalannya diskusi, memberikan bimbingan bertahap bagi siswa yang memerlukan penguatan, serta melakukan observasi perkembangan Dimensi Profil Lulusan (${dplList.join(', ')}).`
       ],
       merefleksi: [
-        `Perwakilan kelompok mempresentasikan hasil analisis dan temuan mereka tentang "${materi}" secara komunikatif, sementara kelompok lain memberikan tanggapan konstruktif.`,
-        `Peserta didik bersama guru melakukan refleksi mendalam mengenai apa yang telah dipahami, tantangan yang berhasil diatasi, serta manfaat mempelajari "${materi}" bagi kehidupan sehari-hari.`,
-        `Guru memberikan penguatan konsep akademik, melaksanakan evaluasi formatif/sumatif berbasis Taksonomi SOLO, dan menutup pembelajaran dengan apresiasi serta doa.`
+        `Setiap kelompok mempresentasikan hasil analisis dan kesimpulan mereka mengenai "${mainTopic}", dilanjutkan dengan umpan balik positif dari kelompok lain dan guru.`,
+        `Peserta didik bersama guru menyimpulkan inti materi pembelajaran, merefleksikan manfaat mempelajari "${mainTopic}" dalam kehidupan sehari-hari, serta mengaitkannya kembali dengan Capaian Pembelajaran.`,
+        `Guru melaksanakan asesmen evaluasi (${soloMeta.level}) untuk mengukur penguasaan Tujuan Pembelajaran secara objektif, kemudian menutup kelas dengan apresiasi dan doa.`
       ]
     };
 
@@ -9320,6 +9454,9 @@ const IntraApp = {
       semester,
       mapel,
       materi,
+      cpInput: capaianPembelajaran,
+      tpInput: parsedTpList.join('\n'),
+      parsedTpList,
       soloLevel,
       soloMeta,
       dplList,
@@ -9332,9 +9469,100 @@ const IntraApp = {
     };
   },
 
+  buildContextualScenarioPool(params) {
+    const { mapel, materi, kelasFase, soloLevel, cpInput, tpInput } = params;
+    const soloMeta = this.getSoloVerbMeta(soloLevel);
+    const tpList = this.parseTpList(tpInput, materi, mapel, soloMeta);
+    const { mainTopic, subTopics, cpEssence } = this.extractSubTopics(materi, tpList, cpInput);
+
+    const cleanTpObjectives = tpList.map(t => this.cleanObjectivePhrase(t));
+
+    // Buat daftar skenario kontekstual & sudut pandang soal yang bervariasi
+    // sehingga setiap nomor soal menguji aspek TP, CP, dan Materi secara nyata & mudah dipahami siswa
+    const angles = [
+      {
+        angleName: 'Pemahaman Konsep & Identifikasi Inti',
+        buildPG: (tpClean, subFocus) => ({
+          stem: `Perhatikan pernyataan berikut! Dalam mempelajari materi ${mainTopic} pada pelajaran ${mapel}, kita perlu ${tpClean}. Manakah pernyataan di bawah ini yang paling tepat menjelaskan tentang ${subFocus}?`,
+          correct: `Bagian penting dari ${mainTopic} yang berfungsi untuk ${tpClean} sesuai kaidah ${mapel} yang benar.`,
+          distractors: [
+            `Kegiatan yang tidak berkaitan dengan ${mainTopic} dan tidak memengaruhi proses ${subFocus}.`,
+            `Unsur tambahan di luar ${mainTopic} yang hanya digunakan sebagai pelengkap tanpa fungsi utama.`,
+            `Hasil akhir yang muncul secara kebetulan tanpa melalui proses atau aturan pada ${mainTopic}.`
+          ],
+          explanation: `Sesuai Tujuan Pembelajaran (${tpClean}), pemahaman yang benar tentang ${subFocus} adalah mengenali peran dan kaidah utamanya dalam ${mainTopic}.`
+        })
+      },
+      {
+        angleName: 'Penerapan dalam Kehidupan Sehari-hari',
+        buildPG: (tpClean, subFocus) => ({
+          stem: `Di lingkungan sekolah maupun di rumah, kita sering menjumpai contoh nyata yang berkaitan dengan ${mainTopic}. Tindakan atau contoh manakah di bawah ini yang paling tepat menunjukkan penerapan dari kemampuan ${tpClean}?`,
+          correct: `Mengamati dan menerapkan prinsip ${subFocus} secara tepat ketika menyelesaikan kegiatan atau permasalahan sehari-hari.`,
+          distractors: [
+            `Mengabaikan aturan dasar ${subFocus} karena dianggap hanya berlaku di dalam buku pelajaran.`,
+            `Melakukan kegiatan secara acak tanpa memperhatikan langkah atau ciri-ciri ${mainTopic}.`,
+            `Menghindari penggunaan konsep ${subFocus} saat menghadapi persoalan di lingkungan sekitar.`
+          ],
+          explanation: `Penerapan konsep ${mainTopic} yang tepat dalam keseharian ditunjukkan dengan mempraktikkan prinsip ${subFocus} untuk ${tpClean}.`
+        })
+      },
+      {
+        angleName: 'Analisis Hubungan Sebab-Akibat (Taksonomi SOLO)',
+        buildPG: (tpClean, subFocus) => ({
+          stem: `Ketika mempelajari ${mainTopic}, setiap unsur atau tahapan di dalamnya saling berhubungan satu sama lain. Apa yang akan terjadi apabila salah satu bagian penting dalam ${subFocus} tidak berjalan sebagaimana mestinya?`,
+          correct: `Proses atau keseimbangan pada ${mainTopic} akan terganggu sehingga tujuan untuk ${tpClean} tidak dapat tercapai secara optimal.`,
+          distractors: [
+            `Seluruh proses dalam ${mainTopic} akan tetap berjalan normal tanpa mengalami perubahan apa pun.`,
+            `Bagian lain dalam ${mainTopic} akan langsung hilang seluruhnya dalam waktu seketika.`,
+            `Tidak ada pengaruh apa pun karena setiap bagian dalam ${subFocus} berdiri sendiri secara terpisah.`
+          ],
+          explanation: `Pada ranah ${soloMeta.level}, setiap komponen dalam ${mainTopic} (${subFocus}) memiliki hubungan sebab-akibat. Jika satu komponen terganggu, maka keseluruhan proses akan terdampak.`
+        })
+      },
+      {
+        angleName: 'Klasifikasi Ciri-Ciri & Langkah Tepat',
+        buildPG: (tpClean, subFocus) => ({
+          stem: `Seorang siswa sedang mempelajari cara ${tpClean} pada topik ${mainTopic}. Agar hasilnya tepat dan sesuai dengan konsep ${mapel}, langkah atau ciri utama apakah yang harus diperhatikan terkait ${subFocus}?`,
+          correct: `Memastikan seluruh ciri utama dan urutan konsep pada ${subFocus} terpenuhi secara runtut dan teliti.`,
+          distractors: [
+            `Hanya memilih bagian yang paling mudah saja dan melewati tahapan penting lainnya.`,
+            `Mengubah aturan dasar ${subFocus} tanpa memeriksa kebenaran informasinya terlebih dahulu.`,
+            `Menyimpulkan hasil akhir sebelum melakukan pengamatan atau perhitungan terhadap ${mainTopic}.`
+          ],
+          explanation: `Untuk dapat ${tpClean} dengan benar, siswa perlu memperhatikan ciri utama serta keruntutan proses pada ${subFocus}.`
+        })
+      },
+      {
+        angleName: 'Pemecahan Masalah & Evaluasi Solusi',
+        buildPG: (tpClean, subFocus) => ({
+          stem: `Saat melakukan kegiatan belajar tentang ${mainTopic}, kelompok belajar di kelas menemukan permasalahan yang berkaitan dengan ${subFocus}. Berdasarkan pemahamanmu untuk ${tpClean}, solusi manakah yang paling tepat dilakukan?`,
+          correct: `Mengidentifikasi penyebab masalah pada ${subFocus} terlebih dahulu, lalu menerapkan langkah penyelesaian sesuai prinsip ${mainTopic}.`,
+          distractors: [
+            `Membiarkan permasalahan tersebut karena akan selesai dengan sendirinya tanpa perlu dianalisis.`,
+            `Mengganti topik ${mainTopic} dengan topik lain yang sama sekali tidak berhubungan.`,
+            `Menyalin jawaban dari kelompok lain tanpa memeriksa kesesuaiannya dengan konsep ${subFocus}.`
+          ],
+          explanation: `Penyelesaian masalah yang tepat sesuai Capaian Pembelajaran (${cpEssence}) dilakukan dengan menganalisis akar masalah pada ${subFocus} dan menerapkan konsep ${mainTopic}.`
+        })
+      }
+    ];
+
+    return {
+      mainTopic,
+      subTopics,
+      cpEssence,
+      tpList,
+      cleanTpObjectives,
+      soloMeta,
+      angles
+    };
+  },
+
   generateQuestionsBySpec(params, questionSpecList) {
     const { mapel, materi, kelasFase, soloLevel } = params;
-    const soloMeta = this.getSoloVerbMeta(soloLevel);
+    const pool = this.buildContextualScenarioPool(params);
+    const { mainTopic, subTopics, cpEssence, tpList, cleanTpObjectives, soloMeta, angles } = pool;
+
     const sections = [];
 
     (questionSpecList || []).forEach(spec => {
@@ -9343,75 +9571,111 @@ const IntraApp = {
       const items = [];
 
       for (let i = 1; i <= count; i++) {
+        const tpIdx = (i - 1) % cleanTpObjectives.length;
+        const targetTpClean = cleanTpObjectives[tpIdx] || `memahami konsep ${mainTopic}`;
+        const targetTpFull = tpList[tpIdx] || `Memahami konsep ${mainTopic}`;
+        const subFocus = subTopics[(i - 1) % subTopics.length] || mainTopic;
+        const angleObj = angles[(i - 1) % angles.length];
+
         if (qType === 'PG') {
-          const correctPool = ['A', 'B', 'C', 'D'];
-          const answerKey = correctPool[(i - 1) % 4];
-          const optionTexts = {
-            A: `Menjelaskan konsep dasar "${materi}" بدون mengaitkan dengan konteks penerapan pada ${mapel}.`,
-            B: `Mengidentifikasi satu unsur dari "${materi}" secara terpisah tanpa melihat hubungan antarbagian.`,
-            C: `Menganalisis keterkaitan konsep "${materi}" secara utuh dan menerapkannya secara tepat sesuai prinsip ${mapel}.`,
-            D: `Menyebutkan istilah pada "${materi}" secara umum tanpa disertai alasan ilmiah yang relevan.`
-          };
-          if (answerKey !== 'C') {
-            const temp = optionTexts[answerKey];
-            optionTexts[answerKey] = optionTexts.C;
-            optionTexts.C = temp;
-          }
+          const pgData = angleObj.buildPG(targetTpClean, subFocus);
+          const keysOrder = ['A', 'B', 'C', 'D'];
+          const correctKey = keysOrder[(i + 1) % 4];
+
+          const optionTexts = {};
+          let distIdx = 0;
+          keysOrder.forEach(k => {
+            if (k === correctKey) {
+              optionTexts[k] = pgData.correct;
+            } else {
+              optionTexts[k] = pgData.distractors[distIdx % pgData.distractors.length];
+              distIdx++;
+            }
+          });
 
           items.push({
             no: i,
-            stem: `[Ranah SOLO: ${soloMeta.level} — Aspek Ke-${i}] Dalam konteks pembelajaran ${mapel} (${kelasFase}) mengenai "${materi}", ${soloMeta.questionStemPrefix.toLowerCase()} penerapan konsep tersebut pada situasi nyata. Manakah pernyataan di bawah ini yang paling tepat?`,
+            indicatorBadge: `Indikator TP #${tpIdx + 1} | Ranah SOLO: ${soloMeta.level} (${angleObj.angleName})`,
+            stem: pgData.stem,
             options: optionTexts,
-            answer: `Kunci Jawaban: ${answerKey} — Karena pernyataan tersebut secara akurat mencerminkan pemahaman ${soloMeta.level} pada materi "${materi}".`,
-            scoreWeight: Math.round(100 / count)
+            answer: `Kunci Jawaban: ${correctKey} — ${pgData.explanation}`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         } else if (qType === 'ESAI') {
+          const esaiPrompts = [
+            `Jelaskan dengan bahasamu sendiri apa yang dimaksud dengan ${subFocus} pada materi ${mainTopic}, serta bagaimana perannya agar kita dapat ${targetTpClean}!`,
+            `Sebutkan dan jelaskan minimal 2 (dua) contoh nyata penerapan konsep ${subFocus} (${mainTopic}) yang dapat kamu temukan dalam kehidupan sehari-hari di rumah atau di sekolah!`,
+            `Mengapa kita perlu memahami cara ${targetTpClean} ketika mempelajari ${mainTopic}? Jelaskan hubungan antara ${subFocus} dengan manfaatnya bagi kehidupan kita!`,
+            `Perhatikan proses yang terjadi pada ${mainTopic}! Uraikan secara runtut tahapan atau ciri-ciri penting dari ${subFocus} sesuai yang telah kamu pelajari pada mata pelajaran ${mapel}!`
+          ];
+
           items.push({
             no: i,
-            stem: `[Esai Terstruktur #${i} — SOLO ${soloMeta.level}] Jelaskan secara runtut bagaimana konsep "${materi}" dalam mata pelajaran ${mapel} bekerja, serta berikan ${i === 1 ? 'dua contoh nyata penerapannya' : 'analisis keterkaitannya dengan kehidupan sehari-hari di lingkungan sekolah/rumah'}!`,
-            answer: `Pedoman Penskoran / Kunci Jawaban: Peserta didik mampu menguraikan konsep inti "${materi}" dengan bahasa sendiri secara tepat, menghubungkan sebab-akibat sesuai tahap ${soloMeta.level}, dan menyertakan contoh kontekstual yang relevan.`,
-            scoreWeight: 20
+            indicatorBadge: `Indikator TP #${tpIdx + 1} | Esai Ranah SOLO: ${soloMeta.level}`,
+            stem: esaiPrompts[(i - 1) % esaiPrompts.length],
+            answer: `Pedoman Penskoran & Kunci Jawaban: Siswa mampu menjelaskan konsep ${subFocus} pada materi ${mainTopic} secara tepat, menguraikan alasan/contoh yang sesuai dengan tujuan pembelajaran (${targetTpClean}), serta menyusun kalimat secara runtut.`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         } else if (qType === 'URAIAN') {
+          const uraianPrompts = [
+            `Di lingkungan sekitar kita, terkadang terjadi masalah atau perubahan yang berkaitan dengan ${mainTopic}, khususnya pada aspek ${subFocus}. Analisislah apa penyebab terjadinya masalah tersebut dan jelaskan dampaknya jika tidak segera diatasi!`,
+            `Seandainya kamu diminta membuat sebuah proyek atau solusi sederhana yang menerapkan konsep ${mainTopic} (${subFocus}) di sekolah, langkah-langkah apa saja yang akan kamu lakukan agar tujuan untuk ${targetTpClean} dapat berhasil dengan baik? Jelaskan alasanmu!`,
+            `Bandingkan kondisi apabila konsep ${subFocus} dalam ${mainTopic} diterapkan dengan benar dan apabila diabaikan! Tuliskan kesimpulanmu beserta saran terbaik yang dapat dilakukan oleh siswa ${kelasFase}!`
+          ];
+
           items.push({
             no: i,
-            stem: `[Pemecahan Masalah / Uraian HOTS #${i} — SOLO ${soloMeta.level}] Di lingkungan sekitar kita sering dijumpai permasalahan yang berkaitan erat dengan topik "${materi}". Analisislah faktor penyebab munculnya permasalahan tersebut dari sudut pandang ${mapel}, lalu rumuskan solusi langkah demi langkah yang efektif dan bertanggung jawab!`,
-            answer: `Kunci & Rubrik Uraian: (1) Identifikasi masalah tepat terkait "${materi}", (2) Analisis konsep ${mapel} akurat, (3) Solusi logis, aplikatif, dan mencerminkan penalaran kritis (${soloMeta.level}).`,
-            scoreWeight: 25
+            indicatorBadge: `Indikator CP & TP #${tpIdx + 1} | Uraian HOTS (${soloMeta.level})`,
+            stem: uraianPrompts[(i - 1) % uraianPrompts.length],
+            answer: `Kunci & Rubrik Uraian HOTS: (1) Ketepatan menganalisis masalah/sebab-akibat pada ${subFocus} [Skor 40%], (2) Ketepatan mengaitkan dengan konsep ${mainTopic} untuk ${targetTpClean} [Skor 30%], (3) Kelogisan solusi/kesimpulan yang dirumuskan siswa [Skor 30%].`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         } else if (qType === 'ISIAN') {
+          const isianPrompts = [
+            `Dalam mempelajari materi ${mainTopic}, kegiatan atau proses untuk ${targetTpClean} sangat berkaitan erat dengan konsep utama yaitu ___________________________.`,
+            `Salah satu ciri atau unsur penting yang harus diperhatikan ketika kita mengamati ${subFocus} pada pelajaran ${mapel} adalah ___________________________.`,
+            `Apabila proses pada ${subFocus} berjalan dengan baik sesuai kaidah ${mainTopic}, maka manfaat utama yang akan diperoleh adalah ___________________________.`
+          ];
+
           items.push({
             no: i,
-            stem: `[Filling Blank / Isian Singkat #${i}] Proses atau konsep utama dalam mata pelajaran ${mapel} yang berperan penting dalam menentukan keberhasilan penerapan "${materi}" aspek ke-${i} disebut ___________________________.`,
-            answer: `Kunci Isian: Konsep/prinsip inti "${materi}" (aspek ke-${i} sesuai indikator tujuan pembelajaran ${mapel}).`,
-            scoreWeight: 10
+            indicatorBadge: `Indikator TP #${tpIdx + 1} | Isian Singkat (${soloMeta.level})`,
+            stem: isianPrompts[(i - 1) % isianPrompts.length],
+            answer: `Kunci Isian: ${subFocus} / konsep inti pada ${mainTopic} yang mendukung kemampuan ${targetTpClean}.`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         } else if (qType === 'MATCHING') {
           items.push({
             no: i,
-            leftPremise: `Pernyataan ${i}: Penerapan prinsip ke-${i} dari materi "${materi}" pada kegiatan ${mapel}`,
-            rightResponse: `Pasangan Tepat ${String.fromCharCode(64 + i)}: Menghasilkan pemahaman konsep ${soloMeta.level} dan dampak positif pada penyelesaian masalah kontekstual ke-${i}`,
-            answer: `Pasangan Benar: Pernyataan ${i} <--> Pilihan ${String.fromCharCode(64 + i)}`,
-            scoreWeight: 10
+            indicatorBadge: `Indikator TP #${tpIdx + 1}`,
+            leftPremise: `${i}. Aspek / Konsep: ${subFocus.charAt(0).toUpperCase() + subFocus.slice(1)} dalam materi ${mainTopic}`,
+            rightResponse: `Pasangan ${String.fromCharCode(64 + i)}: Berperan penting untuk ${targetTpClean} sehingga mencapai kompetensi ${cpEssence}`,
+            answer: `Pasangan Tepat: Nomor ${i} <--> Huruf ${String.fromCharCode(64 + i)}`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         } else if (qType === 'BENARSALAH') {
           const isTrue = i % 2 === 1;
+          const statementText = isTrue
+            ? `[BENAR / SALAH] Memahami ${subFocus} secara teliti pada materi ${mainTopic} sangat membantu kita untuk ${targetTpClean} dalam kehidupan sehari-hari.`
+            : `[BENAR / SALAH] Dalam mempelajari ${mainTopic}, kita tidak perlu memperhatikan aturan atau peran dari ${subFocus} karena tidak memiliki pengaruh apa pun terhadap hasil akhir.`;
+
           items.push({
             no: i,
-            stem: `[Pernyataan #${i}] Pemahaman terhadap materi "${materi}" dalam mata pelajaran ${mapel} ${isTrue ? 'sangat diperlukan agar peserta didik mampu menganalisis dan memecahkan masalah sehari-hari secara tepat' : 'hanya bersifat hafalan semata dan tidak memiliki kaitan dengan penerapan di kehidupan nyata'}.`,
-            answer: `Kunci: ${isTrue ? 'BENAR (B)' : 'SALAH (S)'} — ${isTrue ? 'Konsep ini berkaitan langsung dengan kecakapan hidup dan pemecahan masalah.' : 'Pembelajaran mendalam menekankan keterkaitan konsep dengan konteks kehidupan nyata.'}`,
-            scoreWeight: 10
+            indicatorBadge: `Indikator TP #${tpIdx + 1} | Evaluasi Konsep (${soloMeta.level})`,
+            stem: statementText,
+            answer: `Kunci Jawaban: ${isTrue ? 'BENAR (B)' : 'SALAH (S)'} — ${isTrue ? `Karena penguasaan ${subFocus} merupakan bagian inti untuk mencapai tujuan pembelajaran (${targetTpFull}).` : `Pernyataan tersebut keliru karena ${subFocus} justru memegang peranan penting dalam ${mainTopic}.`}`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
           });
         }
       }
 
       const typeTitles = {
-        PG: 'Bagian Pilihan Ganda (PG)',
-        ESAI: 'Bagian Esai Terstruktur',
-        URAIAN: 'Bagian Uraian & Pemecahan Masalah (HOTS)',
-        ISIAN: 'Bagian Filling Blank (Isian Singkat)',
-        MATCHING: 'Bagian Mencocokkan Tabel (Matching)',
-        BENARSALAH: 'Bagian Pernyataan Benar / Salah'
+        PG: 'Bagian Pilihan Ganda (Pilihlah Satu Jawaban yang Paling Tepat!)',
+        ESAI: 'Bagian Esai Terstruktur (Jawablah Pertanyaan Berikut dengan Jelas dan Tepat!)',
+        URAIAN: 'Bagian Uraian & Pemecahan Masalah HOTS (Analisislah Permasalahan Berikut!)',
+        ISIAN: 'Bagian Isian Singkat / Filling Blank (Lengkapilah Titik-Titik di Bawah Ini!)',
+        MATCHING: 'Bagian Mencocokkan Tabel (Pasangkan Pernyataan di Kolom A dengan Kolom B!)',
+        BENARSALAH: 'Bagian Benar / Salah (Tentukan Apakah Pernyataan Berikut Benar atau Salah!)'
       };
 
       sections.push({
@@ -9518,7 +9782,7 @@ const IntraApp = {
       ? weaknessIndicator.charAt(0).toLowerCase() + weaknessIndicator.slice(1)
       : '';
 
-    if (!weaknessText || gradeCode === 'A' && weaknessIndicator === 'TIDAK_ADA') {
+    if (!weaknessText || (gradeCode === 'A' && weaknessIndicator === 'TIDAK_ADA')) {
       return `Ananda ${name} menunjukkan capaian ${gradeLabel} pada kegiatan ekstrakurikuler ${prog}. Ananda sudah sangat mahir dalam ${masteredText}, serta konsisten menampilkan kedisiplinan dan antusiasme yang tinggi.`;
     }
 
@@ -9526,7 +9790,9 @@ const IntraApp = {
   }
 };
 
-  const RpmApp = {
+const RpmApp = {
+  hideAnswerKeysForStudentPrint: false,
+
   openMainView() {
     const teacher = DB.getActiveTeacherAccount();
     const bucket = DB.getActiveClassBucket();
@@ -9575,6 +9841,42 @@ const IntraApp = {
     UI.switchView('view-intra-modul-rpm');
   },
 
+  autoSuggestCpAndTp() {
+    const mapelEl = document.getElementById('rpm-input-mapel');
+    const kelasEl = document.getElementById('rpm-input-kelas-fase');
+    const materiEl = document.getElementById('rpm-input-materi');
+    const soloEl = document.getElementById('rpm-input-solo');
+    const cpEl = document.getElementById('rpm-input-cp');
+    const tpEl = document.getElementById('rpm-input-tp');
+
+    const mapel = mapelEl && mapelEl.value.trim() ? mapelEl.value.trim() : 'IPAS';
+    const kelasFase = kelasEl && kelasEl.value.trim() ? kelasEl.value.trim() : 'Kelas 4 / Fase B';
+    const materi = materiEl && materiEl.value.trim() ? materiEl.value.trim() : 'Konsep Inti Pembelajaran';
+    const soloMeta = AcademicAIEngine.getSoloVerbMeta(soloEl ? soloEl.value : 'Relational');
+
+    if (materiEl && !materiEl.value.trim()) {
+      materiEl.value = materi;
+    }
+
+    if (cpEl) {
+      cpEl.value = `Pada akhir ${kelasFase}, peserta didik memahami konsep esensial pada mata pelajaran ${mapel} terkait "${materi}", mampu mengaitkan hubungan antarkonsep, serta menerapkannya untuk menyelesaikan permasalahan dalam kehidupan sehari-hari secara bernalar kritis dan bertanggung jawab.`;
+    }
+
+    if (tpEl) {
+      tpEl.value = [
+        `1. Mengidentifikasi pengertian, ciri-ciri utama, dan komponen penting pada materi ${materi} dengan tepat.`,
+        `2. Menganalisis hubungan sebab-akibat serta cara kerja konsep ${materi} dalam kehidupan sehari-hari sesuai ranah ${soloMeta.level}.`,
+        `3. Menyajikan hasil pengamatan atau pemecahan masalah sederhana terkait ${materi} secara runtut dan komunikatif.`
+      ].join('\n');
+    }
+
+    UI.showNotif(
+      'Draft CP & TP Berhasil Disusun',
+      `Rumusan Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) untuk materi "${materi}" telah diisi otomatis. Anda dapat menyempurnakannya sesuai kebutuhan sebelum membuat modul dan soal.`,
+      'success'
+    );
+  },
+
   selectAllDplCheckboxes(selectAll = true) {
     const checks = document.querySelectorAll('input[name="rpm_dpl_item"]');
     checks.forEach(ch => {
@@ -9605,6 +9907,21 @@ const IntraApp = {
     }
   },
 
+  toggleAnswerKeyVisibility() {
+    this.hideAnswerKeysForStudentPrint = !this.hideAnswerKeysForStudentPrint;
+    const btn = document.getElementById('btn-toggle-teacher-key');
+    if (btn) {
+      if (this.hideAnswerKeysForStudentPrint) {
+        btn.textContent = 'Tampilkan Kunci Jawaban (Mode Pegangan Guru)';
+        btn.className = 'btn btn-warning btn-sm';
+      } else {
+        btn.textContent = 'Sembunyikan Kunci Jawaban (Mode Lembar Siswa)';
+        btn.className = 'btn btn-secondary btn-sm';
+      }
+    }
+    this.renderGeneratedQuestionsDocument();
+  },
+
   handleGenerateRpm(event) {
     event.preventDefault();
     const bucket = DB.getActiveClassBucket();
@@ -9618,11 +9935,16 @@ const IntraApp = {
     const mapel = document.getElementById('rpm-input-mapel').value.trim();
     const soloLevel = document.getElementById('rpm-input-solo').value;
     const materi = document.getElementById('rpm-input-materi').value.trim();
+    const cpInputEl = document.getElementById('rpm-input-cp');
+    const tpInputEl = document.getElementById('rpm-input-tp');
 
-    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
+    const cpInput = cpInputEl ? cpInputEl.value.trim() : '';
+    const tpInput = tpInputEl ? tpInputEl.value.trim() : '';
+
+    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi || !cpInput || !tpInput) {
       UI.showNotif(
-        'Parameter Modul Belum Lengkap',
-        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Materi Pokok.',
+        'Formulir RPM Belum Lengkap',
+        'Harap lengkapi seluruh kolom wajib, termasuk Materi Pokok, Capaian Pembelajaran (CP), dan Tujuan Pembelajaran (TP).',
         'warning'
       );
       return;
@@ -9665,6 +9987,8 @@ const IntraApp = {
       semester,
       mapel,
       materi,
+      cpInput,
+      tpInput,
       soloLevel,
       selectedDpl
     };
@@ -9697,8 +10021,8 @@ const IntraApp = {
     this.switchResultPage(1);
 
     UI.showNotif(
-      'Modul RPM 8-3-3-4 & Soal Berhasil Dibuat',
-      `Modul Ajar RPM mata pelajaran ${mapel} (${materi}) beserta instrumen soal berbasis Taksonomi SOLO telah selesai disusun secara otomatis.`,
+      'Modul RPM 8-3-3-4 & Soal Kontekstual Berhasil Dibuat',
+      `Modul Ajar RPM dan instrumen soal mata pelajaran ${mapel} (${materi}) telah disusun berdasarkan analisis CP, TP, Kelas/Fase, dan Taksonomi SOLO Anda.`,
       'success'
     );
   },
@@ -9854,7 +10178,7 @@ const IntraApp = {
         </div>
 
         <h4 style="background: #f1f5f9; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem; color: var(--dark);">
-          B. INTEGRASI SISTEM 8-3-3-4 & KOMPONEN INTI AKADEMIK
+          B. INTEGRASI SISTEM 8-3-3-4 & CAPAIAN KOMPETENSI AKADEMIK
         </h4>
 
         <div style="margin-bottom: 1.15rem;">
@@ -9866,14 +10190,18 @@ const IntraApp = {
 
         <div style="margin-bottom: 1.15rem;">
           <strong style="display: block; margin-bottom: 0.35rem; color: var(--primary);">
-            2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP Otomatis AI Akademik) :
+            2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP) :
           </strong>
-          <div style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem;">
-            <strong>Capaian Pembelajaran:</strong> ${UI.escapeHtml(doc.capaianPembelajaran)}
+          <div style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem; line-height: 1.6;">
+            <strong>Capaian Pembelajaran (CP):</strong><br>
+            ${UI.escapeHtml(doc.capaianPembelajaran)}
           </div>
-          <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
-            ${tpListHtml}
-          </ol>
+          <div style="background: #f0fdf4; padding: 0.9rem; border: 1px solid #86efac; border-radius: var(--radius-sm);">
+            <strong style="font-size: 0.88rem; color: #14532d; display: block; margin-bottom: 0.4rem;">Tujuan Pembelajaran (TP):</strong>
+            <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--dark);">
+              ${tpListHtml}
+            </ol>
+          </div>
         </div>
 
         <div style="margin-bottom: 1.15rem;">
@@ -9981,11 +10309,13 @@ const IntraApp = {
     if (!doc.enableQuestions || !doc.questionSections || doc.questionSections.length === 0) {
       container.innerHTML = `
         <div class="alert-box alert-info" style="margin-top: 0;">
-          Fitur pembuatan soal otomatis tidak diaktifkan pada modul ini. Klik tombol <strong>Ubah Parameter Modul</strong> dan ceklis <em>Aktifkan Fitur Buat Soal Otomatis</em> jika Anda ingin menyertakan instrumen soal.
+          Fitur pembuatan soal otomatis tidak diaktifkan pada modul ini. Klik tombol <strong>Ubah Parameter CP/TP & Modul</strong> dan ceklis <em>Aktifkan Fitur Buat Soal Otomatis</em> jika Anda ingin menyertakan instrumen soal.
         </div>
       `;
       return;
     }
+
+    const hideKey = Boolean(this.hideAnswerKeysForStudentPrint);
 
     const sectionsHtml = doc.questionSections.map((sec, sIdx) => {
       let itemsContent = '';
@@ -9994,9 +10324,9 @@ const IntraApp = {
         const rows = sec.items.map(it => `
           <tr>
             <td style="width: 50px; text-align: center;">${it.no}</td>
-            <td>${UI.escapeHtml(it.leftPremise)}</td>
-            <td>${UI.escapeHtml(it.rightResponse)}</td>
-            <td><strong>${UI.escapeHtml(it.answer)}</strong></td>
+            <td contenteditable="true">${UI.escapeHtml(it.leftPremise)}</td>
+            <td contenteditable="true">${UI.escapeHtml(it.rightResponse)}</td>
+            ${hideKey ? '' : `<td><strong>${UI.escapeHtml(it.answer)}</strong></td>`}
           </tr>
         `).join('');
 
@@ -10006,9 +10336,9 @@ const IntraApp = {
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Kolom A (Pernyataan Konsep)</th>
-                  <th>Kolom B (Pasangan Jawaban)</th>
-                  <th>Kunci Pencocokan</th>
+                  <th>Kolom A (Konsep / Pernyataan Materi)</th>
+                  <th>Kolom B (Pasangan Fungsi / Capaian)</th>
+                  ${hideKey ? '' : '<th>Kunci Pencocokan (Pegangan Guru)</th>'}
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -10020,24 +10350,39 @@ const IntraApp = {
           let optionsBlock = '';
           if (sec.type === 'PG' && it.options) {
             optionsBlock = `
-              <div style="margin: 0.45rem 0 0.45rem 1.25rem; font-size: 0.86rem; line-height: 1.6;">
-                <div><strong>A.</strong> ${UI.escapeHtml(it.options.A)}</div>
-                <div><strong>B.</strong> ${UI.escapeHtml(it.options.B)}</div>
-                <div><strong>C.</strong> ${UI.escapeHtml(it.options.C)}</div>
-                <div><strong>D.</strong> ${UI.escapeHtml(it.options.D)}</div>
+              <div style="margin: 0.5rem 0 0.5rem 1.25rem; font-size: 0.88rem; line-height: 1.65;">
+                <div contenteditable="true"><strong>A.</strong> ${UI.escapeHtml(it.options.A)}</div>
+                <div contenteditable="true"><strong>B.</strong> ${UI.escapeHtml(it.options.B)}</div>
+                <div contenteditable="true"><strong>C.</strong> ${UI.escapeHtml(it.options.C)}</div>
+                <div contenteditable="true"><strong>D.</strong> ${UI.escapeHtml(it.options.D)}</div>
               </div>
             `;
+          } else if (sec.type === 'ESAI' || sec.type === 'URAIAN') {
+            optionsBlock = hideKey
+              ? `<div style="margin-top: 0.5rem; height: 65px; border-bottom: 1px dotted #94a3b8;"></div>`
+              : '';
           }
 
+          const badgeIndicatorHtml = hideKey
+            ? ''
+            : `<div style="margin-bottom: 0.25rem;"><span class="badge badge-info" style="font-size: 0.7rem;">${UI.escapeHtml(it.indicatorBadge || '')}</span></div>`;
+
+          const answerKeyBlock = hideKey
+            ? ''
+            : `
+              <div style="margin-top: 0.45rem; padding: 0.5rem 0.75rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.82rem; color: #14532d;">
+                ${UI.escapeHtml(it.answer)}
+              </div>
+            `;
+
           return `
-            <div style="margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed var(--border);">
-              <div style="font-weight: 600; font-size: 0.9rem; color: var(--dark);">
+            <div style="margin-bottom: 1.15rem; padding-bottom: 0.9rem; border-bottom: 1px dashed var(--border);">
+              ${badgeIndicatorHtml}
+              <div contenteditable="true" style="font-weight: 600; font-size: 0.92rem; color: var(--dark); line-height: 1.55;">
                 ${it.no}. ${UI.escapeHtml(it.stem)}
               </div>
               ${optionsBlock}
-              <div style="margin-top: 0.4rem; padding: 0.45rem 0.75rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.82rem; color: #14532d;">
-                ${UI.escapeHtml(it.answer)}
-              </div>
+              ${answerKeyBlock}
             </div>
           `;
         }).join('');
@@ -10053,20 +10398,45 @@ const IntraApp = {
       `;
     }).join('');
 
+    const studentIdentityHeader = `
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 0.85rem 1rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.86rem;">
+        <div>
+          <div><strong>Nama Siswa :</strong> ....................................................</div>
+          <div style="margin-top: 0.35rem;"><strong>Kelas / Fase :</strong> ${UI.escapeHtml(doc.kelasFase)}</div>
+        </div>
+        <div>
+          <div><strong>Mata Pelajaran :</strong> ${UI.escapeHtml(doc.mapel)}</div>
+          <div style="margin-top: 0.35rem;"><strong>Materi Pokok :</strong> ${UI.escapeHtml(doc.materi)}</div>
+        </div>
+      </div>
+    `;
+
+    const kisiKisiHeader = hideKey
+      ? ''
+      : `
+        <div style="margin-bottom: 1.25rem; padding: 0.85rem 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); font-size: 0.83rem; color: #78350f;">
+          <div><strong>Acuan Capaian Pembelajaran (CP):</strong> ${UI.escapeHtml(doc.capaianPembelajaran)}</div>
+          <div style="margin-top: 0.35rem;"><strong>Acuan Tujuan Pembelajaran (TP):</strong> ${UI.escapeHtml((doc.parsedTpList || []).join(' | '))}</div>
+          <div style="margin-top: 0.35rem;"><strong>Ranah Kognitif Taksonomi SOLO:</strong> ${UI.escapeHtml(doc.soloLevel)}</div>
+        </div>
+      `;
+
     container.innerHTML = `
       <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff;">
-        <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.35rem;">
+        <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.25rem;">
           <div style="font-size: 0.84rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">
-            LAMPIRAN INSTRUMEN ASESMEN & KUNCI JAWABAN PROFESIONAL AKADEMIK
+            ${hideKey ? 'LEMBAR EVALUASI BELAJAR PESERTA DIDIK' : 'LAMPIRAN INSTRUMEN ASESMEN, KISI-KISI CP/TP, & KUNCI JAWABAN GURU'}
           </div>
           <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
-            Mata Pelajaran: ${UI.escapeHtml(doc.mapel)} — Topik: ${UI.escapeHtml(doc.materi)}
+            ${UI.escapeHtml(doc.sekolah)} — ${UI.escapeHtml(doc.mapel)}
           </h2>
-          <div style="font-size: 0.86rem; color: var(--text-muted);">
-            Satuan Pendidikan: ${UI.escapeHtml(doc.sekolah)} | Kelas/Fase: ${UI.escapeHtml(doc.kelasFase)} | Ranah Taksonomi SOLO: <strong>${UI.escapeHtml(doc.soloLevel)}</strong>
+          <div style="font-size: 0.88rem; color: var(--text-muted); font-weight: 600;">
+            Topik / Materi Uji: ${UI.escapeHtml(doc.materi)} (${UI.escapeHtml(doc.kelasFase)})
           </div>
         </div>
 
+        ${studentIdentityHeader}
+        ${kisiKisiHeader}
         ${sectionsHtml}
       </div>
     `;
