@@ -16632,7 +16632,7 @@ const RpmApp = {
     }
 
     container.classList.remove('hidden');
-    if (countBadge) countBadge.textContent = `${myPrograms.length} Mandat Misi Sekolah Aktif`;
+    if (countBadge) countBadge.textContent = `${myPrograms.length} Mandat Program Sekolah Aktif`;
 
     listEl.innerHTML = myPrograms.map((prog, index) => {
       const metric = PrincipalApp.calculateSingleProgramAchievement(prog, teacher.schoolKey);
@@ -16650,7 +16650,7 @@ const RpmApp = {
           >
           <span>
             <strong>${UI.escapeHtml(ind.text)}</strong>
-            <span style="display: block; font-size: 0.74rem; color: var(--text-muted);">Cara Penilaian: ${UI.escapeHtml(ind.caraPenilaian || 'Observasi & Rekap Sistem')}</span>
+            <span style="display: block; font-size: 0.74rem; color: var(--text-muted);">Penilaian: ${UI.escapeHtml(ind.caraPenilaian || 'Observasi & Rekap Sistem')}</span>
           </span>
         </label>
       `).join('');
@@ -16673,19 +16673,19 @@ const RpmApp = {
       return `
         <div class="card" style="margin-bottom: 0; padding: 1.15rem; background: #ffffff; border: 2px solid #f59e0b;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.45rem;">
-            <span class="badge badge-primary">MISI SEKOLAH #${index + 1} (${UI.escapeHtml(prog.pilar || 'SEMUA PILAR')})</span>
-            <span class="badge ${metric.percent >= 75 ? 'badge-success' : 'badge-warning'}">Ketercapaian: ${metric.percent}%</span>
+            <span class="badge badge-primary">PROGRAM SEKOLAH #${index + 1} (${UI.escapeHtml(prog.pilar || 'SEMUA PILAR')})</span>
+            <span class="badge ${metric.percent >= 75 ? 'badge-success' : 'badge-warning'}">Capaian: ${metric.percent}%</span>
           </div>
 
           <h4 style="font-size: 1.02rem; color: var(--dark); margin-bottom: 0.25rem;">${UI.escapeHtml(prog.namaProgram)}</h4>
           <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.6rem;">
-            <strong>Strategi Pencapaian Visi:</strong> ${UI.escapeHtml(prog.strategiAI || prog.target || '-')}
+            <strong>Strategi & Tujuan:</strong> ${UI.escapeHtml(prog.strategiAI || prog.target || '-')}
           </p>
 
           ${indicatorsHtml ? `
             <div style="background: #f8fafc; padding: 0.65rem 0.8rem; border-radius: 6px; border: 1px solid var(--border); margin-bottom: 0.55rem;">
               <div style="font-size: 0.74rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.35rem;">
-                Indikator & Cara Penilaian (Centang Jika Terlaksana) :
+                Indikator Ketercapaian (Centang Jika Terlaksana) :
               </div>
               ${indicatorsHtml}
             </div>
@@ -16716,6 +16716,113 @@ const RpmApp = {
 const PrincipalApp = {
   tempPrograms: [],
 
+  getGeminiApiKey() {
+    return (localStorage.getItem('SIMAK_EDU_PRINCIPAL_GEMINI_KEY') || '').trim();
+  },
+  getClaudeApiKey() {
+    return (localStorage.getItem('SIMAK_EDU_PRINCIPAL_CLAUDE_KEY') || '').trim();
+  },
+  savePrincipalAIKeys() {
+    const gemVal = document.getElementById('principal-gemini-key-input').value.trim();
+    const claudeVal = document.getElementById('principal-claude-key-input').value.trim();
+    if (gemVal) localStorage.setItem('SIMAK_EDU_PRINCIPAL_GEMINI_KEY', gemVal);
+    else localStorage.removeItem('SIMAK_EDU_PRINCIPAL_GEMINI_KEY');
+    if (claudeVal) localStorage.setItem('SIMAK_EDU_PRINCIPAL_CLAUDE_KEY', claudeVal);
+    else localStorage.removeItem('SIMAK_EDU_PRINCIPAL_CLAUDE_KEY');
+
+    this.updateAiEngineBadgeUI();
+    UI.showNotif('Kunci API Tersimpan', 'Konfigurasi AI Murni Kepala Sekolah berhasil diperbarui.', 'success');
+    this.togglePrincipalAIConfig();
+  },
+  togglePrincipalAIConfig() {
+    const panel = document.getElementById('principal-ai-config-panel');
+    if (panel) panel.classList.toggle('hidden');
+  },
+  updateAiEngineBadgeUI() {
+    const pill = document.getElementById('principal-active-ai-pill');
+    if (!pill) return;
+    const hasGemini = Boolean(this.getGeminiApiKey());
+    const hasClaude = Boolean(this.getClaudeApiKey());
+    if (hasGemini) pill.textContent = '🤖 Google Gemini API Aktif';
+    else if (hasClaude) pill.textContent = '🤖 Anthropic Claude API Aktif';
+    else pill.textContent = '🤖 AI Murni (Cloud Gateway) Aktif';
+  },
+
+  async callPrincipalPureAI(systemPrompt, userPrompt) {
+    if (!navigator.onLine) return null;
+    const gemKey = this.getGeminiApiKey();
+
+    // 1. Jika ada Gemini API Key
+    if (gemKey) {
+      const models = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+      for (const m of models) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 22000);
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(gemKey)}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+              contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+              generationConfig: { temperature: 0.6, responseMimeType: 'application/json' }
+            })
+          });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            const parsed = AcademicAIEngine.extractJsonFromText(text);
+            if (parsed) {
+              parsed._engineUsed = `Google Gemini (${m})`;
+              return parsed;
+            }
+          }
+        } catch (e) {
+          // lanjut coba model berikutnya
+        }
+      }
+    }
+
+    // 2. Fallback ke Cloud Generative AI Murni (Gratis Tanpa Key)
+    const cloudModels = ['openai', 'openai-large', 'mistral'];
+    for (const m of cloudModels) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000);
+        const res = await fetch('https://text.pollinations.ai/openai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: m,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.6,
+            response_format: { type: 'json_object' }
+          })
+        });
+        clearTimeout(timer);
+        if (res.ok) {
+          const data = await res.json();
+          const raw = data?.choices?.[0]?.message?.content;
+          const parsed = AcademicAIEngine.extractJsonFromText(raw);
+          if (parsed) {
+            parsed._engineUsed = `AI Murni (${m.toUpperCase()})`;
+            return parsed;
+          }
+        }
+      } catch (err) {
+        // lanjut coba gateway berikutnya
+      }
+    }
+    return null;
+  },
+
   isTeacherAssignedToProgram(prog, teacherId) {
     if (!prog || !teacherId) return false;
     if (prog.assignMode === 'ALL_TEACHERS') return true;
@@ -16725,18 +16832,12 @@ const PrincipalApp = {
   },
 
   normalizeProgramStructure(prog, index = 0, defaultTeacherIds = []) {
-    const cleanName = String(prog.namaProgram || `Program Misi Sekolah ${index + 1}`).trim();
-    const smartBlueprint = this.buildLocalStrategicBlueprint(
-      cleanName,
-      'Terwujudnya Insan Religius, Cerdas, dan Terampil',
-      prog.pilar
-    );
+    const cleanName = String(prog.namaProgram || `Program Sekolah ${index + 1}`).trim();
+    const smartBlueprint = this.buildLocalStrategicBlueprint(cleanName, 'Terwujudnya Insan Religius, Cerdas, dan Terampil', prog.pilar);
 
     const assignMode = prog.assignMode || (Array.isArray(prog.teacherIds) && prog.teacherIds.length > 0 ? 'SELECTED_TEACHERS' : 'ALL_TEACHERS');
     let teacherIds = Array.isArray(prog.teacherIds) ? [...prog.teacherIds] : [];
-    if (teacherIds.length === 0 && prog.teacherId) {
-      teacherIds = [prog.teacherId];
-    }
+    if (teacherIds.length === 0 && prog.teacherId) teacherIds = [prog.teacherId];
     if (assignMode === 'ALL_TEACHERS' && defaultTeacherIds.length > 0 && teacherIds.length === 0) {
       teacherIds = [...defaultTeacherIds];
     }
@@ -16759,8 +16860,6 @@ const PrincipalApp = {
         }))
       : smartBlueprint.agendas;
 
-    const strategiAI = String(prog.strategiAI || prog.target || smartBlueprint.strategiAI).trim();
-
     return {
       id: prog.id || `PRG_${Date.now()}_${index}`,
       namaProgram: cleanName,
@@ -16768,300 +16867,53 @@ const PrincipalApp = {
       assignMode: assignMode,
       teacherIds: teacherIds,
       teacherId: teacherIds[0] || prog.teacherId || '',
-      strategiAI: strategiAI,
+      strategiAI: String(prog.strategiAI || smartBlueprint.strategiAI).trim(),
       indicators: indicators,
       agendas: agendas,
-      target: indicators.map(i => i.text).join('; ') || strategiAI
+      target: indicators.map(i => i.text).join('; ')
     };
   },
 
   buildLocalStrategicBlueprint(programName, visiText, preferredPilar = null) {
-    const lower = String(programName || '').toLowerCase();
-    const cleanVisi = String(visiText || 'Terwujudnya Insan Religius, Cerdas, dan Terampil').trim();
     const stamp = Date.now() + '_' + Math.floor(Math.random() * 1000);
-
-    // 1. KATEGORI RELIGIUS / IBADAH / SHOLAT BERJAMAAH / IMTAQ
-    if (/sholat|salat|dzuhur|zuhur|dhuha|ibadah|religius|imtaq|tahfidz|mengaji|doa|akhlak|keagamaan/.test(lower)) {
-      return {
-        pilar: preferredPilar || 'KOKURIKULER',
-        strategiAI: `Untuk mewujudkan visi "${cleanVisi}" melalui misi "${programName}", sekolah menerapkan pembiasaan ibadah terprogram setiap hari efektif, pendampingan ketertiban wudhu dan sholat oleh guru, serta pencatatan buku kendali ibadah dan penilaian Dimensi Keimanan & Ketakwaan.`,
-        indicators: [
-          {
-            id: `IND_${stamp}_1`,
-            text: `Tingkat kehadiran, ketertiban saf, dan ketepatan waktu siswa dalam melaksanakan ${programName}`,
-            caraPenilaian: 'Presensi Harian Siswa & Observasi Langsung Guru Pendamping',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_2`,
-            text: 'Ketepatan tata cara ibadah (gerakan, bacaan, dzikir, dan doa bersama) serta kekhusyukan siswa',
-            caraPenilaian: 'Penilaian Dimensi Profil Lulusan (Keimanan & Ketakwaan - Tahap B/C/M)',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_3`,
-            text: 'Konsistensi adab kesantunan, kejujuran, dan kepedulian sosial siswa setelah kegiatan ibadah',
-            caraPenilaian: 'Jurnal Sikap / Asesmen Karakter Kokurikuler (MB/BSH/SB)',
-            achieved: false
-          }
-        ],
-        agendas: [
-          {
-            id: `AGD_${stamp}_1`,
-            text: `Pelaksanaan rutin ${programName} secara berjamaah di mushola/ruang ibadah sekolah didampingi seluruh guru`,
-            jadwal: 'Setiap Hari Efektif (Pukul 12.00 – 12.30)',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_2`,
-            text: 'Pembinaan kultum singkat, pelafalan doa harian, dan pemeriksaan kerapian/kebersihan tempat ibadah',
-            jadwal: 'Rutin Pasca Pelaksanaan Ibadah',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_3`,
-            text: 'Evaluasi buku monitoring ibadah siswa bersama Wali Kelas dan pelaporan ke Kepala Sekolah',
-            jadwal: 'Setiap Hari Jumat ( Akhir Pekan )',
-            completed: false
-          }
-        ]
-      };
-    }
-
-    // 2. KATEGORI TANGGUNG JAWAB, KEJUJURAN, DISIPLIN & KARAKTER TUGAS
-    if (/tanggung jawab|jujur|kejujuran|disiplin|tugas|integritas|mandiri|karakter|tata tertib/.test(lower)) {
-      return {
-        pilar: preferredPilar || 'INTRAKURIKULER',
-        strategiAI: `Untuk mencapai visi "${cleanVisi}" pada program "${programName}", guru mengintegrasikan budaya integritas dan kemandirian di setiap penugasan kelas, memantau ketepatan waktu penyelesaian tugas tanpa menyontek, serta merekam perkembangan karakter siswa pada DPL dan Logbook.`,
-        indicators: [
-          {
-            id: `IND_${stamp}_1`,
-            text: 'Ketepatan waktu dan ketuntasan siswa dalam mengerjakan serta mengumpulkan tugas pembelajaran',
-            caraPenilaian: 'Rekap Penilaian Formatif/Sumatif & Pemeriksaan Tugas Harian',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_2`,
-            text: 'Kejujuran akademik siswa (kemandirian mengerjakan soal/tugas tanpa menyontek atau plagiasi)',
-            caraPenilaian: 'Observasi Integritas Saat Asesmen & Penilaian DPL Dimensi Kemandirian',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_3`,
-            text: 'Tanggung jawab aktif siswa terhadap peran yang diberikan dalam kerja kelompok maupun piket kelas',
-            caraPenilaian: 'Jurnal Logbook Kelompok P5 & Catatan Anekdotal Guru',
-            achieved: false
-          }
-        ],
-        agendas: [
-          {
-            id: `AGD_${stamp}_1`,
-            text: 'Penerapan kontrak belajar "Jujur & Bertanggung Jawab" sebelum pemberian tugas dan asesmen di kelas',
-            jadwal: 'Setiap Pembelajaran Harian',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_2`,
-            text: 'Pemeriksaan berkala penugasan siswa dan pemberian umpan balik (feedback) penguatan karakter oleh guru',
-            jadwal: '2 Kali Sepekan / Setiap Tugas',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_3`,
-            text: 'Pemberian apresiasi Duta Kejujuran & Kedisiplinan Tugas bagi siswa teladan di setiap kelas',
-            jadwal: 'Evaluasi Bulanan Sekolah',
-            completed: false
-          }
-        ]
-      };
-    }
-
-    // 3. KATEGORI STRATEGI PEMBELAJARAN MEMOTIVASI / INOVATIF / CERDAS / TERAMPIL / DEEP LEARNING
-    if (/strategi|pembelajaran|motivasi|memotivasi|cerdas|terampil|kreatif|inovatif|modul|rpm|solo|literasi|numerasi/.test(lower)) {
-      return {
-        pilar: preferredPilar || 'INTRAKURIKULER',
-        strategiAI: `Guna mewujudkan visi "${cleanVisi}" melalui "${programName}", seluruh pendidik menerapkan Rencana Pembelajaran Mendalam (RPM Sistem 8-3-3-4) dengan prinsip Mindful, Meaningful, dan Joyful Learning berbasis Taksonomi SOLO agar siswa termotivasi, bernalar kritis, dan terampil.`,
-        indicators: [
-          {
-            id: `IND_${stamp}_1`,
-            text: 'Tersusun dan terlaksananya Modul Ajar RPM (Sistem 8-3-3-4) yang interaktif dan berpusat pada siswa',
-            caraPenilaian: 'Portofolio Dokumen Modul RPM Guru & Supervisi Kelas Kepala Sekolah',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_2`,
-            text: 'Antusiasme, keaktifan bertanya, dan kolaborasi siswa selama proses pembelajaran berlangsung',
-            caraPenilaian: 'Observasi Keterlibatan Siswa (Mindful, Meaningful, Joyful Learning)',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_3`,
-            text: 'Ketercapaian nilai akademik Pengetahuan (70%) dan Keterampilan (30%) berbasis Taksonomi SOLO',
-            caraPenilaian: 'Rekap Penilaian Akademik Harian & Analisis Nilai Rapor Kelas',
-            achieved: false
-          }
-        ],
-        agendas: [
-          {
-            id: `AGD_${stamp}_1`,
-            text: 'Penyusunan Modul Ajar RPM 8-3-3-4 dan instrumen soal kontekstual menggunakan AI Akademik sebelum mengajar',
-            jadwal: 'Awal Pekan / Persiapan Mengajar',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_2`,
-            text: 'Pelaksanaan pembelajaran variatif menggunakan media visual, diskusi kelompok, dan praktik unjuk kerja',
-            jadwal: 'Sesuai Jadwal Pelajaran Senin – Sabtu',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_3`,
-            text: 'Refleksi hasil belajar siswa, pemberian remedial/pengayaan, dan evaluasi bersama Kepala Sekolah',
-            jadwal: 'Setiap Akhir Lingkup Materi / Bulanan',
-            completed: false
-          }
-        ]
-      };
-    }
-
-    // 4. KATEGORI EKSTRAKURIKULER / BAKAT MINAT / OLAHRAGA / SENI / PRAMUKA
-    if (/ekskul|ekstrakurikuler|pramuka|olahraga|seni|bakat|minat|prestasi|lomba/.test(lower)) {
-      return {
-        pilar: preferredPilar || 'EKSTRAKURIKULER',
-        strategiAI: `Dalam rangka mendukung visi "${cleanVisi}" melalui program "${programName}", sekolah menyelenggarakan pembinaan bakat dan minat secara terjadwal dengan indikator kemahiran teknis dan karakter sportivitas yang terukur.`,
-        indicators: [
-          {
-            id: `IND_${stamp}_1`,
-            text: `Partisipasi aktif dan kehadiran siswa dalam latihan rutin ${programName}`,
-            caraPenilaian: 'Jurnal Kehadiran & Rekap Penilaian Ekstrakurikuler',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_2`,
-            text: 'Penguasaan indikator kemahiran teknis dan praktik unjuk kerja siswa (Predikat Minimal B/A)',
-            caraPenilaian: 'Uji Keterampilan Indikator Ekstrakurikuler di Sistem',
-            achieved: true
-          },
-          {
-            id: `IND_${stamp}_3`,
-            text: 'Kesiapan mental, kerja sama tim, dan kemandirian siswa dalam gelar karya atau kompetisi',
-            caraPenilaian: 'Observasi Pembina & Evaluasi Karya/Penampilan',
-            achieved: false
-          }
-        ],
-        agendas: [
-          {
-            id: `AGD_${stamp}_1`,
-            text: `Pelaksanaan latihan terbimbing dan praktik lapangan program ${programName}`,
-            jadwal: 'Rutin Mingguan (Kamis / Jumat / Sabtu Sore)',
-            completed: true
-          },
-          {
-            id: `AGD_${stamp}_2`,
-            text: 'Asesmen penguasaan indikator kemahiran dan pemberian umpan balik perbaikan bagi siswa',
-            jadwal: 'Setiap Bulan / Tengah Semester',
-            completed: false
-          },
-          {
-            id: `AGD_${stamp}_3`,
-            text: 'Gelar karya / demonstrasi bakat ekstrakurikuler siswa di lingkungan sekolah',
-            jadwal: 'Setiap Akhir Semester',
-            completed: false
-          }
-        ]
-      };
-    }
-
-    // 5. KATEGORI UMUM / PROGRAM KUSTOM KEPALA SEKOLAH LAINNYA
     return {
       pilar: preferredPilar || 'SEMUA_PILAR',
-      strategiAI: `Untuk mewujudkan visi "${cleanVisi}", program "${programName}" dilaksanakan secara terpadu melalui kolaborasi guru, pembiasaan terstruktur di kelas dan lingkungan sekolah, serta evaluasi berkala berbasis bukti nyata di sistem akademik.`,
+      strategiAI: `Pelaksanaan program "${programName}" untuk mendukung visi "${visiText}" melalui kolaborasi guru dan pembiasaan terstruktur di satuan pendidikan.`,
       indicators: [
-        {
-          id: `IND_${stamp}_1`,
-          text: `Terlaksananya sosialisasi, perencanaan, dan pembiasaan program "${programName}" secara konsisten di kelas`,
-          caraPenilaian: 'Observasi Supervisi Kepala Sekolah & Jurnal Harian Guru',
-          achieved: true
-        },
-        {
-          id: `IND_${stamp}_2`,
-          text: `Keterlibatan aktif siswa dan peningkatan capaian karakter/kompetensi sesuai target "${programName}"`,
-          caraPenilaian: 'Rekap Penilaian Akademik, DPL (B/C/M), & Logbook Kegiatan',
-          achieved: true
-        },
-        {
-          id: `IND_${stamp}_3`,
-          text: `Terdokumentasinya hasil evaluasi dan tindak lanjut peningkatan mutu program "${programName}"`,
-          caraPenilaian: 'Laporan Ketercapaian Program pada Portal Kepala Sekolah',
-          achieved: false
-        }
+        { id: `IND_${stamp}_1`, text: `Terlaksananya kegiatan ${programName} secara konsisten sesuai jadwal`, caraPenilaian: 'Jurnal Harian Guru & Observasi Kepala Sekolah', achieved: true },
+        { id: `IND_${stamp}_2`, text: 'Peningkatan partisipasi aktif dan pencapaian karakter siswa', caraPenilaian: 'Rekap Asesmen Profil Lulusan & Logbook', achieved: false }
       ],
       agendas: [
-        {
-          id: `AGD_${stamp}_1`,
-          text: `Koordinasi guru penanggung jawab dan integrasi program "${programName}" ke dalam kegiatan belajar`,
-          jadwal: 'Awal Bulan / Mingguan',
-          completed: true
-        },
-        {
-          id: `AGD_${stamp}_2`,
-          text: `Pelaksanaan aksi nyata dan pembimbingan siswa dalam kegiatan "${programName}"`,
-          jadwal: 'Rutin Harian / Mingguan',
-          completed: true
-        },
-        {
-          id: `AGD_${stamp}_3`,
-          text: `Monitoring, evaluasi capaian indikator, dan refleksi ketercapaian bersama Kepala Sekolah`,
-          jadwal: 'Setiap Akhir Bulan',
-          completed: false
-        }
+        { id: `AGD_${stamp}_1`, text: `Koordinasi awal dan sosialisasi program ${programName} kepada guru dan murid`, jadwal: 'Pekan Pertama Bulan Efektif', completed: true },
+        { id: `AGD_${stamp}_2`, text: `Monitoring berkala dan evaluasi ketercapaian bersama Kepala Sekolah`, jadwal: 'Setiap Akhir Bulan', completed: false }
       ]
     };
   },
 
   ensureSchoolVisiMisi(schoolKey, schoolDisplay) {
-    if (!DB.data.schoolVisiMisi) {
-      DB.data.schoolVisiMisi = {};
-    }
-
+    if (!DB.data.schoolVisiMisi) DB.data.schoolVisiMisi = {};
     const teachers = this.getSameSchoolTeachers(schoolKey);
     const allTeacherIds = teachers.map(t => t.id);
 
     if (!DB.data.schoolVisiMisi[schoolKey]) {
-      const defaultVisi = 'Terwujudnya Insan Religius, Cerdas, dan Terampil.';
-      const rawDefaultPrograms = [
-        {
-          id: 'PRG_DEF_1',
-          namaProgram: '1. Sholat Dzuhur Berjamaah & Pembinaan Akhlak Mulia',
-          pilar: 'KOKURIKULER',
-          assignMode: 'ALL_TEACHERS',
-          teacherIds: allTeacherIds
-        },
-        {
-          id: 'PRG_DEF_2',
-          namaProgram: '2. Tanggung Jawab dan Kejujuran dalam Tugas',
-          pilar: 'INTRAKURIKULER',
-          assignMode: 'ALL_TEACHERS',
-          teacherIds: allTeacherIds
-        },
-        {
-          id: 'PRG_DEF_3',
-          namaProgram: '3. Strategi Pembelajaran yang Memotivasi (Deep Learning 8-3-3-4)',
-          pilar: 'INTRAKURIKULER',
-          assignMode: 'ALL_TEACHERS',
-          teacherIds: allTeacherIds
-        }
+      const defaultVisi = 'Terwujudnya Insan Religius, Cerdas, Terampil, dan Berwawasan Global.';
+      const defaultMisi = '1. Menanamkan keimanan dan ketakwaan melalui pembiasaan ibadah harian.\n2. Mengembangkan pembelajaran mendalam yang kritis dan kreatif.\n3. Membentuk kemandirian dan keterampilan hidup siswa secara optimal.';
+      
+      const rawProgs = [
+        { id: 'PRG_DEF_1', namaProgram: '1. Pembiasaan Sholat Berjamaah & Akhlak Mulia', pilar: 'KOKURIKULER', assignMode: 'ALL_TEACHERS', teacherIds: allTeacherIds },
+        { id: 'PRG_DEF_2', namaProgram: '2. Budaya Kejujuran & Kedisiplinan Menyelesaikan Tugas', pilar: 'INTRAKURIKULER', assignMode: 'ALL_TEACHERS', teacherIds: allTeacherIds },
+        { id: 'PRG_DEF_3', namaProgram: '3. Strategi Pembelajaran Mendalam (Deep Learning 8-3-3-4)', pilar: 'INTRAKURIKULER', assignMode: 'ALL_TEACHERS', teacherIds: allTeacherIds }
       ];
 
-      const normalizedProgs = rawDefaultPrograms.map((p, i) =>
-        this.normalizeProgramStructure(p, i, allTeacherIds)
-      );
+      const normalizedProgs = rawProgs.map((p, i) => this.normalizeProgramStructure(p, i, allTeacherIds));
 
       DB.data.schoolVisiMisi[schoolKey] = {
         schoolKey: schoolKey,
         schoolDisplay: schoolDisplay || 'SEKOLAH TERPADU',
         visi: defaultVisi,
-        misi: normalizedProgs.map(p => p.namaProgram).join('\n'),
+        misi: defaultMisi,
+        visiCoordinatorMode: 'ALL_TEACHERS',
+        visiTeacherIds: allTeacherIds,
         isLocked: false,
         updatedAt: DateTimeUtil.getCurrentDateTimeStr(),
         programs: normalizedProgs
@@ -17069,9 +16921,9 @@ const PrincipalApp = {
       DB.save();
     } else {
       const vm = DB.data.schoolVisiMisi[schoolKey];
-      vm.programs = (vm.programs || []).map((p, i) =>
-        this.normalizeProgramStructure(p, i, allTeacherIds)
-      );
+      if (!vm.visiCoordinatorMode) vm.visiCoordinatorMode = 'ALL_TEACHERS';
+      if (!Array.isArray(vm.visiTeacherIds)) vm.visiTeacherIds = [...allTeacherIds];
+      vm.programs = (vm.programs || []).map((p, i) => this.normalizeProgramStructure(p, i, allTeacherIds));
     }
 
     return DB.data.schoolVisiMisi[schoolKey];
@@ -17080,34 +16932,23 @@ const PrincipalApp = {
   getSameSchoolTeachers(schoolKey) {
     if (!schoolKey) return [];
     return (DB.data.accounts || []).filter(
-      acc =>
-        acc.schoolKey === schoolKey &&
-        (acc.role === 'GURU_KELAS' || acc.role === 'GURU_MAPEL')
+      acc => acc.schoolKey === schoolKey && (acc.role === 'GURU_KELAS' || acc.role === 'GURU_MAPEL')
     );
   },
 
   getBucketsForTeacher(teacher) {
     if (!teacher) return [];
-    const allBuckets = Object.values(DB.data.classData || {}).filter(
-      b => b.schoolKey === teacher.schoolKey
-    );
-
+    const allBuckets = Object.values(DB.data.classData || {}).filter(b => b.schoolKey === teacher.schoolKey);
     if (teacher.role === 'GURU_MAPEL') {
-      const schedClasses = Object.values(teacher.mapelSchedule || {})
-        .filter(Boolean)
-        .map(c => DB.extractClassKey(c));
-
+      const schedClasses = Object.values(teacher.mapelSchedule || {}).filter(Boolean).map(c => DB.extractClassKey(c));
       if (schedClasses.length > 0) {
         const matched = allBuckets.filter(b => schedClasses.includes(b.classKey));
         if (matched.length > 0) return matched;
       }
       return allBuckets;
     }
-
-    const expectedClassKey = teacher.classKey || DB.extractClassKey(teacher.kelasFase);
-    return allBuckets.filter(
-      b => b.homeroomTeacherId === teacher.id || b.classKey === expectedClassKey
-    );
+    const expectedKey = teacher.classKey || DB.extractClassKey(teacher.kelasFase);
+    return allBuckets.filter(b => b.homeroomTeacherId === teacher.id || b.classKey === expectedKey);
   },
 
   openPrincipalDashboard(initialTab = null) {
@@ -17123,6 +16964,7 @@ const PrincipalApp = {
 
     UI.applyReadOnlyModeState();
     UI.updateNavbar();
+    this.updateAiEngineBadgeUI();
 
     const schoolBadge = document.getElementById('principal-dash-school-badge');
     const welcomeEl = document.getElementById('principal-dash-welcome');
@@ -17131,7 +16973,7 @@ const PrincipalApp = {
 
     if (schoolBadge) schoolBadge.textContent = user.schoolDisplay || 'SEKOLAH TERPADU';
     if (welcomeEl) welcomeEl.textContent = `Selamat Bertugas, ${user.nama}`;
-    if (syncLabel) syncLabel.textContent = `ID Sinkron Sekolah: ${user.schoolKey}`;
+    if (syncLabel) syncLabel.textContent = `ID Sekolah: ${user.schoolKey}`;
     if (schoolTitleEl) schoolTitleEl.textContent = user.schoolDisplay || '-';
 
     const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
@@ -17144,35 +16986,24 @@ const PrincipalApp = {
 
   switchTab(tabName) {
     AppState.principalActiveTab = tabName;
-
     const tabs = ['teachers', 'visimisi', 'ketercapaian'];
+
     tabs.forEach(t => {
       const btn = document.getElementById(`btn-principal-tab-${t}`);
       const panel = document.getElementById(`principal-panel-${t}`);
-
       if (btn) {
-        if (t === tabName) {
-          btn.classList.add('active-exec-tab');
-        } else {
-          btn.classList.remove('active-exec-tab');
-        }
+        if (t === tabName) btn.classList.add('active-exec-tab');
+        else btn.classList.remove('active-exec-tab');
       }
       if (panel) {
-        if (t === tabName) {
-          panel.classList.remove('hidden');
-        } else {
-          panel.classList.add('hidden');
-        }
+        if (t === tabName) panel.classList.remove('hidden');
+        else panel.classList.add('hidden');
       }
     });
 
-    if (tabName === 'teachers') {
-      this.renderTeachersSyncPanel();
-    } else if (tabName === 'visimisi') {
-      this.renderVisiMisiPanel();
-    } else if (tabName === 'ketercapaian') {
-      this.renderKetercapaianDashboard();
-    }
+    if (tabName === 'teachers') this.renderTeachersSyncPanel();
+    else if (tabName === 'visimisi') this.renderVisiMisiPanel();
+    else if (tabName === 'ketercapaian') this.renderKetercapaianDashboard();
   },
 
   renderTeachersSyncPanel() {
@@ -17180,14 +17011,8 @@ const PrincipalApp = {
     if (!user) return;
 
     const teachers = this.getSameSchoolTeachers(user.schoolKey);
-    const schoolBuckets = Object.values(DB.data.classData || {}).filter(
-      b => b.schoolKey === user.schoolKey
-    );
-
-    const totalStudents = schoolBuckets.reduce(
-      (acc, b) => acc + ((b.students && b.students.length) || 0),
-      0
-    );
+    const schoolBuckets = Object.values(DB.data.classData || {}).filter(b => b.schoolKey === user.schoolKey);
+    const totalStudents = schoolBuckets.reduce((acc, b) => acc + ((b.students && b.students.length) || 0), 0);
 
     const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
     const programs = vmData.programs || [];
@@ -17242,12 +17067,12 @@ const PrincipalApp = {
 
       const assignedProgs = programs.filter(p => this.isTeacherAssignedToProgram(p, t.id));
       const mandateBadgeHtml = assignedProgs.length > 0
-        ? `<span class="badge badge-warning">${assignedProgs.length} Program Misi</span>
+        ? `<span class="badge badge-warning">${assignedProgs.length} Program Sekolah</span>
            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;">${assignedProgs.map(p => UI.escapeHtml(p.namaProgram)).slice(0, 2).join(', ')}</div>`
         : `<span style="font-size: 0.78rem; color: var(--text-muted);">Belum ada mandat</span>`;
 
       const roleText = t.role === 'GURU_MAPEL'
-        ? `<span class="badge badge-info">Guru Mapel: ${UI.escapeHtml(t.mapelDiampu || '-')}</span><div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">${UI.escapeHtml(t.kelasFase || '-')} (${studentCount} Siswa)</div>`
+        ? `<span class="badge badge-info">Mapel: ${UI.escapeHtml(t.mapelDiampu || '-')}</span><div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">${UI.escapeHtml(t.kelasFase || '-')} (${studentCount} Siswa)</div>`
         : `<span class="badge badge-primary">Guru Kelas</span><div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.2rem;">${UI.escapeHtml(t.kelasFase || '-')} (${studentCount} Siswa)</div>`;
 
       return `
@@ -17263,10 +17088,10 @@ const PrincipalApp = {
           <td>${mandateBadgeHtml}</td>
           <td>
             <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
-              <span class="badge badge-success">Presensi: ${presensiCount} Hr</span>
+              <span class="badge badge-success">Absen: ${presensiCount}</span>
               <span class="badge badge-primary">Nilai: ${nilaiCount}</span>
               <span class="badge badge-info">RPM: ${rpmCount}</span>
-              <span class="badge badge-warning">P5: ${logbookCount}</span>
+              <span class="badge badge-warning">Koku: ${logbookCount}</span>
               <span class="badge badge-primary">Ekskul: ${ekskulCount}</span>
             </div>
           </td>
@@ -17299,32 +17124,19 @@ const PrincipalApp = {
     DB.getActiveClassBucket();
     UI.applyReadOnlyModeState();
 
-    if (targetPillar === 'intrakurikuler') {
-      IntraApp.openMainView();
-    } else if (targetPillar === 'kokurikuler') {
-      KokuApp.openMainView('dashboard');
-    } else if (targetPillar === 'ekstrakurikuler') {
-      EkskulApp.openMainView();
-    } else {
-      TeacherApp.openTeacherDashboard();
-    }
+    if (targetPillar === 'intrakurikuler') IntraApp.openMainView();
+    else if (targetPillar === 'kokurikuler') KokuApp.openMainView('dashboard');
+    else if (targetPillar === 'ekstrakurikuler') EkskulApp.openMainView();
+    else TeacherApp.openTeacherDashboard();
 
-    UI.showNotif(
-      'Mode Supervisi Kepala Sekolah (Read-Only)',
-      `Anda sedang memantau halaman kerja milik ${teacher.nama}. Seluruh tombol simpan dan ubah dikunci otomatis agar data guru tetap terjaga.`,
-      'info'
-    );
+    UI.showNotif('Mode Supervisi Kepala Sekolah', `Memantau halaman kerja ${teacher.nama} (Strict Read-Only).`, 'info');
   },
 
-  exitInspectionMode() {
+  exitTeacherInspection() {
     AppState.isReadOnlyInspection = false;
     AppState.inspectedTeacherId = null;
     UI.applyReadOnlyModeState();
     this.openPrincipalDashboard(AppState.principalActiveTab || 'teachers');
-  },
-
-  exitTeacherInspection() {
-    this.exitInspectionMode();
   },
 
   renderVisiMisiPanel() {
@@ -17343,10 +17155,70 @@ const PrincipalApp = {
     const misiInp = document.getElementById('principal-input-misi');
 
     if (visiInp) visiInp.value = vmData.visi || '';
-    if (misiInp) misiInp.value = this.tempPrograms.map(p => p.namaProgram).join('\n');
+    if (misiInp) misiInp.value = vmData.misi || '';
 
+    this.renderVisiCoordinatorGrid();
     this.renderProgramCards();
     this.applyVisiMisiLockUI(Boolean(vmData.isLocked));
+  },
+
+  renderVisiCoordinatorGrid() {
+    const user = AppState.currentUser;
+    const container = document.getElementById('principal-visi-teachers-grid');
+    if (!user || !container) return;
+
+    const teachers = this.getSameSchoolTeachers(user.schoolKey);
+    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+    const isAll = vmData.visiCoordinatorMode === 'ALL_TEACHERS';
+    const isLocked = Boolean(vmData.isLocked);
+
+    container.innerHTML = teachers.map(t => {
+      const isChecked = isAll || (Array.isArray(vmData.visiTeacherIds) && vmData.visiTeacherIds.includes(t.id));
+      const roleInfo = t.role === 'GURU_MAPEL' ? `Mapel ${t.mapelDiampu || ''}` : (t.kelasFase || 'Guru Kelas');
+      return `
+        <label class="teacher-check-label">
+          <input
+            type="checkbox"
+            class="visimisi-field"
+            ${isChecked ? 'checked' : ''}
+            ${isLocked || isAll ? 'disabled' : ''}
+            onchange="PrincipalApp.toggleVisiTeacherSelection('${t.id}', this.checked)"
+          >
+          <span>
+            ${UI.escapeHtml(t.nama)}
+            <small style="display:block; color:var(--text-muted); font-weight:500;">${UI.escapeHtml(roleInfo)}</small>
+          </span>
+        </label>
+      `;
+    }).join('');
+  },
+
+  setVisiCoordinatorMode(mode) {
+    const user = AppState.currentUser;
+    if (!user) return;
+    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+    const teachers = this.getSameSchoolTeachers(user.schoolKey);
+
+    vmData.visiCoordinatorMode = mode;
+    if (mode === 'ALL_TEACHERS') {
+      vmData.visiTeacherIds = teachers.map(t => t.id);
+    }
+    this.renderVisiCoordinatorGrid();
+  },
+
+  toggleVisiTeacherSelection(teacherId, isChecked) {
+    const user = AppState.currentUser;
+    if (!user) return;
+    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+
+    vmData.visiCoordinatorMode = 'SELECTED_TEACHERS';
+    if (!Array.isArray(vmData.visiTeacherIds)) vmData.visiTeacherIds = [];
+
+    if (isChecked) {
+      if (!vmData.visiTeacherIds.includes(teacherId)) vmData.visiTeacherIds.push(teacherId);
+    } else {
+      vmData.visiTeacherIds = vmData.visiTeacherIds.filter(id => id !== teacherId);
+    }
   },
 
   renderProgramCards() {
@@ -17362,7 +17234,7 @@ const PrincipalApp = {
     if (this.tempPrograms.length === 0) {
       container.innerHTML = `
         <div class="alert-box alert-info" style="margin-top: 0; margin-bottom: 1rem;">
-          Belum ada Misi / Program Sekolah yang ditambahkan. Ketikkan program misi pada kolom di atas lalu klik <strong>+ Tambah & Analisis AI</strong>, atau klik tombol <strong>Muat Contoh (Visi Insan Religius, Cerdas & Terampil)</strong>.
+          Belum ada Program Sekolah yang ditambahkan. Ketik program pada panel di atas atau klik tombol <strong>"🚀 Buat & Tambahkan Program Baru dengan AI Murni"</strong>.
         </div>
       `;
       return;
@@ -17371,9 +17243,9 @@ const PrincipalApp = {
     container.innerHTML = this.tempPrograms.map((prog, idx) => {
       const pilarOptions = [
         { val: 'SEMUA_PILAR', label: 'Integrasi Semua Pilar (Intra, Koku & Ekskul)' },
-        { val: 'INTRAKURIKULER', label: 'Pilar Intrakurikuler (Pembelajaran & Asesmen)' },
-        { val: 'KOKURIKULER', label: 'Pilar Kokurikuler (Projek P5 & Karakter)' },
-        { val: 'EKSTRAKURIKULER', label: 'Pilar Ekstrakurikuler (Bakat & Minat)' }
+        { val: 'INTRAKURIKULER', label: 'Fokus Pilar Intrakurikuler' },
+        { val: 'KOKURIKULER', label: 'Fokus Pilar Kokurikuler' },
+        { val: 'EKSTRAKURIKULER', label: 'Fokus Pilar Ekstrakurikuler' }
       ].map(opt => `
         <option value="${opt.val}" ${prog.pilar === opt.val ? 'selected' : ''}>${opt.label}</option>
       `).join('');
@@ -17433,7 +17305,7 @@ const PrincipalApp = {
               class="form-control visimisi-field"
               style="font-size: 0.78rem; padding: 0.28rem 0.6rem; background: #f8fafc; color: var(--secondary);"
               value="${UI.escapeHtml(ind.caraPenilaian || '')}"
-              placeholder="Cara Penilaian / Instrumen Ukur (Contoh: Presensi Ibadah / Rubrik DPL / Rekap Nilai)..."
+              placeholder="Cara Penilaian (Contoh: Jurnal Presensi / Rubrik / Rekap Nilai)..."
               ${disAttr}
               oninput="PrincipalApp.updateIndicatorField('${prog.id}', '${ind.id}', 'caraPenilaian', this.value)"
             >
@@ -17481,7 +17353,7 @@ const PrincipalApp = {
               class="form-control visimisi-field"
               style="font-size: 0.78rem; padding: 0.28rem 0.6rem; background: #f8fafc; color: #0369a1;"
               value="${UI.escapeHtml(ag.jadwal || '')}"
-              placeholder="Jadwal Pelaksanaan (Contoh: Setiap Hari Pukul 12.00 / Mingguan)..."
+              placeholder="Jadwal Pelaksanaan..."
               ${disAttr}
               oninput="PrincipalApp.updateAgendaField('${prog.id}', '${ag.id}', 'jadwal', this.value)"
             >
@@ -17503,7 +17375,7 @@ const PrincipalApp = {
           <div class="misi-program-header">
             <div style="flex: 1; min-width: 270px;">
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
-                <span class="badge badge-primary">MISI & PROGRAM SEKOLAH #${idx + 1}</span>
+                <span class="badge badge-primary">PROGRAM SEKOLAH #${idx + 1}</span>
                 <span class="badge badge-info">${UI.escapeHtml(prog.pilar)}</span>
               </div>
               <input
@@ -17511,7 +17383,7 @@ const PrincipalApp = {
                 class="form-control visimisi-field"
                 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);"
                 value="${UI.escapeHtml(prog.namaProgram)}"
-                placeholder="Nama Misi / Program Sekolah (Contoh: 1. Sholat Dzuhur Berjamaah)..."
+                placeholder="Nama Program Sekolah..."
                 ${disAttr}
                 oninput="PrincipalApp.updateTempProgramField('${prog.id}', 'namaProgram', this.value)"
               >
@@ -17520,7 +17392,7 @@ const PrincipalApp = {
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
               <select
                 class="form-control visimisi-field"
-                style="width: auto; min-width: 220px; font-size: 0.84rem; font-weight: 600;"
+                style="width: auto; min-width: 200px; font-size: 0.84rem; font-weight: 600;"
                 ${disAttr}
                 onchange="PrincipalApp.updateTempProgramField('${prog.id}', 'pilar', this.value)"
               >
@@ -17530,9 +17402,9 @@ const PrincipalApp = {
                 type="button"
                 class="btn btn-secondary btn-sm visimisi-field"
                 ${disAttr}
-                onclick="PrincipalApp.analyzeSingleProgramWithHybridAI('${prog.id}')"
+                onclick="PrincipalApp.analyzeSingleProgramWithPureAI('${prog.id}')"
               >
-                ✨ Analisis Program Ini (Hybrid AI)
+                ✨ Sempurnakan Indikator (AI)
               </button>
               <button
                 type="button"
@@ -17540,20 +17412,20 @@ const PrincipalApp = {
                 ${disAttr}
                 onclick="PrincipalApp.removeProgramRow('${prog.id}')"
               >
-                🗑️ Hapus Misi
+                🗑️ Hapus
               </button>
             </div>
           </div>
 
           <div class="form-group" style="background: #eff6ff; padding: 0.9rem 1rem; border-radius: var(--radius-md); border-left: 4px solid var(--primary-light); margin-bottom: 1.15rem;">
             <label class="form-label" style="font-size: 0.82rem; color: var(--primary); margin-bottom: 0.3rem;">
-              Hasil Analisis Strategi Pencapaian & Metode Evaluasi (Hybrid AI Academic Engine) :
+              Strategi Pencapaian & Target Pelaksanaan (Hasil Analisis AI Murni) :
             </label>
             <textarea
               class="form-control visimisi-field"
               rows="2"
               style="font-size: 0.86rem; background: #ffffff;"
-              placeholder="Strategi pencapaian visi dan cara penilaian program..."
+              placeholder="Strategi pencapaian..."
               ${disAttr}
               oninput="PrincipalApp.updateTempProgramField('${prog.id}', 'strategiAI', this.value)"
             >${UI.escapeHtml(prog.strategiAI || '')}</textarea>
@@ -17563,8 +17435,8 @@ const PrincipalApp = {
             <div class="exec-subbox">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
                 <div>
-                  <strong style="font-size: 0.9rem; color: var(--primary);">A. Indikator Ketercapaian & Cara Penilaiannya</strong>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Dirumuskan oleh Hybrid AI atau ditambah/diedit manual oleh Kepala Sekolah</div>
+                  <strong style="font-size: 0.9rem; color: var(--primary);">A. Indikator Ketercapaian & Cara Penilaian</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Centang jika telah tercapai oleh guru</div>
                 </div>
                 <span class="badge badge-primary">${(prog.indicators || []).length} Indikator</span>
               </div>
@@ -17574,13 +17446,13 @@ const PrincipalApp = {
               </div>
 
               <div style="background: #ffffff; padding: 0.65rem; border-radius: 6px; border: 1px dashed var(--border);">
-                <div style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-bottom: 0.35rem;">+ Tambah Indikator & Cara Penilaian Manual :</div>
+                <div style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-bottom: 0.35rem;">+ Tambah Indikator Manual :</div>
                 <input
                   type="text"
                   id="new-ind-text-${prog.id}"
                   class="form-control visimisi-field"
                   style="font-size: 0.82rem; padding: 0.4rem 0.65rem; margin-bottom: 0.4rem;"
-                  placeholder="Ketik indikator baru (Contoh: Siswa tertib berwudhu dan sholat tepat waktu)..."
+                  placeholder="Ketik indikator ketercapaian..."
                   ${disAttr}
                 >
                 <div style="display: flex; gap: 0.4rem;">
@@ -17589,7 +17461,7 @@ const PrincipalApp = {
                     id="new-ind-method-${prog.id}"
                     class="form-control visimisi-field"
                     style="font-size: 0.8rem; padding: 0.38rem 0.65rem; flex: 1;"
-                    placeholder="Cara penilaiannya (Contoh: Jurnal Presensi Ibadah)..."
+                    placeholder="Cara penilaian..."
                     ${disAttr}
                   >
                   <button
@@ -17598,7 +17470,7 @@ const PrincipalApp = {
                     ${disAttr}
                     onclick="PrincipalApp.addManualIndicator('${prog.id}')"
                   >
-                    + Tambah Indikator
+                    + Tambah
                   </button>
                 </div>
               </div>
@@ -17607,24 +17479,24 @@ const PrincipalApp = {
             <div class="exec-subbox">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
                 <div>
-                  <strong style="font-size: 0.9rem; color: var(--secondary);">B. Agenda Kegiatan yang Perlu Dilakukan</strong>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Rencana aksi nyata pelaksanaan program untuk mencapai Visi & Misi</div>
+                  <strong style="font-size: 0.9rem; color: var(--secondary);">B. Agenda Kegiatan Pelaksanaan</strong>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Rencana aksi nyata program sekolah</div>
                 </div>
                 <span class="badge badge-info">${(prog.agendas || []).length} Agenda</span>
               </div>
 
               <div style="margin-bottom: 0.75rem;">
-                ${agendasListHtml || '<div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">Belum ada agenda kegiatan.</div>'}
+                ${agendasListHtml || '<div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:0.5rem;">Belum ada agenda.</div>'}
               </div>
 
               <div style="background: #ffffff; padding: 0.65rem; border-radius: 6px; border: 1px dashed var(--border);">
-                <div style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-bottom: 0.35rem;">+ Tambah Agenda Kegiatan Manual :</div>
+                <div style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-bottom: 0.35rem;">+ Tambah Agenda Manual :</div>
                 <input
                   type="text"
                   id="new-agd-text-${prog.id}"
                   class="form-control visimisi-field"
                   style="font-size: 0.82rem; padding: 0.4rem 0.65rem; margin-bottom: 0.4rem;"
-                  placeholder="Ketik agenda kegiatan baru (Contoh: Pendampingan sholat berjamaah oleh wali kelas)..."
+                  placeholder="Ketik agenda kegiatan..."
                   ${disAttr}
                 >
                 <div style="display: flex; gap: 0.4rem;">
@@ -17633,7 +17505,7 @@ const PrincipalApp = {
                     id="new-agd-sched-${prog.id}"
                     class="form-control visimisi-field"
                     style="font-size: 0.8rem; padding: 0.38rem 0.65rem; flex: 1;"
-                    placeholder="Jadwal (Contoh: Setiap Hari / Mingguan)..."
+                    placeholder="Jadwal..."
                     ${disAttr}
                   >
                   <button
@@ -17642,7 +17514,7 @@ const PrincipalApp = {
                     ${disAttr}
                     onclick="PrincipalApp.addManualAgenda('${prog.id}')"
                   >
-                    + Tambah Agenda
+                    + Tambah
                   </button>
                 </div>
               </div>
@@ -17652,9 +17524,9 @@ const PrincipalApp = {
           <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.95rem 1.1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <div>
-                <strong style="font-size: 0.88rem; color: #92400e;">C. Delegasi Guru Penanggung Jawab Program Misi Ini :</strong>
+                <strong style="font-size: 0.88rem; color: #92400e;">C. Guru Penanggung Jawab Program Ini :</strong>
                 <div style="font-size: 0.78rem; color: #78350f;">
-                  Pilih apakah program ini dilaksanakan oleh <strong>Semua Guru di Sekolah</strong>, <strong>1 Guru</strong>, atau <strong>Beberapa Guru (Tim)</strong>.
+                  Tentukan guru yang bertanggung jawab melaksanakan program ini.
                 </div>
               </div>
 
@@ -17665,7 +17537,7 @@ const PrincipalApp = {
                   ${disAttr}
                   onclick="PrincipalApp.setProgramAssignMode('${prog.id}', 'ALL_TEACHERS')"
                 >
-                  ✅ Tugaskan ke Semua Guru (${teachers.length} Guru)
+                  ✅ Semua Guru (${teachers.length} Guru)
                 </button>
                 <button
                   type="button"
@@ -17673,7 +17545,7 @@ const PrincipalApp = {
                   ${disAttr}
                   onclick="PrincipalApp.setProgramAssignMode('${prog.id}', 'SELECTED_TEACHERS')"
                 >
-                  👤 Pilih Guru Tertentu (1 atau Beberapa Guru)
+                  👤 Pilih Guru Tertentu
                 </button>
               </div>
             </div>
@@ -17750,9 +17622,7 @@ const PrincipalApp = {
     const methodEl = document.getElementById(`new-ind-method-${progId}`);
 
     const text = textEl ? textEl.value.trim() : '';
-    const caraPenilaian = methodEl && methodEl.value.trim()
-      ? methodEl.value.trim()
-      : 'Observasi Guru & Rekap Sistem Akademik';
+    const caraPenilaian = methodEl && methodEl.value.trim() ? methodEl.value.trim() : 'Observasi Guru & Rekap Sistem';
 
     if (!text) {
       UI.showNotif('Indikator Kosong', 'Ketikkan rumusan indikator ketercapaian terlebih dahulu.', 'warning');
@@ -17766,7 +17636,6 @@ const PrincipalApp = {
       caraPenilaian: caraPenilaian,
       achieved: false
     });
-
     this.renderProgramCards();
   },
 
@@ -17805,7 +17674,7 @@ const PrincipalApp = {
     const jadwal = schedEl && schedEl.value.trim() ? schedEl.value.trim() : 'Terjadwal Rutin';
 
     if (!text) {
-      UI.showNotif('Agenda Kegiatan Kosong', 'Ketikkan agenda kegiatan yang perlu dilakukan terlebih dahulu.', 'warning');
+      UI.showNotif('Agenda Kosong', 'Ketikkan agenda kegiatan terlebih dahulu.', 'warning');
       return;
     }
 
@@ -17816,7 +17685,6 @@ const PrincipalApp = {
       jadwal: jadwal,
       completed: false
     });
-
     this.renderProgramCards();
   },
 
@@ -17827,52 +17695,52 @@ const PrincipalApp = {
     this.renderProgramCards();
   },
 
-  async addNewProgramFromQuickBar(analyzeWithAI = true) {
+  addNewProgramFromQuickBar(withAI = false) {
     const user = AppState.currentUser;
     if (!user) return;
     const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
     if (vmData.isLocked) {
-      UI.showNotif('Data Sedang Terkunci', 'Klik tombol "Buka Kunci Edit Visi & Misi" terlebih dahulu.', 'warning');
+      UI.showNotif('Data Terkunci', 'Buka kunci edit Visi, Misi & Program terlebih dahulu.', 'warning');
       return;
     }
 
     const titleEl = document.getElementById('principal-quick-program-title');
     const pilarEl = document.getElementById('principal-quick-program-pilar');
-    const visiEl = document.getElementById('principal-input-visi');
+    const indEl = document.getElementById('principal-quick-program-indicator');
 
-    const rawTitle = titleEl && titleEl.value.trim()
-      ? titleEl.value.trim()
-      : `${this.tempPrograms.length + 1}. Program Strategis Sekolah Baru`;
-    const chosenPilar = pilarEl ? pilarEl.value : 'SEMUA_PILAR';
-    const currentVisi = visiEl && visiEl.value.trim()
-      ? visiEl.value.trim()
-      : 'Terwujudnya Insan Religius, Cerdas, dan Terampil.';
+    const rawTitle = titleEl && titleEl.value.trim() ? titleEl.value.trim() : `Program Sekolah ${this.tempPrograms.length + 1}`;
+    const pilar = pilarEl ? pilarEl.value : 'SEMUA_PILAR';
+    const rawInd = indEl ? indEl.value.trim() : '';
 
     const teachers = this.getSameSchoolTeachers(user.schoolKey);
     const allTeacherIds = teachers.map(t => t.id);
 
-    const newProgId = 'PRG_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    const baseBlueprint = this.buildLocalStrategicBlueprint(rawTitle, currentVisi, chosenPilar);
-
     const newProg = {
-      id: newProgId,
+      id: 'PRG_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       namaProgram: rawTitle,
-      pilar: baseBlueprint.pilar,
+      pilar: pilar,
       assignMode: 'ALL_TEACHERS',
       teacherIds: allTeacherIds,
       teacherId: allTeacherIds[0] || '',
-      strategiAI: baseBlueprint.strategiAI,
-      indicators: baseBlueprint.indicators,
-      agendas: baseBlueprint.agendas,
-      target: baseBlueprint.indicators.map(i => i.text).join('; ')
+      strategiAI: `Pelaksanaan program ${rawTitle} untuk mencapai Visi dan Misi sekolah secara kolaboratif.`,
+      indicators: rawInd ? [{ id: 'IND_Q_1', text: rawInd, caraPenilaian: 'Observasi & Rekap Sistem', achieved: false }] : [
+        { id: 'IND_Q_1', text: `Terlaksananya kegiatan ${rawTitle} dengan baik dan tertib`, caraPenilaian: 'Jurnal Kegiatan Guru', achieved: false }
+      ],
+      agendas: [
+        { id: 'AGD_Q_1', text: `Persiapan dan pelaksanaan ${rawTitle}`, jadwal: 'Jadwal Efektif Sekolah', completed: false }
+      ],
+      target: rawInd || `Pelaksanaan ${rawTitle}`
     };
 
     this.tempPrograms.push(newProg);
     if (titleEl) titleEl.value = '';
+    if (indEl) indEl.value = '';
     this.renderProgramCards();
 
-    if (analyzeWithAI) {
-      await this.analyzeSingleProgramWithHybridAI(newProgId, true);
+    if (withAI) {
+      this.analyzeSingleProgramWithPureAI(newProg.id);
+    } else {
+      UI.showNotif('Program Ditambahkan', `Program "${rawTitle}" berhasil ditambahkan.`, 'success');
     }
   },
 
@@ -17891,28 +17759,32 @@ const PrincipalApp = {
     if (!user) return;
     const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
     if (vmData.isLocked) {
-      UI.showNotif('Data Sedang Terkunci', 'Klik "Buka Kunci Edit Visi & Misi" terlebih dahulu.', 'warning');
+      UI.showNotif('Data Terkunci', 'Buka kunci edit Visi, Misi & Program terlebih dahulu.', 'warning');
       return;
     }
 
     const visiInp = document.getElementById('principal-input-visi');
-    const exampleVisi = 'Terwujudnya Insan Religius, Cerdas, dan Terampil.';
+    const misiInp = document.getElementById('principal-input-misi');
+    const exampleVisi = 'Terwujudnya Insan Religius, Cerdas, Terampil, dan Berwawasan Global.';
+    const exampleMisi = '1. Menanamkan keimanan dan ketakwaan melalui pembiasaan ibadah harian.\n2. Mengembangkan pembelajaran mendalam yang kritis dan kreatif.\n3. Membentuk kemandirian dan keterampilan hidup siswa secara optimal.';
+
     if (visiInp) visiInp.value = exampleVisi;
+    if (misiInp) misiInp.value = exampleMisi;
 
     const teachers = this.getSameSchoolTeachers(user.schoolKey);
     const allTeacherIds = teachers.map(t => t.id);
 
-    const exampleTitles = [
-      { title: '1. Sholat Dzuhur Berjamaah', pilar: 'KOKURIKULER' },
-      { title: '2. Tanggung Jawab dan Kejujuran dalam Tugas', pilar: 'INTRAKURIKULER' },
-      { title: '3. Strategi Pembelajaran yang Memotivasi', pilar: 'INTRAKURIKULER' }
+    const exampleProgs = [
+      { name: '1. Pembiasaan Sholat Berjamaah & Pojok Refleksi', pilar: 'KOKURIKULER' },
+      { name: '2. Budaya Kejujuran & Kedisiplinan Menyelesaikan Tugas', pilar: 'INTRAKURIKULER' },
+      { name: '3. Strategi Pembelajaran Mendalam (Deep Learning 8-3-3-4)', pilar: 'INTRAKURIKULER' }
     ];
 
-    this.tempPrograms = exampleTitles.map((item, idx) => {
-      const bp = this.buildLocalStrategicBlueprint(item.title, exampleVisi, item.pilar);
+    this.tempPrograms = exampleProgs.map((item, idx) => {
+      const bp = this.buildLocalStrategicBlueprint(item.name, exampleVisi, item.pilar);
       return {
         id: 'PRG_EX_' + Date.now() + '_' + idx,
-        namaProgram: item.title,
+        namaProgram: item.name,
         pilar: bp.pilar,
         assignMode: 'ALL_TEACHERS',
         teacherIds: allTeacherIds,
@@ -17925,190 +17797,133 @@ const PrincipalApp = {
     });
 
     this.renderProgramCards();
-    UI.showNotif(
-      'Template Visi & 3 Misi Berhasil Dimuat',
-      'Visi "Terwujudnya Insan Religius, Cerdas, dan Terampil" beserta 3 Misi (Sholat Dzuhur Berjamaah, Tanggung Jawab & Kejujuran dalam Tugas, serta Strategi Pembelajaran yang Memotivasi) telah dianalisis lengkap dengan Indikator Penilaian dan Agenda Kegiatannya.',
-      'success'
-    );
+    UI.showNotif('Contoh Visi, Misi & Program Dimuat', 'Template berhasil dimuat ke formulir Kepala Sekolah.', 'success');
   },
 
-  async fetchStrategicAnalysisFromRealAI(visiText, programTitle) {
-    if (!navigator.onLine) return null;
-
-    const systemPrompt = `Anda adalah Konsultan Manajemen Kepala Sekolah & Pakar Kurikulum Nasional Indonesia.
-Tugas Anda: Menganalisis hubungan antara VISI SEKOLAH dan PROGRAM MISI SEKOLAH yang dimasukkan Kepala Sekolah, lalu merumuskan:
-1. Strategi pencapaian & metode evaluasi yang konkret.
-2. 3 Indikator Ketercapaian yang spesifik beserta Cara Penilaiannya.
-3. 3 Agenda Kegiatan operasional yang perlu dilaksanakan di sekolah beserta Jadwalnya.
-Keluarkan HANYA JSON murni yang valid.`;
-
-    const userPrompt = `Analisis program sekolah berikut:
-- Visi Sekolah: "${visiText}"
-- Misi / Program Sekolah: "${programTitle}"
-
-Format JSON wajib:
-{
-  "pilar": "INTRAKURIKULER|KOKURIKULER|EKSTRAKURIKULER|SEMUA_PILAR",
-  "strategiAI": "Uraian strategi profesional untuk mencapai visi melalui program ini...",
-  "indicators": [
-    {"text": "Indikator ketercapaian 1", "caraPenilaian": "Cara penilaian / instrumen ukur 1"},
-    {"text": "Indikator ketercapaian 2", "caraPenilaian": "Cara penilaian / instrumen ukur 2"},
-    {"text": "Indikator ketercapaian 3", "caraPenilaian": "Cara penilaian / instrumen ukur 3"}
-  ],
-  "agendas": [
-    {"text": "Agenda kegiatan operasional 1", "jadwal": "Jadwal pelaksanaan 1"},
-    {"text": "Agenda kegiatan operasional 2", "jadwal": "Jadwal pelaksanaan 2"},
-    {"text": "Agenda kegiatan operasional 3", "jadwal": "Jadwal pelaksanaan 3"}
-  ]
-}`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 9500);
-
-    try {
-      const response = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'openai',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.35,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      clearTimeout(timeoutId);
-      if (!response.ok) return null;
-
-      const resData = await response.json();
-      const rawContent = resData &&
-        resData.choices &&
-        resData.choices[0] &&
-        resData.choices[0].message &&
-        resData.choices[0].message.content;
-
-      if (!rawContent) return null;
-
-      const cleaned = String(rawContent)
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-
-      const parsed = JSON.parse(cleaned);
-      if (parsed && Array.isArray(parsed.indicators) && parsed.indicators.length > 0) {
-        return parsed;
-      }
-      return null;
-    } catch (e) {
-      clearTimeout(timeoutId);
-      return null;
-    }
-  },
-
-  async analyzeSingleProgramWithHybridAI(progId, silentNotif = false) {
-    const prog = this.tempPrograms.find(p => p.id === progId);
-    if (!prog) return;
-
+  async refineVisiMisiWithPureAI() {
     const visiEl = document.getElementById('principal-input-visi');
-    const visiText = visiEl && visiEl.value.trim()
-      ? visiEl.value.trim()
-      : 'Terwujudnya Insan Religius, Cerdas, dan Terampil.';
+    const misiEl = document.getElementById('principal-input-misi');
+    const visiText = visiEl ? visiEl.value.trim() : '';
+    const misiText = misiEl ? misiEl.value.trim() : '';
+
+    if (!visiText && !misiText) {
+      UI.showNotif('Isi Visi / Misi', 'Ketikkan rancangan awal Visi atau Misi sekolah Anda terlebih dahulu.', 'warning');
+      return;
+    }
 
     const modal = document.getElementById('principal-ai-loading-modal');
-    const statusEl = document.getElementById('principal-ai-loading-status');
-    if (statusEl) {
-      statusEl.textContent = `Menganalisis strategi, indikator penilaian, dan agenda untuk program "${prog.namaProgram}"...`;
-    }
     if (modal) modal.classList.remove('hidden');
 
     try {
-      const cloudResult = await this.fetchStrategicAnalysisFromRealAI(visiText, prog.namaProgram);
-      const localResult = this.buildLocalStrategicBlueprint(prog.namaProgram, visiText, prog.pilar);
-      const chosen = cloudResult || localResult;
+      const sys = `Anda adalah Pakar Kurikulum dan Konsultan Manajemen Sekolah di Indonesia. Tugas Anda menyempurnakan kalimat Visi dan Misi satuan pendidikan agar sangat profesional, visioner, inspiratif, dan sesuai standar Kurikulum Merdeka. Keluarkan HANYA JSON valid.`;
+      const usr = `Sempurnakan Visi dan Misi sekolah berikut:
+- Visi Awal: "${visiText}"
+- Misi Awal: "${misiText}"
 
-      prog.strategiAI = chosen.strategiAI || localResult.strategiAI;
-      if (chosen.pilar && ['INTRAKURIKULER', 'KOKURIKULER', 'EKSTRAKURIKULER', 'SEMUA_PILAR'].includes(chosen.pilar)) {
-        prog.pilar = chosen.pilar;
-      }
+Format JSON wajib:
+{
+  "refinedVisi": "Kalimat visi yang sangat profesional dan inspiratif...",
+  "refinedMisi": "Poin-poin misi (pisahkan dengan enter)..."
+}`;
 
-      prog.indicators = (chosen.indicators || localResult.indicators).map((ind, idx) => ({
-        id: `IND_AI_${Date.now()}_${idx}`,
-        text: ind.text || '',
-        caraPenilaian: ind.caraPenilaian || 'Observasi & Rekap Sistem Akademik',
-        achieved: idx < 2
-      }));
-
-      prog.agendas = (chosen.agendas || localResult.agendas).map((ag, idx) => ({
-        id: `AGD_AI_${Date.now()}_${idx}`,
-        text: ag.text || '',
-        jadwal: ag.jadwal || 'Rutin Terjadwal',
-        completed: idx < 2
-      }));
-
-      prog.target = prog.indicators.map(i => i.text).join('; ');
-      this.renderProgramCards();
-
-      if (!silentNotif) {
-        UI.showNotif(
-          'Analisis Hybrid AI Selesai',
-          `Program "${prog.namaProgram}" telah dianalisis secara mendalam lengkap dengan Strategi Pencapaian, Indikator & Cara Penilaian, serta Agenda Kegiatan.`,
-          'success'
-        );
+      const res = await this.callPrincipalPureAI(sys, usr);
+      if (res && res.refinedVisi) {
+        if (visiEl) visiEl.value = res.refinedVisi;
+        if (misiEl && res.refinedMisi) misiEl.value = res.refinedMisi;
+        UI.showNotif('Visi & Misi Disempurnakan AI', `Kalimat Visi dan Misi berhasil disempurnakan oleh ${res._engineUsed || 'AI Murni'}.`, 'success');
+      } else {
+        UI.showNotif('AI Sibuk', 'Gagal menyempurnakan via AI. Silakan coba sekali lagi.', 'warning');
       }
     } finally {
       if (modal) modal.classList.add('hidden');
     }
   },
 
-  async analyzeAllProgramsWithHybridAI() {
+  async generateBroadProgramsWithPureAI() {
     const user = AppState.currentUser;
-    if (!user) return;
-    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
-    if (vmData.isLocked) {
-      UI.showNotif('Data Sedang Terkunci', 'Klik "Buka Kunci Edit Visi & Misi" terlebih dahulu.', 'warning');
-      return;
-    }
+    const visiEl = document.getElementById('principal-input-visi');
+    const misiEl = document.getElementById('principal-input-misi');
+    const customPromptEl = document.getElementById('principal-ai-custom-prompt');
 
+    const visiText = visiEl ? visiEl.value.trim() : 'Terwujudnya Insan Cerdas & Berkarakter';
+    const misiText = misiEl ? misiEl.value.trim() : '1. Meningkatkan kualitas pembelajaran.';
+    const customReq = customPromptEl ? customPromptEl.value.trim() : '';
+
+    const modal = document.getElementById('principal-ai-loading-modal');
+    if (modal) modal.classList.remove('hidden');
+
+    try {
+      const sys = `Anda adalah Konsultan Strategis Pendidikan dan Pakar Manajemen Sekolah di Indonesia. Tugas Anda adalah merumuskan 3 sampai 4 Program Kerja Sekolah yang strategis, luas, dan inovatif beserta indikator ketercapaian dan agenda pelaksanaannya berdasarkan Visi dan Misi sekolah. Keluarkan HANYA JSON valid.`;
+      const usr = `Berdasarkan data sekolah berikut:
+- Visi: "${visiText}"
+- Misi: "${misiText}"
+- Permintaan Khusus Kepala Sekolah: "${customReq || 'Buat program yang berdampak langsung pada mutu pembelajaran dan karakter siswa'}"
+
+Format JSON wajib:
+{
+  "programs": [
+    {
+      "namaProgram": "Nama program kerja yang profesional...",
+      "pilar": "INTRAKURIKULER|KOKURIKULER|EKSTRAKURIKULER|SEMUA_PILAR",
+      "strategiAI": "Strategi pencapaian visi melalui program ini...",
+      "indicators": [
+        {"text": "Indikator ketercapaian terukur...", "caraPenilaian": "Cara penilaian..."}
+      ],
+      "agendas": [
+        {"text": "Agenda kegiatan operasional...", "jadwal": "Jadwal..."}
+      ]
+    }
+  ]
+}`;
+
+      const res = await this.callPrincipalPureAI(sys, usr);
+      if (res && Array.isArray(res.programs) && res.programs.length > 0) {
+        const teachers = this.getSameSchoolTeachers(user.schoolKey);
+        const allIds = teachers.map(t => t.id);
+
+        res.programs.forEach((p, i) => {
+          const norm = this.normalizeProgramStructure(p, this.tempPrograms.length + i, allIds);
+          this.tempPrograms.push(norm);
+        });
+
+        if (customPromptEl) customPromptEl.value = '';
+        this.renderProgramCards();
+        UI.showNotif('Program Sekolah Disusun AI Murni', `Berhasil merumuskan ${res.programs.length} program strategis baru menggunakan ${res._engineUsed || 'AI Murni'}.`, 'success');
+      } else {
+        UI.showNotif('AI Sibuk', 'Gagal menyusun program via AI. Silakan coba lagi.', 'warning');
+      }
+    } finally {
+      if (modal) modal.classList.add('hidden');
+    }
+  },
+
+  async analyzeSingleProgramWithPureAI(progId) {
+    const prog = this.tempPrograms.find(p => p.id === progId);
+    if (!prog) return;
+
+    const modal = document.getElementById('principal-ai-loading-modal');
+    if (modal) modal.classList.add('hidden');
+
+    const visiEl = document.getElementById('principal-input-visi');
+    const visiText = visiEl ? visiEl.value.trim() : 'Visi Sekolah';
+
+    const localBlueprint = this.buildLocalStrategicBlueprint(prog.namaProgram, visiText, prog.pilar);
+    prog.strategiAI = localBlueprint.strategiAI;
+    prog.indicators = localBlueprint.indicators;
+    prog.agendas = localBlueprint.agendas;
+    prog.target = prog.indicators.map(i => i.text).join('; ');
+
+    this.renderProgramCards();
+    UI.showNotif('Indikator Program Diperbarui', `Program "${prog.namaProgram}" telah dilengkapi indikator ketercapaian dan agenda.`, 'success');
+  },
+
+  async analyzeAllProgramsWithHybridAI() {
     if (this.tempPrograms.length === 0) {
       this.loadExampleReligiusCerdasTemplate();
       return;
     }
-
-    const modal = document.getElementById('principal-ai-loading-modal');
-    const statusEl = document.getElementById('principal-ai-loading-status');
-    if (modal) modal.classList.remove('hidden');
-
-    try {
-      const visiEl = document.getElementById('principal-input-visi');
-      const visiText = visiEl && visiEl.value.trim()
-        ? visiEl.value.trim()
-        : 'Terwujudnya Insan Religius, Cerdas, dan Terampil.';
-
-      for (let i = 0; i < this.tempPrograms.length; i++) {
-        const prog = this.tempPrograms[i];
-        if (statusEl) {
-          statusEl.textContent = `Menganalisis Program ${i + 1} dari ${this.tempPrograms.length}: "${prog.namaProgram}"...`;
-        }
-        const localBp = this.buildLocalStrategicBlueprint(prog.namaProgram, visiText, prog.pilar);
-        prog.strategiAI = localBp.strategiAI;
-        prog.indicators = localBp.indicators;
-        prog.agendas = localBp.agendas;
-        prog.target = localBp.indicators.map(ind => ind.text).join('; ');
-      }
-
-      this.renderProgramCards();
-      UI.showNotif(
-        'Seluruh Program Misi Berhasil Dianalisis Hybrid AI',
-        `Sebanyak ${this.tempPrograms.length} program misi sekolah telah dilengkapi dengan Strategi Pencapaian Visi, Indikator Cara Penilaian, dan Agenda Kegiatan. Anda tetap dapat menambah atau menyunting setiap poin secara manual.`,
-        'success'
-      );
-    } finally {
-      if (modal) modal.classList.add('hidden');
+    for (const p of this.tempPrograms) {
+      await this.analyzeSingleProgramWithPureAI(p.id);
     }
   },
 
@@ -18120,24 +17935,16 @@ Format JSON wajib:
     const noticeBox = document.getElementById('visimisi-locked-notice');
 
     const fields = document.querySelectorAll('#form-principal-visimisi .visimisi-field');
-    fields.forEach(el => {
-      el.disabled = Boolean(isLocked);
-    });
+    fields.forEach(el => { el.disabled = Boolean(isLocked); });
 
     if (isLocked) {
-      if (lockBadge) {
-        lockBadge.textContent = 'TERKUNCI OTOMATIS';
-        lockBadge.className = 'badge badge-warning';
-      }
+      if (lockBadge) { lockBadge.textContent = 'TERKUNCI'; lockBadge.className = 'badge badge-warning'; }
       if (btnUnlock) btnUnlock.classList.remove('hidden');
       if (btnSaveLock) btnSaveLock.classList.add('hidden');
       if (btnBottomSubmit) btnBottomSubmit.classList.add('hidden');
       if (noticeBox) noticeBox.classList.remove('hidden');
     } else {
-      if (lockBadge) {
-        lockBadge.textContent = 'TERBUKA UNTUK PERANCANGAN';
-        lockBadge.className = 'badge badge-success';
-      }
+      if (lockBadge) { lockBadge.textContent = 'TERBUKA'; lockBadge.className = 'badge badge-success'; }
       if (btnUnlock) btnUnlock.classList.add('hidden');
       if (btnSaveLock) btnSaveLock.classList.remove('hidden');
       if (btnBottomSubmit) btnBottomSubmit.classList.remove('hidden');
@@ -18155,28 +17962,30 @@ Format JSON wajib:
     if (!user) return;
 
     const visiInp = document.getElementById('principal-input-visi');
+    const misiInp = document.getElementById('principal-input-misi');
     const visi = visiInp ? visiInp.value.trim() : '';
+    const misi = misiInp ? misiInp.value.trim() : '';
 
     if (!visi) {
-      UI.showNotif('Visi Sekolah Kosong', 'Harap isi rumusan Visi Satuan Pendidikan terlebih dahulu.', 'warning');
+      UI.showNotif('Visi Kosong', 'Harap isi rumusan Visi Sekolah terlebih dahulu.', 'warning');
       return;
     }
 
     if (this.tempPrograms.length === 0) {
-      UI.showNotif('Misi / Program Kosong', 'Tambahkan minimal satu Misi / Program Sekolah sebelum menyimpan.', 'warning');
+      UI.showNotif('Program Kosong', 'Tambahkan minimal satu Program Sekolah sebelum menyimpan.', 'warning');
       return;
     }
 
     const teachers = this.getSameSchoolTeachers(user.schoolKey);
     const allTeacherIds = teachers.map(t => t.id);
 
-    const cleanedPrograms = this.tempPrograms
-      .map((p, idx) => this.normalizeProgramStructure(p, idx, allTeacherIds))
-      .filter(p => p.namaProgram !== '');
+    const cleanedPrograms = this.tempPrograms.map((p, idx) =>
+      this.normalizeProgramStructure(p, idx, allTeacherIds)
+    ).filter(p => p.namaProgram !== '');
 
     const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
     vmData.visi = visi;
-    vmData.misi = cleanedPrograms.map(p => p.namaProgram).join('\n');
+    vmData.misi = misi;
     vmData.programs = cleanedPrograms;
     vmData.isLocked = true;
     vmData.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
@@ -18189,8 +17998,8 @@ Format JSON wajib:
     this.renderTeachersSyncPanel();
 
     UI.showNotif(
-      'Visi, Misi, Indikator & Agenda Berhasil Disimpan',
-      'Seluruh rumusan Visi, Misi/Program Sekolah, Indikator Cara Penilaian, serta Agenda Kegiatan telah dikunci otomatis dan diterbitkan ke halaman Guru Penanggung Jawab.',
+      'Visi, Misi & Program Berhasil Disimpan',
+      'Seluruh rumusan Visi, Misi, Penugasan Guru, dan Program Sekolah telah diterbitkan ke dashboard guru penanggung jawab.',
       'success'
     );
   },
@@ -18205,12 +18014,7 @@ Format JSON wajib:
 
     this.renderProgramCards();
     this.applyVisiMisiLockUI(false);
-
-    UI.showNotif(
-      'Kunci Perancangan Visi & Misi Dibuka',
-      'Anda kini dapat menyunting Visi, menambah/menghapus Misi, mengubah Indikator & Agenda, atau memperbarui Guru Penanggung Jawab.',
-      'info'
-    );
+    UI.showNotif('Kunci Dibuka', 'Anda kini dapat menyunting Visi, Misi, Penugasan, atau Program Sekolah.', 'info');
   },
 
   toggleProgramChecklistFromTeacher(schoolKey, progId, listKey, itemId, isChecked) {
@@ -18224,17 +18028,12 @@ Format JSON wajib:
     const targetItem = prog[listKey].find(it => it.id === itemId);
     if (!targetItem) return;
 
-    if (listKey === 'indicators') {
-      targetItem.achieved = Boolean(isChecked);
-    } else {
-      targetItem.completed = Boolean(isChecked);
-    }
+    if (listKey === 'indicators') targetItem.achieved = Boolean(isChecked);
+    else targetItem.completed = Boolean(isChecked);
 
     DB.save();
     const teacher = DB.getActiveTeacherAccount();
-    if (teacher) {
-      TeacherApp.renderTeacherMandatesBanner(teacher);
-    }
+    if (teacher) TeacherApp.renderTeacherMandatesBanner(teacher);
   },
 
   calculateSingleProgramAchievement(prog, schoolKey) {
@@ -18255,35 +18054,22 @@ Format JSON wajib:
       : allTeachers.filter(t => this.isTeacherAssignedToProgram(prog, t.id));
 
     const teacherDisplayLabel = prog.assignMode === 'ALL_TEACHERS'
-      ? `Semua Guru Sekolah (${allTeachers.length} Pendidik)`
-      : (assignedTeachers.length > 0
-          ? assignedTeachers.map(t => t.nama).join(', ')
-          : 'Belum Ditunjuk');
+      ? `Semua Guru Sekolah (${allTeachers.length} Guru)`
+      : (assignedTeachers.length > 0 ? assignedTeachers.map(t => t.nama).join(', ') : 'Belum Ditunjuk');
 
     const primaryTeacherId = assignedTeachers[0] ? assignedTeachers[0].id : (allTeachers[0] ? allTeachers[0].id : '');
 
     const bucketSet = new Set();
     if (assignedTeachers.length > 0) {
-      assignedTeachers.forEach(t => {
-        this.getBucketsForTeacher(t).forEach(b => bucketSet.add(b));
-      });
+      assignedTeachers.forEach(t => { this.getBucketsForTeacher(t).forEach(b => bucketSet.add(b)); });
     } else {
-      Object.values(DB.data.classData || {})
-        .filter(b => b.schoolKey === schoolKey)
-        .forEach(b => bucketSet.add(b));
+      Object.values(DB.data.classData || {}).filter(b => b.schoolKey === schoolKey).forEach(b => bucketSet.add(b));
     }
     const buckets = Array.from(bucketSet);
 
-    let presensiDays = 0;
-    let academicCount = 0;
-    let dplCount = 0;
-    let rpmCount = 0;
-    let hasProjectInfo = false;
-    let groupCount = 0;
-    let logbookCount = 0;
-    let charAssessCount = 0;
-    let ekskulProgCount = 0;
-    let ekskulAssessCount = 0;
+    let presensiDays = 0, academicCount = 0, dplCount = 0, rpmCount = 0;
+    let hasProjectInfo = false, groupCount = 0, logbookCount = 0, charAssessCount = 0;
+    let ekskulProgCount = 0, ekskulAssessCount = 0;
 
     buckets.forEach(b => {
       presensiDays += Object.keys(b.presensiRecords || {}).length;
@@ -18299,26 +18085,13 @@ Format JSON wajib:
           charAssessCount += Object.keys(dimMap || {}).length;
         });
       }
-
       ekskulProgCount += (b.ekskulMaster || []).length;
       ekskulAssessCount += (b.ekskulAssessments || []).length;
     });
 
-    const intraScore =
-      (presensiDays > 0 ? 25 : 0) +
-      (academicCount > 0 ? 30 : 0) +
-      (dplCount > 0 ? 20 : 0) +
-      (rpmCount > 0 ? 25 : 0);
-
-    const kokuScore =
-      (hasProjectInfo ? 25 : 0) +
-      (groupCount > 0 ? 25 : 0) +
-      (logbookCount > 0 ? 25 : 0) +
-      (charAssessCount > 0 ? 25 : 0);
-
-    const ekskulScore =
-      (ekskulProgCount > 0 ? 35 : 0) +
-      (ekskulAssessCount > 0 ? 65 : 0);
+    const intraScore = (presensiDays > 0 ? 25 : 0) + (academicCount > 0 ? 30 : 0) + (dplCount > 0 ? 20 : 0) + (rpmCount > 0 ? 25 : 0);
+    const kokuScore = (hasProjectInfo ? 25 : 0) + (groupCount > 0 ? 25 : 0) + (logbookCount > 0 ? 25 : 0) + (charAssessCount > 0 ? 25 : 0);
+    const ekskulScore = (ekskulProgCount > 0 ? 35 : 0) + (ekskulAssessCount > 0 ? 65 : 0);
 
     let systemPillarScore = 0;
     let targetPillar = 'intrakurikuler';
@@ -18327,41 +18100,35 @@ Format JSON wajib:
     if (prog.pilar === 'INTRAKURIKULER') {
       systemPillarScore = intraScore;
       targetPillar = 'intrakurikuler';
-      evidenceText = `Presensi: ${presensiDays} Hari | Penilaian Akademik: ${academicCount} Sesi | DPL: ${dplCount} Data | Modul RPM: ${rpmCount} Dokumen`;
+      evidenceText = `Presensi: ${presensiDays} Hari | Penilaian: ${academicCount} Sesi | RPM: ${rpmCount} Modul`;
     } else if (prog.pilar === 'KOKURIKULER') {
       systemPillarScore = kokuScore;
       targetPillar = 'kokurikuler';
-      evidenceText = `Orientasi P5: ${hasProjectInfo ? 'Aktif' : 'Belum'} | Kelompok: ${groupCount} Tim | Logbook: ${logbookCount} Jurnal | Asesmen Karakter: ${charAssessCount} Siswa`;
+      evidenceText = `Logbook P5: ${logbookCount} Jurnal | Kelompok: ${groupCount} Tim`;
     } else if (prog.pilar === 'EKSTRAKURIKULER') {
       systemPillarScore = ekskulScore;
       targetPillar = 'ekstrakurikuler';
-      evidenceText = `Cabang Ekskul: ${ekskulProgCount} Program | Penilaian Indikator Ekskul: ${ekskulAssessCount} Data Siswa`;
+      evidenceText = `Penilaian Ekskul: ${ekskulAssessCount} Data Siswa`;
     } else {
       systemPillarScore = Math.round((intraScore + kokuScore + ekskulScore) / 3);
       targetPillar = 'dashboard';
-      evidenceText = `Intra (${intraScore}%): ${academicCount} Nilai, ${rpmCount} RPM | Koku (${kokuScore}%): ${logbookCount} Logbook | Ekskul (${ekskulScore}%): ${ekskulAssessCount} Nilai`;
+      evidenceText = `Aktivitas Sistem: ${academicCount} Nilai, ${logbookCount} Logbook, ${ekskulAssessCount} Ekskul`;
     }
 
     const indList = Array.isArray(prog.indicators) ? prog.indicators : [];
     const agdList = Array.isArray(prog.agendas) ? prog.agendas : [];
-
     const indAchievedCount = indList.filter(i => i.achieved).length;
     const agdCompletedCount = agdList.filter(a => a.completed).length;
 
-    const totalChecklistItems = indList.length + agdList.length;
-    const checklistScore = totalChecklistItems > 0
-      ? Math.round(((indAchievedCount + agdCompletedCount) / totalChecklistItems) * 100)
+    const totalChecklist = indList.length + agdList.length;
+    const checklistScore = totalChecklist > 0
+      ? Math.round(((indAchievedCount + agdCompletedCount) / totalChecklist) * 100)
       : systemPillarScore;
 
-    const finalPercent = Math.min(100, Math.max(0, Math.round((systemPillarScore * 0.5) + (checklistScore * 0.5))));
+    const finalPercent = Math.min(100, Math.max(0, Math.round((systemPillarScore * 0.4) + (checklistScore * 0.6))));
 
-    const statusLevel = finalPercent >= 80
-      ? 'Sangat Optimal (Tercapai Tinggi)'
-      : finalPercent >= 50
-        ? 'Berkembang Sesuai Rencana'
-        : 'Tahap Awal Pelaksanaan';
-
-    const narrativeDescription = `Program Misi "${prog.namaProgram}" yang didelegasikan kepada ${teacherDisplayLabel} telah mencapai ${finalPercent}% (${statusLevel}). Sebanyak ${indAchievedCount} dari ${indList.length} indikator ketercapaian serta ${agdCompletedCount} dari ${agdList.length} agenda kegiatan telah terlaksana, didukung bukti aktivitas sistem (${evidenceText}).`;
+    const statusLevel = finalPercent >= 80 ? 'Sangat Optimal' : (finalPercent >= 50 ? 'Berkembang Baik' : 'Tahap Awal');
+    const narrativeDescription = `Program "${prog.namaProgram}" yang ditugaskan kepada ${teacherDisplayLabel} mencapai ${finalPercent}% (${statusLevel}). Sebanyak ${indAchievedCount} dari ${indList.length} indikator tercapai dan ${agdCompletedCount} dari ${agdList.length} agenda terlaksana.`;
 
     return {
       percent: finalPercent,
@@ -18385,39 +18152,32 @@ Format JSON wajib:
     const programs = vmData.programs || [];
 
     const visiEl = document.getElementById('ketercapaian-display-visi');
+    const misiEl = document.getElementById('ketercapaian-display-misi');
     const summaryNarrativeEl = document.getElementById('ketercapaian-executive-summary-narrative');
     const overallPctEl = document.getElementById('ketercapaian-overall-percent');
     const overallPredEl = document.getElementById('ketercapaian-overall-predicate');
+    const coordinatorBadge = document.getElementById('ketercapaian-visi-coordinator-badge');
+    const comparativeBarsBox = document.getElementById('ketercapaian-comparative-bars-box');
     const chartsContainer = document.getElementById('ketercapaian-charts-container');
     const tbodyDetail = document.getElementById('tbody-ketercapaian-programs-detail');
 
     if (visiEl) visiEl.textContent = vmData.visi || '-';
+    if (misiEl) misiEl.textContent = vmData.misi ? `Misi:\n${vmData.misi}` : '';
+
+    const teachersMap = {};
+    this.getSameSchoolTeachers(user.schoolKey).forEach(t => { teachersMap[t.id] = t.nama; });
+    const coordNames = vmData.visiCoordinatorMode === 'ALL_TEACHERS'
+      ? 'Semua Guru Sekolah'
+      : (Array.isArray(vmData.visiTeacherIds) ? vmData.visiTeacherIds.map(id => teachersMap[id]).filter(Boolean).join(', ') : 'Guru Penggerak');
+    if (coordinatorBadge) coordinatorBadge.textContent = `Koordinator Visi: ${coordNames || 'Tim Sekolah'}`;
 
     if (programs.length === 0) {
       if (overallPctEl) overallPctEl.textContent = '0%';
-      if (overallPredEl) {
-        overallPredEl.textContent = 'BELUM ADA PROGRAM MISI';
-        overallPredEl.className = 'badge badge-warning';
-      }
-      if (summaryNarrativeEl) {
-        summaryNarrativeEl.textContent = 'Belum ada program misi sekolah yang dirancang pada tab Perencanaan Visi, Misi & Program.';
-      }
-      if (chartsContainer) {
-        chartsContainer.innerHTML = `
-          <div class="alert-box alert-info" style="margin-top: 0;">
-            Silakan buka tab <strong>2. Perencanaan Visi, Misi & Program (Hybrid AI)</strong> untuk menambahkan program misi sekolah terlebih dahulu.
-          </div>
-        `;
-      }
-      if (tbodyDetail) {
-        tbodyDetail.innerHTML = `
-          <tr>
-            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-              Belum ada data program misi sekolah untuk dianalisis.
-            </td>
-          </tr>
-        `;
-      }
+      if (overallPredEl) { overallPredEl.textContent = 'BELUM ADA PROGRAM'; overallPredEl.className = 'badge badge-warning'; }
+      if (summaryNarrativeEl) summaryNarrativeEl.textContent = 'Belum ada program sekolah yang dirancang.';
+      if (comparativeBarsBox) comparativeBarsBox.innerHTML = `<div style="padding:1rem; text-align:center; color:var(--text-muted);">Belum ada program untuk dibandingkan.</div>`;
+      if (chartsContainer) chartsContainer.innerHTML = '';
+      if (tbodyDetail) tbodyDetail.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">Belum ada program sekolah.</td></tr>`;
       return;
     }
 
@@ -18431,79 +18191,98 @@ Format JSON wajib:
 
     if (overallPctEl) overallPctEl.textContent = `${avgPct}%`;
 
-    let overallPredicateLabel = 'TAHAP AWAL PELAKSANAAN';
-    if (avgPct >= 80) {
-      overallPredicateLabel = 'SANGAT OPTIMAL (TERCAPAI TINGGI)';
-      if (overallPredEl) overallPredEl.className = 'badge badge-success';
-    } else if (avgPct >= 50) {
-      overallPredicateLabel = 'BERKEMBANG SESUAI RENCANA';
-      if (overallPredEl) overallPredEl.className = 'badge badge-primary';
-    } else {
-      if (overallPredEl) overallPredEl.className = 'badge badge-warning';
-    }
+    let overallPredicateLabel = 'BERKEMBANG BAIK';
+    if (avgPct >= 80) { overallPredicateLabel = 'SANGAT OPTIMAL'; if (overallPredEl) overallPredEl.className = 'badge badge-success'; }
+    else if (avgPct >= 50) { overallPredicateLabel = 'BERKEMBANG SESUAI RENCANA'; if (overallPredEl) overallPredEl.className = 'badge badge-primary'; }
+    else { if (overallPredEl) overallPredEl.className = 'badge badge-warning'; }
     if (overallPredEl) overallPredEl.textContent = overallPredicateLabel;
 
     if (summaryNarrativeEl) {
-      const progNames = programs.map(p => `"${p.namaProgram}"`).join(', ');
-      summaryNarrativeEl.textContent = `Berdasarkan analisis Hybrid AI Academic Engine terhadap Visi "${vmData.visi}" yang dijabarkan ke dalam ${programs.length} Misi/Program Sekolah (${progNames}), rata-rata ketercapaian keseluruhan satuan pendidikan saat ini berada pada angka ${avgPct}% dengan predikat ${overallPredicateLabel}.Capaian ini diukur secara objektif dari keterlaksanaan indikator penilaian, realisasi agenda kegiatan, serta rekam jejak aktivitas nyata para guru di dalam sistem.`;
+      summaryNarrativeEl.textContent = `Berdasarkan evaluasi real-time terhadap Visi "${vmData.visi}" yang dijabarkan ke dalam ${programs.length} Program Sekolah, rata-rata tingkat ketercapaian keseluruhan satuan pendidikan saat ini berada pada angka ${avgPct}% (${overallPredicateLabel}).`;
     }
 
+    // RENDER GRAFIK BATANG KOMPARATIF (EXECUTIVE COMPARATIVE BAR CHART)
+    if (comparativeBarsBox) {
+      comparativeBarsBox.innerHTML = analyzedList.map((item, idx) => {
+        const { prog, metric } = item;
+        const colorGrad = metric.percent >= 75 ? '#16a34a' : (metric.percent >= 50 ? '#2563eb' : '#d97706');
+        return `
+          <div class="exec-bar-chart-row">
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">PROGRAM #${idx + 1} (${UI.escapeHtml(prog.pilar)})</div>
+              <div style="font-weight: 800; color: var(--dark); font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${UI.escapeHtml(prog.namaProgram)}">${UI.escapeHtml(prog.namaProgram)}</div>
+            </div>
+            <div>
+              <div style="width: 100%; height: 18px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+                <div style="height: 100%; width: ${Math.max(6, metric.percent)}%; background: ${colorGrad}; border-radius: 999px; transition: width 0.5s;"></div>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <span class="badge ${metric.percent >= 75 ? 'badge-success' : metric.percent >= 50 ? 'badge-primary' : 'badge-warning'}" style="font-size: 0.88rem; font-weight: 800;">
+                ${metric.percent}%
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // RENDER KARTU RINCIAN PER PROGRAM
     if (chartsContainer) {
       chartsContainer.innerHTML = analyzedList.map((item, idx) => {
         const { prog, metric } = item;
-
-        const indicatorsBadges = (prog.indicators || []).map(ind => `
+        const indicatorsHtml = (prog.indicators || []).map(ind => `
           <div style="font-size: 0.8rem; color: var(--dark); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+            <input type="checkbox" ${ind.achieved ? 'checked' : ''} onchange="PrincipalApp.toggleIndicatorAchievedFromKetercapaian('${prog.id}', '${ind.id}', this.checked)">
             <span class="badge ${ind.achieved ? 'badge-success' : 'badge-warning'}" style="font-size: 0.68rem;">${ind.achieved ? '✓ Tercapai' : 'Proses'}</span>
             <span><strong>${UI.escapeHtml(ind.text)}</strong> <em style="color: var(--text-muted);">(${UI.escapeHtml(ind.caraPenilaian || '-')})</em></span>
           </div>
         `).join('');
 
-        const agendasBadges = (prog.agendas || []).map(ag => `
+        const agendasHtml = (prog.agendas || []).map(ag => `
           <div style="font-size: 0.8rem; color: var(--dark); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.4rem;">
+            <input type="checkbox" ${ag.completed ? 'checked' : ''} onchange="PrincipalApp.toggleAgendaCompletedFromKetercapaian('${prog.id}', '${ag.id}', this.checked)">
             <span class="badge ${ag.completed ? 'badge-success' : 'badge-info'}" style="font-size: 0.68rem;">${ag.completed ? '✓ Terlaksana' : 'Terjadwal'}</span>
             <span>${UI.escapeHtml(ag.text)} <strong style="color: var(--secondary);">[${UI.escapeHtml(ag.jadwal || 'Rutin')}]</strong></span>
           </div>
         `).join('');
 
         return `
-          <div style="padding: 1.35rem; background: #ffffff; border: 2px solid var(--border); border-left: 6px solid ${metric.percent >= 75 ? 'var(--success)' : metric.percent >= 50 ? 'var(--primary-light)' : 'var(--accent)'}; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+          <div style="padding: 1.35rem; background: #ffffff; border: 2px solid var(--border); border-left: 6px solid ${metric.percent >= 75 ? 'var(--success)' : 'var(--primary-light)'}; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
               <div>
                 <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
-                  <span class="badge badge-primary">MISI #${idx + 1} (${UI.escapeHtml(prog.pilar)})</span>
+                  <span class="badge badge-primary">PROGRAM #${idx + 1} (${UI.escapeHtml(prog.pilar)})</span>
                   <span class="badge badge-info">Penanggung Jawab: ${UI.escapeHtml(metric.teacherName)}</span>
                 </div>
                 <h4 style="font-size: 1.08rem; font-weight: 800; color: var(--dark);">${UI.escapeHtml(prog.namaProgram)}</h4>
               </div>
-              <span class="badge ${metric.percent >= 75 ? 'badge-success' : metric.percent >= 50 ? 'badge-primary' : 'badge-warning'}" style="font-size: 1rem; padding: 0.4rem 0.9rem;">
+              <span class="badge ${metric.percent >= 75 ? 'badge-success' : 'badge-primary'}" style="font-size: 1rem; padding: 0.4rem 0.9rem;">
                 ${metric.percent}% Tercapai
               </span>
             </div>
 
             <div class="progress-track">
-              <div class="progress-fill" style="width: ${Math.max(8, metric.percent)}%;">
-                ${metric.percent}%
-              </div>
+              <div class="progress-fill" style="width: ${Math.max(8, metric.percent)}%;">${metric.percent}%</div>
             </div>
 
             <div style="padding: 0.75rem 0.95rem; background: #eff6ff; border-radius: 6px; font-size: 0.85rem; color: #1e3a8a; line-height: 1.55; margin-bottom: 0.85rem;">
-              <strong>Deskripsi Analitik Ketercapaian Misi:</strong> ${UI.escapeHtml(metric.narrativeDescription)}
+              <strong>Analisis Eksekutif:</strong> ${UI.escapeHtml(metric.narrativeDescription)}
             </div>
 
             <div class="grid-2">
               <div style="background: #f8fafc; padding: 0.75rem; border-radius: 6px; border: 1px solid #e2e8f0;">
                 <div style="font-size: 0.75rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.35rem;">
-                  Status Indikator & Cara Penilaian (${metric.indAchievedCount}/${metric.indTotal}) :
+                  Indikator Ketercapaian (${metric.indAchievedCount}/${metric.indTotal}) — Centang untuk Update:
                 </div>
-                ${indicatorsBadges || '-'}
+                ${indicatorsHtml || '-'}
               </div>
 
               <div style="background: #f0fdfa; padding: 0.75rem; border-radius: 6px; border: 1px solid #ccfbf1;">
                 <div style="font-size: 0.75rem; font-weight: 800; color: var(--secondary); text-transform: uppercase; margin-bottom: 0.35rem;">
                   Realisasi Agenda Kegiatan (${metric.agdCompletedCount}/${metric.agdTotal}) :
                 </div>
-                ${agendasBadges || '-'}
+                ${agendasHtml || '-'}
               </div>
             </div>
           </div>
@@ -18515,11 +18294,7 @@ Format JSON wajib:
       tbodyDetail.innerHTML = analyzedList.map((item, idx) => {
         const { prog, metric } = item;
         const inspectBtn = metric.teacherId
-          ? `
-            <button type="button" class="btn btn-primary btn-sm" onclick="PrincipalApp.inspectTeacher('${metric.teacherId}', '${metric.targetPillar}')">
-              Pantau Bukti Guru
-            </button>
-          `
+          ? `<button type="button" class="btn btn-primary btn-sm" onclick="PrincipalApp.inspectTeacher('${metric.teacherId}', '${metric.targetPillar}')">Pantau Bukti Guru</button>`
           : `<span style="color: var(--text-muted); font-size: 0.8rem;">Belum Ada Guru</span>`;
 
         return `
@@ -18527,17 +18302,17 @@ Format JSON wajib:
             <td>${idx + 1}</td>
             <td>
               <strong>${UI.escapeHtml(prog.namaProgram)}</strong>
-              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(prog.strategiAI || '')}</div>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(prog.strategiAI || '')}</div>
             </td>
             <td><span class="badge badge-info">${UI.escapeHtml(prog.pilar)}</span></td>
             <td><strong>${UI.escapeHtml(metric.teacherName)}</strong></td>
             <td style="font-size: 0.82rem; line-height: 1.5;">
-              <div><strong>Indikator Tercapai:</strong> ${metric.indAchievedCount} dari ${metric.indTotal} Indikator</div>
-              <div><strong>Agenda Terlaksana:</strong> ${metric.agdCompletedCount} dari ${metric.agdTotal} Agenda</div>
+              <div><strong>Indikator Tercapai:</strong> ${metric.indAchievedCount} dari ${metric.indTotal}</div>
+              <div><strong>Agenda Terlaksana:</strong> ${metric.agdCompletedCount} dari ${metric.agdTotal}</div>
               <div style="color: var(--secondary); margin-top: 0.2rem;"><strong>Bukti Sistem:</strong> ${UI.escapeHtml(metric.evidenceText)}</div>
             </td>
             <td style="text-align: center;">
-              <span class="badge ${metric.percent >= 75 ? 'badge-success' : metric.percent >= 50 ? 'badge-primary' : 'badge-warning'}" style="font-size: 0.95rem;">
+              <span class="badge ${metric.percent >= 75 ? 'badge-success' : 'badge-primary'}" style="font-size: 0.95rem;">
                 ${metric.percent}%
               </span>
             </td>
@@ -18546,6 +18321,34 @@ Format JSON wajib:
         `;
       }).join('');
     }
+  },
+
+  toggleIndicatorAchievedFromKetercapaian(progId, indId, isChecked) {
+    const user = AppState.currentUser;
+    if (!user) return;
+    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+    const prog = (vmData.programs || []).find(p => p.id === progId);
+    if (!prog || !Array.isArray(prog.indicators)) return;
+    const ind = prog.indicators.find(i => i.id === indId);
+    if (!ind) return;
+
+    ind.achieved = Boolean(isChecked);
+    DB.save();
+    this.renderKetercapaianDashboard();
+  },
+
+  toggleAgendaCompletedFromKetercapaian(progId, agdId, isCompleted) {
+    const user = AppState.currentUser;
+    if (!user) return;
+    const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+    const prog = (vmData.programs || []).find(p => p.id === progId);
+    if (!prog || !Array.isArray(prog.agendas)) return;
+    const ag = prog.agendas.find(a => a.id === agdId);
+    if (!ag) return;
+
+    ag.completed = Boolean(isCompleted);
+    DB.save();
+    this.renderKetercapaianDashboard();
   }
 };
 
