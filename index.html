@@ -3248,64 +3248,277 @@ body {
     </div>
   </div>
 
-    <section id="view-pilar-kokurikuler" class="app-view hidden">
-    <div class="card no-print" style="background: linear-gradient(135deg, #0f172a 0%, #0f766e 55%, #d97706 100%); color: #ffffff; border: none;">
+      <section id="view-pilar-kokurikuler" class="app-view hidden">
+    <style>
+      .koku-hero-banner {
+        background: linear-gradient(135deg, #0f172a 0%, #0f766e 52%, #1e3a8a 100%);
+        color: #ffffff;
+        border-radius: var(--radius-lg);
+        padding: 1.75rem 2rem;
+        margin-bottom: 1.25rem;
+        box-shadow: var(--shadow-lg);
+      }
+      .koku-tabs-nav {
+        background: #0f172a;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        box-shadow: var(--shadow-md);
+      }
+      .koku-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.55rem 1rem;
+        font-size: 0.83rem;
+        font-weight: 700;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0 !important;
+        cursor: pointer;
+        transition: all 0.18s ease;
+      }
+      .koku-tab-btn:hover {
+        background: #334155;
+        color: #ffffff !important;
+      }
+      .koku-tab-btn.active-koku-tab {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #0f172a !important;
+        border-color: #fde68a !important;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28);
+      }
+      .koku-bentuk-card {
+        border: 2px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        background: #ffffff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+      }
+      .koku-bentuk-card:hover {
+        border-color: var(--secondary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+      .koku-bentuk-card.active-bentuk {
+        border-color: #0f766e;
+        background: #f0fdfa;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+      }
+      .koku-alur-flow-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        padding: 1rem 0.5rem;
+      }
+      .koku-alur-node {
+        min-width: 155px;
+        flex: 1;
+        background: #fde68a;
+        color: #1e293b;
+        border: 2px solid #f59e0b;
+        border-radius: 12px;
+        padding: 0.85rem 0.75rem;
+        text-align: center;
+        font-size: 0.8rem;
+        font-weight: 800;
+        line-height: 1.35;
+        box-shadow: var(--shadow-sm);
+      }
+      .koku-alur-node.node-highlight {
+        background: #0f766e;
+        color: #ffffff;
+        border-color: #115e59;
+      }
+      .koku-alur-arrow {
+        font-size: 1.35rem;
+        font-weight: 900;
+        color: #0f766e;
+        flex-shrink: 0;
+      }
+      .koku-doc-header-bar {
+        background: #0284c7;
+        color: #ffffff;
+        text-align: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        padding: 0.75rem 1rem;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border-radius: 6px 6px 0 0;
+      }
+      .koku-inspirasi-box {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 0.85rem;
+        background: #ffffff;
+      }
+      .koku-inspirasi-header {
+        background: #c26d4a;
+        color: #ffffff;
+        font-weight: 700;
+        text-align: center;
+        padding: 0.45rem;
+        font-size: 0.86rem;
+      }
+      .koku-inspirasi-body {
+        padding: 0.85rem 1rem;
+        background: #fdf8f6;
+        font-size: 0.86rem;
+        color: var(--dark);
+        line-height: 1.55;
+      }
+    </style>
+
+    <div id="koku-ai-loading-modal" class="rpm-ai-loading-overlay hidden">
+      <div class="rpm-ai-loading-box">
+        <div class="rpm-spinner"></div>
+        <span class="badge badge-primary" style="margin-bottom: 0.5rem;">HYBRID AI ACADEMIC ENGINE — KOKURIKULER</span>
+        <h3 style="font-size: 1.16rem; color: var(--dark); margin-bottom: 0.4rem;">Menyusun Modul Perencanaan & Rubrik Kokurikuler...</h3>
+        <p id="koku-ai-loading-status" style="font-size: 0.86rem; color: var(--text-muted);">
+          Menganalisis Dimensi Profil Lulusan, Bentuk Kegiatan, Tujuan Pembelajaran, Aktivitas Terstruktur, dan Matriks Asesmen (SB/B/C/K)...
+        </p>
+      </div>
+    </div>
+
+    <div class="koku-hero-banner no-print">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">PILAR 3 — PEMBELAJARAN KOKURIKULER (PROJEK P5)</span>
-          <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.25rem;">Manajemen Projek Penguatan Profil Pelajar Pancasila</h2>
-          <p style="font-size: 0.88rem; color: #fef3c7;">
-            Pusat informasi & orientasi projek kelas, pengorganisasian kelompok kolaborasi siswa, jurnal logbook harian bergambar, serta asesmen formatif karakter (MB, BSH, SB).
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
+            <span class="badge badge-warning">PILAR 3 — KEGIATAN KOKURIKULER PEMBELAJARAN MENDALAM</span>
+            <span id="koku-active-class-badge" class="badge badge-info">Kelas Aktif: -</span>
+          </div>
+          <h2 style="font-size: 1.48rem; font-weight: 800; margin-bottom: 0.25rem;">
+            Manajemen Perencanaan, Pelaksanaan & Asesmen Kokurikuler Terpadu
+          </h2>
+          <p style="font-size: 0.88rem; color: #ccfbf1; max-width: 850px;">
+            Mendukung <strong>3 Bentuk Utama Kokurikuler SD</strong>: (1) Pembelajaran Kolaboratif Lintas Disiplin Ilmu, (2) Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH), dan (3) Cara Lainnya / Karakteristik Lokal, dilengkapi <strong>Generator Modul Perencanaan Kokurikuler (Hybrid AI)</strong> serta <strong>Generator 3 Inspirasi Deskripsi Rapor</strong>.
           </p>
         </div>
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.switchTab('modul')">
+            ✨ Buat Modul Perencanaan Kokurikuler (AI)
+          </button>
           <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openTeacherDashboard()">
-            Kembali ke Pilar Utama
+            &larr; Kembali ke Pilar Utama
           </button>
         </div>
       </div>
     </div>
 
-    <div class="card no-print" style="padding: 0.9rem 1.25rem; background: #f8fafc;">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" id="btn-koku-tab-dashboard" class="btn btn-primary btn-sm" onclick="KokuApp.switchTab('dashboard')">
-            1. Dashboard & Orientasi Projek
-          </button>
-          <button type="button" id="btn-koku-tab-kelompok" class="btn btn-outline btn-sm" onclick="KokuApp.switchTab('kelompok')">
-            2. Manajemen Kelas & Kelompok
-          </button>
-          <button type="button" id="btn-koku-tab-logbook" class="btn btn-outline btn-sm" onclick="KokuApp.switchTab('logbook')">
-            3. Logbook / Catatan Progres Harian
-          </button>
-          <button type="button" id="btn-koku-tab-penilaian" class="btn btn-outline btn-sm" onclick="KokuApp.switchTab('penilaian')">
-            4. Penilaian Guru & Deskripsi Karakter (P5)
-          </button>
-        </div>
-        <span id="koku-active-class-badge" class="badge badge-primary">Kelas Aktif: -</span>
+    <div class="koku-tabs-nav no-print">
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" id="btn-koku-tab-dashboard" class="koku-tab-btn active-koku-tab" onclick="KokuApp.switchTab('dashboard')">
+          <span>🧭 1. Orientasi & Alur 3 Bentuk Kokurikuler</span>
+        </button>
+        <button type="button" id="btn-koku-tab-modul" class="koku-tab-btn" onclick="KokuApp.switchTab('modul')">
+          <span>📘 2. Buat Modul Perencanaan Kokurikuler (AI)</span>
+        </button>
+        <button type="button" id="btn-koku-tab-kelompok" class="koku-tab-btn" onclick="KokuApp.switchTab('kelompok')">
+          <span>👥 3. Manajemen Kelompok Murid</span>
+        </button>
+        <button type="button" id="btn-koku-tab-logbook" class="koku-tab-btn" onclick="KokuApp.switchTab('logbook')">
+          <span>📝 4. Jurnal Logbook & Dokumentasi</span>
+        </button>
+        <button type="button" id="btn-koku-tab-penilaian" class="koku-tab-btn" onclick="KokuApp.switchTab('penilaian')">
+          <span>📊 5. Asesmen (SB/B/C/K) & Deskripsi Rapor</span>
+        </button>
       </div>
     </div>
 
+    <!-- TAB 1: DASHBOARD ORIENTASI & 3 BENTUK UTAMA KOKURIKULER -->
     <div id="koku-panel-dashboard" class="koku-subpanel">
-      <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #1e293b 100%); color: #ffffff; border: none;">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 0.3rem;">3 BENTUK UTAMA KEGIATAN KOKURIKULER SD</span>
+            <h3 class="card-title">Pilih Fokus Bentuk Kegiatan Kokurikuler Kelas</h3>
+            <p class="card-subtitle">
+              Klik salah satu dari 3 bentuk kegiatan kokurikuler di bawah ini untuk melihat bagan alur pengembangannya dan menyinkronkannya ke Papan Informasi Kelas.
+            </p>
+          </div>
+          <button type="button" class="btn btn-warning btn-sm write-action-btn" onclick="KokuApp.toggleEditDashboardForm()">
+            ⚙️ Atur Papan Orientasi Kelas
+          </button>
+        </div>
+
+        <div class="grid-3" style="margin-bottom: 1.25rem;">
+          <div id="koku-card-bentuk-LINTAS_DISIPLIN" class="koku-bentuk-card active-bentuk" onclick="KokuApp.selectBentukKokurikuler('LINTAS_DISIPLIN')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-primary">BENTUK 1</span>
+              <span class="badge badge-info">Kolaborasi Mapel</span>
+            </div>
+            <h4 style="font-size: 1.02rem; color: var(--dark); margin-bottom: 0.35rem;">1. Pembelajaran Kolaboratif Lintas Disiplin Ilmu</h4>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+              Mengintegrasikan beberapa mata pelajaran (seperti IPAS, Matematika, dan Bahasa Indonesia) ke dalam satu proyek nyata. Contoh: Proyek <em>"Menjelajah Alam Sekitar"</em> atau <em>"Peduli Lingkungan"</em>.
+            </p>
+          </div>
+
+          <div id="koku-card-bentuk-G7KAIH" class="koku-bentuk-card" onclick="KokuApp.selectBentukKokurikuler('G7KAIH')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-success">BENTUK 2</span>
+              <span class="badge badge-warning">7 Kebiasaan Hebat</span>
+            </div>
+            <h4 style="font-size: 1.02rem; color: var(--dark); margin-bottom: 0.35rem;">2. Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</h4>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+              Pembiasaan positif yang berkesadaran, bermakna, dan menggembirakan: Bangun Pagi, Beribadah, Berolahraga, Makan Sehat & Bergizi, Gemar Belajar, Bermasyarakat, dan Tidur Cepat.
+            </p>
+          </div>
+
+          <div id="koku-card-bentuk-CARA_LAIN" class="koku-bentuk-card" onclick="KokuApp.selectBentukKokurikuler('CARA_LAIN')">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <span class="badge badge-warning">BENTUK 3</span>
+              <span class="badge badge-primary">Kearifan Lokal</span>
+            </div>
+            <h4 style="font-size: 1.02rem; color: var(--dark); margin-bottom: 0.35rem;">3. Cara Lainnya / Karakteristik & Kearifan Lokal</h4>
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+              Kegiatan khas sesuai nilai-nilai, program unggulan sekolah, dan kearifan lokal daerah. Contoh: Tarian daerah, permainan tradisional (gobak sodor), membatik, atau aksi bersih lingkungan.
+            </p>
+          </div>
+        </div>
+
+        <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: var(--radius-md); padding: 1.15rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <strong id="koku-alur-visual-title" style="font-size: 0.95rem; color: #92400e;">
+              Bagan Alur Pengembangan Kegiatan Kokurikuler :
+            </strong>
+            <span class="badge badge-warning">Sesuai Panduan Resmi Kemendikdasmen</span>
+          </div>
+          <div id="koku-alur-visual-diagram" class="koku-alur-flow-wrap"></div>
+        </div>
+      </div>
+
+      <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%); color: #ffffff; border: none;">
         <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.2);">
           <div>
-            <span class="badge badge-warning" style="margin-bottom: 0.4rem;">PAPAN INFORMASI DIGITAL KELAS — ORIENTASI PROJEK</span>
-            <h3 id="koku-board-title" style="font-size: 1.55rem; font-weight: 800; color: #ffffff;">Projek Kokurikuler Kelas</h3>
-            <p id="koku-board-theme-subtitle" style="font-size: 0.95rem; color: #93c5fd; font-weight: 600;">Tema: Gaya Hidup Berkelanjutan</p>
+            <span id="koku-board-bentuk-badge" class="badge badge-warning" style="margin-bottom: 0.4rem;">PAPAN ORIENTASI KOKURIKULER KELAS</span>
+            <h3 id="koku-board-title" style="font-size: 1.5rem; font-weight: 800; color: #ffffff;">Kegiatan Kokurikuler Kelas</h3>
+            <p id="koku-board-theme-subtitle" style="font-size: 0.95rem; color: #93c5fd; font-weight: 600;">Tema: Peduli Lingkungan</p>
           </div>
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
             <span id="koku-board-phase-badge" class="school-pill">Kelas / Fase: -</span>
             <span id="koku-board-allocation-badge" class="school-pill">Alokasi: 36 JP</span>
             <button type="button" class="btn btn-warning btn-sm write-action-btn" onclick="KokuApp.toggleEditDashboardForm()">
-              Perbarui Informasi & Tahapan Projek
+              ✏️ Edit Papan Informasi
             </button>
           </div>
         </div>
 
         <div style="margin-bottom: 1.35rem;">
           <div style="font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; margin-bottom: 0.65rem;">
-            Peta Tahapan Alur Kegiatan Projek (Klik Tahapan untuk Mengubah Status Berjalan) :
+            Status Tahapan Pelaksanaan Kokurikuler Saat Ini (Klik Tahapan untuk Mengubah Status Aktif) :
           </div>
           <div class="grid-4" id="koku-stage-stepper">
             <div id="koku-stage-card-PENGENALAN" class="card" style="margin-bottom: 0; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); color: #ffffff; cursor: pointer;" onclick="KokuApp.setProjectStage('PENGENALAN')">
@@ -3313,8 +3526,8 @@ body {
                 <span class="badge badge-info">TAHAP 1</span>
                 <span id="koku-stage-status-PENGENALAN" style="font-size: 0.75rem; font-weight: 700;">-</span>
               </div>
-              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem;">1. Pengenalan</div>
-              <p style="font-size: 0.78rem; color: #e2e8f0;">Mengenali dan membangun kesadaran siswa terhadap isu atau tema projek yang dipelajari.</p>
+              <div style="font-weight: 800; font-size: 0.96rem; margin-bottom: 0.25rem;">1. Penentuan DPL & Tema</div>
+              <p style="font-size: 0.78rem; color: #e2e8f0;">Penentuan Dimensi Profil Lulusan, tema kegiatan, serta pemetaan kolaborasi mapel / G7KAIH / lokal.</p>
             </div>
 
             <div id="koku-stage-card-KONTEKSTUALISASI" class="card" style="margin-bottom: 0; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); color: #ffffff; cursor: pointer;" onclick="KokuApp.setProjectStage('KONTEKSTUALISASI')">
@@ -3322,8 +3535,8 @@ body {
                 <span class="badge badge-info">TAHAP 2</span>
                 <span id="koku-stage-status-KONTEKSTUALISASI" style="font-size: 0.75rem; font-weight: 700;">-</span>
               </div>
-              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem;">2. Kontekstualisasi</div>
-              <p style="font-size: 0.78rem; color: #e2e8f0;">Menggali permasalahan di lingkungan sekitar yang terkait dengan topik pembahasan projek.</p>
+              <div style="font-weight: 800; font-size: 0.96rem; margin-bottom: 0.25rem;">2. Perencanaan & Eksplorasi</div>
+              <p style="font-size: 0.78rem; color: #e2e8f0;">Penyusunan Perencanaan Kokurikuler dan pengamatan langsung kondisi lingkungan sekitar oleh murid.</p>
             </div>
 
             <div id="koku-stage-card-AKSI" class="card" style="margin-bottom: 0; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); color: #ffffff; cursor: pointer;" onclick="KokuApp.setProjectStage('AKSI')">
@@ -3331,8 +3544,8 @@ body {
                 <span class="badge badge-info">TAHAP 3</span>
                 <span id="koku-stage-status-AKSI" style="font-size: 0.75rem; font-weight: 700;">-</span>
               </div>
-              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem;">3. Aksi Nyata</div>
-              <p style="font-size: 0.78rem; color: #e2e8f0;">Merumuskan peran dan mewujudkan pelajaran yang mereka dapat melalui aksi atau karya nyata.</p>
+              <div style="font-weight: 800; font-size: 0.96rem; margin-bottom: 0.25rem;">3. Pelaksanaan Kokurikuler</div>
+              <p style="font-size: 0.78rem; color: #e2e8f0;">Pelaksanaan proyek lintas disiplin, pembiasaan harian G7KAIH, atau praktik kearifan lokal secara kolaboratif.</p>
             </div>
 
             <div id="koku-stage-card-REFLEKSI" class="card" style="margin-bottom: 0; padding: 1rem; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); color: #ffffff; cursor: pointer;" onclick="KokuApp.setProjectStage('REFLEKSI')">
@@ -3340,8 +3553,8 @@ body {
                 <span class="badge badge-info">TAHAP 4</span>
                 <span id="koku-stage-status-REFLEKSI" style="font-size: 0.75rem; font-weight: 700;">-</span>
               </div>
-              <div style="font-weight: 800; font-size: 1rem; margin-bottom: 0.25rem;">4. Refleksi & Evaluasi</div>
-              <p style="font-size: 0.78rem; color: #e2e8f0;">Menggenapi proses dengan berbagi karya, evaluasi dampak, dan menyusun langkah tindak lanjut.</p>
+              <div style="font-weight: 800; font-size: 0.96rem; margin-bottom: 0.25rem;">4. Evaluasi & Tindak Lanjut</div>
+              <p style="font-size: 0.78rem; color: #e2e8f0;">Presentasi karya, asesmen capaian Dimensi Profil Lulusan (SB/B/C/K), refleksi, dan kesepakatan tindak lanjut.</p>
             </div>
           </div>
         </div>
@@ -3349,23 +3562,23 @@ body {
         <div class="grid-3">
           <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.2); padding: 1.15rem; border-radius: var(--radius-md);">
             <div style="font-size: 0.78rem; font-weight: 700; color: #fde68a; text-transform: uppercase; margin-bottom: 0.35rem;">
-              Fokus Kegiatan Hari Ini
+              Fokus Aktivitas Kokurikuler Hari Ini
             </div>
-            <div id="koku-board-daily-focus" style="font-size: 0.95rem; font-weight: 600; color: #ffffff;">-</div>
+            <div id="koku-board-daily-focus" style="font-size: 0.92rem; font-weight: 600; color: #ffffff;">-</div>
           </div>
 
           <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.2); padding: 1.15rem; border-radius: var(--radius-md);">
             <div style="font-size: 0.78rem; font-weight: 700; color: #86efac; text-transform: uppercase; margin-bottom: 0.35rem;">
-              Target Waktu & Capaian Mingguan
+              Target Penguatan Dimensi & Kompetensi
             </div>
-            <div id="koku-board-weekly-target" style="font-size: 0.95rem; font-weight: 600; color: #ffffff;">-</div>
+            <div id="koku-board-weekly-target" style="font-size: 0.92rem; font-weight: 600; color: #ffffff;">-</div>
           </div>
 
           <div style="background: rgba(15, 23, 42, 0.55); border: 1px solid rgba(255,255,255,0.2); padding: 1.15rem; border-radius: var(--radius-md);">
             <div style="font-size: 0.78rem; font-weight: 700; color: #93c5fd; text-transform: uppercase; margin-bottom: 0.35rem;">
-              Alat, Bahan, & Persiapan Siswa
+              Sarana, Alat, Bahan & Persiapan Murid
             </div>
-            <div id="koku-board-preparation" style="font-size: 0.95rem; font-weight: 600; color: #ffffff;">-</div>
+            <div id="koku-board-preparation" style="font-size: 0.92rem; font-weight: 600; color: #ffffff;">-</div>
           </div>
         </div>
       </div>
@@ -3373,8 +3586,8 @@ body {
       <div id="koku-edit-dashboard-card" class="card hidden write-action-btn">
         <div class="card-header">
           <div>
-            <h3 class="card-title">Formulir Pengaturan Identitas Projek & Papan Informasi Kelas</h3>
-            <p class="card-subtitle">Perbarui informasi di bawah ini di awal pekan atau sebelum jam pelajaran dimulai untuk ditampilkan di depan kelas.</p>
+            <h3 class="card-title">Pengaturan Papan Orientasi Kegiatan Kokurikuler Kelas</h3>
+            <p class="card-subtitle">Sesuaikan bentuk kegiatan, tema, judul, dan fokus harian yang akan tampil di Papan Informasi Kelas serta Portal Siswa.</p>
           </div>
           <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.toggleEditDashboardForm()">Tutup Editor</button>
         </div>
@@ -3382,178 +3595,358 @@ body {
         <form id="form-koku-dashboard" onsubmit="KokuApp.saveProjectDashboard(event)">
           <div class="grid-3">
             <div class="form-group">
-              <label class="form-label" for="koku-input-tema">Tema Projek Kokurikuler (P5) :</label>
-              <select id="koku-input-tema" class="form-control" required>
-                <option value="Gaya Hidup Berkelanjutan">Gaya Hidup Berkelanjutan</option>
-                <option value="Kearifan Lokal">Kearifan Lokal</option>
-                <option value="Bhinneka Tunggal Ika">Bhinneka Tunggal Ika</option>
-                <option value="Bangunlah Jiwa dan Raganya">Bangunlah Jiwa dan Raganya</option>
-                <option value="Suara Demokrasi">Suara Demokrasi</option>
-                <option value="Rekayasa dan Teknologi">Rekayasa dan Teknologi</option>
-                <option value="Kewirausahaan">Kewirausahaan</option>
+              <label class="form-label" for="koku-input-bentuk">1. Bentuk Kegiatan Kokurikuler :</label>
+              <select id="koku-input-bentuk" class="form-control" onchange="KokuApp.selectBentukKokurikuler(this.value)" required>
+                <option value="LINTAS_DISIPLIN">1. Pembelajaran Kolaboratif Lintas Disiplin Ilmu</option>
+                <option value="G7KAIH">2. Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</option>
+                <option value="CARA_LAIN">3. Cara Lainnya / Karakteristik & Kearifan Lokal</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="koku-input-judul">Judul / Topik Spesifik Projek :</label>
-              <input type="text" id="koku-input-judul" class="form-control" placeholder="Contoh: Pengolahan Sampah Organik & Daur Ulang Kreatif Sekolahku" required>
+              <label class="form-label" for="koku-input-tema">2. Tema Kegiatan Kokurikuler :</label>
+              <input type="text" id="koku-input-tema" list="datalist-koku-tema" class="form-control" placeholder="Contoh: Menjelajah Alam Sekitar / Peduli Lingkungan / Anak Hebat Berkarakter" required>
+              <datalist id="datalist-koku-tema">
+                <option value="Menjelajah Alam Sekitar & Peduli Ekosistem"></option>
+                <option value="Peduli Lingkungan & Pengelolaan Sampah Sekolah"></option>
+                <option value="Generasi Sehat, Cerdas & Berkarakter (G7KAIH)"></option>
+                <option value="Pelestarian Budaya & Permainan Tradisional Daerah"></option>
+                <option value="Literasi, Numerasi & Inovasi Sains Sederhana"></option>
+                <option value="Kewirausahaan Sosial & Kearifan Lokal Sekolah"></option>
+              </datalist>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="koku-input-alokasi">Alokasi Waktu Pelaksanaan :</label>
-              <input type="text" id="koku-input-alokasi" class="form-control" placeholder="Contoh: 36 JP (6 Pekan Efektif)" required>
+              <label class="form-label" for="koku-input-alokasi">3. Alokasi Waktu & Lokasi :</label>
+              <input type="text" id="koku-input-alokasi" class="form-control" placeholder="Contoh: 36 JP (Lingkungan Satuan Pendidikan)" required>
             </div>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label class="form-label" for="koku-input-tahap">Status Tahapan Alur Kegiatan Saat Ini :</label>
+              <label class="form-label" for="koku-input-judul">4. Judul Spesifik Kegiatan Kokurikuler :</label>
+              <input type="text" id="koku-input-judul" class="form-control" placeholder="Contoh: Proyek Kolaborasi Menjelajah Alam Sekitar / Pembiasaan 7 Kebiasaan Anak Hebat" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="koku-input-tahap">5. Tahap Alur Pelaksanaan Saat Ini :</label>
               <select id="koku-input-tahap" class="form-control" required>
-                <option value="PENGENALAN">Tahap 1: Pengenalan</option>
-                <option value="KONTEKSTUALISASI">Tahap 2: Kontekstualisasi</option>
-                <option value="AKSI">Tahap 3: Aksi Nyata</option>
-                <option value="REFLEKSI">Tahap 4: Refleksi & Evaluasi</option>
+                <option value="PENGENALAN">Tahap 1: Penentuan DPL & Tema</option>
+                <option value="KONTEKSTUALISASI">Tahap 2: Penyusunan Perencanaan & Eksplorasi</option>
+                <option value="AKSI">Tahap 3: Pelaksanaan Kokurikuler</option>
+                <option value="REFLEKSI">Tahap 4: Evaluasi & Tindak Lanjut</option>
               </select>
             </div>
+          </div>
 
-            <div class="form-group">
-              <label class="form-label" for="koku-input-target-mingguan">Target Waktu & Capaian Mingguan :</label>
-              <input type="text" id="koku-input-target-mingguan" class="form-control" placeholder="Contoh: Selesai observasi lapangan & penyusunan rancangan karya (2 x 35 Menit)" required>
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="koku-input-target-mingguan">6. Target Penguatan Kompetensi & Dimensi Profil Lulusan :</label>
+            <input type="text" id="koku-input-target-mingguan" class="form-control" placeholder="Contoh: Menguatkan Penalaran Kritis dan Komunikasi melalui observasi ekosistem / pembiasaan positif" required>
           </div>
 
           <div class="grid-2">
             <div class="form-group">
-              <label class="form-label" for="koku-input-fokus-harian">Instruksi Fokus Kegiatan Hari Ini (Ditampilkan di Papan Digital) :</label>
-              <textarea id="koku-input-fokus-harian" class="form-control" rows="3" placeholder="Contoh: Setiap kelompok melakukan pengamatan lingkungan sekolah, mencatat temuan di Logbook, dan membagi tugas pembuatan karya." required></textarea>
+              <label class="form-label" for="koku-input-fokus-harian">7. Fokus Kegiatan Hari Ini :</label>
+              <textarea id="koku-input-fokus-harian" class="form-control" rows="3" required></textarea>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="koku-input-persiapan">Alat, Bahan, & Persiapan yang Harus Dibawa Siswa :</label>
-              <textarea id="koku-input-persiapan" class="form-control" rows="3" placeholder="Contoh: Buku catatan pengamatan, alat tulis, bahan daur ulang per kelompok, dan gawai untuk dokumentasi foto Logbook." required></textarea>
+              <label class="form-label" for="koku-input-persiapan">8. Sarana, Alat, Bahan & Persiapan Murid :</label>
+              <textarea id="koku-input-persiapan" class="form-control" rows="3" required></textarea>
             </div>
           </div>
 
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.autoFillProjectBoardByAI()">
-              Isi Otomatis Rekomendasi Kegiatan Sesuai Tema (AI Akademik)
+            <button type="button" class="btn btn-secondary btn-sm" onclick="KokuApp.autoFillProjectBoardByAI()">
+              ✨ Isi Otomatis Rekomendasi Sesuai Bentuk Kokurikuler (Hybrid AI)
             </button>
             <button type="submit" class="btn btn-success">
-              Simpan & Tampilkan di Papan Informasi Kelas
+              💾 Simpan & Tampilkan di Papan Orientasi Kelas
             </button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- TAB 2: GENERATOR MODUL PERENCANAAN KOKURIKULER (HYBRID AI) -->
+    <div id="koku-panel-modul" class="koku-subpanel hidden">
+      <div id="koku-modul-form-card" class="card no-print">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 0.3rem;">GENERATOR MODUL PERENCANAAN KOKURIKULER — HYBRID AI</span>
+            <h3 class="card-title">Penyusunan Dokumen Perencanaan & Rubrik Asesmen Kokurikuler</h3>
+            <p class="card-subtitle">
+              Dirancang sesuai format resmi <strong>Panduan Kokurikuler Kemendikdasmen</strong> (Identitas, A. Dimensi Profil Lulusan, B. Tujuan Pembelajaran, C. Praktik Pedagogis, D. Lingkungan Belajar, E. Kemitraan Pembelajaran, F. Pemanfaatan Digital, G. Rangkaian Kegiatan, dan H. Asesmen & Rubrik SB/B/C/K).
+            </p>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.fillSamplePerencanaanForm()">
+            ✨ Bantu Isi Contoh Sesuai Bentuk Terpilih
+          </button>
+        </div>
+
+        <form id="form-generate-koku-modul" onsubmit="KokuApp.handleGenerateKokuModul(event)">
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-sekolah">1. Nama Satuan Pendidikan :</label>
+              <input type="text" id="koku-mod-sekolah" class="form-control" placeholder="Contoh: SDN 2 Sabedo" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-kelas">2. Kelas / Fase :</label>
+              <input type="text" id="koku-mod-kelas" class="form-control" placeholder="Contoh: Kelas 4 / Fase B" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-bentuk">3. Pilih Bentuk Kegiatan Kokurikuler :</label>
+              <select id="koku-mod-bentuk" class="form-control" onchange="KokuApp.handleModBentukChange(this.value)" required>
+                <option value="LINTAS_DISIPLIN">1. Pembelajaran Kolaboratif Lintas Disiplin Ilmu</option>
+                <option value="G7KAIH">2. Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</option>
+                <option value="CARA_LAIN">3. Cara Lainnya / Karakteristik & Kearifan Lokal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-tema">4. Tema & Topik Spesifik Kegiatan :</label>
+              <input type="text" id="koku-mod-tema" class="form-control" placeholder="Contoh: Peduli Lingkungan / Menjelajah Alam Sekitar" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-alokasi">5. Alokasi Waktu :</label>
+              <input type="text" id="koku-mod-alokasi" class="form-control" placeholder="Contoh: 36 JP (atau 114 JP)" value="36 JP" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-lokasi">6. Lokasi Kegiatan :</label>
+              <input type="text" id="koku-mod-lokasi" class="form-control" placeholder="Contoh: Lingkungan satuan pendidikan & sekitarnya" value="Lingkungan satuan pendidikan" required>
+            </div>
+          </div>
+
+          <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
+            <div id="koku-mod-fokus-label-title" style="font-weight: 800; font-size: 0.94rem; color: #0f766e; margin-bottom: 0.4rem;">
+              7. Detail Kolaborasi Mata Pelajaran / Fokus Pembiasaan G7KAIH / Kekhasan Lokal :
+            </div>
+            <div class="grid-2">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="koku-mod-fokus-detail">Mata Pelajaran yang Berkolaborasi / Fokus Kebiasaan / Program Lokal :</label>
+                <input
+                  type="text"
+                  id="koku-mod-fokus-detail"
+                  class="form-control"
+                  placeholder="Contoh: IPAS, Bahasa Indonesia, dan Matematika (atau Beribadah, Berolahraga, Makan Sehat & Bergizi)"
+                  required
+                >
+                <div class="form-hint" id="koku-mod-fokus-hint">
+                  Tuliskan mata pelajaran yang diintegrasikan, kebiasaan G7KAIH yang dipilih, atau kearifan lokal yang dikembangkan.
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="koku-mod-tp">8. Tujuan Pembelajaran Kokurikuler (Pisahkan per baris jika lebih dari satu) :</label>
+                <textarea
+                  id="koku-mod-tp"
+                  class="form-control"
+                  rows="3"
+                  placeholder="1. Menganalisis interaksi antar komponen ekosistem dan pengaruhnya terhadap keseimbangan lingkungan (IPAS).&#10;2. Mempresentasikan gagasan sebagai solusi pemecahan masalah secara kritis dan kreatif (Bahasa Indonesia)."
+                  required
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+              <div>
+                <strong style="font-size: 0.92rem; color: var(--dark);">9. Pilih Dimensi Profil Lulusan yang Dikuatkan & Dinilai :</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  Pilih minimal 2 Dimensi Profil Lulusan. Hybrid AI akan menyusun <strong>Aspek yang Dinilai</strong> serta <strong>Rubrik Sangat Baik, Baik, Cukup, dan Kurang</strong> untuk setiap dimensi yang dicentang.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid-4" id="koku-mod-dpl-checks">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Keimanan dan Ketakwaan terhadap Tuhan YME">
+                Keimanan & Ketakwaan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kewargaan">
+                Kewargaan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Penalaran Kritis" checked>
+                Penalaran Kritis
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kreativitas">
+                Kreativitas
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kolaborasi">
+                Kolaborasi
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kemandirian">
+                Kemandirian
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kesehatan">
+                Kesehatan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Komunikasi" checked>
+                Komunikasi
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="submit" class="btn btn-success write-action-btn" style="padding: 0.85rem 1.85rem; font-size: 0.96rem; box-shadow: var(--shadow-md);">
+              🚀 Analisis dengan Hybrid AI & Susun Modul Perencanaan Kokurikuler &rarr;
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div id="koku-modul-result-wrapper" class="hidden">
+        <div class="rpm-nav-toolbar no-print">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <button type="button" id="btn-koku-doc-page1" class="rpm-page-tab-btn active-tab" onclick="KokuApp.switchModulPage(1)">
+                <span class="rpm-page-tab-num">1</span>
+                <span>Halaman 1: Dokumen Perencanaan Kokurikuler (A s.d. H)</span>
+              </button>
+              <button type="button" id="btn-koku-doc-page2" class="rpm-page-tab-btn" onclick="KokuApp.switchModulPage(2)">
+                <span class="rpm-page-tab-num">2</span>
+                <span>Halaman 2: Matriks Rubrik Asesmen (SB / B / C / K) & Lembar Observasi</span>
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="KokuApp.showAllModulPages()">
+                Tampilkan Semua Halaman
+              </button>
+              <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.reopenModulBuilder()">
+                &larr; Ubah Parameter Perencanaan
+              </button>
+              <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
+                🖨️ Cetak / Simpan PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="koku-modul-page-1" class="rpm-print-page">
+          <div class="no-print" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.95rem 1.15rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
+            <input
+              type="text"
+              id="koku-custom-activity-input"
+              class="form-control"
+              style="flex: 1; min-width: 260px;"
+              placeholder="Tambah langkah aktivitas kegiatan baru secara manual ke Bagian G (Kegiatan)..."
+            >
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="KokuApp.addCustomActivityStep()">
+              + Tambah Langkah Kegiatan
+            </button>
+          </div>
+          <div id="koku-modul-doc-page1-content"></div>
+        </div>
+
+        <div id="koku-modul-page-2" class="rpm-print-page hidden">
+          <div id="koku-modul-doc-page2-content"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: MANAJEMEN KELOMPOK MURID -->
     <div id="koku-panel-kelompok" class="koku-subpanel hidden">
       <div class="card">
         <div class="card-header">
           <div>
-            <h3 class="card-title">Manajemen Kelas & Pengorganisasian Kelompok Siswa</h3>
-            <p class="card-subtitle">Bagi daftar siswa dalam satu kelas ke dalam kelompok-kelompok kecil (misalnya 4–5 siswa per tim) secara otomatis maupun manual.</p>
+            <h3 class="card-title">3. Manajemen Kelompok Belajar & Kolaborasi Kokurikuler</h3>
+            <p class="card-subtitle">Bagi murid dalam satu kelas ke dalam kelompok secara heterogen (otomatis maupun manual) untuk melaksanakan kegiatan kokurikuler.</p>
           </div>
-          <div class="write-action-btn" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.syncStudentsFromDataKelas()">
-              Sinkronkan Daftar Siswa dari Data Kelas
-            </button>
-          </div>
+          <button type="button" class="btn btn-outline btn-sm write-action-btn" onclick="KokuApp.syncStudentsFromDataKelas()">
+            🔄 Sinkronkan Murid dari Data Kelas
+          </button>
         </div>
 
         <div class="card write-action-btn" style="background: #f0fdfa; border: 1px solid #5eead4; margin-bottom: 1.25rem;">
-          <h4 style="font-size: 0.95rem; color: var(--dark); margin-bottom: 0.75rem;">
-            Pengaturan Pembagian Kelompok Otomatis & Manual
-          </h4>
           <div class="grid-3" style="align-items: end;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="koku-group-size-input">Target Jumlah Siswa per Kelompok (Otomatis) :</label>
+              <label class="form-label" for="koku-group-size-input">Jumlah Murid per Kelompok (Otomatis) :</label>
               <select id="koku-group-size-input" class="form-control">
-                <option value="3">3 Siswa per Kelompok</option>
-                <option value="4" selected>4 Siswa per Kelompok (Standar Ideal)</option>
-                <option value="5">5 Siswa per Kelompok</option>
-                <option value="6">6 Siswa per Kelompok</option>
+                <option value="3">3 Murid per Kelompok</option>
+                <option value="4" selected>4 Murid per Kelompok (Ideal)</option>
+                <option value="5">5 Murid per Kelompok</option>
+                <option value="6">6 Murid per Kelompok</option>
               </select>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
               <label class="form-label" for="koku-new-group-name">Atau Buat Nama Kelompok Baru (Manual) :</label>
-              <input type="text" id="koku-new-group-name" class="form-control" placeholder="Contoh: Kelompok 1 - Cendrawasih">
+              <input type="text" id="koku-new-group-name" class="form-control" placeholder="Contoh: Kelompok 1 - Ekosistem Hijau">
             </div>
 
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button type="button" class="btn btn-secondary" onclick="KokuApp.generateGroupsAutomatically()">
-                Bagi Kelompok Otomatis
+                ⚡ Bagi Kelompok Otomatis
               </button>
               <button type="button" class="btn btn-primary" onclick="KokuApp.addManualGroup()">
-                + Tambah Kelompok Manual
+                + Tambah Kelompok
               </button>
             </div>
           </div>
         </div>
 
-        <div style="margin-bottom: 1.5rem;">
-          <h4 style="font-size: 1rem; color: var(--dark); margin-bottom: 0.75rem;">
-             Struktur Tim & Komposisi Kelompok Aktif
-          </h4>
-          <div id="koku-groups-cards-container" class="grid-3"></div>
+        <div id="koku-groups-cards-container" class="grid-3" style="margin-bottom: 1.35rem;"></div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <h4 style="font-size: 1rem; color: var(--dark);">Tabel Penempatan Kelompok & Peran Kolaborasi Murid</h4>
+          <span id="koku-total-students-grouped-badge" class="badge badge-primary">0 Murid Terdaftar</span>
         </div>
 
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
-            <h4 style="font-size: 1rem; color: var(--dark);">
-              Tabel Penempatan Kelompok & Peran Kolaborasi Siswa
-            </h4>
-            <span id="koku-total-students-grouped-badge" class="badge badge-primary">0 Siswa Terdaftar</span>
-          </div>
-
-          <div class="table-responsive">
-            <table class="academic-table">
-              <thead>
-                <tr>
-                  <th style="width: 55px;">No</th>
-                  <th>Nama Siswa</th>
-                  <th>Kelas</th>
-                  <th style="width: 260px;">Kelompok Projek</th>
-                  <th style="width: 240px;">Peran / Tugas dalam Kelompok</th>
-                </tr>
-              </thead>
-              <tbody id="tbody-koku-student-groups"></tbody>
-            </table>
-          </div>
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 55px;">No</th>
+                <th>Nama Murid</th>
+                <th>Kelas</th>
+                <th style="width: 260px;">Kelompok Kokurikuler</th>
+                <th style="width: 240px;">Peran / Tanggung Jawab Tim</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-koku-student-groups"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-          <div id="koku-panel-logbook" class="koku-subpanel hidden">
+    <!-- TAB 4: LOGBOOK / JURNAL HARIAN & DOKUMENTASI -->
+    <div id="koku-panel-logbook" class="koku-subpanel hidden">
       <div class="card">
         <div class="card-header">
           <div>
-            <h3 class="card-title">3. Halaman Logbook / Catatan Progres Harian (Jurnal Kegiatan Kelompok)</h3>
+            <h3 class="card-title">4. Jurnal Logbook Aktivitas Kokurikuler & Dokumentasi Karya/Pembiasaan</h3>
             <p class="card-subtitle">
-              Buku harian digital per kelompok untuk merekam jejak aktivitas, kemajuan pengerjaan tugas, kendala yang dihadapi, dokumentasi foto visual, serta umpan balik (feedback) langsung dari guru.
+              Catat perkembangan proyek lintas disiplin ilmu, pelaksanaan pembiasaan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH), atau kegiatan kearifan lokal beserta foto dokumentasi dan umpan balik guru.
             </p>
           </div>
-          <span class="badge badge-warning">Transparansi Proses Kerja Siswa</span>
+          <span class="badge badge-warning">Tersinkronisasi dengan Portal Siswa</span>
         </div>
 
         <form id="form-koku-logbook" class="write-action-btn" onsubmit="KokuApp.handleAddLogbookEntry(event)" style="background: #f8fafc; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.5rem;">
-          <h4 style="font-size: 0.96rem; color: var(--dark); margin-bottom: 0.85rem;">
-            Formulir Input Jurnal Kegiatan Harian Kelompok (Oleh Perwakilan Kelompok / Guru)
-          </h4>
-
           <div class="grid-3">
             <div class="form-group">
-              <label class="form-label" for="logbook-input-kelompok">1. Pilih Kelompok Projek :</label>
+              <label class="form-label" for="logbook-input-kelompok">1. Pilih Kelompok / Tim :</label>
               <select id="logbook-input-kelompok" class="form-control" required></select>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="logbook-input-tahap">2. Tahapan Projek Saat Ini :</label>
+              <label class="form-label" for="logbook-input-tahap">2. Tahapan Kegiatan Kokurikuler :</label>
               <select id="logbook-input-tahap" class="form-control" required>
-                <option value="Pengenalan">Tahap 1: Pengenalan</option>
-                <option value="Kontekstualisasi">Tahap 2: Kontekstualisasi</option>
-                <option value="Aksi Nyata">Tahap 3: Aksi Nyata</option>
-                <option value="Refleksi & Evaluasi">Tahap 4: Refleksi & Evaluasi</option>
+                <option value="Penentuan DPL & Tema">Tahap 1: Penentuan DPL & Tema</option>
+                <option value="Perencanaan & Pengamatan">Tahap 2: Perencanaan & Pengamatan</option>
+                <option value="Pelaksanaan Aksi / G7KAIH">Tahap 3: Pelaksanaan Aksi / G7KAIH</option>
+                <option value="Evaluasi & Tindak Lanjut">Tahap 4: Evaluasi & Tindak Lanjut</option>
               </select>
             </div>
 
@@ -3574,19 +3967,19 @@ body {
 
           <div class="grid-2">
             <div class="form-group">
-              <label class="form-label" for="logbook-input-progres">4. Ringkasan Aktivitas & Kemajuan Pengerjaan Tugas Hari Ini :</label>
-              <textarea id="logbook-input-progres" class="form-control" rows="3" placeholder="Contoh: Kelompok kami telah melakukan pengamatan lapangan, mengumpulkan bahan utama, dan menyusun kerangka awal karya..." required></textarea>
+              <label class="form-label" for="logbook-input-progres">4. Ringkasan Aktivitas, Hasil Pengamatan / Pembiasaan Hari Ini :</label>
+              <textarea id="logbook-input-progres" class="form-control" rows="3" placeholder="Contoh: Kelompok kami melakukan pengamatan ekosistem di taman sekolah, mencatat interaksi komponen biotik-abiotik, dan merancang karya..." required></textarea>
             </div>
 
             <div class="form-group">
-              <label class="form-label" for="logbook-input-kendala">5. Kendala / Hambatan yang Dihadapi Kelompok :</label>
-              <textarea id="logbook-input-kendala" class="form-control" rows="3" placeholder="Contoh: Masih kekurangan bahan perekat dan sebagian anggota belum selesai menyusun bagian laporan pengamatan..." required></textarea>
+              <label class="form-label" for="logbook-input-kendala">5. Catatan Kendala / Hal yang Perlu Ditingkatkan :</label>
+              <textarea id="logbook-input-kendala" class="form-control" rows="3" placeholder="Contoh: Beberapa anggota masih perlu berlatih menyampaikan gagasan secara runtut saat presentasi..." required></textarea>
             </div>
           </div>
 
           <div style="display: flex; justify-content: flex-end;">
             <button type="submit" class="btn btn-primary">
-              Simpan Catatan Progres Harian Kelompok
+              💾 Simpan Jurnal Kegiatan Kokurikuler
             </button>
           </div>
         </form>
@@ -3605,70 +3998,95 @@ body {
       </div>
     </div>
 
+    <!-- TAB 5: ASESMEN KOKURIKULER (SB / B / C / K) & 3 INSPIRASI DESKRIPSI RAPOR -->
     <div id="koku-panel-penilaian" class="koku-subpanel hidden">
       <div class="card">
         <div class="card-header">
           <div>
-            <h3 class="card-title">4. Halaman Penilaian Guru & Deskripsi Capaian Karakter (Asesmen Formatif P5)</h3>
+            <span class="badge badge-success" style="margin-bottom: 0.3rem;">STANDAR PELAPORAN PANDUAN KOKURIKULER KEMENDIKDASMEN</span>
+            <h3 class="card-title">5. Input & Analisis Nilai Kokurikuler (SB / B / C / K) serta Generator 3 Inspirasi Deskripsi Rapor</h3>
             <p class="card-subtitle">
-              Lembar evaluasi digital untuk mengukur perkembangan dimensi Profil Pelajar Pancasila secara formatif menggunakan predikat kualitatif <strong>MB</strong>, <strong>BSH</strong>, dan <strong>SB</strong> beserta catatan anekdotal.
+              Nilai capaian Dimensi Profil Lulusan menggunakan predikat <strong>SB (Sangat Baik)</strong>, <strong>B (Baik)</strong>, <strong>C (Cukup)</strong>, atau <strong>K (Kurang)</strong> beserta <strong>Catatan Pendidik</strong>. Sistem otomatis merangkai <strong>3 Inspirasi Deskripsi Rapor Kokurikuler</strong> untuk setiap murid.
             </p>
           </div>
-          <span class="badge badge-success">Evaluasi Karakter Kualitatif</span>
+          <button type="button" class="btn btn-outline btn-sm no-print" onclick="window.print()">
+            🖨️ Cetak Hasil Analisis & Deskripsi Rapor
+          </button>
         </div>
 
-        <div class="grid-3" style="margin-bottom: 1.25rem;">
-          <div class="card" style="margin-bottom: 0; padding: 1rem; background: #fffbeb; border-color: #fde68a;">
-            <span class="badge badge-warning" style="margin-bottom: 0.4rem;">Mulai Berkembang (MB)</span>
-            <p style="font-size: 0.8rem; color: #78350f;">
-              Siswa masih memerlukan bimbingan dan dorongan yang cukup intensif dalam menunjukkan sikap kerja sama atau kemandirian. Dalam kerja kelompok, siswa terkadang masih pasif atau sangat bergantung pada arahan rekan sekelompoknya dalam menyelesaikan tugas harian.
+        <div class="grid-4" style="margin-bottom: 1.25rem;">
+          <div class="card" style="margin-bottom: 0; padding: 0.9rem; background: #f0fdf4; border-color: #86efac;">
+            <span class="badge badge-success" style="margin-bottom: 0.3rem;">Sangat Baik (SB)</span>
+            <p style="font-size: 0.78rem; color: #14532d;">
+              Murid menunjukkan penguasaan aspek dimensi profil lulusan secara tuntas, runtut, logis, dan melebihi ekspektasi (misal: menjelaskan &gt;5 interaksi komponen secara akurat).
             </p>
           </div>
-
-          <div class="card" style="margin-bottom: 0; padding: 1rem; background: #eff6ff; border-color: #93c5fd;">
-            <span class="badge badge-primary" style="margin-bottom: 0.4rem;">Berkembang Sesuai Harapan (BSH)</span>
-            <p style="font-size: 0.8rem; color: #1e3a8a;">
-              Siswa sudah menunjukkan inisiatif yang baik, aktif berpartisipasi dalam diskusi kelompok, serta mampu menyelesaikan tugas mandiri maupun bekerja sama secara selaras tanpa harus diingatkan secara terus-menerus oleh guru. Siswa memperlihatkan tanggung jawab terhadap peran yang diberikan dalam tim.
+          <div class="card" style="margin-bottom: 0; padding: 0.9rem; background: #eff6ff; border-color: #93c5fd;">
+            <span class="badge badge-primary" style="margin-bottom: 0.3rem;">Baik (B)</span>
+            <p style="font-size: 0.78rem; color: #1e3a8a;">
+              Murid mampu menunjukkan kompetensi aspek yang dinilai dengan baik sesuai harapan (misal: menjelaskan 3–5 interaksi komponen dengan lancar).
             </p>
           </div>
-
-          <div class="card" style="margin-bottom: 0; padding: 1rem; background: #f0fdf4; border-color: #86efac;">
-            <span class="badge badge-success" style="margin-bottom: 0.4rem;">Sangat Berkembang (SB)</span>
-            <p style="font-size: 0.8rem; color: #14532d;">
-              Siswa menunjukkan kemampuan kepemimpinan yang menonjol di dalam kelompoknya, mampu memberikan gagasan atau solusi kreatif saat menghadapi kendala pengerjaan, serta menunjukkan konsistensi yang tinggi dalam menerapkan nilai-nilai Profil Pelajar Pancasila secara mandiri dan proaktif.
+          <div class="card" style="margin-bottom: 0; padding: 0.9rem; background: #fffbeb; border-color: #fde68a;">
+            <span class="badge badge-warning" style="margin-bottom: 0.3rem;">Cukup (C)</span>
+            <p style="font-size: 0.78rem; color: #78350f;">
+              Murid mulai mampu menunjukkan aspek yang dinilai namun masih terbatas/belum runtut (misal: menjelaskan &lt;3 interaksi atau penyampaian kurang lancar).
+            </p>
+          </div>
+          <div class="card" style="margin-bottom: 0; padding: 0.9rem; background: #fef2f2; border-color: #fca5a5;">
+            <span class="badge badge-danger" style="margin-bottom: 0.3rem;">Kurang (K)</span>
+            <p style="font-size: 0.78rem; color: #991b1b;">
+              Murid masih memerlukan bimbingan intensif dan latihan lebih lanjut untuk memahami/mengomunikasikan aspek dimensi yang dinilai.
             </p>
           </div>
         </div>
 
-        <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+        <div class="card no-print" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
           <div class="grid-3" style="align-items: end;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="koku-assess-dimensi-select">Pilih Fokus Dimensi Profil Pelajar Pancasila :</label>
+              <label class="form-label" for="koku-assess-dimensi-select">1. Dimensi Profil Lulusan 1 (Utama) :</label>
               <select id="koku-assess-dimensi-select" class="form-control allow-readonly-filter" onchange="KokuApp.renderCharacterAssessmentTable()">
-                <option value="Gotong Royong">Gotong Royong (Kolaborasi, Kepedulian, & Berbagi)</option>
-                <option value="Mandiri">Mandiri (Pemahaman Diri & Regulasi Diri)</option>
-                <option value="Bernalar Kritis">Bernalar Kritis (Memperoleh & Memproses Informasi/Gagasan)</option>
-                <option value="Kreatif">Kreatif (Menghasilkan Gagasan & Karya Orisinal)</option>
-                <option value="Beriman, Bertakwa kepada Tuhan YME, dan Berakhlak Mulia">Beriman, Bertakwa kepada Tuhan YME, & Berakhlak Mulia</option>
-                <option value="Berkebinekaan Global">Berkebinekaan Global</option>
+                <option value="Penalaran Kritis" selected>Penalaran Kritis</option>
+                <option value="Komunikasi">Komunikasi</option>
+                <option value="Kolaborasi">Kolaborasi</option>
+                <option value="Kemandirian">Kemandirian</option>
+                <option value="Kreativitas">Kreativitas</option>
+                <option value="Keimanan dan Ketakwaan terhadap Tuhan YME">Keimanan dan Ketakwaan terhadap Tuhan YME</option>
+                <option value="Kewargaan">Kewargaan</option>
+                <option value="Kesehatan">Kesehatan</option>
               </select>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="koku-assess-group-filter">Filter Kelompok Siswa :</label>
-              <select id="koku-assess-group-filter" class="form-control allow-readonly-filter" onchange="KokuApp.renderCharacterAssessmentTable()">
-                <option value="ALL">Tampilkan Semua Siswa Kelas</option>
+              <label class="form-label" for="koku-assess-dimensi2-select">2. Dimensi Profil Lulusan 2 (Pendamping) :</label>
+              <select id="koku-assess-dimensi2-select" class="form-control allow-readonly-filter" onchange="KokuApp.renderCharacterAssessmentTable()">
+                <option value="Komunikasi" selected>Komunikasi</option>
+                <option value="Penalaran Kritis">Penalaran Kritis</option>
+                <option value="Kolaborasi">Kolaborasi</option>
+                <option value="Kemandirian">Kemandirian</option>
+                <option value="Kreativitas">Kreativitas</option>
+                <option value="Keimanan dan Ketakwaan terhadap Tuhan YME">Keimanan dan Ketakwaan terhadap Tuhan YME</option>
+                <option value="Kewargaan">Kewargaan</option>
+                <option value="Kesehatan">Kesehatan</option>
               </select>
             </div>
 
-            <div class="write-action-btn" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.setAllP5Predicates('BSH')">
-                Set Semua BSH
-              </button>
-              <button type="button" class="btn btn-success" style="flex: 1;" onclick="KokuApp.saveAllCharacterAssessments()">
-                Simpan Penilaian Karakter P5
-              </button>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="koku-assess-group-filter">3. Filter Kelompok Murid :</label>
+              <select id="koku-assess-group-filter" class="form-control allow-readonly-filter" onchange="KokuApp.renderCharacterAssessmentTable()">
+                <option value="ALL">Tampilkan Semua Murid Kelas</option>
+              </select>
             </div>
+          </div>
+
+          <div class="write-action-btn" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed var(--border);">
+            <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.setAllP5Predicates('SB')">Set Semua SB (Sangat Baik)</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="KokuApp.setAllP5Predicates('B')">Set Semua B (Baik)</button>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="KokuApp.saveAllCharacterAssessments()">
+              💾 Simpan Hasil Analisis & Deskripsi Rapor Kokurikuler
+            </button>
           </div>
         </div>
 
@@ -3676,25 +4094,20 @@ body {
           <table class="academic-table">
             <thead>
               <tr>
-                <th style="width: 50px;">No</th>
-                <th style="width: 190px;">Nama Siswa & Kelompok</th>
-                <th style="width: 210px;">Pilih Predikat (MB / BSH / SB)</th>
-                <th>Deskripsi Naratif Kualitatif P5 (Otomatis Sesuai Panduan)</th>
-                <th style="width: 280px;">Catatan Anekdotal Tambahan Guru</th>
+                <th style="width: 45px;">No</th>
+                <th style="width: 175px;">Nama Murid</th>
+                <th style="width: 185px;">Hasil Asesmen Dimensi 1 (SB/B/C/K)</th>
+                <th style="width: 185px;">Hasil Asesmen Dimensi 2 (SB/B/C/K)</th>
+                <th style="width: 240px;">Catatan Pendidik (Observasi Formatif)</th>
+                <th>Deskripsi Rapor Kokurikuler Otomatis (3 Inspirasi Panduan Kemendikdasmen)</th>
               </tr>
             </thead>
             <tbody id="tbody-koku-character-assessment"></tbody>
           </table>
         </div>
-
-        <div class="write-action-btn" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
-          <button type="button" class="btn btn-success" onclick="KokuApp.saveAllCharacterAssessments()">
-            Simpan Rekam Jejak Penilaian Karakter Siswa
-          </button>
-        </div>
       </div>
     </div>
-  </section>
+      </section>
 
     <section id="view-pilar-ekstrakurikuler" class="app-view hidden">
     <div class="card no-print" style="background: linear-gradient(135deg, #2e1065 0%, #6d28d9 55%, #0f766e 100%); color: #ffffff; border: none;">
@@ -11922,34 +12335,213 @@ const RpmApp = {
   const KokuApp = {
   stageOrder: ['PENGENALAN', 'KONTEKSTUALISASI', 'AKSI', 'REFLEKSI'],
 
+  rubricMasterBank: {
+    'Penalaran Kritis': {
+      aspek: 'Menganalisis interaksi dan keterkaitan antar komponen materi/masalah di lingkungan sekitar',
+      SB: 'Mampu menjelaskan dan menganalisis lebih dari 5 interaksi/keterkaitan komponen beserta solusinya secara akurat dan mendalam.',
+      B: 'Mampu menjelaskan 3–5 interaksi/keterkaitan antar komponen yang diamati di lingkungan sekitar dengan tepat.',
+      C: 'Mampu menjelaskan kurang dari 3 interaksi/keterkaitan antar komponen yang diamati dengan bimbingan.',
+      K: 'Belum mampu menjelaskan interaksi/keterkaitan antar komponen yang diamati secara tepat.'
+    },
+    'Komunikasi': {
+      aspek: 'Menyampaikan gagasan dan hasil pengamatan/karya',
+      SB: 'Menyampaikan gagasan dengan sangat lancar, runtut, logis, serta menggunakan bahasa yang santun dan mudah dipahami.',
+      B: 'Menyampaikan gagasan dengan lancar, namun alur penyampaian masih perlu sedikit penguatan agar lebih runtut dan logis.',
+      C: 'Menyampaikan gagasan dengan kurang lancar dan alur penyampaian belum runtut dan/atau logis.',
+      K: 'Gagasan tidak dapat dipahami, alur penyampaian belum runtut dan belum logis.'
+    },
+    'Kolaborasi': {
+      aspek: 'Bekerja sama dan berbagi peran dalam kegiatan kelompok',
+      SB: 'Sangat aktif bekerja sama, menghargai pendapat teman, dan memimpin penyelesaian tugas kelompok secara sinergis.',
+      B: 'Bekerja sama dengan baik dalam kelompok dan menyelesaikan peran tugasnya sesuai kesepakatan.',
+      C: 'Mulai bekerja sama dalam kelompok namun terkadang masih perlu diingatkan untuk menyelesaikan perannya.',
+      K: 'Belum menunjukkan kerja sama aktif dalam kelompok dan masih pasif saat kegiatan berlangsung.'
+    },
+    'Kemandirian': {
+      aspek: 'Mengelola tugas dan melaksanakan pembiasaan secara bertanggung jawab',
+      SB: 'Sangat mandiri, berinisiatif tinggi, dan konsisten menuntaskan seluruh rangkaian kegiatan tanpa perlu diingatkan.',
+      B: 'Mampu melaksanakan kegiatan dan menuntaskan tanggung jawabnya secara mandiri sesuai arahan.',
+      C: 'Melaksanakan kegiatan dengan cukup baik namun masih memerlukan dorongan berkala dari pendidik.',
+      K: 'Sangat bergantung pada bantuan pendidik/teman dan belum mampu menuntaskan tugas secara mandiri.'
+    },
+    'Kreativitas': {
+      aspek: 'Merancang ide dan menghasilkan karya solusi permasalahan',
+      SB: 'Menghasilkan karya dan gagasan solusi yang sangat orisinal, estetis, dan efektif menggunakan berbagai media.',
+      B: 'Mampu menghasilkan karya dan gagasan solusi yang relevan dan menarik sesuai tema kegiatan.',
+      C: 'Menghasilkan karya sederhana dengan meniru contoh yang sudah ada dengan bimbingan pendidik.',
+      K: 'Belum mampu menyelesaikan rancangan karya atau gagasan solusi yang ditugaskan.'
+    },
+    'Keimanan dan Ketakwaan terhadap Tuhan YME': {
+      aspek: 'Mengamalkan pembiasaan ibadah, doa, dan akhlak mulia terhadap sesama serta alam',
+      SB: 'Sangat tertib, khusyuk, dan konsisten menjadi teladan dalam beribadah, berdoa, serta menjaga kelestarian ciptaan Tuhan.',
+      B: 'Melaksanakan pembiasaan beribadah, berdoa, dan bersikap santun dengan baik dan tertib.',
+      C: 'Melaksanakan pembiasaan beribadah dan berdoa namun masih perlu diingatkan agar lebih tertib.',
+      K: 'Masih memerlukan bimbingan intensif dalam membiasakan ketertiban beribadah, berdoa, dan menjaga sikap santun.'
+    },
+    'Kewargaan': {
+      aspek: 'Menjaga kepedulian sosial, kearifan lokal, dan menaati kesepakatan bersama',
+      SB: 'Sangat peduli terhadap lingkungan sosial, aktif melestarikan budaya lokal, dan konsisten mematuhi kesepakatan.',
+      B: 'Menunjukkan kepedulian sosial, menghargai budaya lokal, dan menaati kesepakatan kegiatan dengan baik.',
+      C: 'Mulai menunjukkan kepedulian sosial dan mengikuti aturan kegiatan namun belum konsisten.',
+      K: 'Belum mematuhi kesepakatan bersama dan masih kurang peduli terhadap kegiatan lingkungan sekitar.'
+    },
+    'Kesehatan': {
+      aspek: 'Menerapkan pola hidup bersih, berolahraga, serta makan sehat dan bergizi',
+      SB: 'Sangat konsisten mempraktikkan hidup bersih, bersemangat dalam senam/olahraga, dan memilih makanan sehat bergizi.',
+      B: 'Menerapkan kebiasaan menjaga kebersihan diri/lingkungan, berolahraga, dan membawa bekal sehat dengan baik.',
+      C: 'Cukup menerapkan kebiasaan hidup bersih dan sehat namun masih perlu pengingatan berkala.',
+      K: 'Belum membiasakan perilaku hidup bersih dan sehat dalam keseharian di sekolah.'
+    }
+  },
+
+  sanitizeAllP5LabelsInDOM() {
+    const replacements = [
+      { id: 'btn-principal-tab-ketercapaian', find: /P5/g, replace: 'Kokurikuler' }
+    ];
+    replacements.forEach(r => {
+      const el = document.getElementById(r.id);
+      if (el) el.innerHTML = el.innerHTML.replace(r.find, r.replace);
+    });
+
+    const textSelectors = [
+      '#pilar-card-kokurikuler p',
+      '#view-landing .portal-card p',
+      '#admin-card-pilar-kokurikuler p',
+      '#view-student-dashboard .card-subtitle',
+      '#view-student-dashboard .card-title'
+    ];
+    textSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(node => {
+        if (node.innerHTML && /P5/.test(node.innerHTML)) {
+          node.innerHTML = node.innerHTML
+            .replace(/Projek P5/g, 'Kegiatan Kokurikuler')
+            .replace(/projek \(P5\)/gi, 'kegiatan kokurikuler')
+            .replace(/\(Kokurikuler P5\)/gi, '(Kokurikuler)')
+            .replace(/\(P5\)/g, '')
+            .replace(/\bP5\b/g, 'Kokurikuler');
+        }
+      });
+    });
+  },
+
+  getBentukMeta(bentukKey) {
+    if (bentukKey === 'G7KAIH') {
+      return {
+        key: 'G7KAIH',
+        shortTitle: 'Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)',
+        badgeText: 'BENTUK 2 — GERAKAN 7 KEBIASAAN ANAK INDONESIA HEBAT (G7KAIH)',
+        pedagogisDefault: 'Pembiasaan Positif Terprogram yang Berkesadaran (Mindful), Bermakna (Meaningful), dan Menggembirakan (Joyful).',
+        kemitraanDefault: 'Kolaborasi Guru Kelas, Guru PJOK/Agama, dan Orang Tua murid melalui buku jurnal pemantauan kebiasaan harian.',
+        lingkunganDefault: 'Mushola/pojok refleksi ibadah, lapangan senam pagi, ruang kelas gizi mini, dan lingkungan rumah murid.',
+        flowSteps: [
+          { label: 'Penentuan Dimensi Profil Lulusan', highlight: false },
+          { label: 'Penentuan Tema', highlight: false },
+          { label: 'Penentuan Pembiasaan (Pelaksanaan G7KAIH)', highlight: true },
+          { label: 'Penyusunan Perencanaan Kokurikuler', highlight: false },
+          { label: 'Pelaksanaan Kokurikuler', highlight: false },
+          { label: 'Evaluasi dan Tindak Lanjut', highlight: false }
+        ]
+      };
+    }
+
+    if (bentukKey === 'CARA_LAIN') {
+      return {
+        key: 'CARA_LAIN',
+        shortTitle: 'Cara Lainnya / Karakteristik & Kearifan Lokal',
+        badgeText: 'BENTUK 3 — CARA LAINNYA / KARAKTERISTIK & KEARIFAN LOKAL SEKOLAH',
+        pedagogisDefault: 'Pembelajaran Kontekstual Berbasis Kearifan Lokal, Praktik Langsung (Experiential Learning), dan Pelestarian Budaya.',
+        kemitraanDefault: 'Kolaborasi Guru Kelas, Guru Seni/Muatan Lokal, narasumber/tokoh budaya setempat, dan warga sekolah.',
+        lingkunganDefault: 'Aula/halaman sekolah, sanggar budaya sekolah, dan lingkungan masyarakat sekitar satuan pendidikan.',
+        flowSteps: [
+          { label: 'Penentuan Dimensi Profil Lulusan', highlight: false },
+          { label: 'Penentuan Nilai-nilai / Kekhasan / Program Unggulan Sekolah / Kebijakan Daerah', highlight: false },
+          { label: 'Penentuan Tema', highlight: false },
+          { label: 'Penyusunan Perencanaan Kokurikuler', highlight: true },
+          { label: 'Pelaksanaan Kokurikuler', highlight: false },
+          { label: 'Evaluasi dan Tindak Lanjut', highlight: false }
+        ]
+      };
+    }
+
+    return {
+      key: 'LINTAS_DISIPLIN',
+      shortTitle: 'Pembelajaran Kolaboratif Lintas Disiplin Ilmu',
+      badgeText: 'BENTUK 1 — PEMBELAJARAN KOLABORATIF LINTAS DISIPLIN ILMU',
+      pedagogisDefault: 'Pembelajaran Berbasis Proyek (Project-Based Learning) Kolaboratif Lintas Disiplin Ilmu.',
+      kemitraanDefault: 'Kolaborasi Guru Kelas dan Guru Mata Pelajaran terkait (IPAS, Bahasa Indonesia, Matematika) serta warga sekolah.',
+      lingkunganDefault: 'Memberi kesempatan kepada murid untuk menganalisis kondisi lingkungan sekitar secara berkolaborasi bersama teman sekelas dan melakukan aksi nyata sebagai solusi permasalahan.',
+      flowSteps: [
+        { label: 'Penentuan Dimensi Profil Lulusan', highlight: false },
+        { label: 'Penentuan Tema', highlight: false },
+        { label: 'Pemetaan Kolaborasi Mapel 1, Mapel 2, & Mapel 3', highlight: false },
+        { label: 'Penyusunan Perencanaan Kokurikuler', highlight: true },
+        { label: 'Pelaksanaan Kokurikuler', highlight: false },
+        { label: 'Evaluasi dan Tindak Lanjut', highlight: false }
+      ]
+    };
+  },
+
   ensureKokurikulerStructure(bucket) {
     if (!bucket) return null;
     if (!bucket.kokurikuler) {
       bucket.kokurikuler = {};
     }
+
     if (!bucket.kokurikuler.projectInfo) {
       bucket.kokurikuler.projectInfo = {
-        tema: 'Gaya Hidup Berkelanjutan',
-        judul: 'Ekosistem Sekolah Hijau & Pengolahan Daur Ulang Kreatif',
-        alokasi: '36 JP (6 Pekan Efektif)',
+        bentuk: 'LINTAS_DISIPLIN',
+        tema: 'Menjelajah Alam Sekitar & Peduli Lingkungan',
+        judul: 'Proyek Kolaborasi Lintas Disiplin: Menjelajah Ekosistem Lingkungan Sekolahku',
+        alokasi: '36 JP (Lingkungan Satuan Pendidikan)',
         tahapAktif: 'KONTEKSTUALISASI',
-        targetMingguan: 'Observasi lingkungan sekolah, identifikasi masalah, dan penyusunan rencana karya kelompok',
-        fokusHarian: 'Setiap kelompok melakukan pengamatan lingkungan, mencatat temuan di Logbook, dan membagi tugas pembuatan karya.',
-        persiapan: 'Buku catatan observasi, alat tulis, bahan daur ulang per kelompok, dan gawai untuk dokumentasi foto Logbook.'
+        targetMingguan: 'Menguatkan Penalaran Kritis dan Komunikasi melalui analisis interaksi komponen ekosistem (IPAS, Bahasa Indonesia, Matematika)',
+        fokusHarian: 'Setiap kelompok melakukan kunjungan ke lingkungan sekitar sekolah untuk mengamati komponen ekosistem, mendiskusikan permasalahan, dan merancang karya solusi.',
+        persiapan: 'Lembar pengamatan ekosistem, buku jurnal kelompok, alat tulis, perangkat dokumentasi/video, serta media presentasi karya.'
       };
+    } else {
+      const pi = bucket.kokurikuler.projectInfo;
+      if (!pi.bentuk) pi.bentuk = 'LINTAS_DISIPLIN';
+      if (pi.judul && /P5/i.test(pi.judul)) {
+        pi.judul = pi.judul.replace(/P5/gi, 'Kokurikuler');
+      }
     }
+
     if (!Array.isArray(bucket.kokurikuler.groups) || bucket.kokurikuler.groups.length === 0) {
       bucket.kokurikuler.groups = [
-        { id: 'GRP_1', nama: 'Kelompok 1 - Garuda Hijau' },
-        { id: 'GRP_2', nama: 'Kelompok 2 - Nusantara Lestari' }
+        { id: 'GRP_1', nama: 'Kelompok 1 - Penjelajah Ekosistem' },
+        { id: 'GRP_2', nama: 'Kelompok 2 - Duta Lingkungan Lestari' }
       ];
     }
+
     if (!Array.isArray(bucket.kokurikuler.logbooks)) {
       bucket.kokurikuler.logbooks = [];
     }
+
     if (!bucket.kokurikuler.characterAssessments) {
       bucket.kokurikuler.characterAssessments = {};
     }
+
+    if (!bucket.kokurikuler.modulAssessmentMatrix) {
+      bucket.kokurikuler.modulAssessmentMatrix = {};
+    }
+
+    if (!bucket.kokurikuler.currentModulDoc) {
+      bucket.kokurikuler.currentModulDoc = this.buildLocalKokuModulBlueprint({
+        sekolah: bucket.schoolDisplay || 'SDN 2 SABEDO',
+        kelas: bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B',
+        bentuk: bucket.kokurikuler.projectInfo.bentuk || 'LINTAS_DISIPLIN',
+        tema: bucket.kokurikuler.projectInfo.tema || 'Peduli Lingkungan',
+        alokasi: '36 JP',
+        lokasi: 'Lingkungan satuan pendidikan',
+        fokusDetail: 'IPAS, Bahasa Indonesia, dan Matematika',
+        tpRaw: [
+          'Menganalisis interaksi antar komponen ekosistem dan pengaruhnya terhadap keseimbangan ekosistem (mata pelajaran IPAS)',
+          'Mempresentasikan gagasan sebagai solusi pemecahan masalah secara kritis dan kreatif (mata pelajaran Bahasa Indonesia)'
+        ].join('\n'),
+        dplList: ['Penalaran Kritis', 'Komunikasi']
+      });
+    }
+
     return bucket.kokurikuler;
   },
 
@@ -11958,6 +12550,7 @@ const RpmApp = {
     const bucket = DB.getActiveClassBucket();
     if (!teacher || !bucket) return;
 
+    this.sanitizeAllP5LabelsInDOM();
     this.ensureKokurikulerStructure(bucket);
 
     const activeBadge = document.getElementById('koku-active-class-badge');
@@ -11974,13 +12567,17 @@ const RpmApp = {
   switchTab(tabName) {
     AppState.kokuActiveTab = tabName;
 
-    const tabs = ['dashboard', 'kelompok', 'logbook', 'penilaian'];
+    const tabs = ['dashboard', 'modul', 'kelompok', 'logbook', 'penilaian'];
     tabs.forEach(t => {
       const btn = document.getElementById(`btn-koku-tab-${t}`);
       const panel = document.getElementById(`koku-panel-${t}`);
 
       if (btn) {
-        btn.className = t === tabName ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+        if (t === tabName) {
+          btn.classList.add('active-koku-tab');
+        } else {
+          btn.classList.remove('active-koku-tab');
+        }
       }
       if (panel) {
         if (t === tabName) {
@@ -11993,17 +12590,70 @@ const RpmApp = {
 
     if (tabName === 'dashboard') {
       this.renderProjectDashboard();
+    } else if (tabName === 'modul') {
+      this.openModulTab();
     } else if (tabName === 'kelompok') {
       this.renderGroupsManagement();
     } else if (tabName === 'logbook') {
       this.populateLogbookGroupSelects();
       this.renderLogbookList();
     } else if (tabName === 'penilaian') {
-      if (typeof this.populateAssessmentGroupFilter === 'function') {
-        this.populateAssessmentGroupFilter();
-        this.renderCharacterAssessmentTable();
-      }
+      this.populateAssessmentGroupFilter();
+      this.renderCharacterAssessmentTable();
     }
+  },
+
+  selectBentukKokurikuler(bentukKey) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokurikulerStructure(bucket);
+
+    koku.projectInfo.bentuk = bentukKey;
+
+    ['LINTAS_DISIPLIN', 'G7KAIH', 'CARA_LAIN'].forEach(k => {
+      const card = document.getElementById(`koku-card-bentuk-${k}`);
+      if (card) {
+        if (k === bentukKey) card.classList.add('active-bentuk');
+        else card.classList.remove('active-bentuk');
+      }
+    });
+
+    const selForm = document.getElementById('koku-input-bentuk');
+    if (selForm) selForm.value = bentukKey;
+
+    const selMod = document.getElementById('koku-mod-bentuk');
+    if (selMod) selMod.value = bentukKey;
+
+    this.renderAlurVisualDiagram(bentukKey);
+    DB.save();
+  },
+
+  renderAlurVisualDiagram(bentukKey) {
+    const meta = this.getBentukMeta(bentukKey);
+    const titleEl = document.getElementById('koku-alur-visual-title');
+    const wrapEl = document.getElementById('koku-alur-visual-diagram');
+    const boardBadge = document.getElementById('koku-board-bentuk-badge');
+
+    if (titleEl) {
+      titleEl.textContent = `Alur Pengembangan Kegiatan Kokurikuler — ${meta.shortTitle} :`;
+    }
+    if (boardBadge) {
+      boardBadge.textContent = meta.badgeText;
+    }
+    if (!wrapEl) return;
+
+    wrapEl.innerHTML = meta.flowSteps.map((st, idx) => {
+      const arrowHtml = idx < meta.flowSteps.length - 1
+        ? `<div class="koku-alur-arrow">&rarr;</div>`
+        : '';
+      return `
+        <div class="koku-alur-node ${st.highlight ? 'node-highlight' : ''}">
+          <div style="font-size: 0.68rem; opacity: 0.85; margin-bottom: 0.2rem;">LANGKAH ${idx + 1}</div>
+          <div>${UI.escapeHtml(st.label)}</div>
+        </div>
+        ${arrowHtml}
+      `;
+    }).join('');
   },
 
   renderProjectDashboard() {
@@ -12011,6 +12661,9 @@ const RpmApp = {
     if (!bucket) return;
     const koku = this.ensureKokurikulerStructure(bucket);
     const info = koku.projectInfo;
+    const activeBentuk = info.bentuk || 'LINTAS_DISIPLIN';
+
+    this.selectBentukKokurikuler(activeBentuk);
 
     const titleEl = document.getElementById('koku-board-title');
     const themeEl = document.getElementById('koku-board-theme-subtitle');
@@ -12020,8 +12673,10 @@ const RpmApp = {
     const targetEl = document.getElementById('koku-board-weekly-target');
     const prepEl = document.getElementById('koku-board-preparation');
 
-    if (titleEl) titleEl.textContent = info.judul || 'Projek Kokurikuler Kelas';
-    if (themeEl) themeEl.textContent = `Tema P5: ${info.tema || 'Gaya Hidup Berkelanjutan'}`;
+    const meta = this.getBentukMeta(activeBentuk);
+
+    if (titleEl) titleEl.textContent = info.judul || 'Kegiatan Kokurikuler Kelas';
+    if (themeEl) themeEl.textContent = `${meta.shortTitle} | Tema: ${info.tema || 'Peduli Lingkungan'}`;
     if (phaseBadge) phaseBadge.textContent = `Kelas / Fase: ${bucket.kelasFaseLabel || bucket.classKey}`;
     if (allocBadge) allocBadge.textContent = `Alokasi: ${info.alokasi || '36 JP'}`;
     if (focusEl) focusEl.textContent = info.fokusHarian || '-';
@@ -12052,6 +12707,7 @@ const RpmApp = {
       }
     });
 
+    const inpBentuk = document.getElementById('koku-input-bentuk');
     const inpTema = document.getElementById('koku-input-tema');
     const inpJudul = document.getElementById('koku-input-judul');
     const inpAlokasi = document.getElementById('koku-input-alokasi');
@@ -12060,10 +12716,11 @@ const RpmApp = {
     const inpFokus = document.getElementById('koku-input-fokus-harian');
     const inpPersiapan = document.getElementById('koku-input-persiapan');
 
-    if (inpTema) inpTema.value = info.tema || 'Gaya Hidup Berkelanjutan';
+    if (inpBentuk) inpBentuk.value = activeBentuk;
+    if (inpTema) inpTema.value = info.tema || 'Peduli Lingkungan';
     if (inpJudul) inpJudul.value = info.judul || '';
-    if (inpAlokasi) inpAlokasi.value = info.alokasi || '36 JP (6 Pekan Efektif)';
-    if (inpTahap) inpTahap.value = info.tahapAktif || 'PENGENALAN';
+    if (inpAlokasi) inpAlokasi.value = info.alokasi || '36 JP (Lingkungan Satuan Pendidikan)';
+    if (inpTahap) inpTahap.value = info.tahapAktif || 'KONTEKSTUALISASI';
     if (inpTarget) inpTarget.value = info.targetMingguan || '';
     if (inpFokus) inpFokus.value = info.fokusHarian || '';
     if (inpPersiapan) inpPersiapan.value = info.persiapan || '';
@@ -12072,8 +12729,7 @@ const RpmApp = {
   toggleEditDashboardForm() {
     if (AppState.isReadOnlyInspection) return;
     const editCard = document.getElementById('koku-edit-dashboard-card');
-    if (!editCard) return;
-    editCard.classList.toggle('hidden');
+    if (editCard) editCard.classList.toggle('hidden');
   },
 
   setProjectStage(stageKey) {
@@ -12087,74 +12743,55 @@ const RpmApp = {
     this.renderProjectDashboard();
 
     UI.showNotif(
-      'Tahapan Alur Projek Diperbarui',
-      `Status alur kegiatan projek kelas kini berada pada tahap: ${stageKey}.`,
+      'Tahapan Alur Kokurikuler Diperbarui',
+      `Status pelaksanaan kegiatan kokurikuler kelas kini berada pada tahap: ${stageKey}.`,
       'success'
     );
   },
 
   autoFillProjectBoardByAI() {
-    const temaEl = document.getElementById('koku-input-tema');
-    const tahapEl = document.getElementById('koku-input-tahap');
-    const tema = temaEl ? temaEl.value : 'Gaya Hidup Berkelanjutan';
-    const tahap = tahapEl ? tahapEl.value : 'KONTEKSTUALISASI';
+    const bentukEl = document.getElementById('koku-input-bentuk');
+    const bentuk = bentukEl ? bentukEl.value : 'LINTAS_DISIPLIN';
 
-    const presetsByTheme = {
-      'Gaya Hidup Berkelanjutan': {
-        judul: 'Gerakan Sekolah Minim Sampah & Kreasi Ecoprint/Kompos Organik',
-        target: 'Tuntas pemetaan jenis sampah sekolah dan pembuatan prototipe produk daur ulang kelompok (6 JP / Pekan)',
-        fokus: `Sesuai tahap ${tahap}, setiap kelompok melakukan audit sampah di lingkungan kelas/sekolah, mendiskusikan solusi pengolahan, serta mendokumentasikan progres kerja pada Logbook.`,
-        persiapan: 'Buku jurnal kelompok, sarung tangan kebersihan, botol/kardus bekas bersih, daun/bahan organik, lem, gunting, dan kamera dokumentasi.'
+    const presets = {
+      LINTAS_DISIPLIN: {
+        tema: 'Menjelajah Alam Sekitar & Peduli Lingkungan',
+        judul: 'Proyek Kolaboratif Lintas Disiplin Ilmu: Menjelajah Ekosistem & Solusi Lingkungan Sekolah',
+        alokasi: '36 JP (Lingkungan Satuan Pendidikan)',
+        target: 'Menguatkan Dimensi Penalaran Kritis dan Komunikasi melalui kolaborasi mata pelajaran IPAS, Bahasa Indonesia, dan Matematika',
+        fokus: 'Murid dibagi ke dalam kelompok heterogen untuk mengamati komponen ekosistem di sekitar sekolah, mendiskusikan permasalahan lingkungan, serta merancang media karya solusi.',
+        persiapan: 'Lembar pengamatan komponen ekosistem, buku catatan kelompok, alat tulis, perangkat video/infocus, dan bahan pembuatan poster/karya.'
       },
-      'Kearifan Lokal': {
-        judul: 'Eksplorasi Budaya, Permainan Tradisional, & Kuliner Khas Daerahku',
-        target: 'Dokumentasi sejarah kearifan lokal daerah dan penyusunan media pameran budaya per kelompok',
-        fokus: `Pada tahap ${tahap}, kelompok menggali nilai luhur budaya daerah setempat, menyusun narasi pelestarian, dan mempraktikkan karya kearifan lokal.`,
-        persiapan: 'Catatan wawancara tokoh/sumber budaya, bahan kerajinan atau perlengkapan permainan tradisional daerah, karton manila, dan spidol warna.'
+      G7KAIH: {
+        tema: 'Generasi Hebat Berkarakter melalui 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)',
+        judul: 'Program Pembiasaan Harian G7KAIH: Pojok Refleksi Ibadah, Senam Pagi & Kelas Gizi Mini',
+        alokasi: 'Rutin Terjadwal (36 JP / Semester)',
+        target: 'Menguatkan Dimensi Keimanan & Ketakwaan, Kesehatan, dan Kemandirian melalui pembiasaan berkesadaran, bermakna, dan menggembirakan',
+        fokus: 'Melaksanakan pembiasaan beribadah di pojok refleksi, senam kebugaran pagi bersama, kegiatan makan sehat dan bergizi (kelas gizi mini), gemar belajar, serta aksi kepedulian sosial.',
+        persiapan: 'Perlengkapan ibadah, pakaian olahraga/senam pagi, bekal makanan sehat bergizi seimbang (tumbler & wadah makan), serta buku jurnal G7KAIH.'
       },
-      'Bhinneka Tunggal Ika': {
-        judul: 'Festival Harmoni Keberagaman & Duta Toleransi Sekolah',
-        target: 'Menyusun karya kampanye persatuan dalam keberagaman suku, agama, dan budaya Nusantara',
-        fokus: `Pada tahap ${tahap}, setiap kelompok berdiskusi tentang indahnya keberagaman di sekolah, merancang poster/drama harmoni, dan mencatat refleksi kolaborasi di Logbook.`,
-        persiapan: 'Kertas gambar A3, alat mewarnai, atribut/artikel budaya Nusantara, dan buku catatan kelompok.'
-      },
-      'Bangunlah Jiwa dan Raganya': {
-        judul: 'Kampanye Sekolah Ramah Anak, Anti-Perundungan (Bullying), & Hidup Sehat',
-        target: 'Terbentuknya pojok positif kelas, senam kebugaran bersama, dan poster kampanye anti-perundungan',
-        fokus: `Pada tahap ${tahap}, kelompok mengidentifikasi kebiasaan sehat fisik-mental, menyusun deklarasi pertemanan sehat, dan mempraktikkan olahraga kolaboratif.`,
-        persiapan: 'Bekal makanan sehat bergizi, botol minum (tumbler), perlengkapan olahraga, dan bahan pembuatan poster kampanye.'
-      },
-      'Suara Demokrasi': {
-        judul: 'Simulasi Musyawarah Mufakat & Pemilihan Pengurus/Kesepakatan Kelas Demokratis',
-        target: 'Siswa terampil menyampaikan pendapat secara santun dan merumuskan kesepakatan bersama secara demokratis',
-        fokus: `Pada tahap ${tahap}, kelompok merumuskan usulan program kelas, berlatih debat/musyawarah santun, serta menyelenggarakan pemungutan suara mini.`,
-        persiapan: 'Kertas usulan program, kotak suara kreasi kelompok, papan tulis mini, dan buku notula musyawarah.'
-      },
-      'Rekayasa dan Teknologi': {
-        judul: 'Inovasi Alat Tepat Guna Sederhana untuk Mempermudah Aktivitas di Sekolah',
-        target: 'Rancang bangun prototipe alat sederhana (penyiram tanaman otomatis / penjernih air sederhana)',
-        fokus: `Pada tahap ${tahap}, kelompok menguji coba rancangan alat teknologi sederhana, mencatat cara kerja ilmiahnya di Logbook, dan menyempurnakan kendala teknis.`,
-        persiapan: 'Botol plastik bekas, selang kecil, batu zeolit/pasir/arang aktif, gunting, perekat tahan air, dan lembar desain rekayasa.'
-      },
-      'Kewirausahaan': {
-        judul: 'Market Day Kreatif: Kreasi Produk Lokal Bernilai Jual & Literasi Finansial Dasar',
-        target: 'Menghasilkan produk kreasi siswa lengkap dengan kemasan menarik dan perhitungan modal-harga jual sederhana',
-        fokus: `Pada tahap ${tahap}, setiap kelompok merancang produk kreatif, menghitung biaya bahan secara cermat, membuat label kemasan, dan berlatih komunikasi pemasaran.`,
-        persiapan: 'Bahan baku produk kreasi kelompok, kemasan ramah lingkungan, stiker label, kalkulator/alat hitung, dan buku kas kelompok.'
+      CARA_LAIN: {
+        tema: 'Pelestarian Kearifan Lokal & Budaya Tradisional Daerahku',
+        judul: 'Apresiasi Budaya Lokal: Praktik Permainan Tradisional, Seni Tari Daerah & Aksi Bersih Sekolah',
+        alokasi: '36 JP (Halaman & Aula Satuan Pendidikan)',
+        target: 'Menguatkan Dimensi Kewargaan, Kolaborasi, dan Kreativitas sesuai nilai-nilai kekhasan dan kearifan lokal satuan pendidikan',
+        fokus: 'Murid mengenal nilai luhur kearifan lokal daerah, mempraktikkan permainan tradisional (gobak sodor) / tarian daerah / membatik secara berkelompok, serta melakukan aksi kebersihan lingkungan.',
+        persiapan: 'Atribut/perlengkapan permainan tradisional atau seni budaya lokal, peralatan kebersihan kelas, dan jurnal refleksi kelompok.'
       }
     };
 
-    const chosen = presetsByTheme[tema] || presetsByTheme['Gaya Hidup Berkelanjutan'];
+    const p = presets[bentuk] || presets.LINTAS_DISIPLIN;
+    document.getElementById('koku-input-tema').value = p.tema;
+    document.getElementById('koku-input-judul').value = p.judul;
+    document.getElementById('koku-input-alokasi').value = p.alokasi;
+    document.getElementById('koku-input-target-mingguan').value = p.target;
+    document.getElementById('koku-input-fokus-harian').value = p.fokus;
+    document.getElementById('koku-input-persiapan').value = p.persiapan;
 
-    document.getElementById('koku-input-judul').value = chosen.judul;
-    document.getElementById('koku-input-alokasi').value = '36 JP (6 Pekan Efektif)';
-    document.getElementById('koku-input-target-mingguan').value = chosen.target;
-    document.getElementById('koku-input-fokus-harian').value = chosen.fokus;
-    document.getElementById('koku-input-persiapan').value = chosen.persiapan;
-
+    this.selectBentukKokurikuler(bentuk);
     UI.showNotif(
-      'Rekomendasi Projek AI Akademik Dimuat',
-      `Informasi orientasi projek untuk tema "${tema}" berhasil disusun secara otomatis. Silakan klik Simpan untuk menampilkannya di Papan Informasi Kelas.`,
+      'Rekomendasi Orientasi Kokurikuler Dimuat',
+      `Data orientasi untuk "${this.getBentukMeta(bentuk).shortTitle}" berhasil disusun oleh Hybrid AI. Klik Simpan untuk menampilkannya di Papan Informasi Kelas.`,
       'success'
     );
   },
@@ -12167,8 +12804,10 @@ const RpmApp = {
     if (!bucket) return;
     const koku = this.ensureKokurikulerStructure(bucket);
 
+    const chosenBentuk = document.getElementById('koku-input-bentuk').value;
     koku.projectInfo = {
-      tema: document.getElementById('koku-input-tema').value,
+      bentuk: chosenBentuk,
+      tema: document.getElementById('koku-input-tema').value.trim(),
       judul: document.getElementById('koku-input-judul').value.trim(),
       alokasi: document.getElementById('koku-input-alokasi').value.trim(),
       tahapAktif: document.getElementById('koku-input-tahap').value,
@@ -12184,19 +12823,604 @@ const RpmApp = {
     if (editCard) editCard.classList.add('hidden');
 
     UI.showNotif(
-      'Papan Informasi Projek Kelas Diperbarui',
-      'Seluruh informasi orientasi projek, tahapan alur kegiatan, target mingguan, dan persiapan alat/bahan telah ditampilkan di papan digital kelas.',
+      'Papan Orientasi Kokurikuler Disimpan',
+      'Informasi bentuk kegiatan kokurikuler, bagan alur pengembangan, dan fokus harian telah diperbarui.',
       'success'
     );
   },
 
+  openModulTab() {
+    const teacher = DB.getActiveTeacherAccount();
+    const bucket = DB.getActiveClassBucket();
+    if (!teacher || !bucket) return;
+    const koku = this.ensureKokurikulerStructure(bucket);
+
+    const schInp = document.getElementById('koku-mod-sekolah');
+    const klsInp = document.getElementById('koku-mod-kelas');
+    const btkInp = document.getElementById('koku-mod-bentuk');
+    const temaInp = document.getElementById('koku-mod-tema');
+
+    if (schInp && !schInp.value.trim()) schInp.value = teacher.schoolDisplay || bucket.schoolDisplay || '';
+    if (klsInp && !klsInp.value.trim()) klsInp.value = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    if (btkInp) btkInp.value = koku.projectInfo.bentuk || 'LINTAS_DISIPLIN';
+    if (temaInp && !temaInp.value.trim()) temaInp.value = koku.projectInfo.tema || 'Peduli Lingkungan';
+
+    this.handleModBentukChange(btkInp ? btkInp.value : 'LINTAS_DISIPLIN');
+
+    const fokusInp = document.getElementById('koku-mod-fokus-detail');
+    const tpInp = document.getElementById('koku-mod-tp');
+    if (fokusInp && !fokusInp.value.trim()) {
+      this.fillSamplePerencanaanForm(true);
+    } else if (tpInp && !tpInp.value.trim()) {
+      this.fillSamplePerencanaanForm(true);
+    }
+
+    if (koku.currentModulDoc) {
+      this.renderKokuModulPages();
+    }
+  },
+
+  handleModBentukChange(bentukVal) {
+    const titleEl = document.getElementById('koku-mod-fokus-label-title');
+    const hintEl = document.getElementById('koku-mod-fokus-hint');
+    const inpEl = document.getElementById('koku-mod-fokus-detail');
+
+    if (bentukVal === 'G7KAIH') {
+      if (titleEl) titleEl.textContent = '7. Fokus Pembiasaan Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH) & Tujuan :';
+      if (inpEl) inpEl.placeholder = 'Contoh: Beribadah (Pojok Refleksi), Berolahraga (Senam Pagi), Makan Sehat dan Bergizi (Kelas Gizi Mini), Gemar Belajar';
+      if (hintEl) hintEl.textContent = 'Tuliskan kebiasaan dari 7 Kebiasaan Anak Indonesia Hebat yang difokuskan pada perencanaan ini.';
+    } else if (bentukVal === 'CARA_LAIN') {
+      if (titleEl) titleEl.textContent = '7. Fokus Nilai Kekhasan Sekolah / Kearifan Lokal & Tujuan Pembelajaran :';
+      if (inpEl) inpEl.placeholder = 'Contoh: Permainan Tradisional (Gobak Sodor), Tarian Daerah, Membatik, dan Aksi Kebersihan Lingkungan Sekolah';
+      if (hintEl) hintEl.textContent = 'Tuliskan nilai-nilai kekhasan satuan pendidikan, budaya daerah, atau program unggulan lokal.';
+    } else {
+      if (titleEl) titleEl.textContent = '7. Kolaborasi Lintas Disiplin Ilmu (Mata Pelajaran Terkait) & Tujuan Pembelajaran :';
+      if (inpEl) inpEl.placeholder = 'Contoh: Kolaborasi Mata Pelajaran IPAS, Bahasa Indonesia, dan Matematika';
+      if (hintEl) hintEl.textContent = 'Tuliskan 2 atau 3 mata pelajaran yang berkolaborasi dalam proyek nyata ini.';
+    }
+  },
+
+  fillSamplePerencanaanForm(silent = false) {
+    const bucket = DB.getActiveClassBucket();
+    const bentukEl = document.getElementById('koku-mod-bentuk');
+    const bentuk = bentukEl ? bentukEl.value : 'LINTAS_DISIPLIN';
+
+    const schEl = document.getElementById('koku-mod-sekolah');
+    const klsEl = document.getElementById('koku-mod-kelas');
+    const temaEl = document.getElementById('koku-mod-tema');
+    const alokEl = document.getElementById('koku-mod-alokasi');
+    const lokEl = document.getElementById('koku-mod-lokasi');
+    const fokEl = document.getElementById('koku-mod-fokus-detail');
+    const tpEl = document.getElementById('koku-mod-tp');
+
+    if (schEl) schEl.value = (bucket && bucket.schoolDisplay) || 'SDN 2 SABEDO';
+    if (klsEl) klsEl.value = (bucket && (bucket.kelasFaseLabel || bucket.classKey)) || 'Kelas 4 / Fase B';
+    if (alokEl) alokEl.value = '36 JP';
+    if (lokEl) lokEl.value = 'Lingkungan satuan pendidikan';
+
+    if (bentuk === 'G7KAIH') {
+      if (temaEl) temaEl.value = 'Anak Indonesia Hebat: Sehat, Religius, dan Gemar Belajar';
+      if (fokEl) fokEl.value = 'Pembiasaan G7KAIH: Beribadah (Pojok Refleksi), Berolahraga (Senam Pagi), Makan Sehat dan Bergizi (Kelas Gizi Mini), Gemar Belajar, dan Bermasyarakat';
+      if (tpEl) {
+        tpEl.value = [
+          '1. Membiasakan pelaksanaan ibadah tepat waktu, doa harian, dan refleksi diri secara berkesadaran (Pojok Refleksi).',
+          '2. Mempraktikkan gerakan kebugaran jasmani melalui senam pagi serta memilih makanan sehat dan bergizi seimbang (Kelas Gizi Mini).',
+          '3. Menunjukkan sikap gemar belajar dan kepedulian sosial terhadap teman serta kebersihan lingkungan sekolah.'
+        ].join('\n');
+      }
+    } else if (bentuk === 'CARA_LAIN') {
+      if (temaEl) temaEl.value = 'Melestarikan Kearifan Lokal & Budaya Bersih Sekolahku';
+      if (fokEl) fokEl.value = 'Kearifan Lokal: Latihan Tarian Daerah, Permainan Tradisional (Gobak Sodor), dan Aksi Kebersihan Lingkungan Sekolah';
+      if (tpEl) {
+        tpEl.value = [
+          '1. Mengenal dan mempraktikkan nilai kekompakan serta sportivitas dalam permainan tradisional daerah (Gobak Sodor) dan seni tari lokal.',
+          '2. Mengomunikasikan makna kearifan lokal daerah serta melaksanakan aksi nyata menjaga kebersihan lingkungan satuan pendidikan.'
+        ].join('\n');
+      }
+    } else {
+      if (temaEl) temaEl.value = 'Peduli Lingkungan & Menjelajah Alam Sekitar';
+      if (fokEl) fokEl.value = 'Kolaborasi Mata Pelajaran IPAS dan Bahasa Indonesia (serta Matematika)';
+      if (tpEl) {
+        tpEl.value = [
+          '1. Menganalisis interaksi antar komponen ekosistem dan pengaruhnya terhadap keseimbangan ekosistem (mata pelajaran IPAS).',
+          '2. Mempresentasikan gagasan sebagai solusi pemecahan masalah secara kritis dan kreatif (mata pelajaran Bahasa Indonesia).'
+        ].join('\n');
+      }
+    }
+
+    if (!silent) {
+      UI.showNotif(
+        'Contoh Perencanaan Kokurikuler Diisi',
+        'Parameter perencanaan kokurikuler berhasil dimuat sesuai bentuk kegiatan yang dipilih. Silakan klik tombol Buat Modul Perencanaan Kokurikuler.',
+        'success'
+      );
+    }
+  },
+
+  buildLocalKokuModulBlueprint(params) {
+    const {
+      sekolah,
+      kelas,
+      bentuk,
+      tema,
+      alokasi,
+      lokasi,
+      fokusDetail,
+      tpRaw,
+      dplList
+    } = params;
+
+    const bentukMeta = this.getBentukMeta(bentuk);
+    const chosenDpl = Array.isArray(dplList) && dplList.length > 0
+      ? dplList
+      : ['Penalaran Kritis', 'Komunikasi'];
+
+    const tpLines = String(tpRaw || '')
+      .split(/\r?\n/)
+      .map(l => l.replace(/^(\d+[\.\)]|\-|\•)\s*/, '').trim())
+      .filter(Boolean);
+
+    if (tpLines.length === 0) {
+      tpLines.push(
+        `Menganalisis interaksi antar komponen pada tema "${tema}" secara kritis (${fokusDetail}).`,
+        `Mempresentasikan gagasan dan karya nyata sebagai solusi pemecahan masalah secara komunikatif dan kolaboratif.`
+      );
+    }
+
+    let praktikPedagogis = bentukMeta.pedagogisDefault;
+    let lingkunganBelajar = bentukMeta.lingkunganDefault;
+    let kemitraan = `Kolaborasi ${fokusDetail || 'guru kelas dan guru mata pelajaran'} serta pelibatan warga sekolah.`;
+    let digital = 'Laptop, Infocus/Proyektor, video pembelajaran kontekstual, dan Canva/PowerPoint atau media kreatif lainnya.';
+    let kegiatanSteps = [];
+
+    if (bentuk === 'G7KAIH') {
+      praktikPedagogis = 'Pembiasaan Positif Terprogram (Gerakan 7 Kebiasaan Anak Indonesia Hebat) dengan pendekatan Berkesadaran (Mindful), Bermakna (Meaningful), dan Menggembirakan (Joyful).';
+      lingkunganBelajar = `Memberi ruang kepada murid di ${lokasi} (pojok refleksi ibadah, halaman senam, dan ruang kelas gizi mini) untuk mempraktikkan 7 kebiasaan positif secara konsisten dan menggembirakan.`;
+      kemitraan = `Kolaborasi Guru Kelas, Guru PJOK, Guru Agama, serta Orang Tua murid dalam memantau pembiasaan (${fokusDetail}).`;
+      kegiatanSteps = [
+        `Guru menyampaikan tujuan kegiatan Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH) pada tema "${tema}" serta rangkaian pembiasaan yang akan dilakukan.`,
+        'Murid dibagi menjadi beberapa kelompok pemantauan sebaya (peer-support) secara heterogen.',
+        'Murid menyimak tayangan video/ilustrasi inspiratif mengenai manfaat bangun pagi, beribadah tepat waktu, berolahraga, dan makan sehat bergizi.',
+        'Murid dan guru berdiskusi mengenai isi video serta mengaitkannya dengan kebiasaan sehari-hari murid di rumah dan di sekolah.',
+        'Murid melaksanakan kegiatan Beribadah dan refleksi pagi di Pojok Refleksi kelas dengan tertib dan penuh kesadaran.',
+        'Murid bersama guru melaksanakan kegiatan Berolahraga (Senam Pagi Anak Indonesia Hebat) di halaman sekolah dengan gembira dan bersemangat.',
+        'Murid mengikuti kegiatan Kelas Gizi Mini (Makan Sehat dan Bergizi), mengamati komposisi gizi bekal makanan masing-masing, serta membiasakan doa sebelum dan sesudah makan.',
+        'Murid dalam kelompok melaksanakan aktivitas Gemar Belajar dengan membaca buku/sumber informasi dan mencatat pengetahuan baru yang diperoleh.',
+        'Murid melaksanakan aksi Bermasyarakat / Kepedulian Sosial melalui kegiatan menjaga kebersihan kelas dan saling membantu teman.',
+        'Setiap kelompok menyusun poster atau jurnal kreatif kampanye 7 Kebiasaan Anak Indonesia Hebat menggunakan berbagai media.',
+        'Murid mempresentasikan jurnal pembiasaan dan karya kampanye G7KAIH secara berkelompok di depan kelas.',
+        'Murid melakukan refleksi kegiatan yang telah dilakukan serta membuat kesepakatan komitmen tidur cepat dan bangun pagi setiap hari.'
+      ];
+    } else if (bentuk === 'CARA_LAIN') {
+      praktikPedagogis = 'Pembelajaran Kontekstual Berbasis Kearifan Lokal & Praktik Karya/Budaya Langsung.';
+      lingkunganBelajar = `Memberi kesempatan kepada murid di ${lokasi} untuk mengenal, mengamati, dan mempraktikkan nilai kearifan lokal (${fokusDetail}) secara kolaboratif dan menyenangkan.`;
+      kemitraan = `Kolaborasi Guru Kelas, Guru Seni/Muatan Lokal, dan tokoh/komunitas budaya setempat.`;
+      kegiatanSteps = [
+        `Guru menyampaikan tujuan pembelajaran kokurikuler berbasis kearifan lokal "${tema}" (${fokusDetail}) dan rangkaian aktivitas yang akan dilakukan.`,
+        'Murid dibagi menjadi beberapa kelompok kerja dan apresiasi budaya secara heterogen.',
+        `Murid mengamati demonstrasi atau tayangan video mengenai nilai luhur dan tata cara pelaksanaan "${fokusDetail}".`,
+        'Murid dan guru berdiskusi mengenai makna filosofis, aturan, serta nilai karakter yang terkandung dalam kegiatan kearifan lokal tersebut.',
+        'Murid melakukan eksplorasi langsung di lingkungan satuan pendidikan untuk menyiapkan sarana/alat kegiatan kearifan lokal.',
+        `Murid secara berkelompok berlatih dan mempraktikkan kegiatan "${fokusDetail}" (seperti tarian daerah, permainan tradisional gobak sodor, membatik, atau aksi kebersihan lingkungan).`,
+        'Murid mendiskusikan tantangan yang ditemui saat praktik serta merumuskan cara menjaga kelestarian budaya dan kebersihan lingkungan sekolah.',
+        'Setiap kelompok mendokumentasikan proses kegiatan dan menyusun karya laporan/poster pelestarian kearifan lokal.',
+        'Murid menampilkan unjuk karya / demonstrasi hasil latihan kelompok di hadapan teman sekelas dengan percaya diri.',
+        'Kelompok lain memberikan apresiasi dan tanggapan positif secara santun terhadap penampilan teman.',
+        'Murid bersama guru melakukan refleksi mendalam mengenai nilai kebersamaan dan kearifan lokal yang telah dipelajari.',
+        'Murid membuat kesepakatan konkret untuk terus melestarikan budaya daerah dan menjaga keasrian lingkungan satuan pendidikan.'
+      ];
+    } else {
+      praktikPedagogis = 'Pembelajaran berbasis proyek (Project-Based Learning) kolaboratif lintas disiplin ilmu.';
+      lingkunganBelajar = 'Memberi kesempatan kepada murid untuk menganalisis kondisi lingkungan sekitar secara berkolaborasi bersama teman sekelas dan melakukan aksi nyata sebagai solusi dari permasalahan yang terjadi.';
+      kemitraan = `Kolaborasi guru (${fokusDetail || 'IPAS, Bahasa Indonesia, dan Matematika'}).`;
+      kegiatanSteps = [
+        'Guru menyampaikan tujuan pembelajaran dan rangkaian aktivitas yang akan dilakukan.',
+        'Murid dibagi menjadi beberapa kelompok secara heterogen.',
+        `Murid diminta memirsa video tentang "${tema}" (${fokusDetail}) dan kaitannya dengan permasalahan nyata di lingkungan sekitar.`,
+        'Murid dan guru berdiskusi mengenai isi video dan mengaitkan dengan komponen-komponen yang ada di lingkungan sekitar.',
+        'Murid melakukan kunjungan ke lingkungan sekitar satuan pendidikan untuk melakukan pengamatan langsung secara berkelompok.',
+        'Murid berdiskusi dalam kelompok tentang kondisi yang diamati dan permasalahan yang terjadi. Tiap kelompok dapat memilih fokus pengamatan yang berbeda.',
+        'Murid mengumpulkan data tentang alternatif solusi permasalahan lingkungan yang ditemukan.',
+        'Murid merancang solusi terhadap permasalahan yang ditemukan secara kritis dan kolaboratif.',
+        'Murid membuat karya tentang solusi permasalahan dengan menggunakan berbagai media (poster, infografis, laporan, atau prototipe).',
+        'Murid mempresentasikan karyanya dengan berbagai media secara berkelompok.',
+        'Murid melakukan refleksi kegiatan yang telah dilakukan bersama guru.',
+        'Murid membuat kesepakatan terkait apa hal konkret yang akan dilakukan bersama untuk membantu menjaga keseimbangan lingkungan.'
+      ];
+    }
+
+    const rubricRows = chosenDpl.map(dimName => {
+      const bank = this.rubricMasterBank[dimName] || {
+        aspek: `Menunjukkan penguasaan kompetensi ${dimName} dalam kegiatan "${tema}"`,
+        SB: `Sangat konsisten dan mandiri dalam menunjukkan ${dimName} secara tuntas dan menjadi teladan.`,
+        B: `Mampu menunjukkan ${dimName} dengan baik sesuai indikator kegiatan "${tema}".`,
+        C: `Mulai mampu menunjukkan ${dimName} namun masih memerlukan arahan pendidik.`,
+        K: `Belum mampu menunjukkan ${dimName} sesuai target dan memerlukan bimbingan intensif.`
+      };
+      return {
+        dimensi: dimName,
+        aspek: bank.aspek,
+        SB: bank.SB,
+        B: bank.B,
+        C: bank.C,
+        K: bank.K
+      };
+    });
+
+    return {
+      id: 'KOKU_MOD_' + Date.now(),
+      sekolah,
+      kelas,
+      bentuk,
+      bentukLabel: bentukMeta.shortTitle,
+      tema,
+      alokasi,
+      lokasi,
+      fokusDetail,
+      dplList: chosenDpl,
+      tpList: tpLines,
+      praktikPedagogis,
+      lingkunganBelajar,
+      kemitraan,
+      digital,
+      kegiatanSteps,
+      rubricRows,
+      createdAt: DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO())
+    };
+  },
+
+  async handleGenerateKokuModul(event) {
+    event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokurikulerStructure(bucket);
+
+    const sekolah = document.getElementById('koku-mod-sekolah').value.trim();
+    const kelas = document.getElementById('koku-mod-kelas').value.trim();
+    const bentuk = document.getElementById('koku-mod-bentuk').value;
+    const tema = document.getElementById('koku-mod-tema').value.trim();
+    const alokasi = document.getElementById('koku-mod-alokasi').value.trim();
+    const lokasi = document.getElementById('koku-mod-lokasi').value.trim();
+    const fokusDetail = document.getElementById('koku-mod-fokus-detail').value.trim();
+    const tpRaw = document.getElementById('koku-mod-tp').value.trim();
+
+    const dplList = Array.from(document.querySelectorAll('input[name="koku_mod_dpl"]:checked'))
+      .map(el => el.value);
+
+    if (dplList.length === 0) {
+      UI.showNotif('Pilih Dimensi Profil Lulusan', 'Silakan centang minimal satu Dimensi Profil Lulusan yang akan dikuatkan dan dinilai.', 'warning');
+      return;
+    }
+
+    const loadingModal = document.getElementById('koku-ai-loading-modal');
+    if (loadingModal) loadingModal.classList.remove('hidden');
+
+    try {
+      const params = {
+        sekolah,
+        kelas,
+        bentuk,
+        tema,
+        alokasi,
+        lokasi,
+        fokusDetail,
+        tpRaw,
+        dplList
+      };
+
+      const doc = this.buildLocalKokuModulBlueprint(params);
+      koku.currentModulDoc = doc;
+
+      koku.projectInfo.bentuk = bentuk;
+      koku.projectInfo.tema = tema;
+      koku.projectInfo.alokasi = `${alokasi} (${lokasi})`;
+
+      const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+      const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
+      if (dim1Sel && dplList[0]) dim1Sel.value = dplList[0];
+      if (dim2Sel && dplList[1]) dim2Sel.value = dplList[1];
+
+      DB.save();
+
+      const formCard = document.getElementById('koku-modul-form-card');
+      const resWrap = document.getElementById('koku-modul-result-wrapper');
+      if (formCard) formCard.classList.add('hidden');
+      if (resWrap) resWrap.classList.remove('hidden');
+
+      this.renderKokuModulPages();
+      this.switchModulPage(1);
+
+      UI.showNotif(
+        'Modul Perencanaan & Rubrik Kokurikuler Selesai Disusun',
+        `Dokumen Perencanaan Kokurikuler "${tema}" (${doc.bentukLabel}) beserta Tabel Rubrik (Sangat Baik, Baik, Cukup, Kurang) berhasil dibuat sesuai standar Panduan Kemendikdasmen.`,
+        'success'
+      );
+    } finally {
+      if (loadingModal) loadingModal.classList.add('hidden');
+    }
+  },
+
+  reopenModulBuilder() {
+    const formCard = document.getElementById('koku-modul-form-card');
+    const resWrap = document.getElementById('koku-modul-result-wrapper');
+    if (formCard) formCard.classList.remove('hidden');
+    if (resWrap) resWrap.classList.add('hidden');
+  },
+
+  switchModulPage(pageNum) {
+    const p1 = document.getElementById('koku-modul-page-1');
+    const p2 = document.getElementById('koku-modul-page-2');
+    const b1 = document.getElementById('btn-koku-doc-page1');
+    const b2 = document.getElementById('btn-koku-doc-page2');
+
+    if (pageNum === 2) {
+      if (p1) p1.classList.add('hidden');
+      if (p2) p2.classList.remove('hidden');
+      if (b1) b1.classList.remove('active-tab');
+      if (b2) b2.classList.add('active-tab');
+    } else {
+      if (p1) p1.classList.remove('hidden');
+      if (p2) p2.classList.add('hidden');
+      if (b1) b1.classList.add('active-tab');
+      if (b2) b2.classList.remove('active-tab');
+    }
+  },
+
+  showAllModulPages() {
+    const p1 = document.getElementById('koku-modul-page-1');
+    const p2 = document.getElementById('koku-modul-page-2');
+    if (p1) p1.classList.remove('hidden');
+    if (p2) p2.classList.remove('hidden');
+  },
+
+  addCustomActivityStep() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokurikulerStructure(bucket);
+    const doc = koku.currentModulDoc;
+    if (!doc) return;
+
+    const inp = document.getElementById('koku-custom-activity-input');
+    const text = inp ? inp.value.trim() : '';
+    if (!text) {
+      UI.showNotif('Langkah Kosong', 'Ketikkan langkah aktivitas kegiatan terlebih dahulu.', 'warning');
+      return;
+    }
+
+    if (!Array.isArray(doc.kegiatanSteps)) doc.kegiatanSteps = [];
+    doc.kegiatanSteps.push(text);
+    if (inp) inp.value = '';
+
+    DB.save();
+    this.renderKokuModulPages();
+    UI.showNotif('Langkah Kegiatan Ditambahkan', 'Langkah aktivitas baru berhasil ditambahkan ke Bagian G (Kegiatan).', 'success');
+  },
+
+  removeActivityStep(index) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !bucket.kokurikuler || !bucket.kokurikuler.currentModulDoc) return;
+
+    bucket.kokurikuler.currentModulDoc.kegiatanSteps.splice(index, 1);
+    DB.save();
+    this.renderKokuModulPages();
+  },
+
+  renderKokuModulPages() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokurikulerStructure(bucket);
+    const doc = koku.currentModulDoc;
+    if (!doc) return;
+
+    const page1El = document.getElementById('koku-modul-doc-page1-content');
+    const page2El = document.getElementById('koku-modul-doc-page2-content');
+    if (!page1El || !page2El) return;
+
+    const dplOrderedHtml = (doc.dplList || []).map((d, i) =>
+      `<li style="margin-bottom: 0.25rem;">${UI.escapeHtml(d)}</li>`
+    ).join('');
+
+    const tpOrderedHtml = (doc.tpList || []).map((t, i) =>
+      `<li style="margin-bottom: 0.35rem;">${UI.escapeHtml(t)}</li>`
+    ).join('');
+
+    const kegiatanListHtml = (doc.kegiatanSteps || []).map((st, idx) => `
+      <li style="margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+        <span contenteditable="true">${UI.escapeHtml(st)}</span>
+        <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.45rem; font-size: 0.7rem; color: var(--danger); border-color: #fca5a5;" onclick="KokuApp.removeActivityStep(${idx})">
+          Hapus
+        </button>
+      </li>
+    `).join('');
+
+    const dplColsHeader = (doc.dplList || []).map(d =>
+      `<th style="text-align: center; background: #e0f2fe; color: #0f172a;">${UI.escapeHtml(d)}</th>`
+    ).join('');
+
+    const students = bucket.students || [];
+    const sampleStudents = students.length > 0 ? students : [{ nama: '........................' }, { nama: '........................' }];
+
+    const anecdotalRowsHtml = sampleStudents.map(std => {
+      const emptyCols = (doc.dplList || []).map(() => `<td style="height: 36px;"></td>`).join('');
+      return `
+        <tr>
+          <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+          ${emptyCols}
+        </tr>
+      `;
+    }).join('');
+
+    page1El.innerHTML = `
+      <div style="border: 2px solid #0284c7; border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div class="koku-doc-header-bar">
+          PERENCANAAN KOKURIKULER
+        </div>
+
+        <div style="padding: 1.5rem 1.75rem;">
+          <div style="background: #f0f9ff; padding: 1rem 1.25rem; border-radius: 6px; border: 1px solid #bae6fd; margin-bottom: 1.35rem;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+              <tbody>
+                <tr>
+                  <td style="width: 210px; padding: 0.25rem 0; font-weight: 600;">Nama satuan pendidikan</td>
+                  <td style="padding: 0.25rem 0;">: <strong>${UI.escapeHtml(doc.sekolah)}</strong></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-weight: 600;">Kelas / Fase</td>
+                  <td style="padding: 0.25rem 0;">: ${UI.escapeHtml(doc.kelas)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-weight: 600;">Bentuk Kegiatan Kokurikuler</td>
+                  <td style="padding: 0.25rem 0;">: <strong>${UI.escapeHtml(doc.bentukLabel)}</strong></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-weight: 600;">Tema</td>
+                  <td style="padding: 0.25rem 0;">: <strong>${UI.escapeHtml(doc.tema)}</strong></td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-weight: 600;">Alokasi Waktu</td>
+                  <td style="padding: 0.25rem 0;">: ${UI.escapeHtml(doc.alokasi)}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 0.25rem 0; font-weight: 600;">Lokasi Kegiatan</td>
+                  <td style="padding: 0.25rem 0;">: ${UI.escapeHtml(doc.lokasi)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.35rem;">A. Dimensi Profil Lulusan</h4>
+            <ol style="padding-left: 1.5rem; font-size: 0.9rem; line-height: 1.55;">
+              ${dplOrderedHtml}
+            </ol>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">B. Tujuan Pembelajaran</h4>
+            <div style="font-size: 0.88rem; color: var(--text); margin-bottom: 0.3rem; padding-left: 1rem;">
+              Kegiatan ini bertujuan untuk menguatkan kompetensi:
+            </div>
+            <ol style="padding-left: 2.25rem; font-size: 0.9rem; line-height: 1.55;">
+              ${tpOrderedHtml}
+            </ol>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">C. Praktik Pedagogis</h4>
+            <p contenteditable="true" style="font-size: 0.9rem; padding-left: 1.15rem; line-height: 1.55;">${UI.escapeHtml(doc.praktikPedagogis)}</p>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">D. Lingkungan Belajar</h4>
+            <p contenteditable="true" style="font-size: 0.9rem; padding-left: 1.15rem; line-height: 1.55;">${UI.escapeHtml(doc.lingkunganBelajar)}</p>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">E. Kemitraan Pembelajaran</h4>
+            <p contenteditable="true" style="font-size: 0.9rem; padding-left: 1.15rem; line-height: 1.55;">${UI.escapeHtml(doc.kemitraan)}</p>
+          </div>
+
+          <div style="margin-bottom: 1.1rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">F. Pemanfaatan Digital</h4>
+            <p contenteditable="true" style="font-size: 0.9rem; padding-left: 1.15rem; line-height: 1.55;">${UI.escapeHtml(doc.digital)}</p>
+          </div>
+
+          <div style="margin-bottom: 1.25rem;">
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.35rem;">G. Kegiatan</h4>
+            <ol style="padding-left: 2.1rem; font-size: 0.9rem; line-height: 1.6;">
+              ${kegiatanListHtml}
+            </ol>
+          </div>
+
+          <div>
+            <h4 style="font-size: 0.96rem; font-weight: 800; color: var(--dark); margin-bottom: 0.25rem;">H. Asesmen</h4>
+            <p style="font-size: 0.88rem; padding-left: 1.15rem; margin-bottom: 0.65rem;">
+              Formatif: Teknik observasi dengan instrumen catatan anekdotal
+            </p>
+            <div class="table-responsive">
+              <table class="academic-table" style="border: 1px solid #94a3b8;">
+                <thead>
+                  <tr>
+                    <th rowspan="2" style="vertical-align: middle; text-align: center; background: #e0f2fe; color: #0f172a; width: 220px;">Nama Murid</th>
+                    <th colspan="${(doc.dplList || []).length}" style="text-align: center; background: #bae6fd; color: #0f172a;">Catatan Guru</th>
+                  </tr>
+                  <tr>
+                    ${dplColsHeader}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${anecdotalRowsHtml}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const rubricRowsHtml = (doc.rubricRows || []).map(r => `
+      <tr>
+        <td><strong>${UI.escapeHtml(r.dimensi)}</strong></td>
+        <td contenteditable="true">${UI.escapeHtml(r.aspek)}</td>
+        <td contenteditable="true">${UI.escapeHtml(r.SB)}</td>
+        <td contenteditable="true">${UI.escapeHtml(r.B)}</td>
+        <td contenteditable="true">${UI.escapeHtml(r.C)}</td>
+        <td contenteditable="true">${UI.escapeHtml(r.K)}</td>
+      </tr>
+    `).join('');
+
+    page2El.innerHTML = `
+      <div style="border: 2px solid #0284c7; border-radius: 8px; overflow: hidden; background: #ffffff;">
+        <div class="koku-doc-header-bar">
+          LAMPIRAN RUBRIK ASESMEN & PEDOMAN PELAPORAN KOKURIKULER
+        </div>
+
+        <div style="padding: 1.5rem 1.75rem;">
+          <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--dark); margin-bottom: 0.65rem;">
+            1. Matriks Rubrik Asesmen Kokurikuler (Sangat Baik, Baik, Cukup, Kurang)
+          </h4>
+
+          <div class="table-responsive" style="margin-bottom: 1.5rem;">
+            <table class="academic-table">
+              <thead>
+                <tr style="background: #e0f2fe;">
+                  <th style="background: #e0f2fe; color: #0f172a; width: 150px;">Dimensi Profil Lulusan</th>
+                  <th style="background: #e0f2fe; color: #0f172a; width: 180px;">Aspek yang Dinilai</th>
+                  <th style="background: #e0f2fe; color: #0f172a;">Sangat Baik (SB)</th>
+                  <th style="background: #e0f2fe; color: #0f172a;">Baik (B)</th>
+                  <th style="background: #e0f2fe; color: #0f172a;">Cukup (C)</th>
+                  <th style="background: #e0f2fe; color: #0f172a;">Kurang (K)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rubricRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;" class="no-print">
+            <div>
+              <strong style="color: #14532d; font-size: 0.94rem;">Lanjutkan ke Input Nilai Murid & 3 Inspirasi Deskripsi Rapor</strong>
+              <p style="font-size: 0.82rem; color: #166534;">
+                Rubrik di atas telah terhubung langsung dengan Tab 5 (Asesmen SB/B/C/K & Generator 3 Inspirasi Deskripsi Rapor).
+              </p>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" onclick="KokuApp.switchTab('penilaian')">
+              Buka Input Nilai & Deskripsi Rapor &rarr;
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
   syncStudentsFromDataKelas() {
     this.renderGroupsManagement();
-    UI.showNotif(
-      'Daftar Siswa Tersinkronisasi',
-      'Daftar siswa dan penempatan kelompok telah disinkronkan langsung dengan Data Kelas.',
-      'success'
-    );
+    UI.showNotif('Daftar Murid Tersinkronisasi', 'Daftar murid dan kelompok telah disinkronkan dengan Data Kelas.', 'success');
   },
 
   generateGroupsAutomatically() {
@@ -12206,7 +13430,7 @@ const RpmApp = {
 
     const students = bucket.students || [];
     if (students.length === 0) {
-      UI.showNotif('Daftar Siswa Kosong', 'Tambahkan siswa pada menu Data Kelas terlebih dahulu.', 'warning');
+      UI.showNotif('Daftar Murid Kosong', 'Tambahkan murid pada menu Data Kelas terlebih dahulu.', 'warning');
       return;
     }
 
@@ -12215,9 +13439,9 @@ const RpmApp = {
     const totalGroups = Math.max(1, Math.ceil(students.length / targetSize));
 
     const groupThemeNames = [
-      'Garuda Nusantara', 'Cendrawasih Lestari', 'komodo Tangguh',
-      'Rajawali Kreatif', 'Khatulistiwa Hijau', 'Bhinneka Mandiri',
-      'Samudra Inovasi', 'Merapi Sinergi', 'Sriwijaya Cerdas', 'Majapahit Jaya'
+      'Penjelajah Ekosistem', 'Duta Lingkungan', 'Insan Cendekia',
+      'Kreatif Lestari', 'Nusantara Hebat', 'Tunas Mandiri',
+      'Sahabat Alam', 'Khatulistiwa Hijau'
     ];
 
     const newGroups = [];
@@ -12231,10 +13455,10 @@ const RpmApp = {
 
     const roleCycle = [
       'Ketua Kelompok',
-      'Sekretaris & Logbook',
-      'Koordinator Alat & Bahan',
-      'Perancang Karya & Dokumentasi',
-      'Presenter & Komunikasi Tim',
+      'Sekretaris & Pencatat Data',
+      'Koordinator Pengamatan & Alat',
+      'Perancang Media Karya',
+      'Juru Bicara Presentasi',
       'Anggota Kolaborasi Aktif'
     ];
 
@@ -12253,8 +13477,8 @@ const RpmApp = {
     this.renderGroupsManagement();
 
     UI.showNotif(
-      'Pembagian Kelompok Otomatis Berhasil',
-      `Sebanyak ${students.length} siswa telah dibagi secara proporsional ke dalam ${newGroups.length} kelompok beserta pembagian peran timnya.`,
+      'Pembagian Kelompok Heterogen Berhasil',
+      `Sebanyak ${students.length} murid telah dibagi ke dalam ${newGroups.length} kelompok kolaborasi kokurikuler.`,
       'success'
     );
   },
@@ -12278,7 +13502,7 @@ const RpmApp = {
     DB.save();
     this.renderGroupsManagement();
 
-    UI.showNotif('Kelompok Baru Ditambahkan', `"${groupName}" telah ditambahkan. Anda dapat menempatkan siswa ke kelompok ini pada tabel di bawah.`, 'success');
+    UI.showNotif('Kelompok Baru Ditambahkan', `"${groupName}" berhasil ditambahkan.`, 'success');
   },
 
   deleteGroup(groupId) {
@@ -12288,7 +13512,7 @@ const RpmApp = {
 
     const koku = this.ensureKokurikulerStructure(bucket);
     if (koku.groups.length <= 1) {
-      UI.showNotif('Minimal Satu Kelompok', 'Setidaknya harus terdapat 1 kelompok aktif di dalam kelas.', 'warning');
+      UI.showNotif('Minimal Satu Kelompok', 'Setidaknya harus terdapat 1 kelompok aktif di kelas.', 'warning');
       return;
     }
 
@@ -12350,7 +13574,7 @@ const RpmApp = {
         <div class="card" style="margin-bottom: 0; padding: 1rem; border-top: 4px solid var(--secondary);">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
             <div>
-              <span class="badge badge-info" style="margin-bottom: 0.25rem;">${members.length} Anggota</span>
+              <span class="badge badge-info" style="margin-bottom: 0.25rem;">${members.length} Murid</span>
               <h4 style="font-size: 0.96rem; color: var(--dark);">${UI.escapeHtml(grp.nama)}</h4>
             </div>
             <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; color: var(--danger);" onclick="KokuApp.deleteGroup('${grp.id}')">
@@ -12388,14 +13612,14 @@ const RpmApp = {
     this.renderGroupsCardsOnly();
 
     if (totalBadge) {
-      totalBadge.textContent = `${students.length} Siswa Terdaftar`;
+      totalBadge.textContent = `${students.length} Murid Terdaftar`;
     }
 
     if (students.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-            Belum ada nama siswa terdaftar di kelas ini. Silakan daftarkan siswa pada menu Data Kelas.
+            Belum ada nama murid terdaftar di kelas ini. Silakan daftarkan murid pada menu Data Kelas.
           </td>
         </tr>
       `;
@@ -12503,10 +13727,10 @@ const RpmApp = {
     const photoDataUrl = document.getElementById('logbook-photo-dataurl').value || '';
 
     const groupObj = (koku.groups || []).find(g => g.id === groupId);
-    const groupName = groupObj ? groupObj.nama : 'Kelompok Projek';
+    const groupName = groupObj ? groupObj.nama : 'Kelompok Kokurikuler';
 
     if (!progres || !kendala) {
-      UI.showNotif('Logbook Belum Lengkap', 'Harap isi ringkasan progres kegiatan dan kendala yang dihadapi kelompok.', 'warning');
+      UI.showNotif('Logbook Belum Lengkap', 'Harap isi ringkasan aktivitas dan catatan kendala kelompok.', 'warning');
       return;
     }
 
@@ -12532,11 +13756,7 @@ const RpmApp = {
     this.clearLogbookPhoto();
 
     this.renderLogbookList();
-    UI.showNotif(
-      'Catatan Progres Harian Tersimpan',
-      `Jurnal kegiatan harian untuk ${groupName} berhasil direkam ke dalam Logbook kelas.`,
-      'success'
-    );
+    UI.showNotif('Jurnal Logbook Kokurikuler Tersimpan', `Catatan aktivitas untuk ${groupName} berhasil direkam.`, 'success');
   },
 
   renderLogbookList() {
@@ -12556,7 +13776,7 @@ const RpmApp = {
     if (list.length === 0) {
       container.innerHTML = `
         <div class="alert-box alert-info" style="margin-top: 0;">
-          Belum ada catatan jurnal Logbook harian untuk pilihan kelompok ini. Silakan tambahkan catatan progres melalui formulir di atas atau melalui Portal Siswa.
+          Belum ada catatan jurnal Logbook untuk pilihan kelompok ini. Silakan tambahkan melalui formulir di atas atau melalui Portal Siswa.
         </div>
       `;
       return;
@@ -12567,7 +13787,7 @@ const RpmApp = {
         ? `
           <div style="margin-top: 0.75rem;">
             <div style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.35rem;">
-              DOKUMENTASI VISUAL KEGIATAN KELOMPOK :
+              DOKUMENTASI VISUAL KEGIATAN :
             </div>
             <img src="${item.photoDataUrl}" alt="Dokumentasi Logbook" style="max-height: 220px; width: auto; border-radius: var(--radius-sm); border: 1px solid var(--border); object-fit: cover;">
           </div>
@@ -12597,14 +13817,14 @@ const RpmApp = {
           <div class="grid-2">
             <div style="background: #f8fafc; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
               <div style="font-size: 0.76rem; font-weight: 800; color: var(--primary); text-transform: uppercase; margin-bottom: 0.3rem;">
-                Aktivitas & Kemajuan Tugas Hari Ini :
+                Aktivitas & Kemajuan Kegiatan Hari Ini :
               </div>
               <p style="font-size: 0.88rem; color: var(--dark); white-space: pre-line;">${UI.escapeHtml(item.progres)}</p>
             </div>
 
             <div style="background: #fffbeb; padding: 0.85rem; border-radius: var(--radius-sm); border: 1px solid #fde68a;">
               <div style="font-size: 0.76rem; font-weight: 800; color: #92400e; text-transform: uppercase; margin-bottom: 0.3rem;">
-                Kendala / Hambatan yang Dihadapi :
+                Catatan Kendala / Hal yang Perlu Ditingkatkan :
               </div>
               <p style="font-size: 0.88rem; color: #78350f; white-space: pre-line;">${UI.escapeHtml(item.kendala)}</p>
             </div>
@@ -12648,11 +13868,7 @@ const RpmApp = {
     entry.teacherFeedback = inp.value.trim();
     DB.save();
 
-    UI.showNotif(
-      'Feedback Guru Tersimpan',
-      `Tanggapan balik untuk ${entry.groupName} telah disimpan dan langsung dapat dilihat oleh siswa pada Portal Siswa.`,
-      'success'
-    );
+    UI.showNotif('Feedback Guru Tersimpan', `Tanggapan balik untuk ${entry.groupName} telah disimpan.`, 'success');
   },
 
   deleteLogbookEntry(logId) {
@@ -12664,25 +13880,6 @@ const RpmApp = {
     koku.logbooks = (koku.logbooks || []).filter(l => l.id !== logId);
     DB.save();
     this.renderLogbookList();
-  }
-};
-
-  Object.assign(KokuApp, {
-  buildP5QualitativeNarrative(studentName, dimensi, predicateCode, roleName, groupName) {
-    const cleanName = String(studentName || 'Peserta didik').trim();
-    const cleanDimensi = String(dimensi || 'Profil Pelajar Pancasila').trim();
-    const cleanRole = String(roleName || 'Anggota Kelompok').trim();
-    const cleanGroup = String(groupName || 'Kelompok Projek').trim();
-
-    if (predicateCode === 'MB') {
-      return `Pada dimensi ${cleanDimensi}, Ananda ${cleanName} (${cleanGroup}) berada pada tahap Mulai Berkembang (MB). Siswa masih memerlukan bimbingan dan dorongan yang cukup intensif dalam menunjukkan sikap kerja sama atau kemandirian terkait dimensi ${cleanDimensi}. Dalam kerja kelompok sebagai ${cleanRole}, siswa terkadang masih pasif atau sangat bergantung pada arahan rekan sekelompoknya dalam menyelesaikan tugas harian.`;
-    }
-
-    if (predicateCode === 'SB') {
-      return `Pada dimensi ${cleanDimensi}, Ananda ${cleanName} (${cleanGroup}) berada pada tahap Sangat Berkembang (SB). Siswa menunjukkan kemampuan kepemimpinan yang menonjol di dalam kelompoknya sebagai ${cleanRole}, mampu memberikan gagasan atau solusi kreatif saat menghadapi kendala pengerjaan, serta menunjukkan konsistensi yang tinggi dalam menerapkan nilai-nilai ${cleanDimensi} Profil Pelajar Pancasila secara mandiri dan proaktif.`;
-    }
-
-    return `Pada dimensi ${cleanDimensi}, Ananda ${cleanName} (${cleanGroup}) berada pada tahap Berkembang Sesuai Harapan (BSH). Siswa sudah menunjukkan inisiatif yang baik, aktif berpartisipasi dalam diskusi kelompok, serta mampu menyelesaikan tugas mandiri maupun bekerja sama secara selaras tanpa harus diingatkan secara terus-menerus oleh guru. Siswa memperlihatkan tanggung jawab terhadap peran sebagai ${cleanRole} yang diberikan dalam tim.`;
   },
 
   populateAssessmentGroupFilter() {
@@ -12695,32 +13892,130 @@ const RpmApp = {
     if (!filterSel) return;
 
     const prevVal = filterSel.value || 'ALL';
-    filterSel.innerHTML = `<option value="ALL">Tampilkan Semua Siswa Kelas</option>` +
+    filterSel.innerHTML = `<option value="ALL">Tampilkan Semua Murid Kelas</option>` +
       groups.map(g => `<option value="${g.id}">${UI.escapeHtml(g.nama)}</option>`).join('');
 
     filterSel.value = groups.some(g => g.id === prevVal) ? prevVal : 'ALL';
   },
 
-  getStudentCharacterRecord(bucket, dimensi, student) {
+  getPredicateDetailPhrase(dimensiName, predicateCode, isFirstDim = true) {
+    const dLower = String(dimensiName || '').toLowerCase();
+    const predMap = {
+      SB: 'sangat baik',
+      B: 'baik',
+      C: 'cukup baik',
+      K: 'perlu bimbingan'
+    };
+    const predWord = predMap[predicateCode] || 'baik';
+
+    let specificAbility = `menunjukkan kompetensi ${dLower}`;
+    let shortAction = `melaksanakan kegiatan ${dLower}`;
+
+    if (dLower.includes('penalaran kritis')) {
+      specificAbility = predicateCode === 'SB'
+        ? 'mampu menjelaskan lebih dari 5 interaksi antar komponen-komponen yang membentuk ekosistem secara mendalam'
+        : predicateCode === 'B'
+          ? 'mampu menjelaskan 3–5 interaksi antar komponen-komponen yang membentuk ekosistem'
+          : 'mampu menjelaskan beberapa interaksi dasar antar komponen ekosistem';
+      shortAction = 'mencari solusi terhadap permasalahan terkait lingkungan';
+    } else if (dLower.includes('komunikasi')) {
+      specificAbility = predicateCode === 'SB'
+        ? 'menyampaikan gagasan dengan sangat lancar, runtut, dan logis'
+        : predicateCode === 'B'
+          ? 'menyampaikan gagasan dengan lancar dan logis'
+          : 'mengomunikasikan gagasan';
+      shortAction = 'mengomunikasikan gagasan di depan kelas';
+    } else if (dLower.includes('kolaborasi')) {
+      specificAbility = 'bekerja sama secara aktif dan berbagi peran bersama anggota kelompok';
+      shortAction = 'bekerja sama dalam kelompok';
+    } else if (dLower.includes('kemandirian')) {
+      specificAbility = 'mengatur diri dan menuntaskan tanggung jawab kegiatan secara mandiri';
+      shortAction = 'menyelesaikan tugas mandiri';
+    } else if (dLower.includes('kreativitas')) {
+      specificAbility = 'merancang karya solusi permasalahan menggunakan berbagai media secara kreatif';
+      shortAction = 'membuat karya solusi permasalahan';
+    } else if (dLower.includes('keimanan')) {
+      specificAbility = 'melaksanakan pembiasaan beribadah, berdoa, dan menjaga akhlak mulia dengan tertib';
+      shortAction = 'mengikuti pembiasaan ibadah dan refleksi';
+    } else if (dLower.includes('kesehatan')) {
+      specificAbility = 'mempraktikkan kebiasaan berolahraga senam pagi serta memilih makanan sehat dan bergizi';
+      shortAction = 'menerapkan pola hidup bersih dan sehat';
+    } else if (dLower.includes('kewargaan')) {
+      specificAbility = 'melestarikan kearifan lokal dan menjaga kepedulian terhadap lingkungan sekolah';
+      shortAction = 'melaksanakan kegiatan kearifan lokal';
+    }
+
+    return {
+      predWord,
+      dLower,
+      specificAbility,
+      shortAction
+    };
+  },
+
+  buildThreeRaporInspirations(studentName, dim1, pred1, dim2, pred2, temaText) {
+    const cleanName = String(studentName || 'Murid').trim();
+    const cleanTema = String(temaText || 'peduli lingkungan').toLowerCase();
+
+    const p1 = this.getPredicateDetailPhrase(dim1, pred1, true);
+    const p2 = this.getPredicateDetailPhrase(dim2, pred2, false);
+
+    const isD2Weak = pred2 === 'C' || pred2 === 'K';
+
+    const inspirasi1 = isD2Weak
+      ? `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} dengan ${p1.specificAbility}, dan masih perlu berlatih dalam ${p2.shortAction}.`
+      : `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} dengan ${p1.specificAbility}, serta ${p2.predWord} dalam ${p2.specificAbility}.`;
+
+    const inspirasi2 = isD2Weak
+      ? `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} saat ${p1.shortAction} dan masih perlu berlatih dalam ${p2.shortAction}.`
+      : `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} saat ${p1.shortAction} serta ${p2.predWord} saat ${p2.shortAction}.`;
+
+    const inspirasi3 = isD2Weak
+      ? `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} dan masih perlu berlatih dalam ${p2.shortAction} dalam tema ${cleanTema}.`
+      : `Ananda ${cleanName} sudah ${p1.predWord} dalam ${p1.dLower} dan ${p2.predWord} dalam ${p2.dLower} pada kegiatan bertema ${cleanTema}.`;
+
+    const autoTeacherNote = isD2Weak
+      ? `Masih perlu bimbingan pada aspek ${p2.dLower} (${p2.shortAction}), namun sudah mampu ${p1.specificAbility}.`
+      : `Sudah mampu ${p1.specificAbility} serta ${p2.specificAbility} dengan baik.`;
+
+    return {
+      inspirasi1,
+      inspirasi2,
+      inspirasi3,
+      autoTeacherNote
+    };
+  },
+
+  getStudentKokuMatrixRecord(bucket, student, dim1, dim2) {
     const koku = this.ensureKokurikulerStructure(bucket);
-    if (!koku.characterAssessments[dimensi]) {
-      koku.characterAssessments[dimensi] = {};
-    }
+    if (!koku.modulAssessmentMatrix) koku.modulAssessmentMatrix = {};
 
-    const groupObj = (koku.groups || []).find(g => g.id === student.kokuGroupId);
-    const groupName = groupObj ? groupObj.nama : 'Belum Berkelompok';
-    const roleName = student.kokuRole || 'Anggota Kelompok';
+    const tema = (koku.projectInfo && koku.projectInfo.tema) || 'peduli lingkungan';
+    let rec = koku.modulAssessmentMatrix[student.id];
 
-    let rec = koku.characterAssessments[dimensi][student.id];
     if (!rec) {
+      const built = this.buildThreeRaporInspirations(student.nama, dim1, 'B', dim2, 'B', tema);
       rec = {
-        predicate: 'BSH',
-        narrative: this.buildP5QualitativeNarrative(student.nama, dimensi, 'BSH', roleName, groupName),
-        anecdotal: '',
-        updatedAt: ''
+        pred1: 'B',
+        pred2: 'B',
+        catatanPendidik: built.autoTeacherNote,
+        selectedInspiration: 1,
+        updatedAt: DateTimeUtil.getCurrentDateTimeStr()
       };
-      koku.characterAssessments[dimensi][student.id] = rec;
+      koku.modulAssessmentMatrix[student.id] = rec;
     }
+
+    if (!rec.pred1 || !['SB', 'B', 'C', 'K'].includes(rec.pred1)) rec.pred1 = 'B';
+    if (!rec.pred2 || !['SB', 'B', 'C', 'K'].includes(rec.pred2)) rec.pred2 = 'B';
+
+    const syncLegacy = koku.characterAssessments;
+    if (!syncLegacy[dim1]) syncLegacy[dim1] = {};
+    syncLegacy[dim1][student.id] = {
+      predicate: rec.pred1,
+      narrative: this.buildThreeRaporInspirations(student.nama, dim1, rec.pred1, dim2, rec.pred2, tema).inspirasi1,
+      anecdotal: rec.catatanPendidik
+    };
+
     return rec;
   },
 
@@ -12730,11 +14025,14 @@ const RpmApp = {
     if (!bucket || !tbody) return;
 
     const koku = this.ensureKokurikulerStructure(bucket);
-    const dimSelect = document.getElementById('koku-assess-dimensi-select');
+    const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+    const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
     const grpFilter = document.getElementById('koku-assess-group-filter');
 
-    const activeDimensi = dimSelect ? dimSelect.value : 'Gotong Royong';
+    const dim1 = dim1Sel ? dim1Sel.value : 'Penalaran Kritis';
+    const dim2 = dim2Sel ? dim2Sel.value : 'Komunikasi';
     const filterGroupId = grpFilter ? grpFilter.value : 'ALL';
+    const tema = (koku.projectInfo && koku.projectInfo.tema) || 'peduli lingkungan';
 
     const allStudents = bucket.students || [];
     const filteredStudents = allStudents.filter(s => {
@@ -12745,8 +14043,8 @@ const RpmApp = {
     if (filteredStudents.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-            Tidak ada siswa pada filter kelompok ini. Silakan periksa daftar siswa pada tab Manajemen Kelas & Kelompok.
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
+            Tidak ada murid pada filter kelompok ini.
           </td>
         </tr>
       `;
@@ -12755,22 +14053,31 @@ const RpmApp = {
 
     tbody.innerHTML = filteredStudents.map((std, idx) => {
       const groupObj = (koku.groups || []).find(g => g.id === std.kokuGroupId);
-      const groupName = groupObj ? groupObj.nama : 'Belum Berkelompok';
-      const roleName = std.kokuRole || 'Anggota Kelompok';
+      const groupName = groupObj ? groupObj.nama : 'Kelompok Kokurikuler';
 
-      const rec = this.getStudentCharacterRecord(bucket, activeDimensi, std);
-      const pred = rec.predicate || 'BSH';
-      const narrative = rec.narrative || this.buildP5QualitativeNarrative(std.nama, activeDimensi, pred, roleName, groupName);
+      const rec = this.getStudentKokuMatrixRecord(bucket, std, dim1, dim2);
+      const inspirations = this.buildThreeRaporInspirations(std.nama, dim1, rec.pred1, dim2, rec.pred2, tema);
 
-      let cardBg = '#eff6ff';
-      let cardBorder = '#93c5fd';
-      if (pred === 'MB') {
-        cardBg = '#fffbeb';
-        cardBorder = '#fde68a';
-      } else if (pred === 'SB') {
-        cardBg = '#f0fdf4';
-        cardBorder = '#86efac';
-      }
+      const renderPredButtons = (slotNum, activeCode) => {
+        return ['SB', 'B', 'C', 'K'].map(code => {
+          let activeClass = '';
+          if (activeCode === code) {
+            if (code === 'SB') activeClass = 'active-H';
+            else if (code === 'B') activeClass = 'active-S';
+            else if (code === 'C') activeClass = 'active-I';
+            else activeClass = 'active-A';
+          }
+          return `
+            <button
+              type="button"
+              class="presensi-btn ${activeClass}"
+              onclick="KokuApp.setStudentMatrixPredicate('${std.id}', ${slotNum}, '${code}')"
+            >
+              ${code}
+            </button>
+          `;
+        }).join('');
+      };
 
       return `
         <tr>
@@ -12780,98 +14087,102 @@ const RpmApp = {
             <div style="margin-top: 0.25rem;">
               <span class="badge badge-info" style="font-size: 0.7rem;">${UI.escapeHtml(groupName)}</span>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
-              Peran: ${UI.escapeHtml(roleName)}
-            </div>
           </td>
           <td>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary); margin-bottom: 0.3rem;">
+              ${UI.escapeHtml(dim1)} :
+            </div>
             <div class="presensi-group">
-              <button
-                type="button"
-                class="presensi-btn ${pred === 'MB' ? 'active-I' : ''}"
-                onclick="KokuApp.selectStudentP5Predicate('${std.id}', 'MB')"
-              >
-                MB
-              </button>
-              <button
-                type="button"
-                class="presensi-btn ${pred === 'BSH' ? 'active-S' : ''}"
-                onclick="KokuApp.selectStudentP5Predicate('${std.id}', 'BSH')"
-              >
-                BSH
-              </button>
-              <button
-                type="button"
-                class="presensi-btn ${pred === 'SB' ? 'active-H' : ''}"
-                onclick="KokuApp.selectStudentP5Predicate('${std.id}', 'SB')"
-              >
-                SB
-              </button>
+              ${renderPredButtons(1, rec.pred1)}
             </div>
           </td>
           <td>
-            <div style="padding: 0.75rem; border-radius: var(--radius-sm); background: ${cardBg}; border: 1px solid ${cardBorder}; font-size: 0.84rem; color: var(--dark); line-height: 1.55;">
-              ${UI.escapeHtml(narrative)}
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.3rem;">
+              ${UI.escapeHtml(dim2)} :
+            </div>
+            <div class="presensi-group">
+              ${renderPredButtons(2, rec.pred2)}
             </div>
           </td>
           <td>
             <textarea
               class="form-control"
-              rows="3"
-              placeholder="Catatan kejadian khusus / anekdotal guru untuk siswa ini..."
-              oninput="KokuApp.updateStudentP5Anecdotal('${std.id}', this.value)"
-            >${UI.escapeHtml(rec.anecdotal || '')}</textarea>
+              rows="4"
+              style="font-size: 0.82rem;"
+              placeholder="Catatan pendidik hasil observasi..."
+              oninput="KokuApp.updateStudentMatrixNote('${std.id}', this.value)"
+            >${UI.escapeHtml(rec.catatanPendidik || inspirations.autoTeacherNote)}</textarea>
+          </td>
+          <td>
+            <div class="koku-inspirasi-box">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: #0f766e; color: #ffffff; padding: 0.3rem 0.65rem; font-size: 0.74rem; font-weight: 700;">
+                <span>Inspirasi 1 (Detail Indikator Aspek)</span>
+                <span>Predikat: ${rec.pred1} & ${rec.pred2}</span>
+              </div>
+              <div class="koku-inspirasi-body">${UI.escapeHtml(inspirations.inspirasi1)}</div>
+            </div>
+
+            <div class="koku-inspirasi-box">
+              <div style="background: #c26d4a; color: #ffffff; padding: 0.3rem 0.65rem; font-size: 0.74rem; font-weight: 700;">
+                Inspirasi 2 (Konteks Pemecahan Masalah / Aksi)
+              </div>
+              <div class="koku-inspirasi-body">${UI.escapeHtml(inspirations.inspirasi2)}</div>
+            </div>
+
+            <div class="koku-inspirasi-box" style="margin-bottom: 0;">
+              <div style="background: #1e3a8a; color: #ffffff; padding: 0.3rem 0.65rem; font-size: 0.74rem; font-weight: 700;">
+                Inspirasi 3 (Ringkas Padat Sesuai Tema)
+              </div>
+              <div class="koku-inspirasi-body">${UI.escapeHtml(inspirations.inspirasi3)}</div>
+            </div>
           </td>
         </tr>
       `;
     }).join('');
   },
 
-  selectStudentP5Predicate(studentId, predicateCode) {
+  setStudentMatrixPredicate(studentId, slotNum, predicateCode) {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
     if (!bucket) return;
 
     const koku = this.ensureKokurikulerStructure(bucket);
-    const dimSelect = document.getElementById('koku-assess-dimensi-select');
-    const activeDimensi = dimSelect ? dimSelect.value : 'Gotong Royong';
+    const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+    const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
+    const dim1 = dim1Sel ? dim1Sel.value : 'Penalaran Kritis';
+    const dim2 = dim2Sel ? dim2Sel.value : 'Komunikasi';
+    const tema = (koku.projectInfo && koku.projectInfo.tema) || 'peduli lingkungan';
 
     const std = (bucket.students || []).find(s => s.id === studentId);
     if (!std) return;
 
-    const groupObj = (koku.groups || []).find(g => g.id === std.kokuGroupId);
-    const groupName = groupObj ? groupObj.nama : 'Belum Berkelompok';
-    const roleName = std.kokuRole || 'Anggota Kelompok';
+    const rec = this.getStudentKokuMatrixRecord(bucket, std, dim1, dim2);
+    if (slotNum === 1) rec.pred1 = predicateCode;
+    else rec.pred2 = predicateCode;
 
-    if (!koku.characterAssessments[activeDimensi]) {
-      koku.characterAssessments[activeDimensi] = {};
-    }
-
-    const prev = koku.characterAssessments[activeDimensi][studentId] || {};
-    koku.characterAssessments[activeDimensi][studentId] = {
-      predicate: predicateCode,
-      narrative: this.buildP5QualitativeNarrative(std.nama, activeDimensi, predicateCode, roleName, groupName),
-      anecdotal: prev.anecdotal || '',
-      updatedAt: DateTimeUtil.getCurrentDateTimeStr()
-    };
+    const built = this.buildThreeRaporInspirations(std.nama, dim1, rec.pred1, dim2, rec.pred2, tema);
+    rec.catatanPendidik = built.autoTeacherNote;
+    rec.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
 
     DB.save();
     this.renderCharacterAssessmentTable();
   },
 
-  updateStudentP5Anecdotal(studentId, noteText) {
+  updateStudentMatrixNote(studentId, noteText) {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
     if (!bucket) return;
 
-    const dimSelect = document.getElementById('koku-assess-dimensi-select');
-    const activeDimensi = dimSelect ? dimSelect.value : 'Gotong Royong';
+    const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+    const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
+    const dim1 = dim1Sel ? dim1Sel.value : 'Penalaran Kritis';
+    const dim2 = dim2Sel ? dim2Sel.value : 'Komunikasi';
 
     const std = (bucket.students || []).find(s => s.id === studentId);
     if (!std) return;
 
-    const rec = this.getStudentCharacterRecord(bucket, activeDimensi, std);
-    rec.anecdotal = noteText;
+    const rec = this.getStudentKokuMatrixRecord(bucket, std, dim1, dim2);
+    rec.catatanPendidik = noteText;
     rec.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.save();
   },
@@ -12882,30 +14193,22 @@ const RpmApp = {
     if (!bucket) return;
 
     const koku = this.ensureKokurikulerStructure(bucket);
-    const dimSelect = document.getElementById('koku-assess-dimensi-select');
+    const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+    const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
     const grpFilter = document.getElementById('koku-assess-group-filter');
 
-    const activeDimensi = dimSelect ? dimSelect.value : 'Gotong Royong';
+    const dim1 = dim1Sel ? dim1Sel.value : 'Penalaran Kritis';
+    const dim2 = dim2Sel ? dim2Sel.value : 'Komunikasi';
     const filterGroupId = grpFilter ? grpFilter.value : 'ALL';
-
-    if (!koku.characterAssessments[activeDimensi]) {
-      koku.characterAssessments[activeDimensi] = {};
-    }
+    const tema = (koku.projectInfo && koku.projectInfo.tema) || 'peduli lingkungan';
 
     (bucket.students || []).forEach(std => {
       if (filterGroupId !== 'ALL' && std.kokuGroupId !== filterGroupId) return;
-
-      const groupObj = (koku.groups || []).find(g => g.id === std.kokuGroupId);
-      const groupName = groupObj ? groupObj.nama : 'Belum Berkelompok';
-      const roleName = std.kokuRole || 'Anggota Kelompok';
-      const prev = koku.characterAssessments[activeDimensi][std.id] || {};
-
-      koku.characterAssessments[activeDimensi][std.id] = {
-        predicate: predicateCode,
-        narrative: this.buildP5QualitativeNarrative(std.nama, activeDimensi, predicateCode, roleName, groupName),
-        anecdotal: prev.anecdotal || '',
-        updatedAt: DateTimeUtil.getCurrentDateTimeStr()
-      };
+      const rec = this.getStudentKokuMatrixRecord(bucket, std, dim1, dim2);
+      rec.pred1 = predicateCode;
+      rec.pred2 = predicateCode;
+      rec.catatanPendidik = this.buildThreeRaporInspirations(std.nama, dim1, predicateCode, dim2, predicateCode, tema).autoTeacherNote;
+      rec.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     });
 
     DB.save();
@@ -12914,17 +14217,14 @@ const RpmApp = {
 
   saveAllCharacterAssessments() {
     if (AppState.isReadOnlyInspection) return;
-    const dimSelect = document.getElementById('koku-assess-dimensi-select');
-    const activeDimensi = dimSelect ? dimSelect.value : 'Gotong Royong';
-
     DB.save();
     UI.showNotif(
-      'Penilaian Karakter P5 Berhasil Disimpan',
-      `Seluruh capaian predikat (MB / BSH / SB), deskripsi naratif kualitatif, serta catatan anekdotal guru untuk dimensi "${activeDimensi}" telah disimpan.`,
+      'Asesmen & Deskripsi Rapor Kokurikuler Disimpan',
+      'Seluruh capaian predikat (SB / B / C / K), Catatan Pendidik, serta 3 Inspirasi Deskripsi Rapor Kokurikuler murid telah berhasil disimpan.',
       'success'
     );
   }
-});
+};
 
   const EkskulApp = {
   ensureEkskulStructure(bucket) {
