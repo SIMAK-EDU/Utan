@@ -2823,7 +2823,7 @@ body {
     </div>
   </section>
 
-          <section id="view-intra-modul-rpm" class="app-view hidden">
+            <section id="view-intra-modul-rpm" class="app-view hidden">
     <style>
       .rpm-nav-toolbar {
         background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
@@ -2907,7 +2907,7 @@ body {
         margin-bottom: 1.25rem;
       }
       .rpm-ai-loading-overlay {
-        background: rgba(15, 23, 42, 0.82);
+        background: rgba(15, 23, 42, 0.85);
         position: fixed;
         inset: 0;
         z-index: 300;
@@ -2919,7 +2919,7 @@ body {
       .rpm-ai-loading-box {
         background: #ffffff;
         border-radius: var(--radius-lg);
-        max-width: 520px;
+        max-width: 560px;
         width: 100%;
         padding: 2rem;
         text-align: center;
@@ -2927,13 +2927,45 @@ body {
         border-top: 6px solid var(--primary-light);
       }
       .rpm-spinner {
-        width: 48px;
-        height: 48px;
+        width: 50px;
+        height: 50px;
         border: 5px solid #dbeafe;
         border-top-color: var(--primary-light);
         border-radius: 50%;
         margin: 0 auto 1rem;
         animation: rpmSpin 0.85s linear infinite;
+      }
+      .rpm-day-subject-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.32rem 0.78rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        background: #dbeafe;
+        color: #1e40af;
+        border: 1px solid #93c5fd;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .rpm-day-subject-chip:hover,
+      .rpm-day-subject-chip.active-chip {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #1d4ed8;
+      }
+      .math-direct-box {
+        font-size: 1.08rem;
+        font-weight: 800;
+        font-family: 'Segoe UI', Roboto, monospace;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        border-left: 4px solid #2563eb;
+        padding: 0.65rem 1rem;
+        border-radius: 6px;
+        color: #0f172a;
+        margin: 0.35rem 0;
       }
       @keyframes rpmSpin {
         to { transform: rotate(360deg); }
@@ -2960,41 +2992,91 @@ body {
       }
     </style>
 
+    <!-- MODAL LOADING GENERATIVE AI MURNI -->
     <div id="rpm-ai-loading-modal" class="rpm-ai-loading-overlay hidden">
       <div class="rpm-ai-loading-box">
         <div class="rpm-spinner"></div>
-        <span class="badge badge-primary" style="margin-bottom: 0.5rem;">AI PROFESIONAL AKADEMIK SEDANG BEKERJA</span>
-        <h3 style="font-size: 1.18rem; color: var(--dark); margin-bottom: 0.4rem;">Menganalisis Materi, CP, TP, Fase Kelas & Taksonomi SOLO...</h3>
-        <p id="rpm-ai-loading-status" style="font-size: 0.88rem; color: var(--text-muted);">
-          Menyusun skenario soal substantif dan membagi halaman dokumen secara proporsional...
+        <span id="rpm-ai-loading-engine-badge" class="badge badge-primary" style="margin-bottom: 0.5rem;">
+          GENERATIVE AI MURNI — INSTRUCTIONAL DESIGNER KURIKULUM MERDEKA
+        </span>
+        <h3 id="rpm-ai-loading-title" style="font-size: 1.18rem; color: var(--dark); margin-bottom: 0.4rem;">
+          Merancang Modul Ajar & Menyusun Soal Secara Dinamis...
+        </h3>
+        <p id="rpm-ai-loading-status" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.55;">
+          AI sedang membedah Capaian Pembelajaran (CP), Tujuan Pembelajaran (TP), dan Materi Pokok untuk menghasilkan skenario pembelajaran serta butir soal yang kreatif, kontekstual, dan 100% sesuai level kelas...
         </p>
       </div>
     </div>
 
-    <div class="card no-print" style="background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%); color: #ffffff; border: none;">
+    <!-- HEADER BANNER UTAMA -->
+    <div class="card no-print" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0f766e 100%); color: #ffffff; border: none;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">SUB-PILAR 6 — GENERATOR MODUL RPM & SOAL AI PROFESIONAL AKADEMIK</span>
-          <h2 style="font-size: 1.4rem; font-weight: 800;">Penyusunan Rencana Pembelajaran Mendalam (RPM 8-3-3-4) & Instrumen Soal Kontekstual</h2>
-          <p style="font-size: 0.88rem; color: #dbeafe;">
-            Dirancang dengan <strong>AI Profesional Akademik</strong> yang membedah substansi keilmuan dari <strong>Materi</strong>, <strong>Capaian Pembelajaran (CP)</strong>, <strong>Tujuan Pembelajaran (TP)</strong>, <strong>Kelas/Fase</strong>, dan <strong>Ranah Taksonomi SOLO</strong> untuk menghasilkan Modul Ajar di Halaman 1 dan Naskah Soal substantif di halaman-halaman berikutnya.
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+            <span class="badge badge-warning">SUB-PILAR 6 — GENERATIVE AI INSTRUCTIONAL DESIGNER</span>
+            <span id="rpm-active-engine-badge" class="badge badge-success">Mesin AI Murni Aktif (Tanpa Bank Soal Statis)</span>
+          </div>
+          <h2 style="font-size: 1.42rem; font-weight: 800; margin-bottom: 0.25rem;">
+            Penyusunan Modul Ajar (RPM 8-3-3-4) & Generator Soal Dinamis Berbasis AI Murni
+          </h2>
+          <p style="font-size: 0.88rem; color: #dbeafe; max-width: 860px;">
+            Ditenagai <strong>Generative AI Murni (Google Gemini API & Cloud LLM)</strong> dengan peran <em>Pakar Kurikulum Merdeka & Ahli Asesmen Pendidikan Indonesia</em>. Menghasilkan pengalaman belajar dan variasi soal yang luas, kreatif, kontekstual, serta presisi mengikuti perintah guru.
           </p>
         </div>
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openPillar('intrakurikuler')">
-            Kembali ke Menu Intrakurikuler
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.14); color: #fde68a; border-color: rgba(253,230,138,0.45);" onclick="RpmApp.toggleGeminiKeyConfig()">
+            🔑 Pengaturan API AI (Gemini / Cloud)
           </button>
+          <button type="button" class="btn btn-warning btn-sm" onclick="RpmApp.scrollToSavedArchive()">
+            📂 Arsip RPM Tersimpan (<span id="rpm-saved-count-top">0</span>)
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openPillar('intrakurikuler')">
+            &larr; Kembali ke Intrakurikuler
+          </button>
+        </div>
+      </div>
+
+      <!-- PANEL KONFIGURASI GOOGLE GEMINI API KEY (OPSIONAL, MENDUKUNG CLOUD AI GRATIS OTOMATIS) -->
+      <div id="rpm-gemini-config-panel" class="hidden" style="margin-top: 1.15rem; padding: 1.1rem 1.25rem; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radius-md);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+          <div style="flex: 1; min-width: 260px;">
+            <span class="badge badge-info" style="margin-bottom: 0.3rem;">KONFIGURASI MESIN GENERATIVE AI MURNI</span>
+            <h4 style="font-size: 0.98rem; color: #ffffff; margin-bottom: 0.25rem;">Hubungkan Google Gemini API Key (Atau Gunakan Cloud AI Gratis Otomatis)</h4>
+            <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
+              Secara bawaan, sistem sudah terhubung ke <strong>Cloud Generative AI Gratis</strong> tanpa perlu kunci API. Namun jika Anda memiliki <strong>Google Gemini API Key</strong> (gratis dari <em>aistudio.google.com</em>), tempelkan di bawah ini agar pembuatan modul dan soal diproses langsung oleh model resmi <strong>Google Gemini 2.5 Flash / 1.5 Flash</strong>.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; min-width: 320px; flex: 1;">
+            <input
+              type="password"
+              id="rpm-gemini-api-key-input"
+              class="form-control allow-readonly-filter"
+              style="flex: 1; background: #ffffff; color: #0f172a; font-family: monospace;"
+              placeholder="Tempel Gemini API Key (AIzaSy...) atau kosongkan untuk Cloud AI..."
+            >
+            <button type="button" class="btn btn-success btn-sm" onclick="RpmApp.saveGeminiApiKey()">
+              💾 Simpan Kunci AI
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" style="color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="RpmApp.toggleGeminiKeyConfig()">
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
+    <!-- FORMULIR GENERATOR RPM & SOAL DINAMIS -->
     <div id="rpm-builder-form-card" class="card no-print">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Formulir Pengisian Modul RPM & Kata Kunci Analisis Soal AI</h3>
-          <p class="card-subtitle">Isi parameter di bawah ini secara lengkap. AI Akademik akan menghasilkan soal ujian yang benar-benar menguji substansi materi sesuai tingkat kelas/fase siswa.</p>
+          <h3 class="card-title">Formulir Perancangan Modul Ajar (RPM) & Spesifikasi Soal AI Murni</h3>
+          <p class="card-subtitle">
+            AI akan menyusun skenario pembelajaran dan meramu butir soal baru yang dinamis sesuai <strong>TP, Materi, CP, Kelas/Fase, dan Instruksi Khusus Anda</strong>.
+          </p>
         </div>
-        <span class="badge badge-primary">Deep Curriculum AI Engine</span>
+        <span id="rpm-detected-day-pill" class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+          Jadwal Hari Ini: -
+        </span>
       </div>
 
       <form id="form-generate-rpm" onsubmit="RpmApp.handleGenerateRpm(event)">
@@ -3008,7 +3090,7 @@ body {
             <input type="text" id="rpm-input-sekolah" class="form-control" placeholder="Nama satuan pendidikan..." required>
           </div>
           <div class="form-group">
-            <label class="form-label" for="rpm-input-kelas-fase">3. Kelas / Fase (Kalibrasi Tingkat Kesulitan Soal) :</label>
+            <label class="form-label" for="rpm-input-kelas-fase">3. Kelas / Fase (Kalibrasi Bahasa & Kognitif Siswa) :</label>
             <input type="text" id="rpm-input-kelas-fase" class="form-control" placeholder="Contoh: Kelas 4 / Fase B (atau Kelas 1 / Fase A)" required>
           </div>
         </div>
@@ -3023,11 +3105,26 @@ body {
               <option value="Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)">Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label class="form-label" for="rpm-input-mapel">5. Mata Pelajaran :</label>
-            <input type="text" id="rpm-input-mapel" list="datalist-rpm-mapel" class="form-control" placeholder="Contoh: IPAS / Matematika / Bahasa Indonesia / Pendidikan Pancasila" required>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
+              <label class="form-label" for="rpm-input-mapel" style="margin-bottom: 0;">5. Mata Pelajaran (Deteksi Hari Ini) :</label>
+              <select id="rpm-day-filter-select" class="form-control" style="width: auto; padding: 0.15rem 0.45rem; font-size: 0.75rem; height: auto;" onchange="RpmApp.handleDayFilterChange(this.value)">
+                <option value="TODAY">Jadwal Hari Ini</option>
+                <option value="Senin">Hari Senin</option>
+                <option value="Selasa">Hari Selasa</option>
+                <option value="Rabu">Hari Rabu</option>
+                <option value="Kamis">Hari Kamis</option>
+                <option value="Jumat">Hari Jumat</option>
+                <option value="Sabtu">Hari Sabtu</option>
+                <option value="ALL">Semua Mapel</option>
+              </select>
+            </div>
+            <input type="text" id="rpm-input-mapel" list="datalist-rpm-mapel" class="form-control" placeholder="Otomatis mendeteksi mata pelajaran hari ini..." oninput="RpmApp.handleMapelInputChange(this.value)" required>
             <datalist id="datalist-rpm-mapel"></datalist>
+            <div id="rpm-today-subjects-chips" style="display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.45rem;"></div>
           </div>
+
           <div class="form-group">
             <label class="form-label" for="rpm-input-solo">6. Ranah Taksonomi SOLO :</label>
             <select id="rpm-input-solo" class="form-control" required>
@@ -3040,47 +3137,106 @@ body {
           </div>
         </div>
 
+        <!-- PANEL UTAMA KURIKULUM: MATERI, CP, TP, & PROMPT INSTRUKSI KHUSUS GURU -->
         <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px dashed #14b8a6;">
             <div>
-              <span class="badge badge-success" style="margin-bottom: 0.25rem;">KATA KUNCI UTAMA ANALISIS SUBSTANSI SOAL AI</span>
-              <h4 style="font-size: 1.02rem; color: var(--dark);">7, 8, & 9. Materi Pokok, Capaian Pembelajaran (CP), dan Tujuan Pembelajaran (TP)</h4>
+              <span class="badge badge-success" style="margin-bottom: 0.25rem;">KOMPAS UTAMA GENERATIVE AI (KURIKULUM MERDEKA)</span>
+              <h4 style="font-size: 1.02rem; color: var(--dark);">7, 8, 9, & 10. Materi Ajar, CP, Tujuan Pembelajaran (TP), & Instruksi Khusus Guru ke AI</h4>
               <p style="font-size: 0.8rem; color: var(--text-muted);">
-                AI Akademik menganalisis hubungan antara topik materi, CP, dan setiap baris TP di bawah ini untuk membuat soal kontekstual yang nyata (bukan mengulang bunyi kalimat TP).
+                AI Murni akan membaca seluruh input di bawah ini secara mendalam untuk menghasilkan Modul Ajar dan variasi soal yang luas (bukan template bank soal).
               </p>
             </div>
             <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="RpmApp.autoSuggestCpAndTp()">
-              ✨ Bantu Isi Contoh CP & TP Sesuai Materi
+              ✨ Bantu Susun Draft CP & TP dengan AI
             </button>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="rpm-input-materi">7. Topik / Materi Pokok & Sub-Materi Soal (Wajib Diisi) :</label>
-            <input type="text" id="rpm-input-materi" class="form-control" placeholder="Contoh: Rantai Makanan di Sawah / Pecahan Senilai / Gagasan Pokok Paragraf / Perubahan Wujud Benda / Nilai Pancasila" required>
-            <div class="form-hint">
-              Tips: Anda dapat menuliskan topik utama maupun rincian sub-materi (misalnya: <em>Perubahan Wujud Benda: Mencair, Membeku, Menguap, Mengembun, Menyublim</em>).
+            <label class="form-label" for="rpm-input-materi">7. Topik / Materi Ajar Spesifik yang Diajarkan (Wajib Diisi) :</label>
+            <input
+              type="text"
+              id="rpm-input-materi"
+              class="form-control"
+              placeholder="Ketik topik bebas apa saja (Contoh: Pembagian Bilangan Cacah / Siklus Air / Kalimat Transitif & Intransitif / Gaya & Gerak)..."
+              oninput="RpmApp.checkMathPanelVisibility()"
+              required
+            >
+          </div>
+
+          <!-- PANEL KHUSUS MATEMATIKA -->
+          <div id="rpm-math-special-config-box" class="card hidden" style="background: #fffbeb; border: 2px solid #f59e0b; padding: 1rem 1.15rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+              <div>
+                <span class="badge badge-warning">MODE MATEMATIKA PRESISI AKTIF</span>
+                <strong style="font-size: 0.94rem; color: #92400e; margin-left: 0.35rem;">Pengaturan Bentuk Soal Matematika</strong>
+              </div>
+              <span style="font-size: 0.76rem; color: #78350f; font-weight: 700;">Verifikasi Perhitungan Independen</span>
+            </div>
+
+            <div class="grid-2">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="rpm-math-mode-select" style="color: #78350f;">Pilih Model Soal Matematika :</label>
+                <select id="rpm-math-mode-select" class="form-control" style="font-weight: 700; border-color: #f59e0b;">
+                  <option value="DIRECT_CALC" selected>1. Operasi Hitung Langsung (Angka & Simbol Murni: 864 ÷ 8 = ....)</option>
+                  <option value="WORD_PROBLEM">2. Soal Cerita Kontekstual Singkat (Membutuhkan Perhitungan)</option>
+                  <option value="MIXED_MATH">3. Kombinasi Proporsional (Hitung Langsung + Soal Cerita)</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="rpm-math-constraint-input" style="color: #78350f;">Syarat Bilangan / Aturan Hitung :</label>
+                <input
+                  type="text"
+                  id="rpm-math-constraint-input"
+                  class="form-control"
+                  placeholder="Contoh: Pembagian habis tanpa sisa / Bilangan ratusan / Pecahan berpenyebut sama"
+                  value="Habis dibagi tanpa sisa, angka sesuai tingkat kelas"
+                >
+              </div>
             </div>
           </div>
 
-          <div class="grid-2">
+          <div class="grid-2" style="margin-bottom: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-cp">8. Capaian Pembelajaran (CP) — Wajib Diisi :</label>
-              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Tuliskan Capaian Pembelajaran (CP) sesuai fase. Contoh: Peserta didik memahami hubungan antarmakhluk hidup dan lingkungannya dalam bentuk rantai makanan serta upaya menjaga keseimbangan ekosistem." required></textarea>
-              <div class="form-hint">Menjadi landasan kompetensi akhir fase dalam merancang kedalaman modul dan soal.</div>
+              <label class="form-label" for="rpm-input-cp">8. Capaian Pembelajaran (CP) :</label>
+              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Tuliskan Capaian Pembelajaran (CP) sesuai fase..." required></textarea>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-tp">9. Tujuan Pembelajaran (TP) — Wajib Diisi (Pisahkan per baris jika lebih dari satu) :</label>
-              <textarea id="rpm-input-tp" class="form-control" rows="4" placeholder="1. Mengidentifikasi peran produsen, konsumen tingkat I, II, III, dan pengurai dalam rantai makanan.&#10;2. Menganalisis dampak perubahan populasi salah satu makhluk hidup terhadap keseimbangan ekosistem.&#10;3. Menentukan tindakan pelestarian ekosistem di lingkungan sekitar." required></textarea>
-              <div class="form-hint">Setiap baris TP di atas akan diterjemahkan AI menjadi skenario soal konkret yang menguji pemahaman siswa.</div>
+              <label class="form-label" for="rpm-input-tp">9. Tujuan Pembelajaran (TP) — Prioritas Utama Soal :</label>
+              <textarea
+                id="rpm-input-tp"
+                class="form-control"
+                rows="4"
+                placeholder="Tuliskan Tujuan Pembelajaran (1 baris per TP). Setiap butir soal yang dibuat AI akan mengukur ketercapaian TP ini secara langsung..."
+                oninput="RpmApp.checkMathPanelVisibility()"
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0; background: #ffffff; padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
+            <label class="form-label" for="rpm-input-custom-prompt" style="color: #0f766e;">
+              10. Instruksi Khusus / Prompt Bebas Guru untuk AI (Opsional — Seperti Memberi Perintah ke Gemini) :
+            </label>
+            <textarea
+              id="rpm-input-custom-prompt"
+              class="form-control"
+              rows="2"
+              placeholder="Contoh: 'Buat soal yang sangat dekat dengan kehidupan anak desa/pesisir', 'Sertakan kutipan teks pendek 2-3 kalimat pada soal Bahasa Indonesia', atau 'Fokus pada latihan konversi satuan panjang'..."
+            ></textarea>
+            <div class="form-hint">
+              Kosongkan jika ingin AI merancang secara otomatis, atau tuliskan permintaan spesifik Anda agar dipatuhi 100% oleh AI.
             </div>
           </div>
         </div>
 
+        <!-- PANEL DIMENSI PROFIL LULUSAN -->
         <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
             <div>
-              <strong style="font-size: 0.92rem; color: var(--dark);">10. Pilih Dimensi Profil Lulusan (Sistem 8 Dimensi) :</strong>
+              <strong style="font-size: 0.92rem; color: var(--dark);">11. Pilih Dimensi Profil Lulusan (Sistem 8 Dimensi) :</strong>
               <p style="font-size: 0.8rem; color: var(--text-muted);">Pilih satu atau lebih Dimensi Profil Lulusan yang diintegrasikan ke dalam Modul RPM.</p>
             </div>
             <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.selectAllDplCheckboxes(true)">Pilih Semua 8 Dimensi</button>
@@ -3122,60 +3278,68 @@ body {
           </div>
         </div>
 
+        <!-- PANEL JENIS SOAL, JUMLAH SOAL, & TINGKAT KESULITAN -->
         <div class="card" style="background: #eff6ff; border: 2px solid #93c5fd; margin-bottom: 1.25rem;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
             <label style="display: flex; align-items: center; gap: 0.65rem; font-size: 1rem; font-weight: 800; color: var(--primary); cursor: pointer;">
               <input type="checkbox" id="rpm-enable-auto-questions" style="width: 18px; height: 18px;" onchange="RpmApp.toggleAutoQuestionBuilder(this.checked)" checked>
-              11. Aktifkan Fitur Buat Soal Otomatis AI (Multi-Halaman Sesuai Jenis & Panjang Soal)
+              12. Aktifkan Generator Soal Dinamis AI Murni (Multi-Halaman Sesuai Jenis & Tingkat Kesulitan)
             </label>
-            <span class="badge badge-primary">Otomatis Terbagi ke Halaman 2, 3, dst.</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <label for="rpm-question-difficulty" style="font-size: 0.82rem; font-weight: 700; color: var(--dark);">Tingkat Kesulitan:</label>
+              <select id="rpm-question-difficulty" class="form-control" style="width: auto; padding: 0.3rem 0.65rem; font-size: 0.84rem; font-weight: 700;">
+                <option value="MUDAH">Mudah (Konsep Dasar & Langkah Sederhana)</option>
+                <option value="SEDANG" selected>Sedang (Penerapan Konsep & Variasi Setara Kelas)</option>
+                <option value="SULIT">Sulit (Penalaran Lanjut / HOTS dalam Cakupan TP Kelas)</option>
+              </select>
+            </div>
           </div>
 
           <div id="rpm-auto-questions-panel" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #93c5fd;">
             <p style="font-size: 0.85rem; color: var(--text); margin-bottom: 0.85rem;">
-              Pilih satu atau lebih jenis soal di bawah ini beserta jumlah soalnya. Untuk jenis soal khusus, centang <strong>Lainnya (Ketik Manual Jenis Soal)</strong>:
+              Pilih jenis soal dan jumlah butir soal yang ingin dibuat secara dinamis oleh AI:
             </p>
 
             <div class="grid-2" id="rpm-question-types-grid">
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="PG" onchange="RpmApp.toggleQuestionCountInput('PG', this.checked)" checked> Pilihan Ganda (PG)</span>
-                  <input type="number" id="rpm-qcount-PG" class="form-control" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="30" value="5" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="PG" onchange="RpmApp.toggleQuestionCountInput('PG', this.checked)" checked> Pilihan Ganda (Opsi A, B, C, D — 1 Jawaban Benar)</span>
+                  <input type="number" id="rpm-qcount-PG" class="form-control" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="30" value="5" placeholder="Jumlah">
                 </label>
               </div>
 
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="ESAI" onchange="RpmApp.toggleQuestionCountInput('ESAI', this.checked)" checked> Esai Terstruktur</span>
-                  <input type="number" id="rpm-qcount-ESAI" class="form-control" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="20" value="3" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="ISIAN" onchange="RpmApp.toggleQuestionCountInput('ISIAN', this.checked)" checked> Isian Singkat / Hitung Langsung</span>
+                  <input type="number" id="rpm-qcount-ISIAN" class="form-control" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="25" value="5" placeholder="Jumlah">
                 </label>
               </div>
 
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="URAIAN" onchange="RpmApp.toggleQuestionCountInput('URAIAN', this.checked)"> Uraian / Pemecahan Masalah HOTS</span>
-                  <input type="number" id="rpm-qcount-URAIAN" class="form-control hidden" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="15" value="2" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="ESAI" onchange="RpmApp.toggleQuestionCountInput('ESAI', this.checked)"> Esai Terstruktur</span>
+                  <input type="number" id="rpm-qcount-ESAI" class="form-control hidden" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="20" value="3" placeholder="Jumlah">
                 </label>
               </div>
 
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="ISIAN" onchange="RpmApp.toggleQuestionCountInput('ISIAN', this.checked)"> Filling Blank (Isian Singkat)</span>
-                  <input type="number" id="rpm-qcount-ISIAN" class="form-control hidden" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="20" value="5" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="URAIAN" onchange="RpmApp.toggleQuestionCountInput('URAIAN', this.checked)"> Uraian / Pemecahan Masalah</span>
+                  <input type="number" id="rpm-qcount-URAIAN" class="form-control hidden" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="15" value="3" placeholder="Jumlah">
                 </label>
               </div>
 
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="MATCHING" onchange="RpmApp.toggleQuestionCountInput('MATCHING', this.checked)"> Mencocokkan Tabel (Matching)</span>
-                  <input type="number" id="rpm-qcount-MATCHING" class="form-control hidden" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="15" value="4" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="BENARSALAH" onchange="RpmApp.toggleQuestionCountInput('BENARSALAH', this.checked)"> Pernyataan Benar / Salah Objektif</span>
+                  <input type="number" id="rpm-qcount-BENARSALAH" class="form-control hidden" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="15" value="4" placeholder="Jumlah">
                 </label>
               </div>
 
               <div class="card" style="margin-bottom: 0; padding: 0.85rem;">
                 <label style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
-                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="BENARSALAH" onchange="RpmApp.toggleQuestionCountInput('BENARSALAH', this.checked)"> Pernyataan Benar / Salah</span>
-                  <input type="number" id="rpm-qcount-BENARSALAH" class="form-control hidden" style="width: 95px; padding: 0.35rem 0.5rem;" min="1" max="15" value="4" placeholder="Jumlah">
+                  <span><input type="checkbox" class="rpm-qtype-check" data-qtype="MATCHING" onchange="RpmApp.toggleQuestionCountInput('MATCHING', this.checked)"> Mencocokkan Pasangan (Matching)</span>
+                  <input type="number" id="rpm-qcount-MATCHING" class="form-control hidden" style="width: 90px; padding: 0.35rem 0.5rem;" min="1" max="15" value="4" placeholder="Jumlah">
                 </label>
               </div>
             </div>
@@ -3184,34 +3348,30 @@ body {
               <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
                 <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 800; font-size: 0.92rem; color: #92400e; cursor: pointer;">
                   <input type="checkbox" class="rpm-qtype-check" data-qtype="LAINNYA" onchange="RpmApp.toggleCustomQuestionTypeInput(this.checked)">
-                  Lainnya (Ketik Manual Jenis Soal yang Diinginkan Guru)
+                  Lainnya (Ketik Manual Format Soal Khusus yang Diinginkan)
                 </label>
                 <input type="number" id="rpm-qcount-LAINNYA" class="form-control hidden" style="width: 110px; padding: 0.35rem 0.5rem;" min="1" max="25" value="3" placeholder="Jumlah Soal">
               </div>
 
               <div id="rpm-custom-qtype-manual-wrap" class="hidden" style="margin-top: 0.85rem; padding-top: 0.85rem; border-top: 1px dashed #f59e0b;">
                 <label class="form-label" for="rpm-custom-qtype-name" style="color: #78350f;">
-                  Tuliskan Jenis / Bentuk Soal yang Anda Inginkan Secara Spesifik :
+                  Tuliskan Bentuk Soal Khusus yang Diinginkan :
                 </label>
                 <input
                   type="text"
                   id="rpm-custom-qtype-name"
                   list="datalist-custom-qtypes"
                   class="form-control"
-                  placeholder="Contoh: Soal Cerita Kontekstual / Studi Kasus / Mengurutkan Langkah / Analisis Sebab-Akibat / Pilihan Ganda Kompleks"
+                  placeholder="Contoh: Studi Kasus Kontekstual / Pilihan Ganda Kompleks / Melengkapi Tabel Pengamatan"
                 >
                 <datalist id="datalist-custom-qtypes">
-                  <option value="Soal Cerita Kontekstual Kehidupan Sehari-hari"></option>
-                  <option value="Studi Kasus & Analisis Wacana"></option>
+                  <option value="Operasi Hitung Langsung Tanpa Cerita"></option>
+                  <option value="Soal Cerita Matematika Kontekstual Singkat"></option>
+                  <option value="Studi Kasus & Analisis Wacana Singkat"></option>
                   <option value="Pilihan Ganda Kompleks (Lebih dari Satu Jawaban Benar)"></option>
                   <option value="Mengurutkan Langkah / Prosedur yang Tepat"></option>
                   <option value="Analisis Hubungan Sebab - Akibat"></option>
-                  <option value="Teka-Teki / Tebak Kata Kunci Konsep"></option>
-                  <option value="Analisis Tabel Pengamatan & Kesimpulan"></option>
                 </datalist>
-                <div class="form-hint" style="color: #92400e;">
-                  AI Profesional Akademik akan menganalisis karakteristik jenis soal yang Anda ketik di atas dan membuatkan struktur soal yang akurat sesuai materi, TP, CP, serta Kelas/Fase.
-                </div>
               </div>
             </div>
           </div>
@@ -3219,32 +3379,40 @@ body {
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="submit" class="btn btn-success write-action-btn" style="padding: 0.85rem 1.95rem; font-size: 0.98rem; box-shadow: var(--shadow-md);">
-            🚀 Analisis dengan AI & Buat Modul RPM + Soal Multi-Halaman &rarr;
+            ✨ Susun Modul RPM & Soal Dinamis dengan AI Murni &rarr;
           </button>
         </div>
       </form>
     </div>
 
+    <!-- PANEL HASIL PEMBUATAN MODUL RPM & SOAL -->
     <div id="rpm-result-wrapper" class="hidden">
       <div class="rpm-nav-toolbar no-print">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
           <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
             <span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">NAVIGASI HALAMAN MODUL & SOAL</span>
             <span id="rpm-total-pages-indicator" style="font-size: 0.9rem; font-weight: 700; color: #fde68a;">Halaman 1 dari 1</span>
+            <span id="rpm-verification-status-pill" class="badge badge-success" style="font-size: 0.76rem;">✓ Disusun oleh Generative AI Murni</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #7c3aed; border: 1px solid #c4b5fd; font-weight: 700;" onclick="RpmApp.regenerateQuestionsOnlyWithAI()">
+              🔄 Buat Variasi Soal Baru (AI Murni)
+            </button>
+            <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #16a34a; border: 1px solid #86efac; font-weight: 800;" onclick="RpmApp.saveCurrentRpmToArchive()">
+              💾 Simpan Hasil RPM & Soal
+            </button>
             <button type="button" id="btn-toggle-teacher-key" class="btn btn-secondary btn-sm" onclick="RpmApp.toggleAnswerKeyVisibility()">
-              Sembunyikan Kunci Jawaban (Mode Lembar Siswa)
+              Sembunyikan Kunci Jawaban (Mode Siswa)
             </button>
             <button type="button" id="btn-show-all-pages-view" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="RpmApp.showAllPagesSimultaneously()">
-              Tampilkan Semua Halaman Sekaligus
+              Tampilkan Semua Halaman
             </button>
             <button type="button" class="btn btn-warning btn-sm" onclick="RpmApp.reopenBuilderForm()">
               &larr; Ubah Parameter CP/TP & Soal
             </button>
-            <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
-              🖨️ Cetak / Simpan PDF
+            <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #0f172a;" onclick="window.print()">
+              🖨️ Cetak / PDF
             </button>
           </div>
         </div>
@@ -3254,9 +3422,14 @@ body {
 
       <div id="rpm-print-page-1" class="rpm-print-page">
         <div class="no-print" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem;">
-          <h4 style="font-size: 0.92rem; color: #92400e; margin-bottom: 0.5rem;">
-            Fitur Tambah Langkah Pengalaman Belajar Manual (Fleksibilitas Guru)
-          </h4>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+            <h4 style="font-size: 0.92rem; color: #92400e; margin-bottom: 0;">
+              Fitur Tambah Langkah Pengalaman Belajar Manual & Simpan ke Arsip
+            </h4>
+            <button type="button" class="btn btn-success btn-sm write-action-btn" onclick="RpmApp.saveCurrentRpmToArchive()">
+              💾 Simpan ke Arsip Perangkat Ajar
+            </button>
+          </div>
           <div style="display: flex; gap: 0.65rem; flex-wrap: wrap; align-items: center;">
             <select id="rpm-custom-step-stage" class="form-control" style="max-width: 260px;">
               <option value="memahami">Tahap 1: Memahami (Mindful)</option>
@@ -3277,7 +3450,38 @@ body {
 
       <div id="rpm-bottom-pager-bar" class="rpm-bottom-pager no-print"></div>
     </div>
-          </section>
+
+    <!-- PANEL ARSIP MODUL RPM & SOAL TERSIMPAN -->
+    <div id="rpm-saved-archive-card" class="card no-print" style="margin-top: 1.5rem; border: 2px solid #93c5fd;">
+      <div class="card-header">
+        <div>
+          <span class="badge badge-primary" style="margin-bottom: 0.25rem;">ARSIP PERANGKAT AJAR & BANK SOAL GURU</span>
+          <h3 class="card-title">📂 Daftar Modul RPM & Soal yang Tersimpan (Dapat Digunakan di Lain Waktu)</h3>
+          <p class="card-subtitle">
+            Setiap modul RPM dan soal yang Anda simpan tercatat di sini. Klik <strong>Buka & Gunakan</strong> untuk menampilkan kembali atau mencetaknya kapan saja.
+          </p>
+        </div>
+        <span id="rpm-saved-archive-badge" class="badge badge-success">0 Modul Tersimpan</span>
+      </div>
+
+      <div class="table-responsive">
+        <table class="academic-table">
+          <thead>
+            <tr>
+              <th style="width: 48px;">No</th>
+              <th style="width: 150px;">Waktu Simpan</th>
+              <th style="width: 165px;">Mata Pelajaran</th>
+              <th>Topik Materi & Tujuan Pembelajaran (TP)</th>
+              <th style="width: 135px;">Kelas / Fase</th>
+              <th style="width: 150px; text-align: center;">Rincian Soal</th>
+              <th style="width: 220px;">Aksi (Buka / Hapus)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-rpm-saved-archive"></tbody>
+        </table>
+      </div>
+    </div>
+            </section>
   
     <section id="view-intra-analisis-rapor" class="app-view hidden">
     <div class="card no-print" style="background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 55%, #0f766e 100%); color: #ffffff; border: none;">
@@ -10771,7 +10975,22 @@ const IntraApp = {
   }
 };
 
-  const AcademicAIEngine = {
+  const GEMINI_KEY_STORAGE = 'SIMAK_EDU_GEMINI_API_KEY_V1';
+
+const AcademicAIEngine = {
+  getGeminiApiKey() {
+    return (localStorage.getItem(GEMINI_KEY_STORAGE) || '').trim();
+  },
+
+  setGeminiApiKey(keyStr) {
+    const clean = String(keyStr || '').trim();
+    if (clean) {
+      localStorage.setItem(GEMINI_KEY_STORAGE, clean);
+    } else {
+      localStorage.removeItem(GEMINI_KEY_STORAGE);
+    }
+  },
+
   getSoloVerbMeta(soloRaw) {
     const s = String(soloRaw || '').toLowerCase();
     if (s.includes('pre-structural')) {
@@ -10779,92 +10998,92 @@ const IntraApp = {
         level: 'Pre-structural',
         shortDesc: 'Pengenalan Dasar',
         verbs: 'mengenali, menyebutkan, dan mengamati objek konkret',
-        cognitiveTarget: 'pengenalan fakta dasar awal secara terarah',
-        taskFocus: 'mengenali bentuk, nama, dan ciri dasar yang tampak langsung'
+        cognitiveTarget: 'pengenalan konsep dasar awal secara terarah'
       };
     }
     if (s.includes('uni-structural')) {
       return {
         level: 'Uni-structural',
-        shortDesc: 'Identifikasi Satu Konsep Inti',
-        verbs: 'mengidentifikasi, menentukan, dan menyebutkan satu fungsi/fakta kunci',
-        cognitiveTarget: 'penguasaan satu informasi tunggal yang esensial',
-        taskFocus: 'menentukan satu pengertian, fungsi utama, atau informasi pokok secara tepat'
+        shortDesc: 'Identifikasi Satu Konsep / Operasi Tunggal',
+        verbs: 'mengidentifikasi, menentukan, dan menghitung satu operasi dasar',
+        cognitiveTarget: 'penguasaan satu prosedur atau informasi esensial'
       };
     }
     if (s.includes('multi-structural')) {
       return {
         level: 'Multi-structural',
-        shortDesc: 'Penguraian Beberapa Aspek/Konsep',
-        verbs: 'menguraikan, mengelompokkan, dan menyebutkan beberapa ciri atau langkah',
-        cognitiveTarget: 'pemahaman beberapa fakta, ciri-ciri, dan prosedur secara terstruktur',
-        taskFocus: 'mengklasifikasikan beberapa contoh, ciri-ciri, atau tahapan secara runtut'
+        shortDesc: 'Penguraian Beberapa Langkah Terstruktur',
+        verbs: 'menguraikan, menghitung secara bertahap, dan mengelompokkan informasi',
+        cognitiveTarget: 'pemahaman beberapa fakta atau langkah penyelesaian secara runtut'
       };
     }
     if (s.includes('extended abstract')) {
       return {
         level: 'Extended Abstract',
-        shortDesc: 'Evaluasi, Prediksi, & Solusi HOTS',
-        verbs: 'mengevaluasi, memprediksi dampak, menyimpulkan, dan merancang solusi kreatif',
-        cognitiveTarget: 'transfer pengetahuan tingkat tinggi (HOTS) pada situasi baru',
-        taskFocus: 'memprediksi kemungkinan yang terjadi, menilai tindakan, dan merumuskan solusi inovatif'
+        shortDesc: 'Penalaran Lanjut & Pemecahan Masalah',
+        verbs: 'menganalisis mendalam, menyimpulkan pola, dan memecahkan masalah',
+        cognitiveTarget: 'penerapan konsep secara komprehensif sesuai cakupan kelas'
       };
     }
     return {
       level: 'Relational',
-      shortDesc: 'Analisis Sebab-Akibat & Keterkaitan Konsep',
-      verbs: 'menghubungkan, menganalisis sebab-akibat, dan menerapkan konsep pada kasus nyata',
-      cognitiveTarget: 'kemampuan mengaitkan berbagai elemen konsep menjadi pemahaman utuh',
-      taskFocus: 'menganalisis hubungan sebab-akibat dan memecahkan persoalan kontekstual'
+      shortDesc: 'Penerapan Konsep & Hubungan Antar-Elemen',
+      verbs: 'menghubungkan, menerapkan operasi/konsep, dan menyelesaikan masalah',
+      cognitiveTarget: 'kemampuan menerapkan konsep pada variasi soal yang setara kelas'
     };
   },
 
   detectGradeProfile(kelasFaseStr) {
     const raw = String(kelasFaseStr || '').toUpperCase();
-    if (raw.includes('FASE A') || /\bKELAS\s*(1|2|I|II)\b/.test(raw)) {
+    const numMatch = raw.match(/\b(1|2|3|4|5|6|7|8|9|10|11|12)\b/);
+    const classNum = numMatch ? parseInt(numMatch[1], 10) : 4;
+
+    if (raw.includes('FASE A') || classNum === 1 || classNum === 2) {
       return {
         phaseCode: 'FASE_A',
-        label: 'Fase A (Kelas 1–2 SD)',
-        tone: 'kalimat pendek, sederhana, lugas, menggunakan benda konkret di sekitar anak (rumah dan sekolah)',
-        complexity: 'sederhana dan konkret'
+        classNum: classNum <= 2 ? classNum : 2,
+        label: `Kelas ${classNum <= 2 ? classNum : 2} / Fase A (SD Awal)`,
+        maxNumber: classNum === 1 ? 20 : 100,
+        sentenceStyle: 'sangat singkat (maksimal 12 kata per kalimat), kosakata sehari-hari yang konkret untuk anak usia 7-8 tahun (Kelas 1-2 SD)'
       };
     }
-    if (raw.includes('FASE B') || /\bKELAS\s*(3|4|III|IV)\b/.test(raw)) {
+    if (raw.includes('FASE B') || classNum === 3 || classNum === 4) {
       return {
         phaseCode: 'FASE_B',
-        label: 'Fase B (Kelas 3–4 SD)',
-        tone: 'kalimat jelas dan komunikatif, berbasis pengamatan fenomena sehari-hari dan ilustrasi kegiatan siswa',
-        complexity: 'menengah dan aplikatif'
+        classNum: (classNum === 3 || classNum === 4) ? classNum : 4,
+        label: `Kelas ${(classNum === 3 || classNum === 4) ? classNum : 4} / Fase B (SD Tengah)`,
+        maxNumber: 10000,
+        sentenceStyle: 'jelas, lugas, langsung pada inti persoalan, sesuai perkembangan kognitif anak usia 9-10 tahun (Kelas 3-4 SD)'
       };
     }
-    if (raw.includes('FASE D') || raw.includes('SMP') || /\bKELAS\s*(7|8|9|VII|VIII|IX)\b/.test(raw)) {
+    if (raw.includes('FASE D') || raw.includes('SMP') || classNum >= 7) {
       return {
         phaseCode: 'FASE_D',
-        label: 'Fase D (SMP Kelas 7–9)',
-        tone: 'kalimat analitis, ilmiah, berbasis studi kasus kontekstual, data pengamatan, dan pemecahan masalah',
-        complexity: 'analitis mendalam'
+        classNum: classNum >= 7 ? classNum : 7,
+        label: `Kelas ${classNum >= 7 ? classNum : 7} / Fase D (SMP)`,
+        maxNumber: 100000,
+        sentenceStyle: 'sistematis, logis, dan sesuai tingkat perkembangan remaja SMP'
       };
     }
     return {
       phaseCode: 'FASE_C',
-      label: 'Fase C (Kelas 5–6 SD)',
-      tone: 'kalimat terstruktur, penalaran logis sebab-akibat, studi kasus lingkungan sekitar, dan penerapan konsep',
-      complexity: 'penalaran logis dan kontekstual'
+      classNum: (classNum === 5 || classNum === 6) ? classNum : 5,
+      label: `Kelas ${(classNum === 5 || classNum === 6) ? classNum : 5} / Fase C (SD Akhir)`,
+      maxNumber: 50000,
+      sentenceStyle: 'jelas, komunikatif, dan sesuai tingkat perkembangan anak usia 11-12 tahun (Kelas 5-6 SD)'
     };
   },
 
   parseTpList(rawTp, materi, mapel) {
     if (!rawTp || !String(rawTp).trim()) {
       return [
-        `Mengidentifikasi konsep inti dan contoh nyata pada materi ${materi}.`,
-        `Menganalisis penerapan materi ${materi} dalam menyelesaikan masalah sehari-hari.`
+        `Menyelesaikan persoalan terkait ${materi} pada mata pelajaran ${mapel} dengan tepat.`
       ];
     }
-
     const lines = String(rawTp)
       .split(/\r?\n|;|\b(?=\d+[\.\)]\s)/)
       .map(l => l.replace(/^(\d+[\.\)]|\-|\•|\*)\s*/, '').trim())
-      .filter(l => l.length > 4);
+      .filter(l => l.length > 3);
 
     return lines.length > 0 ? lines : [String(rawTp).trim()];
   },
@@ -10873,7 +11092,7 @@ const IntraApp = {
     if (!tpSentence) return '';
     let s = String(tpSentence).trim();
     s = s.replace(/^(melalui\s+[^,]+,\s*)/i, '');
-    s = s.replace(/^(peserta\s+didik\s+|siswa\s+)(mampu\s+|dapat\s+)?/i, '');
+    s = s.replace(/^(peserta\s+didik\s+|siswa\s+|murid\s+)(mampu\s+|dapat\s+)?/i, '');
     s = s.replace(/\.$/, '').trim();
     if (s.length > 0) {
       s = s.charAt(0).toLowerCase() + s.slice(1);
@@ -10881,53 +11100,761 @@ const IntraApp = {
     return s;
   },
 
-  extractCleanKeywords(materi, tpList, cpInput) {
-    const rawMateri = String(materi || '').trim();
-    const mainTopic = rawMateri.replace(/\([^)]*\)/g, '').split(/,|;|\:/)[0].trim() || rawMateri;
+  isMathSubjectOrTopic(mapel, materi, tpInput = '') {
+    const mapelLower = String(mapel || '').toLowerCase();
+    if (mapelLower.includes('matematika') || mapelLower.includes('numerasi')) return true;
+    const combined = `${materi || ''} ${tpInput || ''}`.toLowerCase();
+    return /\b(operasi hitung|penjumlahan|pengurangan|perkalian|pembagian|bilangan cacah|bilangan bulat|pecahan|desimal|kpk|fpb|keliling|luas|volume|bangun datar|bangun ruang|menghitung hasil)\b/.test(combined);
+  },
 
-    const stopWords = new Set([
-      'peserta', 'didik', 'siswa', 'mampu', 'dapat', 'untuk', 'dalam', 'pada', 'dengan', 'secara',
-      'yang', 'dan', 'atau', 'dari', 'ke', 'di', 'ini', 'itu', 'adalah', 'sebagai', 'melalui',
-      'memahami', 'menjelaskan', 'mengidentifikasi', 'menganalisis', 'menentukan', 'menyajikan',
-      'menyebutkan', 'menguraikan', 'menerapkan', 'tentang', 'terkait', 'materi', 'pelajaran',
-      'tepat', 'benar', 'baik', 'sesuai', 'kehidupan', 'sehari', 'hari', 'lingkungan', 'sekitar'
-    ]);
+  checkTpAndMateriConflict(mapel, materi, tpInput) {
+    const mLower = String(materi || '').toLowerCase();
+    const tpLower = String(tpInput || '').toLowerCase();
+    const mapelLower = String(mapel || '').toLowerCase();
 
-    const conceptTerms = [];
-    const parenMatch = rawMateri.match(/\(([^)]+)\)/);
-    if (parenMatch && parenMatch[1]) {
-      parenMatch[1].split(/,|\/|;|\bdan\b/i).forEach(t => {
-        const clean = t.trim();
-        if (clean.length > 2) conceptTerms.push(clean);
-      });
+    const mathKeywords = /\b(pembagian|perkalian|penjumlahan|pengurangan|bilangan|pecahan|kpk|fpb|operasi hitung|desimal|luas|keliling|volume|sudut|satuan|hitung)\b/;
+    const bioKeywords = /\b(fotosintesis|rantai makanan|ekosistem|organ tubuh|pencernaan|pernapasan|metamorfosis|perkembangbiakan tumbuhan|hewan vertebrata)\b/;
+    const langKeywords = /\b(puisi|pantun|cerpen|dongeng|gagasan pokok|kalimat utama|sinonim|antonim|wawancara|surat resmi|kata baku)\b/;
+
+    if ((mapelLower.includes('matematika') || mathKeywords.test(mLower)) && !mathKeywords.test(tpLower)) {
+      if (bioKeywords.test(tpLower)) {
+        return {
+          hasConflict: true,
+          message: `Terdeteksi pertentangan antara Materi Matematika ("${materi}") dengan Tujuan Pembelajaran (TP) yang memuat topik IPA/Biologi ("${tpInput}"). Sesuai Aturan Prioritas #1, mohon selaraskan TP dengan Materi terlebih dahulu.`
+        };
+      }
+      if (langKeywords.test(tpLower)) {
+        return {
+          hasConflict: true,
+          message: `Terdeteksi pertentangan antara Materi Matematika ("${materi}") dengan Tujuan Pembelajaran (TP) Bahasa/Sastra ("${tpInput}"). Mohon selaraskan terlebih dahulu sebelum membuat soal.`
+        };
+      }
     }
 
-    rawMateri.replace(/\([^)]*\)/g, '').split(/,|\/|;|\:/).forEach((t, idx) => {
-      const clean = t.trim();
-      if (idx > 0 && clean.length > 2) conceptTerms.push(clean);
+    if (bioKeywords.test(mLower) && mathKeywords.test(tpLower) && !bioKeywords.test(tpLower)) {
+      return {
+        hasConflict: true,
+        message: `Terdeteksi pertentangan antara Materi Sains/IPAS ("${materi}") dengan Tujuan Pembelajaran (TP) operasi hitung Matematika murni ("${tpInput}"). Mohon klarifikasi dan selaraskan TP Anda.`
+      };
+    }
+
+    return { hasConflict: false, message: '' };
+  },
+
+  extractJsonFromText(rawText) {
+    if (!rawText) return null;
+    let cleaned = String(rawText)
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        const sub = cleaned.slice(firstBrace, lastBrace + 1);
+        try {
+          return JSON.parse(sub);
+        } catch (err2) {
+          return null;
+        }
+      }
+      return null;
+    }
+  },
+
+  async callPureGenerativeLLM(systemInstruction, userPrompt) {
+    if (!navigator.onLine) return null;
+
+    const geminiKey = this.getGeminiApiKey();
+
+    // JALUR 1: GOOGLE GEMINI API RESMI (JIKA GURU MENGISI API KEY)
+    if (geminiKey) {
+      const geminiModels = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+      for (const modelName of geminiModels) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 22000);
+        try {
+          const url = `[https://generativelanguage.googleapis.com/v1beta/models/$](https://generativelanguage.googleapis.com/v1beta/models/$){modelName}:generateContent?key=${encodeURIComponent(geminiKey)}`;
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: systemInstruction }]
+              },
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: userPrompt }]
+                }
+              ],
+              generationConfig: {
+                temperature: 0.55,
+                responseMimeType: 'application/json'
+              }
+            })
+          });
+          clearTimeout(timer);
+          if (res.ok) {
+            const data = await res.json();
+            const textOut = data &&
+              data.candidates &&
+              data.candidates[0] &&
+              data.candidates[0].content &&
+              data.candidates[0].content.parts &&
+              data.candidates[0].content.parts[0] &&
+              data.candidates[0].content.parts[0].text;
+            const parsed = this.extractJsonFromText(textOut);
+            if (parsed) {
+              parsed._engineUsed = `Google Gemini (${modelName})`;
+              return parsed;
+            }
+          }
+        } catch (err) {
+          clearTimeout(timer);
+        }
+      }
+    }
+
+    // JALUR 2: CLOUD GENERATIVE AI GATEWAY (OTOMATIS & GRATIS TANPA API KEY)
+    const cloudModels = ['openai', 'openai-large', 'mistral'];
+    for (const modelName of cloudModels) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await fetch('[https://text.pollinations.ai/openai](https://text.pollinations.ai/openai)', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: modelName,
+            messages: [
+              { role: 'system', content: systemInstruction },
+              { role: 'user', content: userPrompt }
+            ],
+            temperature: 0.55,
+            seed: Math.floor(Math.random() * 900000) + 100000,
+            response_format: { type: 'json_object' }
+          })
+        });
+        clearTimeout(timer);
+        if (response.ok) {
+          const resData = await response.json();
+          const rawContent = resData &&
+            resData.choices &&
+            resData.choices[0] &&
+            resData.choices[0].message &&
+            resData.choices[0].message.content;
+          const parsed = this.extractJsonFromText(rawContent);
+          if (parsed) {
+            parsed._engineUsed = `Generative AI Murni (${modelName.toUpperCase()})`;
+            return parsed;
+          }
+        }
+      } catch (e) {
+        clearTimeout(timer);
+      }
+    }
+
+    return null;
+  },
+
+  buildCurriculumSystemPrompt() {
+    return `Anda adalah seorang Pakar Kurikulum Pendidikan, Ahli Pedagogi, dan Instructional Designer profesional yang sangat berpengalaman dalam dunia pendidikan Indonesia (khususnya Kurikulum Merdeka), sekaligus PEMBUAT SOAL PENDIDIKAN INDONESIA tingkat ahli.
+
+TUGAS UTAMA ANDA:
+Membantu guru menyusun Rencana Pembelajaran Mendalam / Modul Ajar (RPM Sistem 8-3-3-4) yang komprehensif SERTA menghasilkan variasi soal tes secara dinamis, kreatif, luas, dan 100% akurat berdasarkan input pengguna (BUKAN template bank soal kaku).
+
+PATUHI 8 ATURAN KETAT PEMBUAT SOAL PENDIDIKAN INDONESIA BERIKUT:
+1. PRIORITAS INFORMASI:
+   (1) Tujuan Pembelajaran (TP) yang dimasukkan guru.
+   (2) Materi atau topik yang secara eksplisit dipilih guru.
+   (3) Capaian Pembelajaran (CP) dan kompetensi yang relevan.
+   (4) Kelas dan tingkat perkembangan siswa.
+   (5) Jenis soal, jumlah soal, tingkat kesulitan, serta instruksi khusus yang dipilih guru.
+   Jangan memperluas materi ke topik lain di luar yang diminta guru.
+
+2. KESESUAIAN SOAL:
+   - Setiap soal wajib mengukur kemampuan yang disebutkan dalam Tujuan Pembelajaran (TP) dan menggunakan materi yang benar-benar dipilih guru.
+   - Sesuai dengan tingkat kelas dan perkembangan bahasa siswa.
+   - Tidak mengulang soal yang sama dengan hanya mengganti nama/angka secara monoton; buat variasi yang cerdas dan bermakna.
+   - Tidak membuat cerita panjang jika guru tidak meminta soal cerita.
+   - Tidak mengubah tugas menghitung menjadi tugas membaca bacaan atau menanyakan definisi.
+
+3. ATURAN KHUSUS MATEMATIKA:
+   - Matematika wajib berorientasi pada aktivitas matematis (menghitung, mengoperasikan bilangan, membandingkan, mengukur, menemukan pola, atau memecahkan masalah).
+   - Jika guru memilih OPERASI HITUNG LANGSUNG (DIRECT_CALC):
+     * Tampilkan bilangan dan simbol operasi sebagai inti soal (contoh: "864 ÷ 8 = ....", "1.248 ÷ 6 = ....", "2.736 ÷ 12 = ....").
+     * JANGAN membuat paragraf cerita.
+     * JANGAN mengubah operasi hitung menjadi pertanyaan definisi/pengertian.
+     * Hitung dan verifikasi jawaban menggunakan metode matematis yang benar (patuhi syarat seperti habis dibagi tanpa sisa).
+   - Jika guru memilih SOAL CERITA (WORD_PROBLEM): buat situasi kontekstual singkat (1-2 kalimat) yang membutuhkan operasi matematika yang ditargetkan.
+
+4. ATURAN JENIS SOAL:
+   - PG (Pilihan Ganda): sediakan tepat 4 opsi (A, B, C, D) dengan tepat satu jawaban benar dan pengecoh yang masuk akal.
+   - ISIAN: satu pertanyaan atau operasi hitung langsung dengan jawaban pasti.
+   - ESAI / URAIAN: minta proses, langkah penyelesaian, alasan, atau penjelasan sesuai TP.
+   - BENARSALAH: pernyataan objektif yang jelas benar atau salahnya.
+   - MATCHING: pasangan premis (leftPremise) dan respon (rightResponse) yang tepat.
+
+5. KELUARAN WAJIB JSON MURNI:
+   Keluarkan HANYA objek JSON valid sesuai skema yang diminta tanpa teks pengantar di luar JSON.`;
+  },
+
+  buildFullGenerationUserPrompt(params, questionSpecList, variationSeed = 1) {
+    const {
+      penyusun,
+      sekolah,
+      kelasFase,
+      semester,
+      mapel,
+      materi,
+      cpInput,
+      tpInput,
+      customPrompt = '',
+      soloLevel,
+      selectedDpl,
+      difficulty = 'SEDANG',
+      mathMode = 'DIRECT_CALC',
+      mathConstraint = ''
+    } = params;
+
+    const gradeProfile = this.detectGradeProfile(kelasFase);
+    const isMath = this.isMathSubjectOrTopic(mapel, materi, tpInput);
+
+    const specDesc = (questionSpecList || []).map((s, idx) => {
+      return `${idx + 1}. JenisKode="${s.type}", NamaBagian="${s.customName || s.type}", JumlahSoal=${s.count} butir`;
+    }).join('\n');
+
+    const mathRulesPrompt = isMath
+      ? `INSTRUKSI KHUSUS MATEMATIKA AKTIF:
+- Model Soal Matematika yang dipilih guru: "${mathMode}" (${mathMode === 'DIRECT_CALC' ? 'OPERASI HITUNG LANGSUNG: tulis angka dan simbol operasi secara langsung seperti 864 ÷ 8 = .... TANPA cerita pengantar' : mathMode === 'WORD_PROBLEM' ? 'SOAL CERITA KONTEKSTUAL SINGKAT 1-2 kalimat yang membutuhkan perhitungan' : 'KOMBINASI 50% Operasi Hitung Langsung dan 50% Soal Cerita Singkat'}).
+- Syarat Bilangan/Operasi: "${mathConstraint || 'Habis dibagi tanpa sisa, angka sesuai tingkat kelas'}".
+- Wajib hitung hasil setiap operasi secara akurat sebelum menulis kunci jawaban dan opsi A, B, C, D.`
+      : `INSTRUKSI MATA PELAJARAN (${mapel}):
+- Buat soal yang berfokus 100% pada substansi materi "${materi}" dan mengukur Tujuan Pembelajaran secara langsung.
+- Gunakan gaya bahasa: ${gradeProfile.sentenceStyle}.`;
+
+    return `Susunlah Rencana Pembelajaran Mendalam (RPM Sistem 8-3-3-4) dan Instrumen Soal Tes Dinamis (Variasi Seed #${variationSeed}) berdasarkan data guru berikut:
+
+- Mata Pelajaran: "${mapel}"
+- Topik / Materi Ajar Spesifik: "${materi}"
+- Kelas / Fase Siswa: "${kelasFase}" (${gradeProfile.label} — Gaya bahasa: ${gradeProfile.sentenceStyle})
+- Capaian Pembelajaran (CP): "${cpInput}"
+- Tujuan Pembelajaran (TP) [PRIORITAS #1]:
+${tpInput}
+- Ranah Taksonomi SOLO: "${soloLevel}"
+- Tingkat Kesulitan Soal: "${difficulty}"
+- Dimensi Profil Lulusan (DPL): "${(selectedDpl || []).join(', ')}"
+- Instruksi Khusus Tambahan dari Guru: "${customPrompt || 'Susun secara profesional, jelas, variatif, dan akurat sesuai tingkat kelas siswa.'}"
+
+${mathRulesPrompt}
+
+RINCIAN BAGIAN SOAL YANG WAJIB DIBUAT:
+${specDesc || 'Tidak ada bagian soal'}
+
+FORMAT KELUARAN JSON WAJIB (Ikuti persis struktur key berikut):
+{
+  "rpmBlueprint": {
+    "prinsip3": {
+      "mindful": "Uraian konkret bagaimana guru mengondisikan kesadaran penuh siswa pada materi ini...",
+      "meaningful": "Uraian konkret keterkaitan materi ini dengan pengalaman/kehidupan nyata siswa...",
+      "joyful": "Uraian konkret suasana belajar yang menggembirakan dan interaktif pada materi ini..."
+    },
+    "kerangka4": {
+      "pedagogis": "Model dan strategi pedagogis spesifik untuk materi ini...",
+      "kemitraan": "Kemitraan belajar guru dan siswa pada materi ini...",
+      "lingkungan": "Pengaturan lingkungan belajar di ${sekolah}...",
+      "digital": "Media pembelajaran dan alat peraga yang relevan..."
+    },
+    "pengalaman3": {
+      "memahami": [
+        "Langkah kegiatan awal & eksplorasi konsep 1...",
+        "Langkah 2...",
+        "Langkah 3..."
+      ],
+      "mengaplikasi": [
+        "Langkah kegiatan inti & latihan mendalam 1...",
+        "Langkah 2...",
+        "Langkah 3..."
+      ],
+      "merefleksi": [
+        "Langkah evaluasi, refleksi, & penutup 1...",
+        "Langkah 2...",
+        "Langkah 3..."
+      ]
+    }
+  },
+  "questionSections": [
+    {
+      "type": "PG|ISIAN|ESAI|URAIAN|BENARSALAH|MATCHING|LAINNYA",
+      "customName": "Nama jika LAINNYA",
+      "title": "Judul instruksi bagian soal...",
+      "count": 5,
+      "items": [
+        {
+          "no": 1,
+          "isDirectMath": true,
+          "indicatorBadge": "TP yang diukur | Materi | Level",
+          "stem": "Isi pertanyaan atau operasi hitung langsung (tanpa nomor di depan)...",
+          "options": { "A": "Opsi A", "B": "Opsi B", "C": "Opsi C", "D": "Opsi D" },
+          "leftPremise": "Khusus jika type=MATCHING",
+          "rightResponse": "Khusus jika type=MATCHING",
+          "answer": "Kunci Jawaban lengkap beserta langkah perhitungan / pembahasan akurat",
+          "scoreWeight": 20
+        }
+      ]
+    }
+  ]
+}`;
+  },
+
+  async suggestCpAndTpWithAI(mapel, kelasFase, materi, soloLevel) {
+    const gradeProfile = this.detectGradeProfile(kelasFase);
+    const sysPrompt = `Anda adalah Pakar Kurikulum Merdeka Indonesia. Tugas Anda adalah menyusun rumusan Capaian Pembelajaran (CP) dan 3 butir Tujuan Pembelajaran (TP) yang sangat relevan, operasional, dan sesuai tingkat perkembangan siswa (${gradeProfile.label}). Keluarkan HANYA JSON valid.`;
+
+    const usrPrompt = `Buatkan CP dan 3 TP operasional untuk:
+- Mata Pelajaran: "${mapel}"
+- Kelas / Fase: "${kelasFase}" (${gradeProfile.label})
+- Topik / Materi Pokok: "${materi}"
+- Ranah Kognitif SOLO: "${soloLevel}"
+
+Format JSON wajib:
+{
+  "cp": "Rumusan Capaian Pembelajaran...",
+  "tpList": [
+    "1. Siswa mampu ...",
+    "2. Siswa mampu ...",
+    "3. Siswa mampu ..."
+  ]
+}`;
+
+    const aiRes = await this.callPureGenerativeLLM(sysPrompt, usrPrompt);
+    if (aiRes && aiRes.cp && Array.isArray(aiRes.tpList) && aiRes.tpList.length > 0) {
+      return {
+        cp: String(aiRes.cp).trim(),
+        tpText: aiRes.tpList.map((t, idx) => {
+          const clean = String(t).replace(/^\d+[\.\)]\s*/, '').trim();
+          return `${idx + 1}. ${clean}`;
+        }).join('\n'),
+        engineUsed: aiRes._engineUsed || 'Generative AI Murni'
+      };
+    }
+    return null;
+  },
+
+  async generateFullRpmAndQuestionsWithAI(params, questionSpecList, variationSeed = 1) {
+    const localBlueprint = this.buildRpm8334Blueprint(params);
+
+    const sysPrompt = this.buildCurriculumSystemPrompt();
+    const usrPrompt = this.buildFullGenerationUserPrompt(params, questionSpecList, variationSeed);
+
+    const aiData = await this.callPureGenerativeLLM(sysPrompt, usrPrompt);
+
+    if (aiData) {
+      if (aiData.rpmBlueprint) {
+        const bp = aiData.rpmBlueprint;
+        if (bp.prinsip3 && bp.prinsip3.mindful) {
+          localBlueprint.prinsip3 = {
+            mindful: bp.prinsip3.mindful || localBlueprint.prinsip3.mindful,
+            meaningful: bp.prinsip3.meaningful || localBlueprint.prinsip3.meaningful,
+            joyful: bp.prinsip3.joyful || localBlueprint.prinsip3.joyful
+          };
+        }
+        if (bp.kerangka4 && bp.kerangka4.pedagogis) {
+          localBlueprint.kerangka4 = {
+            pedagogis: bp.kerangka4.pedagogis || localBlueprint.kerangka4.pedagogis,
+            kemitraan: bp.kerangka4.kemitraan || localBlueprint.kerangka4.kemitraan,
+            lingkungan: bp.kerangka4.lingkungan || localBlueprint.kerangka4.lingkungan,
+            digital: bp.kerangka4.digital || localBlueprint.kerangka4.digital
+          };
+        }
+        if (bp.pengalaman3) {
+          if (Array.isArray(bp.pengalaman3.memahami) && bp.pengalaman3.memahami.length > 0) {
+            localBlueprint.pengalaman3.memahami = bp.pengalaman3.memahami;
+          }
+          if (Array.isArray(bp.pengalaman3.mengaplikasi) && bp.pengalaman3.mengaplikasi.length > 0) {
+            localBlueprint.pengalaman3.mengaplikasi = bp.pengalaman3.mengaplikasi;
+          }
+          if (Array.isArray(bp.pengalaman3.merefleksi) && bp.pengalaman3.merefleksi.length > 0) {
+            localBlueprint.pengalaman3.merefleksi = bp.pengalaman3.merefleksi;
+          }
+        }
+      }
+
+      if (Array.isArray(aiData.questionSections) && aiData.questionSections.length > 0) {
+        const normalizedSections = this.normalizeAndVerifyAISections(aiData.questionSections, params, questionSpecList);
+        return {
+          blueprint: localBlueprint,
+          questionSections: normalizedSections,
+          engineUsed: aiData._engineUsed || 'Generative AI Murni'
+        };
+      }
+    }
+
+    // Fallback dinamis jika perangkat sedang terputus dari internet (offline)
+    const fallbackSections = questionSpecList && questionSpecList.length > 0
+      ? this.generateQuestionsBySpec(params, questionSpecList)
+      : [];
+
+    return {
+      blueprint: localBlueprint,
+      questionSections: fallbackSections,
+      engineUsed: 'Mesin Komputasi Dinamis Lokal (Mode Offline)'
+    };
+  },
+
+  async generateQuestionsWithHybridAI(params, questionSpecList, variationSeed = 1) {
+    const res = await this.generateFullRpmAndQuestionsWithAI(params, questionSpecList, variationSeed);
+    return res.questionSections;
+  },
+
+  normalizeAndVerifyAISections(aiSections, params, requestedSpecs) {
+    const isMath = this.isMathSubjectOrTopic(params.mapel, params.materi, params.tpInput);
+    const directMode = isMath && params.mathMode === 'DIRECT_CALC';
+
+    const defaultTitles = {
+      PG: 'Pilihan Ganda (Pilihlah Satu Jawaban yang Paling Tepat!)',
+      ISIAN: directMode
+        ? 'Isian Operasi Hitung Langsung (Hitunglah Hasil Operasi Berikut dengan Tepat!)'
+        : 'Isian Singkat (Isilah dengan Jawaban yang Tepat!)',
+      ESAI: 'Esai Terstruktur (Jawablah Pertanyaan Berikut dengan Jelas!)',
+      URAIAN: 'Uraian & Pemecahan Masalah (Tuliskan Langkah Penyelesaiannya!)',
+      BENARSALAH: 'Pernyataan Benar / Salah (Tentukan Benar atau Salah!)',
+      MATCHING: 'Mencocokkan Pasangan (Pasangkan Kolom A dengan Kolom B!)'
+    };
+
+    const resultSections = (requestedSpecs || []).map((reqSpec, secIdx) => {
+      const matchedAI = aiSections.find(s => String(s.type).toUpperCase() === reqSpec.type) || aiSections[secIdx];
+      const targetCount = Math.max(1, parseInt(reqSpec.count, 10) || 1);
+
+      if (!matchedAI || !Array.isArray(matchedAI.items) || matchedAI.items.length === 0) {
+        const fallbackSingle = this.generateQuestionsBySpec(params, [reqSpec]);
+        return fallbackSingle[0];
+      }
+
+      const rawItems = matchedAI.items.slice(0, targetCount);
+      while (rawItems.length < targetCount) {
+        const extraFallback = this.generateQuestionsBySpec(params, [{ ...reqSpec, count: targetCount }]);
+        const extraItem = extraFallback[0].items[rawItems.length];
+        if (extraItem) rawItems.push(extraItem);
+        else break;
+      }
+
+      const cleanedItems = rawItems.map((it, i) => {
+        const cleanStem = String(it.stem || it.question || '')
+          .replace(/^\d+[\.\)]\s*/, '')
+          .trim();
+
+        const isDirect = Boolean(it.isDirectMath) || (directMode && reqSpec.type !== 'URAIAN');
+
+        let optionsObj = null;
+        if (reqSpec.type === 'PG') {
+          const rawOpts = it.options || {};
+          optionsObj = {
+            A: String(rawOpts.A || rawOpts.a || 'Pilihan A').replace(/^[A-Da-d][\.\)]\s*/, '').trim(),
+            B: String(rawOpts.B || rawOpts.b || 'Pilihan B').replace(/^[A-Da-d][\.\)]\s*/, '').trim(),
+            C: String(rawOpts.C || rawOpts.c || 'Pilihan C').replace(/^[A-Da-d][\.\)]\s*/, '').trim(),
+            D: String(rawOpts.D || rawOpts.d || 'Pilihan D').replace(/^[A-Da-d][\.\)]\s*/, '').trim()
+          };
+        }
+
+        const rawAns = String(it.answer || it.kunciJawaban || '').trim();
+        const formattedAnswer = rawAns.toLowerCase().startsWith('kunci')
+          ? rawAns
+          : `Kunci Jawaban & Pembahasan: ${rawAns}`;
+
+        return {
+          no: i + 1,
+          isDirectMath: isDirect,
+          indicatorBadge: it.indicatorBadge || `TP Terukur | Materi: ${params.materi} | Level: ${params.difficulty || 'SEDANG'}`,
+          stem: cleanStem,
+          options: optionsObj,
+          leftPremise: it.leftPremise || `${i + 1}. ${cleanStem}`,
+          rightResponse: it.rightResponse || String(it.answer || ''),
+          answer: formattedAnswer,
+          scoreWeight: Math.round((100 / targetCount) * 10) / 10
+        };
+      });
+
+      return {
+        type: reqSpec.type,
+        customName: reqSpec.customName || '',
+        title: matchedAI.title || defaultTitles[reqSpec.type] || (reqSpec.customName || reqSpec.type),
+        count: targetCount,
+        items: cleanedItems
+      };
     });
 
-    const combinedText = `${rawMateri} ${(tpList || []).join(' ')} ${cpInput || ''}`;
-    const words = combinedText
-      .replace(/[^a-zA-Z0-9\s\-]/g, ' ')
-      .split(/\s+/)
-      .map(w => w.trim())
-      .filter(w => w.length > 3 && !stopWords.has(w.toLowerCase()));
+    this.verifyAndSanitizeQuestions(resultSections, params);
+    return resultSections;
+  },
 
-    words.forEach(w => {
-      if (!conceptTerms.some(c => c.toLowerCase().includes(w.toLowerCase()))) {
-        conceptTerms.push(w);
+  detectMathOperationType(materi, tpInput) {
+    const text = `${materi || ''} ${tpInput || ''}`.toLowerCase();
+    if (/pembagian|membagi|bagi|\b÷\b/.test(text) && !/perkalian dan pembagian|campuran/.test(text)) {
+      return 'DIVISION';
+    }
+    if (/perkalian|mengalikan|kali|\b×\b/.test(text) && !/pembagian|campuran/.test(text)) {
+      return 'MULTIPLICATION';
+    }
+    if (/pengurangan|mengurangkan|kurang|selisih/.test(text) && !/penjumlahan/.test(text)) {
+      return 'SUBTRACTION';
+    }
+    if (/penjumlahan|menjumlahkan|tambah/.test(text) && !/pengurangan/.test(text)) {
+      return 'ADDITION';
+    }
+    if (/pecahan|senilai|pembilang|penyebut|desimal|persen/.test(text)) {
+      return 'FRACTION';
+    }
+    if (/kpk|fpb|kelipatan|faktor persekutuan/.test(text)) {
+      return 'KPK_FPB';
+    }
+    if (/luas|keliling|persegi|segitiga|lingkaran|volume|kubus|balok|bangun/.test(text)) {
+      return 'GEOMETRY';
+    }
+    return 'MIXED_OP';
+  },
+
+  formatNum(n) {
+    if (typeof n !== 'number' || isNaN(n)) return String(n);
+    return n.toLocaleString('id-ID');
+  },
+
+  buildUniqueNumericOptions(correctVal, unitSuffix = '', stepHint = 1, seedIdx = 1) {
+    const cleanUnit = unitSuffix ? ` ${unitSuffix.trim()}` : '';
+    const step = Math.max(1, Math.abs(Math.round(stepHint)) || 2);
+    const candidates = [
+      correctVal + step,
+      correctVal - step,
+      correctVal + (step * 2),
+      correctVal - (step * 2),
+      correctVal + 10,
+      correctVal - 10,
+      correctVal + 1,
+      correctVal + 3
+    ].filter(v => v >= 0 && v !== correctVal);
+
+    const uniqueDistractors = [];
+    for (const c of candidates) {
+      if (!uniqueDistractors.includes(c)) uniqueDistractors.push(c);
+      if (uniqueDistractors.length >= 3) break;
+    }
+    while (uniqueDistractors.length < 3) {
+      uniqueDistractors.push(correctVal + (uniqueDistractors.length + 1) * 5);
+    }
+
+    const keys = ['A', 'B', 'C', 'D'];
+    const correctKey = keys[(seedIdx - 1) % 4];
+    const options = {};
+    let dIdx = 0;
+
+    keys.forEach(k => {
+      if (k === correctKey) options[k] = `${this.formatNum(correctVal)}${cleanUnit}`;
+      else {
+        options[k] = `${this.formatNum(uniqueDistractors[dIdx])}${cleanUnit}`;
+        dIdx++;
       }
     });
 
-    if (conceptTerms.length === 0) {
-      conceptTerms.push(mainTopic);
+    return {
+      options,
+      correctKey,
+      correctFormatted: `${this.formatNum(correctVal)}${cleanUnit}`
+    };
+  },
+
+  generateMathComputationCase(opType, idx, gradeProfile, difficulty, useWordProblem) {
+    const diffMult = difficulty === 'MUDAH' ? 0.6 : (difficulty === 'SULIT' ? 1.65 : 1);
+    const phase = gradeProfile.phaseCode;
+
+    if (opType === 'DIVISION') {
+      const divPool = phase === 'FASE_A'
+        ? [2, 3, 4, 5, 6]
+        : (difficulty === 'MUDAH' ? [4, 5, 6, 7, 8, 9] : [6, 8, 9, 12, 14, 15, 16, 18, 24]);
+      const divisor = divPool[(idx - 1) % divPool.length];
+      let baseQuotient = phase === 'FASE_A'
+        ? (idx + 3)
+        : Math.round((72 + (idx * 39) + ((idx % 4) * 23)) * diffMult);
+      if (baseQuotient % 10 === 0) baseQuotient += 4;
+      const dividend = divisor * baseQuotient;
+      const answerVal = dividend / divisor;
+
+      const directExpr = `${this.formatNum(dividend)} ÷ ${this.formatNum(divisor)} = ....`;
+      const wordStem = `Sebanyak ${this.formatNum(dividend)} buku tulis dibagikan sama banyak ke dalam ${this.formatNum(divisor)} kotak tanpa sisa. Berapa buku tulis isi setiap kotak?`;
+
+      return {
+        isDirectMath: !useWordProblem,
+        expressionText: directExpr,
+        stem: useWordProblem ? wordStem : directExpr,
+        numericAnswer: answerVal,
+        unit: useWordProblem ? 'buku' : '',
+        stepHint: difficulty === 'MUDAH' ? 2 : 8,
+        workSteps: `${this.formatNum(dividend)} ÷ ${this.formatNum(divisor)} = ${this.formatNum(answerVal)} (habis dibagi tanpa sisa karena ${this.formatNum(answerVal)} × ${this.formatNum(divisor)} = ${this.formatNum(dividend)})`,
+        trueStatement: `Hasil dari ${this.formatNum(dividend)} ÷ ${this.formatNum(divisor)} adalah ${this.formatNum(answerVal)} tanpa sisa.`,
+        falseStatement: `Hasil dari ${this.formatNum(dividend)} ÷ ${this.formatNum(divisor)} adalah ${this.formatNum(answerVal + 11)}.`,
+        matchLeft: `${this.formatNum(dividend)} ÷ ${this.formatNum(divisor)}`,
+        matchRight: `${this.formatNum(answerVal)}`
+      };
     }
 
+    if (opType === 'MULTIPLICATION') {
+      const a = phase === 'FASE_A' ? (idx + 4) : Math.round((28 + idx * 15) * diffMult);
+      const b = phase === 'FASE_A' ? ((idx % 5) + 2) : ((idx % 9) + 6);
+      const answerVal = a * b;
+      const directExpr = `${this.formatNum(a)} × ${this.formatNum(b)} = ....`;
+      const wordStem = `Terdapat ${this.formatNum(b)} keranjang buah. Setiap keranjang berisi ${this.formatNum(a)} buah jeruk. Berapa jumlah seluruh buah jeruk?`;
+
+      return {
+        isDirectMath: !useWordProblem,
+        expressionText: directExpr,
+        stem: useWordProblem ? wordStem : directExpr,
+        numericAnswer: answerVal,
+        unit: useWordProblem ? 'buah' : '',
+        stepHint: b,
+        workSteps: `${this.formatNum(a)} × ${this.formatNum(b)} = ${this.formatNum(answerVal)}`,
+        trueStatement: `Hasil dari ${this.formatNum(a)} × ${this.formatNum(b)} adalah ${this.formatNum(answerVal)}.`,
+        falseStatement: `Hasil dari ${this.formatNum(a)} × ${this.formatNum(b)} adalah ${this.formatNum(answerVal + a)}.`,
+        matchLeft: `${this.formatNum(a)} × ${this.formatNum(b)}`,
+        matchRight: `${this.formatNum(answerVal)}`
+      };
+    }
+
+    const x = phase === 'FASE_A' ? (12 + idx * 3) : Math.round((140 + idx * 55) * diffMult);
+    const y = phase === 'FASE_A' ? (6 + idx * 2) : Math.round((75 + idx * 35) * diffMult);
+    const answerVal = x + y;
+    const directExpr = `${this.formatNum(x)} + ${this.formatNum(y)} = ....`;
+    const wordStem = `Perpustakaan sekolah memiliki ${this.formatNum(x)} buku cerita dan ${this.formatNum(y)} buku pengetahuan. Berapa jumlah seluruh buku tersebut?`;
+
     return {
-      mainTopic,
-      conceptTerms: conceptTerms.slice(0, 12)
+      isDirectMath: !useWordProblem,
+      expressionText: directExpr,
+      stem: useWordProblem ? wordStem : directExpr,
+      numericAnswer: answerVal,
+      unit: useWordProblem ? 'buku' : '',
+      stepHint: 10,
+      workSteps: `${this.formatNum(x)} + ${this.formatNum(y)} = ${this.formatNum(answerVal)}`,
+      trueStatement: `Hasil dari ${this.formatNum(x)} + ${this.formatNum(y)} adalah ${this.formatNum(answerVal)}.`,
+      falseStatement: `Hasil dari ${this.formatNum(x)} + ${this.formatNum(y)} adalah ${this.formatNum(answerVal + 20)}.`,
+      matchLeft: `${this.formatNum(x)} + ${this.formatNum(y)}`,
+      matchRight: `${this.formatNum(answerVal)}`
     };
+  },
+
+  verifyAndSanitizeQuestions(sections, params) {
+    const seenStems = new Set();
+    let totalVerified = 0;
+
+    (sections || []).forEach(sec => {
+      const targetCount = Math.max(1, parseInt(sec.count, 10) || 1);
+      if (sec.items.length > targetCount) {
+        sec.items = sec.items.slice(0, targetCount);
+      }
+      sec.items.forEach((item, idx) => {
+        item.no = idx + 1;
+        if (item.stem && seenStems.has(item.stem)) {
+          item.stem = `${item.stem} `;
+        }
+        if (item.stem) seenStems.add(item.stem);
+        totalVerified++;
+      });
+    });
+
+    return { verified: true, totalVerified };
+  },
+
+  generateQuestionsBySpec(params, questionSpecList) {
+    const {
+      mapel,
+      materi,
+      kelasFase,
+      tpInput,
+      difficulty = 'SEDANG',
+      mathMode = 'DIRECT_CALC'
+    } = params;
+
+    const gradeProfile = this.detectGradeProfile(kelasFase);
+    const tpList = this.parseTpList(tpInput, materi, mapel);
+    const isMath = this.isMathSubjectOrTopic(mapel, materi, tpInput);
+    const mathOpType = isMath ? this.detectMathOperationType(materi, tpInput) : null;
+
+    const sections = [];
+    let globalSeed = Math.floor(Math.random() * 10) + 1;
+
+    (questionSpecList || []).forEach(spec => {
+      const qType = spec.type;
+      const count = Math.max(1, parseInt(spec.count, 10) || 1);
+      const customTypeName = spec.customName ? String(spec.customName).trim() : '';
+      const items = [];
+
+      for (let i = 1; i <= count; i++) {
+        const tpIdx = (i - 1) % tpList.length;
+        const measuredTp = this.cleanObjectivePhrase(tpList[tpIdx]);
+
+        if (isMath) {
+          const useWord = mathMode === 'WORD_PROBLEM' ? true : (mathMode === 'MIXED_MATH' ? (i % 2 === 0) : false);
+          const mCase = this.generateMathComputationCase(mathOpType, globalSeed++, gradeProfile, difficulty, useWord);
+          const built = this.buildUniqueNumericOptions(mCase.numericAnswer, mCase.unit, mCase.stepHint, i);
+          const indicatorText = `TP #${tpIdx + 1}: ${measuredTp} | Materi: ${materi}`;
+
+          if (qType === 'PG') {
+            items.push({
+              no: i,
+              isDirectMath: mCase.isDirectMath,
+              indicatorBadge: indicatorText,
+              stem: mCase.stem,
+              options: built.options,
+              answer: `Kunci Jawaban: ${built.correctKey} (${built.correctFormatted}) — Pembahasan: ${mCase.workSteps}.`,
+              scoreWeight: Math.round((100 / count) * 10) / 10
+            });
+          } else {
+            items.push({
+              no: i,
+              isDirectMath: mCase.isDirectMath,
+              indicatorBadge: indicatorText,
+              stem: mCase.stem,
+              leftPremise: `${i}. ${mCase.matchLeft}`,
+              rightResponse: `Pasangan ${String.fromCharCode(64 + i)}: ${mCase.matchRight}`,
+              answer: `Kunci Jawaban: ${built.correctFormatted} — Cara Penyelesaian: ${mCase.workSteps}.`,
+              scoreWeight: Math.round((100 / count) * 10) / 10
+            });
+          }
+        } else {
+          const indicatorText = `TP #${tpIdx + 1}: ${measuredTp} | Materi: ${materi}`;
+          items.push({
+            no: i,
+            isDirectMath: false,
+            indicatorBadge: indicatorText,
+            stem: `Berdasarkan materi "${materi}" (${mapel}), analisislah bagaimana cara ${measuredTp} pada kegiatan nomor ${i}!`,
+            options: {
+              A: `Menerapkan konsep ${materi} secara tepat sesuai tujuan: ${measuredTp}`,
+              B: `Mengabaikan karakteristik utama pada ${materi}`,
+              C: `Menggunakan langkah yang tidak berkaitan dengan ${materi}`,
+              D: `Menyimpulkan tanpa mengamati data pada ${materi}`
+            },
+            leftPremise: `${i}. Aspek inti ${materi} (#${i})`,
+            rightResponse: `Pasangan ${String.fromCharCode(64 + i)}: ${measuredTp}`,
+            answer: `Kunci Jawaban: Menerapkan konsep ${materi} secara tepat untuk ${measuredTp}.`,
+            scoreWeight: Math.round((100 / count) * 10) / 10
+          });
+        }
+      }
+
+      sections.push({
+        type: qType,
+        customName: customTypeName,
+        title: customTypeName || `Bagian Soal ${qType}`,
+        count: count,
+        items: items
+      });
+    });
+
+    return sections;
   },
 
   buildRpm8334Blueprint(params) {
@@ -10951,53 +11878,20 @@ const IntraApp = {
       : ['Keimanan dan Ketakwaan terhadap Tuhan YME', 'Penalaran Kritis', 'Kolaborasi', 'Komunikasi'];
 
     const parsedTpList = this.parseTpList(tpInput, materi, mapel);
-    const { mainTopic } = this.extractCleanKeywords(materi, parsedTpList, cpInput);
+    const mainTopic = String(materi || 'Materi Pokok').trim();
 
     const capaianPembelajaran = cpInput && String(cpInput).trim()
       ? String(cpInput).trim()
-      : `Pada akhir ${kelasFase}, peserta didik memiliki kemampuan memahami dan menerapkan konsep ${mainTopic} pada mata pelajaran ${mapel} dalam menyelesaikan permasalahan kontekstual sehari-hari.`;
+      : `Pada akhir ${kelasFase}, peserta didik memiliki kemampuan memahami dan menerapkan konsep ${mainTopic} pada mata pelajaran ${mapel} sesuai tingkat perkembangan kelas.`;
 
     const tujuanPembelajaran = parsedTpList.map((tpItem, idx) => {
       if (/^(melalui|peserta didik|siswa)/i.test(tpItem)) return tpItem;
       const cleanTp = tpItem.charAt(0).toLowerCase() + tpItem.slice(1);
-      if (idx === 0) {
-        return `Melalui pengamatan media konkret/interaktif dan tanya jawab terarah (Mindful Learning), peserta didik mampu ${cleanTp}`;
-      } else if (idx === 1) {
-        return `Melalui diskusi kelompok dan pemecahan masalah berbasis Taksonomi SOLO tingkat ${soloMeta.level} (Meaningful Learning), peserta didik mampu ${cleanTp}`;
-      }
-      return `Melalui kegiatan presentasi karya dan refleksi bersama (Joyful Learning), peserta didik mampu ${cleanTp}`;
+      if (idx === 0) return `Peserta didik mampu ${cleanTp}`;
+      return `Melalui kegiatan eksplorasi dan latihan pada materi ${mainTopic}, peserta didik mampu ${cleanTp}`;
     });
 
-    const prinsip3 = {
-      mindful: `Guru mengondisikan kesiapan psikologis dan fokus penuh peserta didik (${gradeProfile.label}) melalui teknik kesadaran penuh (mindfulness) serta pertanyaan pemantik kontekstual seputar "${mainTopic}".`,
-      meaningful: `Materi "${mainTopic}" dikaitkan langsung dengan objek, peristiwa, dan pengalaman nyata siswa di lingkungan ${sekolah} maupun di rumah sehingga bermakna bagi kehidupan mereka.`,
-      joyful: `Suasana belajar dirancang interaktif, apresiatif, dan menggembirakan melalui eksplorasi kelompok, permainan edukatif/kuis, serta penghargaan atas proses belajar setiap siswa.`
-    };
-
-    const kerangka4 = {
-      pedagogis: `Pembelajaran Mendalam (Deep Learning) dengan model Problem/Inquiry-Based Learning yang dikalibrasi pada Taksonomi SOLO tingkat ${soloMeta.level} (${soloMeta.shortDesc}) untuk ${gradeProfile.label}.`,
-      kemitraan: `Kolaborasi aktif antarsiswa dalam kelompok belajar, pendampingan terdiferensiasi (scaffolding) oleh guru (${penyusun}), serta keterlibatan orang tua/lingkungan sebagai sumber belajar.`,
-      lingkungan: `Penataan ruang kelas di ${sekolah} yang fleksibel, aman, inklusif, dan mendukung keberanian siswa dalam mengamati, bertanya, serta berdiskusi.`,
-      digital: `Pemanfaatan media visual/interaktif, Lembar Kerja Peserta Didik (LKPD) kontekstual, dan instrumen asesmen bertahap berbasis kurikulum.`
-    };
-
-    const pengalaman3 = {
-      memahami: [
-        `Guru membuka pembelajaran dengan salam, doa bersama, pemeriksaan kehadiran, dan pengondisian fokus siswa (Mindful Check-in).`,
-        `Guru memberikan apersepsi dengan menampilkan contoh nyata/ilustrasi terkait "${mainTopic}" dan menyampaikan Tujuan Pembelajaran yang akan dicapai.`,
-        `Peserta didik mengamati stimulus pembelajaran tentang "${mainTopic}" pada mata pelajaran ${mapel} dan melakukan tanya jawab eksploratif untuk membangun konsep dasar.`
-      ],
-      mengaplikasi: [
-        `Peserta didik dibagi ke dalam kelompok kolaboratif untuk menyelidiki lembar kerja (LKPD) yang berisi permasalahan nyata seputar "${mainTopic}".`,
-        `Setiap kelompok berdiskusi menganalisis informasi, menghubungkan konsep sesuai tahap ${soloMeta.level}, dan menyelesaikan tantangan sesuai indikator Tujuan Pembelajaran.`,
-        `Guru memberikan bimbingan terdiferensiasi (scaffolding) kepada kelompok yang membutuhkan serta melakukan asesmen formatif terhadap Dimensi Profil Lulusan (${dplList.join(', ')}).`
-      ],
-      merefleksi: [
-        `Perwakilan kelompok mempresentasikan hasil temuan dan penyelesaian masalah tentang "${mainTopic}" di depan kelas, sementara kelompok lain memberikan tanggapan santun.`,
-        `Peserta didik bersama guru menyimpulkan konsep utama "${mainTopic}" serta merefleksikan manfaat materi tersebut dalam kehidupan sehari-hari.`,
-        `Guru melaksanakan evaluasi tertulis berbasis Taksonomi SOLO (${soloMeta.level}) untuk mengukur ketercapaian Tujuan Pembelajaran, lalu menutup kelas dengan apresiasi dan doa.`
-      ]
-    };
+    const secondTpClean = this.cleanObjectivePhrase(parsedTpList[0] || `menyelesaikan latihan ${mainTopic}`);
 
     return {
       penyusun,
@@ -11015,809 +11909,87 @@ const IntraApp = {
       dplList,
       capaianPembelajaran,
       tujuanPembelajaran,
-      prinsip3,
-      kerangka4,
-      pengalaman3,
+      prinsip3: {
+        mindful: `Guru mengondisikan kesiapan belajar dan fokus siswa (${gradeProfile.label}) melalui apersepsi konkret seputar "${mainTopic}".`,
+        meaningful: `Pembelajaran berfokus langsung pada penguasaan "${mainTopic}" agar siswa benar-benar terampil dalam ${secondTpClean}.`,
+        joyful: `Suasana belajar dirancang interaktif, jelas, dan memotivasi siswa melalui latihan bertahap serta apresiasi positif.`
+      },
+      kerangka4: {
+        pedagogis: `Pembelajaran Mendalam (Deep Learning) sesuai Taksonomi SOLO tingkat ${soloMeta.level} (${soloMeta.shortDesc}) untuk ${gradeProfile.label}.`,
+        kemitraan: `Interaksi aktif antara guru (${penyusun}) dan peserta didik melalui bimbingan langsung serta diskusi kolaboratif.`,
+        lingkungan: `Ruang kelas di ${sekolah} yang kondusif untuk eksplorasi konsep, latihan terarah, dan pembuktian hasil kerja siswa.`,
+        digital: `Pemanfaatan media visual, papan tulis interaktif, alat peraga konkret, dan instrumen asesmen dinamis.`
+      },
+      pengalaman3: {
+        memahami: [
+          `Guru membuka pelajaran dengan salam, doa bersama, pemeriksaan kehadiran, dan kesiapan belajar siswa.`,
+          `Guru menyampaikan Tujuan Pembelajaran hari ini pada materi "${mainTopic}" (${mapel}) dan memantik rasa ingin tahu siswa dengan contoh nyata.`,
+          `Peserta didik mengamati konsep/prosedur dasar "${mainTopic}" yang diperagakan guru dan melakukan tanya jawab aktif.`
+        ],
+        mengaplikasi: [
+          `Peserta didik mengerjakan aktivitas inti dan latihan pemecahan masalah pada materi "${mainTopic}" untuk mencapai indikator: ${secondTpClean}.`,
+          `Guru berkeliling mendampingi siswa secara terdiferensiasi (scaffolding) dan memastikan ketepatan konsep/perhitungan.`,
+          `Peserta didik berdiskusi memeriksa ketelitian hasil kerjanya sembari menguatkan karakter (${dplList.join(', ')}).`
+        ],
+        merefleksi: [
+          `Perwakilan peserta didik mempresentasikan atau menuliskan hasil penyelesaiannya di depan kelas untuk dibahas bersama.`,
+          `Peserta didik bersama guru menyimpulkan poin-poin penting materi "${mainTopic}" serta merefleksikan pengalaman belajar hari ini.`,
+          `Guru melaksanakan asesmen evaluasi akhir menggunakan instrumen soal yang telah disusun.`
+        ]
+      },
       createdAt: DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO())
     };
   },
 
-  async generateQuestionsWithHybridAI(params, questionSpecList) {
-    // 1. Coba analisis mendalam menggunakan Real Generative AI Endpoint terlebih dahulu
-    try {
-      const cloudSections = await this.fetchQuestionsFromRealAI(params, questionSpecList);
-      if (Array.isArray(cloudSections) && cloudSections.length > 0) {
-        return cloudSections;
-      }
-    } catch (err) {
-      console.warn('Menggunakan Deep Curriculum Knowledge Engine lokal:', err);
-    }
-
-    // 2. Fallback Instan: Deep Curriculum Knowledge Graph Engine (100% Akurat & Substantif)
-    return this.generateQuestionsBySpec(params, questionSpecList);
-  },
-
-  async fetchQuestionsFromRealAI(params, questionSpecList) {
-    if (! navigator.onLine) return null;
-
-    const { mapel, materi, kelasFase, soloLevel, cpInput, tpInput } = params;
-    const gradeProfile = this.detectGradeProfile(kelasFase);
-    const soloMeta = this.getSoloVerbMeta(soloLevel);
-
-    const specSummary = (questionSpecList || []).map(s => {
-      const label = s.type === 'LAINNYA' ? `KUSTOM (${s.customName})` : s.type;
-      return `- Jenis: ${label}, Jumlah: ${s.count} soal`;
-    }).join('\n');
-
-    const systemPrompt = `Anda adalah Pakar Kurikulum Nasional Indonesia & Pembuat Soal Ujian Sekolah Profesional.
-Tugas Anda: Membuat soal ujian yang 100% AKURAT, FAKTUAL, KONTEKSTUAL, dan SESUAI SUBSTANSI MATERI PELAJARAN.
-ATURAN KERAS:
-1. DILARANG KERAS mengulang atau menempelkan kalimat Tujuan Pembelajaran (TP) atau Capaian Pembelajaran (CP) secara mentah ke dalam pertanyaan atau pilihan jawaban A, B, C, D.
-2. Buatlah soal nyata layaknya soal ujian resmi di sekolah (gunakan cerita pendek/kasus nyata/angka konkret/fenomena nyata yang menguji pemahaman siswa terhadap materi tersebut).
-3. Sesuaikan tingkat bahasa dengan ${gradeProfile.label} (${gradeProfile.tone}) dan kedalaman kognitif Taksonomi SOLO level ${soloMeta.level}.
-4. Untuk Pilihan Ganda (PG), opsi A, B, C, dan D harus berupa fakta/jawaban materi yang spesifik dan masuk akal (1 jawaban benar + 3 pengecoh logis).
-5. Keluarkan HANYA format JSON murni tanpa teks pengantar.`;
-
-    const userPrompt = `Buat instrumen soal berdasarkan kata kunci berikut:
-- Mata Pelajaran: ${mapel}
-- Kelas / Fase: ${kelasFase} (${gradeProfile.label})
-- Materi Pokok: ${materi}
-- Capaian Pembelajaran (CP): ${cpInput}
-- Tujuan Pembelajaran (TP): ${tpInput}
-- Ranah Taksonomi SOLO: ${soloMeta.level} (${soloMeta.shortDesc})
-- Spesifikasi Jenis & Jumlah Soal:
-${specSummary}
-
-Format JSON yang WAJIB dihasilkan:
-{
-  "sections": [
-    {
-      "type": "PG|ESAI|URAIAN|ISIAN|MATCHING|BENARSALAH|LAINNYA",
-      "title": "Judul Bagian Soal",
-      "count": 5,
-      "items": [
-        {
-          "no": 1,
-          "indicatorBadge": "Indikator singkat soal ini",
-          "stem": "Pertanyaan lengkap yang kontekstual dan jelas bagi siswa",
-          "options": {"A": "Teks Opsi A", "B": "Teks Opsi B", "C": "Teks Opsi C", "D": "Teks Opsi D"},
-          "leftPremise": "Khusus jika type MATCHING: Pernyataan Kolom A",
-          "rightResponse": "Khusus jika type MATCHING: Pasangan Kolom B",
-          "answer": "Kunci Jawaban lengkap beserta penjelasan/pembahasan singkat mengapa jawaban itu benar"
-        }
-      ]
-    }
-  ]
-}`;
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 11000);
-
-    try {
-      const response = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'openai',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          temperature: 0.4,
-          response_format: { type: 'json_object' }
-        })
-      });
-
-      clearTimeout(timeoutId);
-      if (!response.ok) return null;
-
-      const resData = await response.json();
-      const rawContent = resData &&
-        resData.choices &&
-        resData.choices[0] &&
-        resData.choices[0].message &&
-        resData.choices[0].message.content;
-
-      if (!rawContent) return null;
-
-      const cleanedJson = String(rawContent)
-        .replace(/^```json\s*/i, '')
-        .replace(/^```\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-
-      const parsed = JSON.parse(cleanedJson);
-      if (parsed && Array.isArray(parsed.sections) && parsed.sections.length > 0) {
-        return parsed.sections;
-      }
-      return null;
-    } catch (e) {
-      clearTimeout(timeoutId);
-      return null;
-    }
-  },
-
-  getSubjectFactBank(mapel, materi, tpList, cpInput, kelasFase) {
-    const combined = `${mapel} ${materi} ${(tpList || []).join(' ')} ${cpInput || ''}`.toLowerCase();
-    const gradeProfile = this.detectGradeProfile(kelasFase);
-    const isLowGrade = gradeProfile.phaseCode === 'FASE_A';
-
-    // 1. BANK PENGETAHUAN: RANTAI MAKANAN & EKOSISTEM
-    if (/rantai makanan|ekosistem|produsen|konsumen|dekomposer|pengurai|jaring-jaring|biotik|abiotik/.test(combined)) {
-      return [
-        {
-          aspect: 'Peran Produsen dalam Rantai Makanan',
-          context: 'Di sebuah ekosistem sawah terdapat tanaman padi, belalang, katak, ular sawah, burung elang, serta jamur dan bakteri di dalam tanah.',
-          stem: 'Berdasarkan pengamatan pada ekosistem sawah tersebut, makhluk hidup manakah yang berperan sebagai produsen karena mampu membuat makanannya sendiri melalui fotosintesis?',
-          correct: 'Tanaman padi, karena memiliki klorofil untuk mengubah energi cahaya matahari menjadi cadangan makanan',
-          distractors: [
-            'Belalang, karena menjadi hewan pertama yang memakan daun tanaman padi di sawah',
-            'Jamur dan bakteri, karena menyediakan unsur hara di permukaan tanah persawahan',
-            'Burung elang, karena menduduki puncak rantai makanan di ekosistem sawah tersebut'
-          ],
-          shortKey: 'Tanaman padi (Produsen)',
-          trueStmt: 'Tanaman hijau seperti padi dan rumput berperan sebagai produsen karena dapat menghasilkan makanan sendiri melalui proses fotosintesis.',
-          falseStmt: 'Katak dan ular dapat disebut sebagai produsen karena mampu mencari mangsa sendiri di lingkungan sawah.',
-          matchLeft: 'Peran tanaman hijau (padi/rumput) dalam rantai makanan',
-          matchRight: 'Produsen penghasil energi makanan pertama melalui fotosintesis',
-          essayQ: 'Tuliskan satu urutan rantai makanan yang lengkap di ekosistem sawah mulai dari produsen hingga pengurai, lalu jelaskan peran masing-masing makhluk hidup tersebut!',
-          essayKey: 'Urutan: Padi (Produsen) -> Belalang (Konsumen I) -> Katak (Konsumen II) -> Ular (Konsumen III) -> Elang (Konsumen Puncak) -> Bakteri/Jamur (Pengurai/Dekomposer).'
-        },
-        {
-          aspect: 'Konsumen Tingkat I (Herbivora) & Tingkat II (Karnivora)',
-          context: 'Dalam urutan rantai makanan di kebun: Tanaman Bayam -> Ulat Daun -> Burung Pipit -> Ular Kebun -> Bakteri Pengurai.',
-          stem: 'Pada urutan rantai makanan di kebun tersebut, apakah peran dari burung pipit?',
-          correct: 'Konsumen tingkat II, karena memakan ulat daun yang merupakan konsumen tingkat I (pemakan tumbuhan)',
-          distractors: [
-            'Konsumen tingkat I, karena mencari makan langsung di sekitar tanaman bayam',
-            'Produsen kedua, karena membantu menyebarkan biji tanaman di area kebun',
-            'Dekomposer, karena menguraikan sisa-sisa ulat daun di dahan pohon'
-          ],
-          shortKey: 'Konsumen tingkat II (pemakan konsumen I)',
-          trueStmt: 'Hewan pemakan tumbuhan (herbivora) seperti ulat dan belalang selalu menempati posisi sebagai konsumen tingkat I.',
-          falseStmt: 'Konsumen tingkat II dalam rantai makanan selalu berupa hewan pemakan tumbuhan hijau secara langsung.',
-          matchLeft: 'Ulat daun dan belalang yang memakan tumbuhan secara langsung',
-          matchRight: 'Konsumen Tingkat I (Herbivora)',
-          essayQ: 'Mengapa hewan pemakan tumbuhan (herbivora) selalu berada pada urutan konsumen tingkat I dalam setiap rantai makanan? Jelaskan!',
-          essayKey: 'Karena konsumen tingkat I memperoleh energi secara langsung dari produsen (tumbuhan hijau), sebelum energi tersebut berpindah ke hewan pemangsa (karnivora).'
-        },
-        {
-          aspect: 'Analisis Dampak Perubahan Populasi (Keseimbangan Ekosistem)',
-          context: 'Pada ekosistem sawah terjadi perburuan liar terhadap ular sawah secara besar-besaran hingga populasi ular hampir habis.',
-          stem: 'Apabila populasi ular sawah menurun drastis akibat diburu manusia, apakah dampak langsung yang paling mungkin terjadi pada keseimbangan ekosistem sawah tersebut?',
-          correct: 'Populasi katak atau tikus sawah akan meningkat pesat karena berkurangnya pemangsa alami mereka, sedangkan makanan elang berkurang',
-          distractors: [
-            'Populasi tanaman padi akan selalu meningkat pesat tanpa adanya gangguan hama sedikit pun',
-            'Populasi burung elang akan bertambah banyak karena tidak perlu bersaing dengan ular sawah',
-            'Seluruh makhluk hidup lain di sawah tidak mengalami perubahan jumlah karena dapat berganti jenis makanan'
-          ],
-          shortKey: 'Populasi mangsa ular (katak/tikus) meningkat pesat dan keseimbangan terganggu',
-          trueStmt: 'Jika salah satu populasi makhluk hidup dalam rantai makanan punah, maka keseimbangan populasi makhluk hidup lainnya akan ikut terganggu.',
-          falseStmt: 'Berkurangnya populasi ular di sawah tidak memberikan pengaruh apa pun terhadap jumlah tikus maupun hasil panen padi.',
-          matchLeft: 'Dampak perburuan ular sawah secara berlebihan oleh manusia',
-          matchRight: 'Meledaknya populasi hama tikus/katak yang merusak keseimbangan ekosistem',
-          essayQ: 'Apa yang akan terjadi pada hasil panen petani apabila populasi burung hantu dan ular di sawah habis diburu? Jelaskan hubungan sebab-akibatnya!',
-          essayKey: 'Populasi tikus sawah akan meledak karena tidak ada pemangsa alaminya (ular/burung hantu). Akibatnya, tanaman padi banyak dimakan tikus dan petani mengalami gagal panen.'
-        },
-        {
-          aspect: 'Peran Pengurai (Dekomposer) dalam Siklus Nutrisi',
-          context: 'Ketika tumbuhan dan hewan mati, bangkai serta sisa tubuhnya lama-kelamaan akan hancur dan menyatu kembali dengan tanah berkat bantuan jamur dan bakteri.',
-          stem: 'Mengapa keberadaan jamur dan bakteri pengurai (dekomposer) sangat penting bagi kelangsungan hidup tumbuhan baru di suatu ekosistem?',
-          correct: 'Karena pengurai mengubah sisa makhluk hidup yang mati menjadi zat hara (humus) yang menyuburkan tanah bagi tumbuhan',
-          distractors: [
-            'Karena jamur dan bakteri memproduksi cahaya matahari tambahan bagi akar tumbuhan',
-            'Karena pengurai bertugas memangsa hewan konsumen tingkat I agar jumlahnya tidak berlebihan',
-            'Karena bakteri pengurai dapat berubah menjadi tanaman hijau baru ketika musim hujan tiba'
-          ],
-          shortKey: 'Pengurai (Dekomposer: jamur & bakteri)',
-          trueStmt: 'Dekomposer (pengurai) berfungsi mengembalikan unsur hara ke dalam tanah sehingga tanah kembali subur untuk pertumbuhan produsen.',
-          falseStmt: 'Rantai makanan akan tetap berjalan sempurna selamanya meskipun seluruh jamur dan bakteri pengurai hilang dari muka bumi.',
-          matchLeft: 'Jamur dan bakteri tanah yang menguraikan sisa organisme mati',
-          matchRight: 'Dekomposer (Pengurai) penghasil zat hara penyubur tanah',
-          essayQ: 'Jelaskan apa yang akan terjadi pada lingkungan bumi jika tidak ada makhluk hidup pengurai (dekomposer) seperti jamur dan bakteri!',
-          essayKey: 'Sampah organik dan bangkai makhluk hidup akan menumpuk, serta tanah menjadi tandus karena tidak ada proses daur ulang unsur hara bagi tumbuhan.'
-        },
-        {
-          aspect: 'Upaya Menjaga Keseimbangan Ekosistem Lingkungan',
-          context: 'Sebagian warga menggunakan pestisida kimia secara berlebihan dan menebang pepohonan di tepi sungai untuk membuka lahan baru.',
-          stem: 'Tindakan manakah di bawah ini yang paling tepat dilakukan oleh manusia untuk menjaga agar rantai makanan dan ekosistem tetap seimbang?',
-          correct: 'Mengendalikan hama secara alami (biologis), menanam kembali pohon, dan tidak menangkap hewan liar secara berlebihan',
-          distractors: [
-            'Menyemprotkan racun serangga dosis tinggi setiap hari agar seluruh serangga di kebun musnah total',
-            'Membakar semak-semak dan pepohonan liar agar lahan terlihat bersih dari segala jenis hewan',
-            'Memelihara hewan buas dari hutan di dalam rumah warga agar rantai makanan berpindah ke pemukiman'
-          ],
-          shortKey: 'Pelestarian habitat dan pengendalian hama ramah lingkungan',
-          trueStmt: 'Penggunaan pestisida kimia secara berlebihan dapat membunuh serangga bermanfaat dan mencemari lingkungan ekosistem.',
-          falseStmt: 'Menangkap seluruh burung pemakan serangga di desa merupakan cara terbaik untuk menyuburkan tanaman petani.',
-          matchLeft: 'Mengurangi pestisida kimia dan menjaga kelestarian habitat alami',
-          matchRight: 'Upaya bijak manusia menjaga kelestarian dan keseimbangan ekosistem',
-          essayQ: 'Sebutkan 3 (tiga) tindakan nyata yang dapat kamu lakukan di lingkungan sekolah atau rumah untuk membantu menjaga keseimbangan ekosistem alam!',
-          essayKey: '(1) Menanam dan merawat tanaman hijau, (2) Tidak membuang sampah atau limbah plastik ke selokan/sungai, (3) Tidak menyakiti atau memburu hewan liar seperti burung dan katak.'
-        }
-      ];
-    }
-
-    // 2. BANK PENGETAHUAN: PERUBAHAN WUJUD ZAT / BENDA & SIKLUS AIR
-    if (/wujud benda|mencair|membeku|menguap|mengembun|menyublim|mengkristal|siklus air|kalor|padat|cair|gas/.test(combined)) {
-      return [
-        {
-          aspect: 'Perubahan Wujud Mencair (Padat ke Cair karena Menerima Kalor)',
-          context: 'Rina meletakkan sebongkah es batu di dalam mangkuk terbuka di atas meja. Beberapa menit kemudian, es batu tersebut berubah menjadi air.',
-          stem: 'Peristiwa berubahnya es batu menjadi air tersebut terjadi karena...',
-          correct: 'Es batu (benda padat) menerima panas/kalor dari udara sekitar sehingga mengalami peristiwa mencair',
-          distractors: [
-            'Es batu melepaskan panas ke udara sekitar sehingga mengalami peristiwa membeku',
-            'Air di udara menyerap dingin dari mangkuk sehingga mengalami peristiwa menguap',
-            'Benda padat berubah langsung menjadi gas tanpa melalui wujud cair (menyublim)'
-          ],
-          shortKey: 'Mencair (menerima kalor)',
-          trueStmt: 'Peristiwa mencair dan menguap terjadi karena benda menerima atau menyerap energi panas (kalor) dari lingkungannya.',
-          falseStmt: 'Mentega yang dipanaskan di atas wajan berubah menjadi cair karena melepaskan kalor ke udara.',
-          matchLeft: 'Es batu atau mentega yang berubah menjadi cair saat terkena panas',
-          matchRight: 'Peristiwa Mencair (Padat menjadi Cair karena menerima kalor)',
-          essayQ: 'Jelaskan mengapa cokelat batang atau es krim yang dibawa di bawah terik matahari lama-kelamaan akan meleleh!',
-          essayKey: 'Karena cokelat/es krim (zat padat) menyerap energi panas (kalor) dari sinar matahari dan udara sekitar sehingga wujudnya berubah menjadi cair (mencair).'
-        },
-        {
-          aspect: 'Perubahan Wujud Mengembun (Gas ke Cair)',
-          context: 'Pada pagi hari yang sejuk, Budi melihat banyak titik-titik air menempel di permukaan daun tanaman di halaman rumah, padahal malam harinya tidak turun hujan.',
-          stem: 'Munculnya titik-titik air di permukaan daun pada pagi hari tersebut merupakan contoh perubahan wujud benda yang disebut...',
-          correct: 'Mengembun, yaitu uap air (gas) di udara yang berubah menjadi titik-titik air (cair) karena suhu udara dingin',
-          distractors: [
-            'Menguap, yaitu air dari dalam tanah yang naik menembus daun karena panas matahari',
-            'Menyublim, yaitu udara pagi yang berubah menjadi kristal padat di atas permukaan daun',
-            'Mencair, yaitu daun tanaman yang mengeluarkan getah cair saat terkena angin pagi'
-          ],
-          shortKey: 'Mengembun (Gas menjadi Cair)',
-          trueStmt: 'Titik-titik air yang muncul di bagian luar gelas berisi air es berasal dari uap air di udara yang mengembun karena dingin.',
-          falseStmt: 'Titik-titik air di luar gelas es berasal dari air di dalam gelas yang merembes menembus dinding kaca gelas.',
-          matchLeft: 'Terbentuknya titik-titik air di dinding luar gelas berisi es',
-          matchRight: 'Peristiwa Mengembun (Gas menjadi Cair karena melepas kalor)',
-          essayQ: 'Mengapa bagian luar gelas yang diisi air es lama-kelamaan menjadi basah oleh titik-titik air? Jelaskan proses perubahan wujudnya!',
-          essayKey: 'Udara di sekitar gelas mengandung uap air (wujud gas). Saat bersentuhan dengan dinding luar gelas yang dingin, uap air melepaskan kalor dan berubah wujud menjadi titik-titik air (mengembun).'
-        },
-        {
-          aspect: 'Perubahan Wujud Menguap dalam Kehidupan Sehari-hari',
-          context: 'Ibu menjemur pakaian yang basah di bawah sinar matahari yang terik. Pada sore hari, pakaian tersebut sudah menjadi kering.',
-          stem: 'Proses mengeringnya pakaian basah yang dijemur di bawah terik matahari memanfaatkan perubahan wujud...',
-          correct: 'Menguap, di mana air (cair) pada pakaian menyerap panas matahari dan berubah menjadi uap air (gas)',
-          distractors: [
-            'Membeku, di mana air pada serat kain mengeras akibat tiupan angin di halaman',
-            'Menyublim, di mana serat kain yang padat berubah menjadi gas di udara terbuka',
-            'Mengembun, di mana uap panas matahari masuk ke dalam pakaian yang basah'
-          ],
-          shortKey: 'Menguap (Cair menjadi Gas)',
-          trueStmt: 'Air yang dimasak di dalam panci hingga mendidih akan berkurang volumenya jika dibiarkan terus-menerus karena berubah menjadi uap air (menguap).',
-          falseStmt: 'Pakaian basah akan lebih cepat mengering jika disimpan di dalam lemari tertutup yang gelap dan dingin.',
-          matchLeft: 'Air laut yang terkena panas matahari dan naik menjadi uap di atmosfer',
-          matchRight: 'Peristiwa Menguap / Evaporasi (Cair menjadi Gas)',
-          essayQ: 'Sebutkan 2 (dua) contoh peristiwa menguap dalam kehidupan sehari-hari dan jelaskan manfaatnya bagi manusia!',
-          essayKey: '(1) Menjemur pakaian basah hingga kering, (2) Pembuatan garam tradisional dengan menguapkan air laut di tambak garam menggunakan panas matahari.'
-        },
-        {
-          aspect: 'Perubahan Wujud Menyublim (Padat ke Gas) & Membeku (Cair ke Padat)',
-          context: 'Ayah meletakkan beberapa butir kapur barus (kamper) di dalam lemari pakaian. Setelah satu bulan, ukuran kapur barus tersebut mengecil dan habis, sementara lemari menjadi harum.',
-          stem: 'Peristiwa mengecilnya kapur barus di dalam lemari pakaian hingga habis dan mengeluarkan bau harum disebut...',
-          correct: 'Menyublim, yaitu perubahan wujud dari benda padat langsung menjadi gas',
-          distractors: [
-            'Mencair, yaitu kapur barus meleleh menjadi air pewangi di dasar lemari',
-            'Mengkristal, yaitu gas di dalam lemari berubah menjadi butiran kapur barus baru',
-            'Menguap, yaitu cairan di dalam pakaian berubah menjadi udara harum'
-          ],
-          shortKey: 'Menyublim (Padat menjadi Gas)',
-          trueStmt: 'Pembuatan es batu di dalam freezer kulkas merupakan contoh perubahan wujud membeku (cair menjadi padat) karena air melepaskan kalor.',
-          falseStmt: 'Kapur barus yang diletakkan di ruangan terbuka berubah wujud dari benda padat menjadi benda cair.',
-          matchLeft: 'Kapur barus (kamper) padat yang lama-kelamaan habis menjadi gas harum',
-          matchRight: 'Peristiwa Menyublim (Padat menjadi Gas)',
-          essayQ: 'Apa perbedaan utama antara peristiwa mencair dan membeku jika dilihat dari proses penyerapan atau pelepasan panas (kalor)? Berikan contohnya!',
-          essayKey: 'Mencair adalah perubahan padat ke cair karena MENERIMA kalor (contoh: es batu dipanaskan). Membeku adalah perubahan cair ke padat karena MELEPAS kalor/didinginkan (contoh: air dimasukkan ke freezer).'
-        }
-      ];
-    }
-
-    // 3. BANK PENGETAHUAN: MATEMATIKA (PECAHAN, OPERASI HITUNG, BANGUN DATAR/RUANG)
-    if (/pecahan|pembilang|penyebut|desimal|persen/.test(combined)) {
-      return [
-        {
-          aspect: 'Konsep Pecahan & Pecahan Senilai',
-          context: 'Ibu memotong sebuah kue bolu menjadi 8 bagian yang sama besar. Dika memakan 2 potong kue tersebut, sehingga bagian yang dimakan Dika bernilai pecahan 2/8.',
-          stem: 'Pecahan manakah di bawah ini yang memiliki nilai sama besar (pecahan senilai) dengan bagian kue 2/8 yang dimakan oleh Dika?',
-          correct: '1/4 (satu per empat), karena pembilang dan penyebut 2/8 sama-sama dibagi dengan bilangan 2',
-          distractors: [
-            '1/8 (satu per delapan), karena jumlah kuenya dikurangi satu potong',
-            '2/4 (dua per empat), karena penyebutnya dibagi dua sedangkan pembilangnya tetap',
-            '4/8 (empat per delapan), karena pembilangnya dikalikan dua sedangkan penyebutnya tetap'
-          ],
-          shortKey: '1/4 (pecahan senilai dari 2/8)',
-          trueStmt: 'Pecahan 1/2 memiliki nilai yang sama besar (senilai) dengan pecahan 2/4 dan 3/6.',
-          falseStmt: 'Pada pecahan 3/5, angka 3 disebut sebagai penyebut sedangkan angka 5 disebut sebagai pembilang.',
-          matchLeft: 'Pecahan yang senilai dengan 2/6 setelah disederhanakan',
-          matchRight: 'Pecahan 1/3 (pembilang dan penyebut dibagi 2)',
-          essayQ: 'Sebuah pizza dipotong menjadi 12 bagian sama besar. Siti memakan 3 bagian pizza tersebut. Tuliskan bentuk pecahannya, lalu sederhanakan menjadi pecahan yang paling sederhana!',
-          essayKey: 'Bentuk pecahan awalnya adalah 3/12. Jika pembilang dan penyebut sama-sama dibagi 3, maka bentuk paling sederhananya adalah 1/4.'
-        },
-        {
-          aspect: 'Membandingkan dan Mengurutkan Pecahan',
-          context: 'Tiga orang sahabat membeli pita untuk kerajinan tangan. Panjang pita Rina adalah 1/2 meter, pita Sari 3/4 meter, dan pita Lani 1/4 meter.',
-          stem: 'Jika diurutkan dari pita yang paling pendek hingga pita yang paling panjang, urutan pemilik pita yang benar adalah...',
-          correct: 'Lani (1/4 m), Rina (1/2 m atau 2/4 m), kemudian Sari (3/4 m)',
-          distractors: [
-            'Rina (1/2 m), Lani (1/4 m), kemudian Sari (3/4 m)',
-            'Sari (3/4 m), Rina (1/2 m), kemudian Lani (1/4 m)',
-            'Lani (1/4 m), Sari (3/4 m), kemudian Rina (1/2 m)'
-          ],
-          shortKey: '1/4, 1/2, 3/4 (Lani, Rina, Sari)',
-          trueStmt: 'Untuk membandingkan dua pecahan yang berbeda penyebutnya, kita harus menyamakan penyebut kedua pecahan tersebut terlebih dahulu.',
-          falseStmt: 'Pecahan 1/5 memiliki nilai yang lebih besar daripada pecahan 1/2 karena angka 5 lebih besar dari angka 2.',
-          matchLeft: 'Perbandingan nilai yang tepat antara pecahan 3/4 dan 1/2',
-          matchRight: '3/4 lebih besar daripada 1/2 (karena 3/4 > 2/4)',
-          essayQ: 'Manakah yang lebih besar nilainya antara pecahan 2/3 dan 3/5? Tunjukkan langkah-langkah cara menyamakan penyebutnya!',
-          essayKey: 'KPK dari 3 dan 5 adalah 15. Pecahan 2/3 = 10/15, sedangkan 3/5 = 9/15. Karena 10/15 > 9/15, maka 2/3 lebih besar daripada 3/5.'
-        },
-        {
-          aspect: 'Operasi Penjumlahan dan Pengurangan Pecahan Kontekstual',
-          context: 'Di dalam gudang terdapat 1/4 kg gula pasir. Kemudian Ibu membeli lagi 2/4 kg gula pasir untuk membuat kue lebaran.',
-          stem: 'Berapakah jumlah seluruh gula pasir yang dimiliki Ibu sekarang?',
-          correct: '3/4 kg, karena penyebutnya sudah sama sehingga pembilangnya dijumlahkan (1 + 2 = 3)',
-          distractors: [
-            '3/8 kg, karena pembilang dijumlahkan dengan pembilang dan penyebut dijumlahkan dengan penyebut',
-            '2/4 kg, karena hanya mengambil nilai gula pasir yang paling banyak',
-            '1/2 kg, karena hasil penjumlahan 1/4 + 2/4 dikurangi 1/4'
-          ],
-          shortKey: '3/4 kg',
-          trueStmt: 'Hasil penjumlahan dari 2/7 + 3/7 adalah 5/7 karena penyebutnya sudah sama.',
-          falseStmt: 'Hasil penjumlahan dari 1/3 + 1/3 adalah 2/6.',
-          matchLeft: 'Hasil operasi penjumlahan pecahan 1/5 + 3/5',
-          matchRight: '4/5 (pembilang dijumlahkan, penyebut tetap 5)',
-          essayQ: 'Ayah memiliki seutas tali sepanjang 7/8 meter. Tali tersebut digunakan untuk mengikat kayu sepanjang 3/8 meter. Berapa meter sisa tali Ayah sekarang? Sederhanakan hasilnya!',
-          essayKey: '7/8 - 3/8 = 4/8 meter. Jika disederhanakan (dibagi 4), sisa tali Ayah adalah 1/2 meter.'
-        }
-      ];
-    }
-
-    if (/bangun datar|keliling|luas|persegi|segitiga|lingkaran|sudut/.test(combined)) {
-      return [
-        {
-          aspect: 'Keliling dan Luas Persegi Panjang',
-          context: 'Sebuah taman sekolah berbentuk persegi panjang memiliki ukuran panjang 12 meter dan lebar 8 meter.',
-          stem: 'Berapakah keliling dan luas taman sekolah tersebut secara berturut-turut?',
-          correct: 'Keliling = 40 meter (2 x (12 + 8)) dan Luas = 96 meter persegi (12 x 8)',
-          distractors: [
-            'Keliling = 20 meter (12 + 8) dan Luas = 96 meter persegi (12 x 8)',
-            'Keliling = 96 meter dan Luas = 40 meter persegi',
-            'Keliling = 48 meter (4 x 12) dan Luas = 64 meter persegi (8 x 8)'
-          ],
-          shortKey: 'Keliling 40 m dan Luas 96 m²',
-          trueStmt: 'Luas bangun persegi yang memiliki panjang sisi 9 cm adalah 81 cm² (9 cm x 9 cm).',
-          falseStmt: 'Rumus untuk mencari keliling persegi panjang adalah panjang dikali lebar (p x l).',
-          matchLeft: 'Persegi dengan panjang sisi 10 cm',
-          matchRight: 'Memiliki Keliling 40 cm dan Luas 100 cm²',
-          essayQ: 'Sebuah lapangan berbentuk persegi memiliki panjang sisi 15 meter. Jika Budi berlari mengelilingi tepi lapangan tersebut sebanyak 2 kali putaran penuh, berapa meter jarak yang ditempuh Budi?',
-          essayKey: 'Keliling 1 putaran lapangan = 4 x 15 m = 60 meter. Karena Budi berlari 2 putaran, maka jarak tempuhnya = 2 x 60 m = 120 meter.'
-        },
-        {
-          aspect: 'Ciri-Ciri Bangun Datar & Perhitungan Segitiga',
-          context: 'Sebuah papan rambu lalu lintas berbentuk segitiga memiliki panjang alas 10 cm dan tinggi 12 cm.',
-          stem: 'Berapakah luas permukaan papan rambu berbentuk segitiga tersebut?',
-          correct: '60 cm², diperoleh dari rumus (1/2 x alas x tinggi) = 1/2 x 10 cm x 12 cm',
-          distractors: [
-            '120 cm², diperoleh dari mengalikan alas dengan tinggi secara langsung (10 cm x 12 cm)',
-            '22 cm², diperoleh dari menjumlahkan panjang alas dan tinggi (10 cm + 12 cm)',
-            '30 cm², diperoleh dari membagi empat hasil perkalian alas dan tinggi'
-          ],
-          shortKey: '60 cm² (1/2 x 10 x 12)',
-          trueStmt: 'Jumlah seluruh sudut di dalam sebuah bangun datar segitiga selalu 180 derajat.',
-          falseStmt: 'Bangun persegi panjang memiliki 4 sisi yang semuanya sama panjang dan 4 sudut lancip.',
-          matchLeft: 'Rumus menghitung luas bangun datar segitiga',
-          matchRight: 'L = 1/2 x alas x tinggi',
-          essayQ: 'Sebutkan 3 (tiga) perbedaan ciri antara bangun datar persegi dan persegi panjang dilihat dari panjang sisi dan simetri lipatnya!',
-          essayKey: '(1) Persegi memiliki 4 sisi sama panjang, sedangkan persegi panjang memiliki 2 pasang sisi berhadapan sama panjang. (2) Persegi memiliki 4 sumbu simetri lipat, sedangkan persegi panjang memiliki 2 sumbu simetri lipat.'
-        }
-      ];
-    }
-
-    // 4. BANK PENGETAHUAN: BAHASA INDONESIA (GAGASAN POKOK, TEKS EKSPLANASI/NARASI/PROSEDUR)
-    if (/gagasan pokok|ide pokok|paragraf|kalimat utama|teks|membaca|cerita|puisi|wawancara|prosedur|eksplanasi/.test(combined)) {
-      return [
-        {
-          aspect: 'Menentukan Gagasan Pokok / Ide Pokok dan Kalimat Utama Paragraf',
-          context: 'Bacalah paragraf berikut!\n"Bersepeda merupakan olahraga yang sangat bermanfaat bagi kesehatan tubuh. Dengan rutin bersepeda di pagi hari, otot-otot kaki menjadi lebih kuat dan peredaran darah menjadi lancar. Selain menyehatkan jantung, bersepeda juga tidak menghasilkan asap polusi sehingga ramah lingkungan."',
-          stem: 'Apakah gagasan pokok (ide pokok) dari paragraf bacaan di atas?',
-          correct: 'Manfaat olahraga bersepeda bagi kesehatan tubuh dan lingkungan',
-          distractors: [
-            'Cara memperbaiki sepeda yang rusak di pagi hari',
-            'Bahaya asap polusi kendaraan bermotor di jalan raya',
-            'Perlombaan balap sepeda antarwarga di lingkungan sekolah'
-          ],
-          shortKey: 'Manfaat olahraga bersepeda bagi kesehatan dan lingkungan',
-          trueStmt: 'Gagasan pokok (ide pokok) sebuah paragraf dapat ditemukan pada kalimat utama yang terletak di awal (deduktif) atau di akhir paragraf (induktif).',
-          falseStmt: 'Kalimat penjelas adalah kalimat yang memuat inti utama seluruh paragraf dan tidak memerlukan rincian lagi.',
-          matchLeft: 'Kalimat yang memuat ide pokok/inti pembahasan dalam sebuah paragraf',
-          matchRight: 'Kalimat Utama',
-          essayQ: 'Apa perbedaan antara Kalimat Utama dan Kalimat Penjelas dalam sebuah paragraf? Buatlah 1 contoh paragraf singkat yang terdiri atas 1 kalimat utama dan 2 kalimat penjelas!',
-          essayKey: 'Kalimat utama berisi gagasan pokok/inti paragraf, sedangkan kalimat penjelas berisi rincian, contoh, atau uraian pendukung kalimat utama.'
-        },
-        {
-          aspect: 'Informasi Tersurat (Adiksimba: Apa, Di mana, Kapan, Siapa, Mengapa, Bagaimana)',
-          context: 'Bacalah kutipan teks berikut!\n"Pada hari Sabtu pagi, siswa Kelas 4 menggelar kegiatan kerja bakti membersihkan taman sekolah. Kegiatan tersebut dipimpin oleh Pak Andi selaku wali kelas agar lingkungan sekolah bebas dari sarang nyamuk demam berdarah."',
-          stem: 'Berdasarkan kutipan teks tersebut, mengapa siswa Kelas 4 melaksanakan kegiatan kerja bakti membersihkan taman sekolah?',
-          correct: 'Agar lingkungan sekolah bersih dan bebas dari sarang nyamuk demam berdarah',
-          distractors: [
-            'Karena sekolah akan mengikuti lomba lukis tingkat kabupaten pada hari Minggu',
-            'Untuk menggantikan jam pelajaran olahraga yang batal dilaksanakan',
-            'Karena seluruh tanaman di taman sekolah akan ditebang habis'
-          ],
-          shortKey: 'Agar lingkungan sekolah bebas dari sarang nyamuk demam berdarah',
-          trueStmt: 'Kata tanya "Mengapa" digunakan untuk menanyakan alasan atau sebab terjadinya suatu peristiwa di dalam teks bacaan.',
-          falseStmt: 'Kata tanya "Kapan" digunakan untuk menanyakan nama tokoh atau pelaku di dalam sebuah cerita.',
-          matchLeft: 'Kata tanya untuk menggali proses atau cara terjadinya suatu peristiwa',
-          matchRight: 'Kata tanya "Bagaimana"',
-          essayQ: 'Buatlah 3 (tiga) kalimat pertanyaan menggunakan kata tanya Apa, Mengapa, dan Bagaimana yang berkaitan dengan tema "Menjaga Kebersihan Lingkungan Sekolah"!',
-          essayKey: '(1) Apa saja alat kebersihan yang digunakan saat piket kelas? (2) Mengapa kita harus membuang sampah pada tempatnya? (3) Bagaimana cara memilah sampah organik dan anorganik di sekolah?'
-        }
-      ];
-    }
-
-    // 5. BANK PENGETAHUAN: PENDIDIKAN PANCASILA (NILAI PANCASILA, NORMA, HAK & KEWAJIBAN)
-    if (/pancasila|sila|hak|kewajiban|norma|aturan|musyawarah|bhinneka|keberagaman|gotong royong/.test(combined)) {
-      return [
-        {
-          aspect: 'Penerapan Nilai-Nilai Sila Pancasila dalam Kehidupan Sehari-hari',
-          context: 'Saat memilih ketua kelas yang baru, seluruh siswa di kelas memberikan usulan calon, mendengarkan pendapat teman dengan santun, dan mengambil keputusan bersama melalui musyawarah mufakat.',
-          stem: 'Sikap mengutamakan musyawarah untuk mencapai mufakat saat memilih ketua kelas tersebut merupakan pengamalan Pancasila terutama...',
-          correct: 'Sila ke-4 yang berlambang Kepala Banteng (Kerakyatan yang dipimpin oleh hikmat kebijaksanaan dalam permusyawaratan/perwakilan)',
-          distractors: [
-            'Sila ke-1 yang berlambang Bintang Emas (Ketuhanan Yang Maha Esa)',
-            'Sila ke-2 yang berlambang Rantai Emas (Kemanusiaan yang adil dan beradab)',
-            'Sila ke-3 yang berlambang Pohon Beringin (Persatuan Indonesia)'
-          ],
-          shortKey: 'Sila ke-4 Pancasila (Lambang Kepala Banteng)',
-          trueStmt: 'Menjenguk teman sekelas yang sedang sakit dan membantu korban bencana alam merupakan pengamalan nilai kemanusiaan pada Sila ke-2 Pancasila.',
-          falseStmt: 'Memaksakan kehendak pribadi kepada anggota kelompok saat berdiskusi merupakan sikap yang sesuai dengan nilai Pancasila.',
-          matchLeft: 'Melaksanakan musyawarah kelas dan menghargai pendapat orang lain',
-          matchRight: 'Pengamalan Sila ke-4 Pancasila (Kerakyatan / Musyawarah)',
-          essayQ: 'Berikan masing-masing 2 (dua) contoh perilaku nyata di lingkungan sekolah yang mencerminkan pengamalan Sila ke-3 (Persatuan Indonesia) dan Sila ke-5 (Keadilan Sosial)!',
-          essayKey: 'Sila ke-3: (1) Berteman rukun tanpa membedakan suku/agama, (2) Mengikuti upacara bendera dengan khidmat. Sila ke-5: (1) Melaksanakan piket kelas secara adil/bergiliran, (2) Menghargai hasil karya teman.'
-        },
-        {
-          aspect: 'Keseimbangan Pelaksanaan Kewajiban dan Hak sebagai Warga Sekolah',
-          context: 'Setiap siswa berhak mendapatkan ruang kelas yang bersih, nyaman, serta memperoleh bimbingan ilmu dari guru saat belajar di sekolah.',
-          stem: 'Agar hak belajar di kelas yang bersih dan nyaman tersebut dapat terpenuhi dengan baik, kewajiban utama yang harus dilaksanakan oleh setiap siswa adalah...',
-          correct: 'Melaksanakan piket kebersihan kelas sesuai jadwal, membuang sampah pada tempatnya, dan menjaga ketertiban saat guru mengajar',
-          distractors: [
-            'Menuntut petugas kebersihan sekolah untuk membersihkan meja masing-masing siswa setiap jam',
-            'Datang terlambat ke sekolah agar tidak perlu mengikuti kegiatan menyapu halaman',
-            'Mencoret-coret meja dan dinding kelas sebagai bentuk kebebasan berekspresi siswa'
-          ],
-          shortKey: 'Melaksanakan piket kebersihan dan menaati tata tertib kelas',
-          trueStmt: 'Kewajiban adalah sesuatu yang harus kita laksanakan dengan penuh tanggung jawab terlebih dahulu sebelum menuntut hak.',
-          falseStmt: 'Setiap siswa boleh mengabaikan aturan tata tertib sekolah asalkan sudah mengerjakan pekerjaan rumah.',
-          matchLeft: 'Sesuatu yang harus dilaksanakan dengan penuh tanggung jawab oleh siswa',
-          matchRight: 'Kewajiban sebagai warga sekolah',
-          essayQ: 'Mengapa pelaksanaan kewajiban dan perolehan hak di lingkungan sekolah harus dilakukan secara seimbang? Apa akibatnya jika siswa hanya menuntut hak tanpa mau melaksanakan kewajiban?',
-          essayKey: 'Karena hak dan kewajiban saling berkaitan. Jika siswa hanya menuntut hak (ingin kelas bersih dan pintar) tanpa melaksanakan kewajiban (enggan piket dan malas belajar), maka ketertiban sekolah akan kacau dan tujuan bersama tidak tercapai.'
-        }
-      ];
-    }
-
-    // 6. BANK GENERATOR SUBSTANTIF UNIVERSAL (Menyesuaikan Kata Kunci Materi & TP Apa Pun Secara Cerdas)
-    const { mainTopic, conceptTerms } = this.extractCleanKeywords(materi, tpList, cpInput);
-    const term1 = conceptTerms[0] || mainTopic;
-    const term2 = conceptTerms[1] || `prinsip utama ${mainTopic}`;
-    const term3 = conceptTerms[2] || `penerapan ${mainTopic}`;
-
-    return [
-      {
-        aspect: `Konsep Inti & Pengertian ${mainTopic}`,
-        context: `Dalam kegiatan pembelajaran ${mapel} di ${kelasFase}, guru menampilkan ilustrasi dan contoh nyata mengenai "${mainTopic}", khususnya yang berkaitan dengan ${term1}.`,
-        stem: isLowGrade
-          ? `Perhatikan contoh tentang ${mainTopic}! Manakah di bawah ini yang merupakan ciri atau contoh yang benar dari ${term1}?`
-          : `Berdasarkan konsep ${mainTopic} pada mata pelajaran ${mapel}, pernyataan manakah di bawah ini yang paling tepat menjelaskan fungsi dan ciri utama dari ${term1}?`,
-        correct: `Bagian pokok dalam ${mainTopic} yang memiliki ciri khas pada ${term1} serta berfungsi mendukung proses ${term2} secara teratur`,
-        distractors: [
-          `Unsur luar yang tidak memiliki hubungan langsung dengan proses ${term1} maupun ${mainTopic}`,
-          `Keadaan yang hanya terjadi apabila seluruh komponen ${term1} dihilangkan dari ${mainTopic}`,
-          `Hasil sampingan yang bersifat kebetulan dan bertentangan dengan kaidah dasar ${mapel}`
-        ],
-        shortKey: `${term1} (Konsep utama pada ${mainTopic})`,
-        trueStmt: `Pemahaman yang tepat mengenai ${term1} merupakan dasar penting dalam menguasai materi ${mainTopic} pada pelajaran ${mapel}.`,
-        falseStmt: `Konsep ${term1} sama sekali tidak memiliki peran maupun manfaat dalam penerapan materi ${mainTopic} sehari-hari.`,
-        matchLeft: `Komponen utama dalam ${mainTopic} yang berkaitan dengan ${term1}`,
-        matchRight: `Berfungsi menjalankan proses inti dan menjaga keteraturan konsep ${mainTopic}`,
-        essayQ: `Jelaskan dengan bahasamu sendiri apa yang dimaksud dengan ${mainTopic} (khususnya terkait ${term1}), lalu sebutkan ciri-ciri utamanya!`,
-        essayKey: `Siswa mampu menguraikan pengertian ${mainTopic} secara tepat, menyebutkan ciri-ciri ${term1}, serta mengaitkannya dengan kaidah ${mapel}.`
-      },
-      {
-        aspect: `Penerapan Kontekstual ${mainTopic} dalam Kehidupan Sehari-hari`,
-        context: `Seorang siswa mengamati peristiwa di lingkungan sekitar rumah dan sekolah yang menerapkan prinsip "${mainTopic}" (${term2}).`,
-        stem: `Contoh tindakan atau peristiwa nyata di bawah ini yang paling tepat menunjukkan penerapan konsep ${mainTopic} dalam kehidupan sehari-hari adalah...`,
-        correct: `Memanfaatkan prinsip ${term1} dan ${term2} secara tepat sesuai langkah-langkah yang benar untuk menyelesaikan kegiatan sehari-hari`,
-        distractors: [
-          `Melakukan kegiatan tanpa memperhatikan aturan keselamatan maupun urutan kerja pada ${mainTopic}`,
-          `Mengabaikan fungsi ${term1} karena menganggap konsep ${mapel} tidak berlaku di luar sekolah`,
-          `Menggunakan cara yang bertentangan dengan prinsip ${term2} sehingga menimbulkan masalah baru`
-        ],
-        shortKey: `Penerapan nyata ${term1} dan ${term2} secara tepat`,
-        trueStmt: `Konsep ${mainTopic} yang dipelajari di sekolah dapat ditemukan dan diterapkan secara nyata dalam berbagai aktivitas di lingkungan rumah maupun masyarakat.`,
-        falseStmt: `Materi ${mainTopic} hanya berupa hafalan teori di buku dan tidak pernah dijumpai dalam kehidupan nyata.`,
-        matchLeft: `Penerapan prinsip ${term2} dalam aktivitas di lingkungan sekitar`,
-        matchRight: `Membantu menyelesaikan permasalahan sehari-hari secara efektif dan tepat`,
-        essayQ: `Berikan 2 (dua) contoh nyata penerapan materi ${mainTopic} yang pernah kamu amati atau lakukan di lingkungan rumah maupun sekolah, lalu jelaskan manfaatnya!`,
-        essayKey: `Siswa menyebutkan 2 contoh konkret penerapan ${mainTopic} (${term1}/${term2}) di lingkungan sehari-hari beserta manfaat praktisnya.`
-      },
-      {
-        aspect: `Analisis Hubungan Sebab-Akibat & Pemecahan Masalah pada ${mainTopic}`,
-        context: `Saat melakukan praktik/pengamatan tentang "${mainTopic}", sebuah kelompok belajar menemukan bahwa bagian ${term1} tidak berjalan sesuai prosedur sehingga memengaruhi ${term3}.`,
-        stem: `Berdasarkan analisis hubungan sebab-akibat pada materi ${mainTopic}, apakah langkah perbaikan yang paling tepat dilakukan agar hasil pengamatan kembali optimal?`,
-        correct: `Memeriksa kembali kondisi ${term1}, memperbaiki urutan proses pada ${term2}, dan memastikan sesuai dengan kaidah ${mainTopic}`,
-        distractors: [
-          `Menghentikan seluruh kegiatan belajar tanpa mencari tahu penyebab gangguan pada ${term1}`,
-          `Menghapus data pengamatan yang ada dan mengarang kesimpulan sendiri tanpa bukti`,
-          `Membiarkan kesalahan pada ${term1} terus berlangsung karena tidak memengaruhi hasil akhir`
-        ],
-        shortKey: `Memperbaiki faktor penyebab pada ${term1} sesuai prosedur ${mainTopic}`,
-        trueStmt: `Apabila salah satu tahapan atau komponen penting dalam ${mainTopic} mengalami gangguan, maka hasil akhirnya juga akan ikut terpengaruh.`,
-        falseStmt: `Kesalahan prosedur pada tahap awal ${mainTopic} tidak akan memberikan dampak apa pun terhadap hasil akhir kegiatan.`,
-        matchLeft: `Langkah mengatasi kendala pada ${term1} saat mempraktikkan ${mainTopic}`,
-        matchRight: `Menganalisis penyebab masalah dan memperbaiki prosedur sesuai kaidah ${mapel}`,
-        essayQ: `Analisislah apa yang akan terjadi apabila prinsip ${term1} dalam ${mainTopic} tidak diterapkan dengan benar! Bagaimana solusi terbaik untuk mengatasinya?`,
-        essayKey: `Siswa mampu menjelaskan dampak negatif/ketidakteraturan jika ${term1} diabaikan, serta merumuskan solusi langkah demi langkah yang logis.`
-      }
-    ];
-  },
-
-  generateQuestionsBySpec(params, questionSpecList) {
-    const { mapel, materi, kelasFase, soloLevel, cpInput, tpInput } = params;
-    const soloMeta = this.getSoloVerbMeta(soloLevel);
-    const gradeProfile = this.detectGradeProfile(kelasFase);
-    const tpList = this.parseTpList(tpInput, materi, mapel);
-    const factBank = this.getSubjectFactBank(mapel, materi, tpList, cpInput, kelasFase);
-    const { mainTopic, conceptTerms } = this.extractCleanKeywords(materi, tpList, cpInput);
-
-    const sections = [];
-
-    (questionSpecList || []).forEach(spec => {
-      const qType = spec.type;
-      const count = Math.max(1, parseInt(spec.count, 10) || 1);
-      const customTypeName = spec.customName ? String(spec.customName).trim() : '';
-      const items = [];
-
-      for (let i = 1; i <= count; i++) {
-        const fact = factBank[(i - 1) % factBank.length];
-        const tpIdx = (i - 1) % tpList.length;
-        const focusTerm = conceptTerms[(i - 1) % conceptTerms.length] || mainTopic;
-
-        if (qType === 'PG') {
-          const keysOrder = ['A', 'B', 'C', 'D'];
-          const correctKey = keysOrder[(i + 1) % 4];
-          const optionTexts = {};
-          let distIdx = 0;
-
-          keysOrder.forEach(k => {
-            if (k === correctKey) {
-              optionTexts[k] = fact.correct;
-            } else {
-              optionTexts[k] = fact.distractors[distIdx % fact.distractors.length];
-              distIdx++;
-            }
-          });
-
-          const stemPrefix = i > factBank.length
-            ? `Perhatikan kasus seputar ${focusTerm} berikut! ${fact.context} `
-            : `${fact.context} `;
-
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — ${fact.aspect} | ${gradeProfile.label} (${soloMeta.level})`,
-            stem: `${stemPrefix}${fact.stem}`,
-            options: optionTexts,
-            answer: `Kunci Jawaban: ${correctKey} — Pembahasan: ${fact.correct}.`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'ESAI') {
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — Esai Terstruktur (${soloMeta.level})`,
-            stem: `${fact.context}\nBerdasarkan ilustrasi tersebut, ${fact.essayQ.charAt(0).toLowerCase() + fact.essayQ.slice(1)}`,
-            answer: `Kunci & Pedoman Penskoran Esai: ${fact.essayKey}`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'URAIAN') {
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — Uraian Pemecahan Masalah HOTS (${soloMeta.level})`,
-            stem: `[Studi Kasus #${i}] ${fact.context}\nAnalisislah permasalahan/peristiwa di atas berdasarkan konsep ${mainTopic} (${mapel}), jelaskan dampak sebab-akibatnya, serta rumuskan solusi atau kesimpulan terbaik yang dapat diterapkan!`,
-            answer: `Rubrik Penilaian Uraian HOTS: (1) Ketepatan analisis konsep: ${fact.shortKey} [40%], (2) Kelogisan hubungan sebab-akibat: ${fact.essayKey} [30%], (3) Ketepatan solusi aplikatif [30%].`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'ISIAN') {
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — Isian Singkat (${fact.aspect})`,
-            stem: `${fact.context} Berdasarkan peristiwa tersebut, istilah/jawaban yang tepat untuk menjawab "${fact.stem.replace(/\?$/, '')}" adalah ___________________________.`,
-            answer: `Kunci Isian Singkat: ${fact.shortKey}`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'MATCHING') {
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — Mencocokkan Konsep`,
-            leftPremise: `${i}. ${fact.matchLeft}`,
-            rightResponse: `Pasangan ${String.fromCharCode(64 + i)}: ${fact.matchRight}`,
-            answer: `Kunci Pasangan: Nomor ${i} <--> Huruf ${String.fromCharCode(64 + i)} (${fact.shortKey})`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'BENARSALAH') {
-          const isTrue = i % 2 === 1;
-          items.push({
-            no: i,
-            indicatorBadge: `TP #${tpIdx + 1} — Evaluasi Pernyataan (${soloMeta.level})`,
-            stem: `Tentukan apakah pernyataan berikut BENAR atau SALAH!\n"${isTrue ? fact.trueStmt : fact.falseStmt}"`,
-            answer: `Kunci Jawaban: ${isTrue ? 'BENAR (B)' : 'SALAH (S)'} — Karena ${fact.trueStmt}`,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        } else if (qType === 'LAINNYA') {
-          const lowerCustom = customTypeName.toLowerCase();
-          let customStem = '';
-          let customOptions = null;
-          let customAns = '';
-
-          if (lowerCustom.includes('kompleks') || lowerCustom.includes('pgk') || lowerCustom.includes('lebih dari satu')) {
-            customStem = `[Pilihan Ganda Kompleks — Pilihlah 2 Jawaban yang Benar!] ${fact.context}\nManakah di antara pernyataan berikut yang BENAR berkaitan dengan ${fact.aspect}?`;
-            customOptions = {
-              A: `[ ] ${fact.correct}`,
-              B: `[ ] ${fact.trueStmt}`,
-              C: `[ ] ${fact.distractors[0]}`,
-              D: `[ ] ${fact.falseStmt}`
-            };
-            customAns = `Kunci PG Kompleks: Pernyataan A dan B BENAR. (${fact.essayKey})`;
-          } else if (lowerCustom.includes('urut') || lowerCustom.includes('langkah') || lowerCustom.includes('prosedur')) {
-            customStem = `[Mengurutkan Langkah / Proses] Perhatikan pernyataan acak tentang ${mainTopic} (${fact.aspect}) berikut ini!\n(1) Mengamati hasil akhir dan menarik kesimpulan tentang ${focusTerm}\n(2) Mengidentifikasi komponen awal pada ${fact.matchLeft}\n(3) Menganalisis proses kerja: ${fact.matchRight}\nUrutan tahapan yang paling runtut dan benar adalah...`;
-            customAns = `Kunci Urutan yang Benar: (2) -> (3) -> (1). Pembahasan: ${fact.essayKey}`;
-          } else if (lowerCustom.includes('sebab') || lowerCustom.includes('akibat') || lowerCustom.includes('hubungan')) {
-            customStem = `[Analisis Sebab - Akibat] Perhatikan pernyataan berikut!\nSEBAB (Peristiwa): ${fact.context}\nAKIBAT / PERTANYAAN: Analisislah mengapa peristiwa tersebut dapat terjadi dan apa akibat langsungnya terhadap ${focusTerm}!`;
-            customAns = `Kunci Analisis Sebab-Akibat: ${fact.essayKey}`;
-          } else if (lowerCustom.includes('teka') || lowerCustom.includes('tebak') || lowerCustom.includes('kata kunci')) {
-            customStem = `[Tebak Konsep / Kata Kunci Aku] Aku adalah salah satu konsep penting dalam materi ${mainTopic}. Ciri dan peranku adalah: "${fact.matchRight}". Siapakah/apakah aku? Jelaskan!`;
-            customAns = `Kunci Jawaban Kata Kunci: ${fact.shortKey}. Penjelasan: ${fact.correct}.`;
-          } else {
-            customStem = `[${customTypeName} — Kasus #${i}] ${fact.context}\nPertanyaan: ${fact.essayQ}`;
-            customAns = `Kunci & Pedoman Penilaian (${customTypeName}): ${fact.essayKey}`;
-          }
-
-          items.push({
-            no: i,
-            indicatorBadge: `${customTypeName || 'Soal Khusus'} | TP #${tpIdx + 1} (${soloMeta.level})`,
-            stem: customStem,
-            options: customOptions,
-            answer: customAns,
-            scoreWeight: Math.round((100 / count) * 10) / 10
-          });
-        }
-      }
-
-      const defaultTitles = {
-        PG: 'Pilihan Ganda (Pilihlah Satu Jawaban yang Paling Tepat!)',
-        ESAI: 'Esai Terstruktur (Jawablah Pertanyaan Berikut dengan Jelas dan Tepat!)',
-        URAIAN: 'Uraian & Pemecahan Masalah HOTS (Analisislah Kasus Berikut!)',
-        ISIAN: 'Isian Singkat / Filling Blank (Lengkapilah Titik-Titik Berikut!)',
-        MATCHING: 'Mencocokkan Tabel (Pasangkan Pernyataan Kolom A dan Kolom B!)',
-        BENARSALAH: 'Pernyataan Benar / Salah (Tentukan Benar atau Salah!)',
-        LAINNYA: `${customTypeName || 'Instrumen Soal Khusus'}`
-      };
-
-      sections.push({
-        type: qType,
-        customName: customTypeName,
-        title: defaultTitles[qType] || `${customTypeName || qType}`,
-        count: count,
-        items: items
-      });
-    });
-
-    return sections;
-  },
-
   getEkskulIndicators(programName, customIndicators = []) {
-    const nameLower = String(programName || '').toLowerCase();
+    const p = String(programName || '').toLowerCase();
     let baseList = [];
-
-    if (nameLower.includes('pramuka')) {
+    if (p.includes('pramuka')) {
       baseList = [
-        'Penguasaan kode kehormatan (Tri Satya & Dasa Darma Pramuka)',
-        'Keterampilan kepramukaan (tali-temali, pionering, sandi, dan semaphore)',
-        'Kemandirian, ketangkasan baris-berbaris (PBB), dan kepemimpinan regu',
-        'Kepedulian lingkungan, kerja sama tim, dan kedisiplinan atribut'
+        'Penguasaan teknik kepramukaan dasar (simpul, tali-temali, dan sandi)',
+        'Kedisiplinan baris-berbaris (PBB) dan ketepatan aba-aba',
+        'Kemandirian, kepemimpinan regu, dan pengamalan Dasa Darma',
+        'Kepedulian lingkungan dan ketangkasan lapangan'
       ];
-    } else if (nameLower.includes('sepak bola') || nameLower.includes('futsal')) {
+    } else if (p.includes('sepak bola') || p.includes('futsal')) {
       baseList = [
-        'Teknik dasar mengumpan (passing), mengontrol (controlling), dan menggiring bola (dribbling)',
-        'Ketepatan menendang ke gawang (shooting) dan penempatan posisi bermain (positioning)',
-        'Kerja sama tim, komunikasi taktik di lapangan, dan daya tahan fisik',
-        'Sportivitas, ketaatan pada aturan permainan (fair play), dan respek terhadap lawan/wasit'
+        'Teknik dasar mengumpan (passing) dan mengontrol bola (controlling)',
+        'Kemampuan menggiring bola (dribbling) melewati rintangan',
+        'Ketepatan menembak bola ke gawang (shooting) dan penyelesaian akhir',
+        'Kerja sama tim, pemosisian ruang, dan sportivitas pertandingan'
       ];
-    } else if (nameLower.includes('tari') || nameLower.includes('seni') || nameLower.includes('musik') || nameLower.includes('paduan suara')) {
+    } else if (p.includes('tari') || p.includes('seni') || p.includes('musik')) {
       baseList = [
-        'Penguasaan teknik gerak dasar / vokal / instrumen (wiraga)',
-        'Kesesuaian irama, ketukan tempo, dan musikalitas (wirama)',
-        'Penghayatan ekspresi, estetika penampilan, dan kepercayaan diri (wirasa)',
-        'Kekompakan harmoni kelompok dan apresiasi terhadap budaya bangsa'
-      ];
-    } else if (nameLower.includes('pmr') || nameLower.includes('dokter kecil') || nameLower.includes('uks') || nameLower.includes('palang merah')) {
-      baseList = [
-        'Pemahaman prosedur Pertolongan Pertama Pada Kecelakaan (P3K) dasar',
-        'Keterampilan perawatan luka ringan, pembidaian, dan evakuasi darurat',
-        'Kampanye perilaku hidup bersih dan sehat (PHBS) di lingkungan sekolah',
-        'Empati kemanusiaan, kesiapsiagaan tugas, dan kerja sama tim kesehatan'
-      ];
-    } else if (nameLower.includes('paskibra') || nameLower.includes('baris')) {
-      baseList = [
-        'Ketepatan gerakan Peraturan Baris-Berbaris (PBB) di tempat dan berjalan',
-        'Tata upacara bendera, pelipatan, dan pengibaran bendera secara presisi',
-        'Postur tubuh, ketahanan fisik, konsentrasi, dan ketegasan aba-aba',
-        'Kedisiplinan waktu, tanggung jawab korps, dan jiwa nasionalisme'
-      ];
-    } else if (nameLower.includes('silat') || nameLower.includes('karate') || nameLower.includes('taekwondo') || nameLower.includes('bela diri')) {
-      baseList = [
-        'Penguasaan kuda-kuda dasar, sikap pasang, dan pola langkah',
-        'Ketepatan teknik pukulan, tendangan, tangkisan, dan jurus baku',
-        'Pengendalian diri, fokus mental, dan refleks koordinasi motorik',
-        'Etika perguruan, rasa hormat, dan sportivitas dalam berlatih'
-      ];
-    } else if (nameLower.includes('rohis') || nameLower.includes('tahfidz') || nameLower.includes('keagamaan') || nameLower.includes('btq')) {
-      baseList = [
-        'Kelancaran bacaan, ketepatan tajwid/makhraj, dan capaian hafalan',
-        'Pemahaman kandungan nilai-nilai akhlak mulia dan ibadah harian',
-        'Adab kesantunan bertutur kata serta keteladanan perilaku di sekolah',
-        'Partisipasi aktif dalam kegiatan pembinaan kerohanian sekolah'
-      ];
-    } else if (nameLower.includes('sains') || nameLower.includes('robotik') || nameLower.includes('tik') || nameLower.includes('komputer') || nameLower.includes('coding')) {
-      baseList = [
-        'Pemahaman logika pemecahan masalah dan konsep dasar sains/teknologi',
-        'Keterampilan merakit/mengoperasikan perangkat serta eksperimen terstruktur',
-        'Kreativitas merancang proyek inovatif dan ketelitian analisis data',
-        'Kolaborasi tim riset dan etika pemanfaatan teknologi secara bertanggung jawab'
+        'Ketepatan wirama (kesesuaian gerak/vokal dengan irama dan tempo)',
+        'Keluwesan wiraga (teknik gerak tubuh, artikulasi, dan postur)',
+        'Penghayatan wirasa (ekspresi wajah dan penjiwaan penampilan)',
+        'Kekompakan formasi dan keserasian tampil bersama kelompok'
       ];
     } else {
       baseList = [
-        `Penguasaan pengetahuan dan teknik dasar program ${programName}`,
-        `Keterampilan praktik dan unjuk kerja secara konsisten dalam latihan ${programName}`,
-        `Kedisiplinan kehadiran, kemandirian, dan motivasi berprestasi`,
-        `Kerja sama tim, komunikasi positif, dan sikap sportif/bertanggung jawab`
+        `Penguasaan teknik dan materi dasar kegiatan ${programName}`,
+        `Kedisiplinan kehadiran dan keaktifan berlatih dalam ${programName}`,
+        `Kemampuan mempraktikkan keterampilan ${programName} secara mandiri`,
+        `Kerja sama tim, sportivitas, dan tanggung jawab selama kegiatan ${programName}`
       ];
     }
-
-    const extras = Array.isArray(customIndicators) ? customIndicators.filter(Boolean) : [];
-    return [...new Set([...baseList, ...extras])];
+    return [...new Set([...baseList, ...(Array.isArray(customIndicators) ? customIndicators : [])].filter(Boolean))];
   },
 
   composeEkskulNarrative(studentName, programName, gradeCode, masteredIndicator, weaknessIndicator) {
-    const name = String(studentName || 'Peserta didik').trim();
-    const prog = String(programName || 'Ekstrakurikuler').trim();
-
-    const gradeMap = {
-      A: 'Amat Baik (A)',
-      B: 'Baik (B)',
-      C: 'Cukup (C)',
-      D: 'Perlu Bimbingan (D)'
-    };
+    const cleanName = String(studentName || 'Peserta didik').trim();
+    const cleanProg = String(programName || 'Ekstrakurikuler').trim();
+    const mastered = String(masteredIndicator || `penguasaan teknik dasar ${cleanProg}`).trim();
+    const lowerMastered = mastered.charAt(0).toLowerCase() + mastered.slice(1);
+    const gradeMap = { A: 'Sangat Baik (A)', B: 'Baik (B)', C: 'Cukup (C)', D: 'Perlu Bimbingan (D)' };
     const gradeLabel = gradeMap[gradeCode] || 'Baik (B)';
 
-    const masteredText = masteredIndicator
-      ? masteredIndicator.charAt(0).toLowerCase() + masteredIndicator.slice(1)
-      : `teknik dasar kegiatan ${prog}`;
-
-    const weaknessText = weaknessIndicator && weaknessIndicator !== 'TIDAK_ADA'
-      ? weaknessIndicator.charAt(0).toLowerCase() + weaknessIndicator.slice(1)
-      : '';
-
-    if (!weaknessText || (gradeCode === 'A' && weaknessIndicator === 'TIDAK_ADA')) {
-      return `Ananda ${name} menunjukkan capaian ${gradeLabel} pada kegiatan ekstrakurikuler ${prog}. Ananda sudah sangat mahir dalam ${masteredText}, serta konsisten menampilkan kedisiplinan dan antusiasme yang tinggi.`;
+    if (!weaknessIndicator || weaknessIndicator === 'NONE' || weaknessIndicator === 'Tidak Ada (Sudah Menguasai Seluruh Indikator)') {
+      return `Ananda ${cleanName} menunjukkan capaian predikat ${gradeLabel} pada kegiatan ekstrakurikuler ${cleanProg}, sangat mahir dan konsisten dalam ${lowerMastered}, serta telah menguasai seluruh indikator pembinaan dengan sangat optimal.`;
     }
-
-    return `Ananda ${name} memperoleh predikat ${gradeLabel} pada ekstrakurikuler ${prog}. Ananda sudah mahir dalam ${masteredText}, namun masih perlu latihan dan pendampingan lebih lanjut untuk meningkatkan aspek ${weaknessText}.`;
+    const weak = String(weaknessIndicator).trim();
+    const lowerWeak = weak.charAt(0).toLowerCase() + weak.slice(1);
+    return `Ananda ${cleanName} memperoleh predikat ${gradeLabel} dalam kegiatan ekstrakurikuler ${cleanProg}; telah menunjukkan kemahiran yang menonjol pada aspek ${lowerMastered}, namun masih perlu latihan dan pendampingan lebih lanjut dalam ${lowerWeak}.`;
   }
 };
 
@@ -11825,6 +11997,7 @@ const RpmApp = {
   hideAnswerKeysForStudentPrint: false,
   activeResultPageIndex: 1,
   paginatedQuestionPages: [],
+  regenCounter: 1,
 
   openMainView() {
     const teacher = DB.getActiveTeacherAccount();
@@ -11834,35 +12007,23 @@ const RpmApp = {
     const penyusunInp = document.getElementById('rpm-input-penyusun');
     const sekolahInp = document.getElementById('rpm-input-sekolah');
     const kelasInp = document.getElementById('rpm-input-kelas-fase');
-    const mapelInp = document.getElementById('rpm-input-mapel');
-    const datalistMapel = document.getElementById('datalist-rpm-mapel');
+    const keyInp = document.getElementById('rpm-gemini-api-key-input');
 
-    if (penyusunInp && !penyusunInp.value.trim()) {
-      penyusunInp.value = teacher.nama || '';
-    }
-    if (sekolahInp) {
-      sekolahInp.value = teacher.schoolDisplay || bucket.schoolDisplay || '';
-    }
+    if (penyusunInp && !penyusunInp.value.trim()) penyusunInp.value = teacher.nama || '';
+    if (sekolahInp) sekolahInp.value = teacher.schoolDisplay || bucket.schoolDisplay || '';
     if (kelasInp) {
       kelasInp.value = teacher.role === 'GURU_MAPEL'
         ? (bucket.kelasFaseLabel || bucket.classKey)
         : (teacher.kelasFase || bucket.kelasFaseLabel || 'Kelas 4 / Fase B');
     }
-
-    const subjects = PenilaianApp.getAvailableSubjectsForTeacher(null);
-    if (datalistMapel) {
-      datalistMapel.innerHTML = subjects
-        .map(s => `<option value="${UI.escapeHtml(s)}"></option>`)
-        .join('');
+    if (keyInp) {
+      keyInp.value = AcademicAIEngine.getGeminiApiKey();
     }
 
-    if (mapelInp) {
-      if (teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
-        mapelInp.value = teacher.mapelDiampu;
-      } else if (!mapelInp.value.trim() && subjects.length > 0) {
-        mapelInp.value = subjects[0];
-      }
-    }
+    this.updateEngineStatusBadge();
+    this.loadDaySubjectsChips('TODAY', true);
+    this.checkMathPanelVisibility();
+    this.renderSavedArchiveTable();
 
     if (AppState.rpmCurrentDoc) {
       this.renderGeneratedRpmDocument();
@@ -11875,7 +12036,158 @@ const RpmApp = {
     UI.switchView('view-intra-modul-rpm');
   },
 
-  autoSuggestCpAndTp() {
+  toggleGeminiKeyConfig() {
+    const panel = document.getElementById('rpm-gemini-config-panel');
+    if (panel) panel.classList.toggle('hidden');
+  },
+
+  saveGeminiApiKey() {
+    const keyInp = document.getElementById('rpm-gemini-api-key-input');
+    const val = keyInp ? keyInp.value.trim() : '';
+    AcademicAIEngine.setGeminiApiKey(val);
+    this.updateEngineStatusBadge();
+
+    const panel = document.getElementById('rpm-gemini-config-panel');
+    if (panel) panel.classList.add('hidden');
+
+    if (val) {
+      UI.showNotif(
+        'Google Gemini API Key Tersimpan',
+        'Mesin utama pembuatan Modul RPM & Soal kini terhubung langsung ke Google Gemini API (gemini-2.5-flash / gemini-1.5-flash).',
+        'success'
+      );
+    } else {
+      UI.showNotif(
+        'Mode Cloud Generative AI Gratis Aktif',
+        'Kunci API dikosongkan. Sistem otomatis menggunakan Cloud Generative AI Gateway gratis.',
+        'info'
+      );
+    }
+  },
+
+  updateEngineStatusBadge() {
+    const badge = document.getElementById('rpm-active-engine-badge');
+    if (!badge) return;
+    const hasKey = Boolean(AcademicAIEngine.getGeminiApiKey());
+    if (hasKey) {
+      badge.textContent = '✨ Google Gemini API Resmi Aktif';
+      badge.className = 'badge badge-warning';
+    } else {
+      badge.textContent = '☁️ Cloud Generative AI Murni Aktif';
+      badge.className = 'badge badge-success';
+    }
+  },
+
+  loadDaySubjectsChips(filterDay = 'TODAY', autoFillFirst = false) {
+    const teacher = DB.getActiveTeacherAccount();
+    const bucket = DB.getActiveClassBucket();
+    const mapelInp = document.getElementById('rpm-input-mapel');
+    const datalistMapel = document.getElementById('datalist-rpm-mapel');
+    const chipsContainer = document.getElementById('rpm-today-subjects-chips');
+    const dayPill = document.getElementById('rpm-detected-day-pill');
+    const filterSelect = document.getElementById('rpm-day-filter-select');
+    if (!bucket || !mapelInp) return;
+
+    const todayDayName = DateTimeUtil.getCurrentDayName();
+    const targetDay = filterDay === 'TODAY' ? todayDayName : filterDay;
+
+    if (filterSelect && filterSelect.value !== filterDay) {
+      filterSelect.value = filterDay;
+    }
+
+    let subjects = [];
+    if (teacher && teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
+      subjects = [teacher.mapelDiampu];
+      if (dayPill) dayPill.textContent = `Guru Mapel Hari ${todayDayName}: ${teacher.mapelDiampu}`;
+    } else {
+      const sched = bucket.schedule || {};
+      if (targetDay === 'ALL') {
+        const allSet = new Set();
+        Object.values(sched).forEach(arr => {
+          if (Array.isArray(arr)) arr.forEach(s => { if (s && s.trim()) allSet.add(s.trim()); });
+        });
+        subjects = Array.from(allSet);
+        if (dayPill) dayPill.textContent = `Semua Jadwal Mapel Kelas (${subjects.length} Mapel)`;
+      } else {
+        const dayArr = sched[targetDay] || [];
+        subjects = [...new Set(dayArr.map(s => s.trim()).filter(Boolean))];
+        if (subjects.length === 0) {
+          subjects = ['Matematika', 'Bahasa Indonesia', 'IPAS', 'Pendidikan Pancasila'];
+        }
+        if (dayPill) {
+          dayPill.textContent = `Jadwal Terdeteksi Hari ${targetDay}: ${subjects.join(', ')}`;
+        }
+      }
+    }
+
+    if (datalistMapel) {
+      datalistMapel.innerHTML = subjects.map(s => `<option value="${UI.escapeHtml(s)}"></option>`).join('');
+    }
+
+    if (autoFillFirst && (!mapelInp.value.trim() || filterDay === 'TODAY')) {
+      if (subjects.length > 0 && !mapelInp.value.trim()) {
+        mapelInp.value = subjects[0];
+      }
+    }
+
+    if (chipsContainer) {
+      chipsContainer.innerHTML = subjects.map(sub => {
+        const isCurrent = mapelInp.value.trim().toLowerCase() === sub.toLowerCase();
+        const safeSub = UI.escapeHtml(sub).replace(/'/g, "\\'");
+        return `
+          <span
+            class="rpm-day-subject-chip ${isCurrent ? 'active-chip' : ''}"
+            title="Klik untuk memilih mata pelajaran ${UI.escapeHtml(sub)}"
+            onclick="RpmApp.selectSubjectChip('${safeSub}')"
+          >
+            📘 ${UI.escapeHtml(sub)}
+          </span>
+        `;
+      }).join('');
+    }
+
+    this.checkMathPanelVisibility();
+  },
+
+  handleDayFilterChange(val) {
+    const mapelInp = document.getElementById('rpm-input-mapel');
+    if (mapelInp) mapelInp.value = '';
+    this.loadDaySubjectsChips(val, true);
+  },
+
+  selectSubjectChip(subName) {
+    const mapelInp = document.getElementById('rpm-input-mapel');
+    if (mapelInp) mapelInp.value = subName;
+    const filterSel = document.getElementById('rpm-day-filter-select');
+    this.loadDaySubjectsChips(filterSel ? filterSel.value : 'TODAY', false);
+    this.checkMathPanelVisibility();
+  },
+
+  handleMapelInputChange() {
+    const filterSel = document.getElementById('rpm-day-filter-select');
+    this.loadDaySubjectsChips(filterSel ? filterSel.value : 'TODAY', false);
+    this.checkMathPanelVisibility();
+  },
+
+  checkMathPanelVisibility() {
+    const mapelEl = document.getElementById('rpm-input-mapel');
+    const materiEl = document.getElementById('rpm-input-materi');
+    const tpEl = document.getElementById('rpm-input-tp');
+    const mathBox = document.getElementById('rpm-math-special-config-box');
+    if (!mathBox) return;
+
+    const mapel = mapelEl ? mapelEl.value : '';
+    const materi = materiEl ? materiEl.value : '';
+    const tp = tpEl ? tpEl.value : '';
+
+    if (AcademicAIEngine.isMathSubjectOrTopic(mapel, materi, tp)) {
+      mathBox.classList.remove('hidden');
+    } else {
+      mathBox.classList.add('hidden');
+    }
+  },
+
+  async autoSuggestCpAndTp() {
     const mapelEl = document.getElementById('rpm-input-mapel');
     const kelasEl = document.getElementById('rpm-input-kelas-fase');
     const materiEl = document.getElementById('rpm-input-materi');
@@ -11883,34 +12195,51 @@ const RpmApp = {
     const cpEl = document.getElementById('rpm-input-cp');
     const tpEl = document.getElementById('rpm-input-tp');
 
-    const mapel = mapelEl && mapelEl.value.trim() ? mapelEl.value.trim() : 'IPAS';
+    const mapel = mapelEl && mapelEl.value.trim() ? mapelEl.value.trim() : 'Matematika';
     const kelasFase = kelasEl && kelasEl.value.trim() ? kelasEl.value.trim() : 'Kelas 4 / Fase B';
-    const materi = materiEl && materiEl.value.trim()
-      ? materiEl.value.trim()
-      : 'Rantai Makanan di Sawah (Produsen, Konsumen, dan Pengurai)';
-    const soloMeta = AcademicAIEngine.getSoloVerbMeta(soloEl ? soloEl.value : 'Relational');
+    const soloLevel = soloEl ? soloEl.value : 'Relational';
+    const isMath = AcademicAIEngine.isMathSubjectOrTopic(mapel, materiEl ? materiEl.value : '', '');
 
-    if (materiEl && !materiEl.value.trim()) {
-      materiEl.value = materi;
+    let materi = materiEl && materiEl.value.trim() ? materiEl.value.trim() : '';
+    if (!materi) {
+      if (isMath) materi = 'Pembagian Bilangan Cacah';
+      else if (mapel.toLowerCase().includes('ipas') || mapel.toLowerCase().includes('ipa')) materi = 'Siklus Air dan Pelestarian Lingkungan';
+      else if (mapel.toLowerCase().includes('indonesia')) materi = 'Gagasan Pokok dan Informasi Penting dalam Paragraf';
+      else if (mapel.toLowerCase().includes('pancasila')) materi = 'Musyawarah dan Penerapan Nilai Sila Pancasila';
+      else materi = `Konsep Esensial ${mapel}`;
+      if (materiEl) materiEl.value = materi;
     }
 
-    if (cpEl) {
-      cpEl.value = `Pada akhir ${kelasFase}, peserta didik memahami konsep inti "${materi}" pada mata pelajaran ${mapel}, mampu mengidentifikasi hubungan antarkomponen, serta menerapkan pemahamannya untuk memecahkan masalah dalam kehidupan sehari-hari.`;
-    }
+    const loadingModal = document.getElementById('rpm-ai-loading-modal');
+    const loadingTitle = document.getElementById('rpm-ai-loading-title');
+    if (loadingTitle) loadingTitle.textContent = `Merumuskan Draft CP & TP "${materi}" dengan AI Murni...`;
+    if (loadingModal) loadingModal.classList.remove('hidden');
 
-    if (tpEl) {
-      tpEl.value = [
-        `1. Mengidentifikasi pengertian, ciri-ciri, dan contoh nyata pada materi ${materi} secara tepat.`,
-        `2. Menganalisis hubungan sebab-akibat serta penerapan ${materi} dalam situasi sehari-hari (${soloMeta.level}).`,
-        `3. Menyimpulkan solusi atas permasalahan kontekstual yang berkaitan dengan ${materi}.`
-      ].join('\n');
-    }
+    try {
+      const aiDraft = await AcademicAIEngine.suggestCpAndTpWithAI(mapel, kelasFase, materi, soloLevel);
+      if (aiDraft) {
+        if (cpEl) cpEl.value = aiDraft.cp;
+        if (tpEl) tpEl.value = aiDraft.tpText;
+        this.checkMathPanelVisibility();
+        UI.showNotif(
+          'CP & TP Berhasil Dirumuskan oleh AI Murni',
+          `Draft Capaian Pembelajaran dan Tujuan Pembelajaran untuk topik "${materi}" (${mapel}) telah disusun secara dinamis oleh ${aiDraft.engineUsed}.`,
+          'success'
+        );
+        return;
+      }
 
-    UI.showNotif(
-      'Contoh CP & TP Berhasil Diisi',
-      `Rumusan Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) untuk materi "${materi}" telah diisi otomatis. Silakan sesuaikan sebelum membuat modul & soal.`,
-      'success'
-    );
+      if (isMath) {
+        if (cpEl) cpEl.value = `Pada akhir ${kelasFase}, peserta didik memiliki pemahaman dan keterampilan operasi hitung pada materi ${materi} serta mampu menerapkannya secara akurat.`;
+        if (tpEl) tpEl.value = `1. Siswa mampu menyelesaikan operasi hitung pada materi ${materi} tanpa kesalahan.\n2. Siswa mampu menentukan hasil perhitungan pada materi ${materi} sesuai tingkat kelas.`;
+      } else {
+        if (cpEl) cpEl.value = `Pada akhir ${kelasFase}, peserta didik mampu memahami konsep ${materi} pada mata pelajaran ${mapel} serta menggunakannya dalam kehidupan sehari-hari.`;
+        if (tpEl) tpEl.value = `1. Siswa mampu mengidentifikasi konsep penting pada materi ${materi} dengan tepat.\n2. Siswa mampu menjelaskan penerapan ${materi} sesuai cakupan kelas.`;
+      }
+      this.checkMathPanelVisibility();
+    } finally {
+      if (loadingModal) loadingModal.classList.add('hidden');
+    }
   },
 
   selectAllDplCheckboxes(selectAll = true) {
@@ -11923,11 +12252,8 @@ const RpmApp = {
   toggleAutoQuestionBuilder(isChecked) {
     const panel = document.getElementById('rpm-auto-questions-panel');
     if (!panel) return;
-    if (isChecked) {
-      panel.classList.remove('hidden');
-    } else {
-      panel.classList.add('hidden');
-    }
+    if (isChecked) panel.classList.remove('hidden');
+    else panel.classList.add('hidden');
   },
 
   toggleQuestionCountInput(qType, isChecked) {
@@ -11936,7 +12262,7 @@ const RpmApp = {
     if (isChecked) {
       countInp.classList.remove('hidden');
       if (!countInp.value || parseInt(countInp.value, 10) < 1) {
-        countInp.value = 3;
+        countInp.value = 5;
       }
     } else {
       countInp.classList.add('hidden');
@@ -11964,13 +12290,50 @@ const RpmApp = {
         btn.textContent = 'Tampilkan Kunci Jawaban (Mode Pegangan Guru)';
         btn.className = 'btn btn-warning btn-sm';
       } else {
-        btn.textContent = 'Sembunyikan Kunci Jawaban (Mode Lembar Siswa)';
+        btn.textContent = 'Sembunyikan Kunci Jawaban (Mode Siswa)';
         btn.className = 'btn btn-secondary btn-sm';
       }
     }
     const currentPage = this.activeResultPageIndex || 1;
     this.renderGeneratedQuestionsMultiPages();
     this.switchResultPage(currentPage);
+  },
+
+  collectCurrentQuestionSpecsFromForm() {
+    const enableQuestions = document.getElementById('rpm-enable-auto-questions').checked;
+    const questionSpecList = [];
+    if (!enableQuestions) return { enableQuestions: false, questionSpecList: [], errorMsg: '' };
+
+    const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
+    for (const ch of checkedTypes) {
+      const qType = ch.getAttribute('data-qtype');
+      const countEl = document.getElementById(`rpm-qcount-${qType}`);
+      const countVal = countEl ? parseInt(countEl.value, 10) : 5;
+
+      if (qType === 'LAINNYA') {
+        const customNameEl = document.getElementById('rpm-custom-qtype-name');
+        const customNameVal = customNameEl ? customNameEl.value.trim() : '';
+        if (!customNameVal) {
+          return {
+            enableQuestions: true,
+            questionSpecList: [],
+            errorMsg: 'Silakan tuliskan bentuk soal yang Anda inginkan pada kolom "Lainnya".'
+          };
+        }
+        questionSpecList.push({
+          type: 'LAINNYA',
+          customName: customNameVal,
+          count: Math.max(1, countVal || 3)
+        });
+      } else if (qType && countVal > 0) {
+        questionSpecList.push({
+          type: qType,
+          count: countVal
+        });
+      }
+    }
+
+    return { enableQuestions, questionSpecList, errorMsg: '' };
   },
 
   async handleGenerateRpm(event) {
@@ -11986,17 +12349,34 @@ const RpmApp = {
     const mapel = document.getElementById('rpm-input-mapel').value.trim();
     const soloLevel = document.getElementById('rpm-input-solo').value;
     const materi = document.getElementById('rpm-input-materi').value.trim();
-    const cpInputEl = document.getElementById('rpm-input-cp');
-    const tpInputEl = document.getElementById('rpm-input-tp');
+    const cpInput = document.getElementById('rpm-input-cp').value.trim();
+    const tpInput = document.getElementById('rpm-input-tp').value.trim();
+    const customPromptEl = document.getElementById('rpm-input-custom-prompt');
+    const customPrompt = customPromptEl ? customPromptEl.value.trim() : '';
 
-    const cpInput = cpInputEl ? cpInputEl.value.trim() : '';
-    const tpInput = tpInputEl ? tpInputEl.value.trim() : '';
+    const difficultyEl = document.getElementById('rpm-question-difficulty');
+    const mathModeEl = document.getElementById('rpm-math-mode-select');
+    const mathConstraintEl = document.getElementById('rpm-math-constraint-input');
+
+    const difficulty = difficultyEl ? difficultyEl.value : 'SEDANG';
+    const mathMode = mathModeEl ? mathModeEl.value : 'DIRECT_CALC';
+    const mathConstraint = mathConstraintEl ? mathConstraintEl.value.trim() : '';
 
     if (!penyusun || !sekolah || !kelasFase || !mapel || !materi || !cpInput || !tpInput) {
       UI.showNotif(
         'Formulir Belum Lengkap',
-        'Harap lengkapi seluruh kolom wajib, termasuk Materi Pokok, Capaian Pembelajaran (CP), dan Tujuan Pembelajaran (TP).',
+        'Harap lengkapi seluruh kolom wajib, termasuk Materi Ajar, Capaian Pembelajaran (CP), dan Tujuan Pembelajaran (TP).',
         'warning'
+      );
+      return;
+    }
+
+    const conflictCheck = AcademicAIEngine.checkTpAndMateriConflict(mapel, materi, tpInput);
+    if (conflictCheck.hasConflict) {
+      UI.showNotif(
+        'Klarifikasi Pertentangan TP & Materi',
+        conflictCheck.message,
+        'danger'
       );
       return;
     }
@@ -12007,45 +12387,16 @@ const RpmApp = {
     if (selectedDpl.length === 0) {
       UI.showNotif(
         'Pilih Dimensi Profil Lulusan',
-        'Silakan pilih minimal satu Dimensi Profil Lulusan (DPL).',
+        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL).',
         'warning'
       );
       return;
     }
 
-    const enableQuestions = document.getElementById('rpm-enable-auto-questions').checked;
-    const questionSpecList = [];
-
-    if (enableQuestions) {
-      const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
-      for (const ch of checkedTypes) {
-        const qType = ch.getAttribute('data-qtype');
-        const countEl = document.getElementById(`rpm-qcount-${qType}`);
-        const countVal = countEl ? parseInt(countEl.value, 10) : 3;
-
-        if (qType === 'LAINNYA') {
-          const customNameEl = document.getElementById('rpm-custom-qtype-name');
-          const customNameVal = customNameEl ? customNameEl.value.trim() : '';
-          if (!customNameVal) {
-            UI.showNotif(
-              'Nama Jenis Soal Lainnya Kosong',
-              'Silakan ketikkan jenis soal yang Anda inginkan pada kolom "Lainnya (Ketik Manual Jenis Soal)".',
-              'warning'
-            );
-            return;
-          }
-          questionSpecList.push({
-            type: 'LAINNYA',
-            customName: customNameVal,
-            count: Math.max(1, countVal || 3)
-          });
-        } else if (qType && countVal > 0) {
-          questionSpecList.push({
-            type: qType,
-            count: countVal
-          });
-        }
-      }
+    const { enableQuestions, questionSpecList, errorMsg } = this.collectCurrentQuestionSpecsFromForm();
+    if (errorMsg) {
+      UI.showNotif('Spesifikasi Soal Belum Lengkap', errorMsg, 'warning');
+      return;
     }
 
     const baseParams = {
@@ -12057,30 +12408,54 @@ const RpmApp = {
       materi,
       cpInput,
       tpInput,
+      customPrompt,
       soloLevel,
-      selectedDpl
+      selectedDpl,
+      difficulty,
+      mathMode,
+      mathConstraint
     };
 
     const loadingModal = document.getElementById('rpm-ai-loading-modal');
+    const loadingTitle = document.getElementById('rpm-ai-loading-title');
+    if (loadingTitle) {
+      loadingTitle.textContent = `Generative AI Sedang Merancang Modul & Soal "${materi}"...`;
+    }
     if (loadingModal) loadingModal.classList.remove('hidden');
 
     try {
-      const blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
-      const questionSections = enableQuestions && questionSpecList.length > 0
-        ? await AcademicAIEngine.generateQuestionsWithHybridAI(baseParams, questionSpecList)
-        : [];
+      this.regenCounter++;
+      const aiGenerated = await AcademicAIEngine.generateFullRpmAndQuestionsWithAI(
+        baseParams,
+        enableQuestions ? questionSpecList : [],
+        this.regenCounter
+      );
 
       AppState.rpmCurrentDoc = {
         id: 'RPM_' + Date.now(),
-        ...blueprint,
+        savedDateISO: DateTimeUtil.getTodayISO(),
+        savedTimeStr: DateTimeUtil.getCurrentTimeStr(),
+        difficulty,
+        mathMode,
+        mathConstraint,
+        customPrompt,
+        questionSpecList,
+        engineUsed: aiGenerated.engineUsed,
+        ...aiGenerated.blueprint,
         enableQuestions,
-        questionSections
+        questionSections: aiGenerated.questionSections
       };
+
+      const verifPill = document.getElementById('rpm-verification-status-pill');
+      if (verifPill) {
+        verifPill.textContent = `✓ Disusun oleh ${aiGenerated.engineUsed}`;
+      }
 
       if (bucket) {
         if (!bucket.rpmModules) bucket.rpmModules = [];
-        bucket.rpmModules.unshift(AppState.rpmCurrentDoc);
+        bucket.rpmModules.unshift(JSON.parse(JSON.stringify(AppState.rpmCurrentDoc)));
         DB.save();
+        this.renderSavedArchiveTable();
       }
 
       const formCard = document.getElementById('rpm-builder-form-card');
@@ -12094,13 +12469,225 @@ const RpmApp = {
 
       const totalPages = this.getTotalPagesCount();
       UI.showNotif(
-        'Modul RPM & Soal AI Multi-Halaman Selesai',
-        `Berhasil menyusun Halaman 1 (Modul RPM 8-3-3-4) dan ${totalPages - 1} Halaman Instrumen Soal kontekstual untuk mata pelajaran ${mapel} (${materi}). Gunakan tombol halaman berwarna di atas atau bawah dokumen untuk berpindah halaman.`,
+        'Modul RPM & Soal Dinamis AI Murni Selesai',
+        `Disusun secara kreatif dan presisi oleh ${aiGenerated.engineUsed}: Halaman 1 (Modul RPM 8-3-3-4) dan ${totalPages - 1} Halaman Soal (${mapel} — ${materi}). Otomatis tersimpan ke Arsip.`,
         'success'
       );
     } finally {
       if (loadingModal) loadingModal.classList.add('hidden');
     }
+  },
+
+  async regenerateQuestionsOnlyWithAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) return;
+
+    const specs = Array.isArray(doc.questionSpecList) && doc.questionSpecList.length > 0
+      ? doc.questionSpecList
+      : (doc.questionSections || []).map(s => ({ type: s.type, customName: s.customName, count: s.count }));
+
+    if (specs.length === 0) {
+      UI.showNotif('Tidak Ada Spesifikasi Soal', 'Aktifkan pembuatan soal terlebih dahulu pada parameter.', 'warning');
+      return;
+    }
+
+    const loadingModal = document.getElementById('rpm-ai-loading-modal');
+    const loadingTitle = document.getElementById('rpm-ai-loading-title');
+    if (loadingTitle) {
+      loadingTitle.textContent = `Meramu Variasi Soal Baru yang Berbeda untuk "${doc.materi}"...`;
+    }
+    if (loadingModal) loadingModal.classList.remove('hidden');
+
+    try {
+      this.regenCounter += 7;
+      const baseParams = {
+        penyusun: doc.penyusun,
+        sekolah: doc.sekolah,
+        kelasFase: doc.kelasFase,
+        semester: doc.semester,
+        mapel: doc.mapel,
+        materi: doc.materi,
+        cpInput: doc.cpInput,
+        tpInput: doc.tpInput,
+        customPrompt: (doc.customPrompt || '') + ` [Buat variasi soal dan skenario/angka yang berbeda dari sebelumnya, Variasi #${this.regenCounter}]`,
+        soloLevel: doc.soloLevel,
+        selectedDpl: doc.dplList,
+        difficulty: doc.difficulty || 'SEDANG',
+        mathMode: doc.mathMode || 'DIRECT_CALC',
+        mathConstraint: doc.mathConstraint || ''
+      };
+
+      const aiGenerated = await AcademicAIEngine.generateFullRpmAndQuestionsWithAI(
+        baseParams,
+        specs,
+        this.regenCounter
+      );
+
+      doc.questionSections = aiGenerated.questionSections;
+      doc.engineUsed = aiGenerated.engineUsed;
+
+      this.renderGeneratedQuestionsMultiPages();
+      this.switchResultPage(this.activeResultPageIndex > 1 ? this.activeResultPageIndex : 2);
+
+      UI.showNotif(
+        'Variasi Soal Baru Berhasil Dibuat',
+        `AI Murni (${aiGenerated.engineUsed}) telah menyusun variasi butir soal baru untuk materi "${doc.materi}". Klik "Simpan Hasil RPM & Soal" jika ingin memperbarui arsip.`,
+        'success'
+      );
+    } finally {
+      if (loadingModal) loadingModal.classList.add('hidden');
+    }
+  },
+
+  saveCurrentRpmToArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    const doc = AppState.rpmCurrentDoc;
+    if (!bucket || !doc) {
+      UI.showNotif('Belum Ada Modul Aktif', 'Silakan buat atau buka modul RPM terlebih dahulu.', 'warning');
+      return;
+    }
+
+    doc.savedDateISO = DateTimeUtil.getTodayISO();
+    doc.savedTimeStr = DateTimeUtil.getCurrentTimeStr();
+
+    if (!bucket.rpmModules) bucket.rpmModules = [];
+    const existingIdx = bucket.rpmModules.findIndex(m => m.id === doc.id);
+    if (existingIdx >= 0) {
+      bucket.rpmModules[existingIdx] = JSON.parse(JSON.stringify(doc));
+    } else {
+      bucket.rpmModules.unshift(JSON.parse(JSON.stringify(doc)));
+    }
+
+    DB.save();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Berhasil Disimpan ke Arsip RPM',
+      `Modul RPM & Soal "${doc.mapel} — ${doc.materi}" telah disimpan dan siap digunakan kembali di lain waktu.`,
+      'success'
+    );
+  },
+
+  renderSavedArchiveTable() {
+    const tbody = document.getElementById('tbody-rpm-saved-archive');
+    const badgeEl = document.getElementById('rpm-saved-archive-badge');
+    const countTopEl = document.getElementById('rpm-saved-count-top');
+    const bucket = DB.getActiveClassBucket();
+    if (!tbody || !bucket) return;
+
+    const list = bucket.rpmModules || [];
+    if (countTopEl) countTopEl.textContent = list.length;
+    if (badgeEl) badgeEl.textContent = `${list.length} Modul Tersimpan`;
+
+    if (list.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+            Belum ada arsip Modul RPM & Soal yang tersimpan di kelas ini.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = list.map((mod, idx) => {
+      let totalQ = 0;
+      const typeLabels = [];
+      if (Array.isArray(mod.questionSections)) {
+        mod.questionSections.forEach(sec => {
+          const c = (sec.items || []).length;
+          totalQ += c;
+          typeLabels.push(`${sec.type}: ${c}`);
+        });
+      }
+
+      const dateDisplay = DateTimeUtil.formatIndonesianDate(mod.savedDateISO || DateTimeUtil.getTodayISO());
+      const safeId = UI.escapeHtml(mod.id);
+
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>
+            <div style="font-weight: 700; color: var(--dark); font-size: 0.84rem;">${UI.escapeHtml(dateDisplay)}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted);">Pukul ${UI.escapeHtml(mod.savedTimeStr || '-')}</div>
+          </td>
+          <td><span class="badge badge-primary">${UI.escapeHtml(mod.mapel)}</span></td>
+          <td>
+            <div style="font-weight: 800; color: var(--dark);">${UI.escapeHtml(mod.materi)}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+              TP: ${UI.escapeHtml((mod.parsedTpList && mod.parsedTpList[0]) || mod.tpInput || '-')}
+            </div>
+          </td>
+          <td><span class="badge badge-info">${UI.escapeHtml(mod.kelasFase)}</span></td>
+          <td style="text-align: center;">
+            <span class="badge badge-success">${totalQ} Butir Soal</span>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(typeLabels.join(' | ') || 'Tanpa Soal')}</div>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="RpmApp.openArchivedRpm('${safeId}')">
+                📂 Buka & Gunakan
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.deleteArchivedRpm('${safeId}')">
+                🗑️ Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  openArchivedRpm(modId) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+
+    const found = bucket.rpmModules.find(m => m.id === modId);
+    if (!found) {
+      UI.showNotif('Arsip Tidak Ditemukan', 'Data modul RPM tersebut tidak ditemukan.', 'warning');
+      return;
+    }
+
+    AppState.rpmCurrentDoc = JSON.parse(JSON.stringify(found));
+
+    const formCard = document.getElementById('rpm-builder-form-card');
+    const resultWrapper = document.getElementById('rpm-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resultWrapper) resultWrapper.classList.remove('hidden');
+
+    this.renderGeneratedRpmDocument();
+    this.renderGeneratedQuestionsMultiPages();
+    this.switchResultPage(1);
+
+    UI.showNotif(
+      'Arsip Modul RPM & Soal Dimuat',
+      `Menampilkan kembali perangkat ajar "${found.mapel} — ${found.materi}" dari arsip tersimpan.`,
+      'success'
+    );
+  },
+
+  deleteArchivedRpm(modId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+
+    const target = bucket.rpmModules.find(m => m.id === modId);
+    if (!target) return;
+
+    if (!window.confirm(`Hapus arsip Modul RPM "${target.mapel} — ${target.materi}" dari daftar tersimpan?`)) return;
+
+    bucket.rpmModules = bucket.rpmModules.filter(m => m.id !== modId);
+    DB.save();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif('Arsip Dihapus', 'Modul RPM telah dihapus dari daftar arsip.', 'warning');
+  },
+
+  scrollToSavedArchive() {
+    const el = document.getElementById('rpm-saved-archive-card');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   },
 
   reopenBuilderForm() {
@@ -12122,14 +12709,11 @@ const RpmApp = {
       const items = Array.isArray(sec.items) ? sec.items : [];
       if (items.length === 0) return;
 
-      // Tentukan jumlah maksimal soal per halaman berdasarkan panjang jenis soal
       let maxItemsPerPage = 5;
-      if (sec.type === 'ESAI' || sec.type === 'URAIAN') {
-        maxItemsPerPage = 4;
-      } else if (sec.type === 'ISIAN' || sec.type === 'MATCHING' || sec.type === 'BENARSALAH') {
-        maxItemsPerPage = 6;
-      } else if (sec.type === 'LAINNYA') {
-        maxItemsPerPage = 4;
+      if (sec.type === 'ISIAN' || sec.type === 'MATCHING' || sec.type === 'BENARSALAH') {
+        maxItemsPerPage = 8;
+      } else if (sec.type === 'ESAI' || sec.type === 'URAIAN' || sec.type === 'LAINNYA') {
+        maxItemsPerPage = 5;
       }
 
       const totalChunks = Math.ceil(items.length / maxItemsPerPage);
@@ -12140,7 +12724,7 @@ const RpmApp = {
 
         const shortTypeLabel = sec.type === 'LAINNYA'
           ? (sec.customName || 'Soal Khusus')
-          : (sec.type === 'PG' ? 'Pilihan Ganda' : sec.type === 'ESAI' ? 'Esai' : sec.type === 'URAIAN' ? 'Uraian HOTS' : sec.type === 'ISIAN' ? 'Isian Singkat' : sec.type === 'MATCHING' ? 'Mencocokkan' : 'Benar/Salah');
+          : (sec.type === 'PG' ? 'Pilihan Ganda' : sec.type === 'ISIAN' ? 'Isian / Hitung' : sec.type === 'ESAI' ? 'Esai' : sec.type === 'URAIAN' ? 'Uraian' : sec.type === 'MATCHING' ? 'Mencocokkan' : 'Benar/Salah');
 
         const tabTitle = totalChunks > 1
           ? `${shortTypeLabel} (No. ${startNo}–${endNo})`
@@ -12172,7 +12756,7 @@ const RpmApp = {
     if (pageIndex > totalPages) pageIndex = totalPages;
     this.activeResultPageIndex = pageIndex;
 
-    const page1El = document.getElementById('rpm-print-page-1') || document.getElementById('rpm-result-page-1');
+    const page1El = document.getElementById('rpm-print-page-1');
     if (page1El) {
       if (pageIndex === 1) page1El.classList.remove('hidden');
       else page1El.classList.add('hidden');
@@ -12256,7 +12840,7 @@ const RpmApp = {
 
   showAllPagesSimultaneously() {
     const totalPages = this.getTotalPagesCount();
-    const page1El = document.getElementById('rpm-print-page-1') || document.getElementById('rpm-result-page-1');
+    const page1El = document.getElementById('rpm-print-page-1');
     if (page1El) page1El.classList.remove('hidden');
 
     for (let i = 2; i <= totalPages; i++) {
@@ -12322,7 +12906,7 @@ const RpmApp = {
       const steps = (doc.pengalaman3 && doc.pengalaman3[stageKey]) || [];
       return steps.map((st, idx) => `
         <li style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
-          <span>${UI.escapeHtml(st)}</span>
+          <span contenteditable="true">${UI.escapeHtml(st)}</span>
           <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; color: var(--danger); border-color: #fca5a5;" onclick="RpmApp.removeLearningStep('${stageKey}', ${idx})">
             Hapus
           </button>
@@ -12391,13 +12975,13 @@ const RpmApp = {
           <strong style="display: block; margin-bottom: 0.35rem; color: var(--primary);">
             2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP) :
           </strong>
-          <div style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem; line-height: 1.6;">
+          <div contenteditable="true" style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem; line-height: 1.6;">
             <strong>Capaian Pembelajaran (CP):</strong><br>
             ${UI.escapeHtml(doc.capaianPembelajaran)}
           </div>
           <div style="background: #f0fdf4; padding: 0.9rem; border: 1px solid #86efac; border-radius: var(--radius-sm);">
             <strong style="font-size: 0.88rem; color: #14532d; display: block; margin-bottom: 0.4rem;">Tujuan Pembelajaran (TP):</strong>
-            <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--dark);">
+            <ol contenteditable="true" style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--dark);">
               ${tpListHtml}
             </ol>
           </div>
@@ -12408,15 +12992,15 @@ const RpmApp = {
             3. [3] Prinsip Pembelajaran Mendalam (Mindful, Meaningful, Joyful) :
           </strong>
           <div class="grid-3">
-            <div style="padding: 0.85rem; border: 1px solid #93c5fd; background: #eff6ff; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #93c5fd; background: #eff6ff; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #1e40af; display: block; margin-bottom: 0.25rem;">Berkesadaran (Mindful)</strong>
               ${UI.escapeHtml(doc.prinsip3.mindful)}
             </div>
-            <div style="padding: 0.85rem; border: 1px solid #5eead4; background: #f0fdfa; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #5eead4; background: #f0fdfa; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #0f766e; display: block; margin-bottom: 0.25rem;">Bermakna (Meaningful)</strong>
               ${UI.escapeHtml(doc.prinsip3.meaningful)}
             </div>
-            <div style="padding: 0.85rem; border: 1px solid #fde68a; background: #fffbeb; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #fde68a; background: #fffbeb; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">Menggembirakan (Joyful)</strong>
               ${UI.escapeHtml(doc.prinsip3.joyful)}
             </div>
@@ -12432,19 +13016,19 @@ const RpmApp = {
               <tbody>
                 <tr>
                   <th style="width: 240px;">1. Praktik Pedagogis</th>
-                  <td>${UI.escapeHtml(doc.kerangka4.pedagogis)}</td>
+                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.pedagogis)}</td>
                 </tr>
                 <tr>
                   <th>2. Kemitraan Pembelajaran</th>
-                  <td>${UI.escapeHtml(doc.kerangka4.kemitraan)}</td>
+                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.kemitraan)}</td>
                 </tr>
                 <tr>
                   <th>3. Lingkungan Pembelajaran</th>
-                  <td>${UI.escapeHtml(doc.kerangka4.lingkungan)}</td>
+                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.lingkungan)}</td>
                 </tr>
                 <tr>
                   <th>4. Pemanfaatan Digital</th>
-                  <td>${UI.escapeHtml(doc.kerangka4.digital)}</td>
+                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.digital)}</td>
                 </tr>
               </tbody>
             </table>
@@ -12466,7 +13050,7 @@ const RpmApp = {
 
         <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
           <div style="font-weight: 800; color: var(--secondary); margin-bottom: 0.45rem;">
-            Tahap 2: MENGAPLIKASI (Kegiatan Inti & Kolaborasi Kontekstual — Meaningful Learning)
+            Tahap 2: MENGAPLIKASI (Kegiatan Inti & Latihan Terarah — Meaningful Learning)
           </div>
           <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
             ${renderStepList('mengaplikasi')}
@@ -12475,7 +13059,7 @@ const RpmApp = {
 
         <div style="margin-bottom: 1.35rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
           <div style="font-weight: 800; color: var(--accent); margin-bottom: 0.45rem;">
-            Tahap 3: MEREFLEKSI (Presentasi, Evaluasi SOLO, & Penutup — Joyful Learning)
+            Tahap 3: MEREFLEKSI (Pembahasan, Evaluasi, & Penutup — Joyful Learning)
           </div>
           <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
             ${renderStepList('merefleksi')}
@@ -12522,9 +13106,9 @@ const RpmApp = {
         const rows = qPage.items.map(it => `
           <tr>
             <td style="width: 50px; text-align: center;">${it.no}</td>
-            <td contenteditable="true">${UI.escapeHtml(it.leftPremise || it.stem || '')}</td>
+            <td contenteditable="true"><strong>${UI.escapeHtml(it.leftPremise || it.stem || '')}</strong></td>
             <td contenteditable="true">${UI.escapeHtml(it.rightResponse || '')}</td>
-            ${hideKey ? '' : `<td><strong>${UI.escapeHtml(it.answer || '')}</strong></td>`}
+            ${hideKey ? '' : `<td style="background:#f0fdf4; color:#14532d;"><strong>${UI.escapeHtml(it.answer || '')}</strong></td>`}
           </tr>
         `).join('');
 
@@ -12534,9 +13118,9 @@ const RpmApp = {
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Kolom A (Pernyataan / Konsep Materi)</th>
-                  <th>Kolom B (Pasangan Jawaban / Fungsi)</th>
-                  ${hideKey ? '' : '<th>Kunci Pencocokan (Pegangan Guru)</th>'}
+                  <th>Kolom A (Soal / Operasi / Konsep)</th>
+                  <th>Kolom B (Pilihan Pasangan Jawaban)</th>
+                  ${hideKey ? '' : '<th>Kunci Jawaban Guru</th>'}
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -12546,37 +13130,39 @@ const RpmApp = {
       } else {
         itemsContent = qPage.items.map(it => {
           let optionsBlock = '';
-          if (it.options && (qPage.type === 'PG' || qPage.type === 'LAINNYA')) {
+          if (it.options && qPage.type === 'PG') {
             optionsBlock = `
-              <div style="margin: 0.55rem 0 0.55rem 1.25rem; font-size: 0.9rem; line-height: 1.7;">
+              <div style="margin: 0.45rem 0 0.45rem 1.35rem; font-size: 0.92rem; line-height: 1.65; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.25rem 1rem;">
                 <div contenteditable="true"><strong>A.</strong> ${UI.escapeHtml(it.options.A || '')}</div>
                 <div contenteditable="true"><strong>B.</strong> ${UI.escapeHtml(it.options.B || '')}</div>
                 <div contenteditable="true"><strong>C.</strong> ${UI.escapeHtml(it.options.C || '')}</div>
                 <div contenteditable="true"><strong>D.</strong> ${UI.escapeHtml(it.options.D || '')}</div>
               </div>
             `;
-          } else if (qPage.type === 'ESAI' || qPage.type === 'URAIAN' || qPage.type === 'LAINNYA') {
-            optionsBlock = hideKey
-              ? `<div style="margin-top: 0.75rem; height: 70px; border-bottom: 1px dotted #94a3b8;"></div>`
-              : '';
+          } else if ((qPage.type === 'ESAI' || qPage.type === 'URAIAN' || qPage.type === 'LAINNYA') && hideKey) {
+            optionsBlock = `<div style="margin-top: 0.65rem; height: 60px; border-bottom: 1px dotted #94a3b8;"></div>`;
           }
 
           const badgeIndicatorHtml = hideKey
             ? ''
-            : `<div style="margin-bottom: 0.3rem;"><span class="badge badge-info" style="font-size: 0.72rem;">${UI.escapeHtml(it.indicatorBadge || '')}</span></div>`;
+            : `<div style="margin-bottom: 0.25rem;"><span class="badge badge-info" style="font-size: 0.72rem;">${UI.escapeHtml(it.indicatorBadge || '')}</span></div>`;
 
           const answerKeyBlock = hideKey
             ? ''
             : `
-              <div style="margin-top: 0.5rem; padding: 0.55rem 0.85rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.84rem; color: #14532d;">
+              <div style="margin-top: 0.45rem; padding: 0.5rem 0.85rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.84rem; color: #14532d; font-weight: 600;">
                 ${UI.escapeHtml(it.answer || '')}
               </div>
             `;
 
+          const stemRender = it.isDirectMath
+            ? `<div contenteditable="true" class="math-direct-box">${it.no}. &nbsp; ${UI.escapeHtml(it.stem || '')}</div>`
+            : `<div contenteditable="true" style="font-weight: 600; font-size: 0.95rem; color: var(--dark); line-height: 1.55; white-space: pre-line;">${it.no}. ${UI.escapeHtml(it.stem || '')}</div>`;
+
           return `
-            <div style="margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px dashed var(--border);">
+            <div style="margin-bottom: 1.15rem; padding-bottom: 0.9rem; border-bottom: 1px dashed var(--border);">
               ${badgeIndicatorHtml}
-              <div contenteditable="true" style="font-weight: 600; font-size: 0.94rem; color: var(--dark); line-height: 1.6; white-space: pre-line;">${it.no}. ${UI.escapeHtml(it.stem || '')}</div>
+              ${stemRender}
               ${optionsBlock}
               ${answerKeyBlock}
             </div>
@@ -12605,22 +13191,22 @@ const RpmApp = {
 
       return `
         <div class="rpm-print-page hidden" id="rpm-print-page-${pageNum}">
-          <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff;">
+          <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff; min-height: 820px;">
             <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.25rem;">
               <div style="font-size: 0.84rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">
-                ${hideKey ? `LEMBAR EVALUASI BELAJAR PESERTA DIDIK — HALAMAN ${pageNum}` : `LAMPIRAN INSTRUMEN ASESMEN & KUNCI JAWABAN — HALAMAN ${pageNum}`}
+                ${hideKey ? `LEMBAR SOAL PESERTA DIDIK — HALAMAN ${pageNum}` : `LAMPIRAN SOAL & KUNCI JAWABAN (${UI.escapeHtml(doc.engineUsed || 'AI Murni')}) — HALAMAN ${pageNum}`}
               </div>
               <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
                 ${UI.escapeHtml(doc.sekolah)} — ${UI.escapeHtml(doc.mapel)}
               </h2>
-              <div style="font-size: 0.86rem; color: var(--text-muted); font-weight: 600;">
-                Topik Materi: ${UI.escapeHtml(doc.materi)} | Ranah Kognitif: ${UI.escapeHtml(doc.soloLevel)}
+              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
+                Materi: ${UI.escapeHtml(doc.materi)} | Tingkat Kesulitan: ${UI.escapeHtml(doc.difficulty || 'SEDANG')}
               </div>
             </div>
 
             ${studentIdentityHeader}
 
-            <h3 style="background: #eff6ff; padding: 0.6rem 0.95rem; border-left: 4px solid var(--primary-light); color: var(--primary); margin-bottom: 1.15rem; font-size: 1.02rem;">
+            <h3 style="background: #eff6ff; padding: 0.6rem 0.95rem; border-left: 4px solid var(--primary-light); color: var(--primary); margin-bottom: 1.15rem; font-size: 1rem;">
               Bagian ${qPage.sectionIndex}. ${UI.escapeHtml(qPage.sectionTitle)}${UI.escapeHtml(partSubtitle)}
             </h3>
 
