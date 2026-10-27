@@ -1295,268 +1295,593 @@ body {
     </div>
   </section>
 
-    <section id="view-pilar-data-kelas" class="app-view hidden">
-    <div class="card" style="background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #ffffff; border: none;">
+      <section id="view-pilar-data-kelas" class="app-view hidden">
+    <style>
+      .dk-tabs-navbar {
+        background: #0f172a;
+        padding: 0.85rem 1.25rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #1e293b;
+      }
+      .dk-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.1rem;
+        font-size: 0.84rem;
+        font-weight: 700;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0 !important;
+        cursor: pointer;
+        transition: all 0.18s ease;
+      }
+      .dk-tab-btn:hover {
+        background: #334155;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+      }
+      .dk-tab-btn.active-dk-tab {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #0f172a !important;
+        border-color: #fde68a !important;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28);
+      }
+      .dk-tab-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.1rem 0.48rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.18);
+        color: inherit;
+      }
+      .dk-tab-btn.active-dk-tab .dk-tab-badge {
+        background: #0f172a;
+        color: #ffffff;
+      }
+      .dpl-dimensi-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 0.45rem;
+        flex-wrap: wrap;
+        padding: 0.85rem 1rem;
+        background: #f8fafc;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+        margin-bottom: 1.15rem;
+      }
+      .dpl-dimensi-chip {
+        padding: 0.38rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        border-radius: 999px;
+        border: 1px solid #cbd5e1;
+        background: #ffffff;
+        color: var(--dark);
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+      .dpl-dimensi-chip:hover {
+        border-color: var(--primary-light);
+        background: #eff6ff;
+      }
+      .dpl-dimensi-chip.active-dim-chip {
+        background: var(--primary-light);
+        color: #ffffff;
+        border-color: var(--primary);
+        box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+      }
+      .dpl-subItem-builder-card {
+        background: #ffffff;
+        border: 2px solid #cbd5e1;
+        border-radius: var(--radius-md);
+        padding: 1rem 1.15rem;
+        margin-bottom: 0.85rem;
+        transition: all 0.18s ease;
+      }
+      .dpl-subItem-builder-card.selected-sub-card {
+        border-color: #2563eb;
+        background: #f8fafc;
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+      }
+      .dpl-group-header {
+        background: linear-gradient(90deg, #1e3a8a 0%, #0f766e 100%);
+        color: #ffffff;
+        padding: 0.75rem 1.1rem;
+        border-radius: 8px 8px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+    </style>
+
+    <!-- HEADER BANNER UTAMA DATA KELAS -->
+    <div class="card no-print" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color: #ffffff; border: none; margin-bottom: 1rem;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.4rem;">PILAR 1 — MANAJEMEN DATA KELAS</span>
-          <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.25rem;">Pengaturan Master Data Kelas</h2>
-          <p style="font-size: 0.9rem; color: #dbeafe;">
-            Kelola daftar siswa & rilis akun login siswa, jadwal pelajaran Senin–Sabtu, deskripsi Dimensi Profil Lulusan (B, C, M), serta daftar ekstrakurikuler kelas.
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+            <span class="badge badge-warning">PILAR 1 — MANAJEMEN MASTER DATA KELAS TERSTRUKTUR</span>
+            <span class="badge badge-success">✓ Terintegrasi SK BSKAP Nomor 058/H/KR/2025</span>
+          </div>
+          <h2 style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.25rem;">Pusat Pengaturan Master Data Kelas</h2>
+          <p style="font-size: 0.88rem; color: #dbeafe; max-width: 820px;">
+            Gunakan navigasi tab di bawah ini untuk berpindah antar lembar pengaturan <strong>Daftar Siswa</strong>, <strong>Jadwal Pelajaran</strong>, <strong>Master DPL (1 Dimensi Multi Sub-Dimensi)</strong>, dan <strong>Ekstrakurikuler</strong> secara rapi tanpa perlu <em>scroll</em> memanjang ke bawah.
           </p>
         </div>
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
           <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openTeacherDashboard()">
-            Kembali ke Pilar Guru
+            &larr; Kembali ke Pilar Guru
           </button>
           <button type="button" class="btn btn-success btn-sm write-action-btn" onclick="DataKelasApp.saveAllDataKelas()">
-            Simpan Seluruh Data Kelas
+            💾 Simpan Seluruh Data Kelas
           </button>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">1. Pendaftaran Nama Siswa & Rilis Username / Password Siswa</h3>
-          <p class="card-subtitle">Daftarkan nama siswa di kelas Anda. Anda dapat merilis Username dan Password untuk masing-masing siswa secara manual maupun otomatis.</p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="DataKelasApp.releaseAllStudentAccountsAuto()">
-            Rilis Otomatis Semua Akun Siswa
-          </button>
-        </div>
-      </div>
-
-      <form id="form-add-student" class="write-action-btn" onsubmit="DataKelasApp.handleAddStudent(event)" style="background: #f8fafc; padding: 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <div class="grid-4" style="align-items: end;">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="student-input-nama">Nama Lengkap Siswa</label>
-            <input type="text" id="student-input-nama" class="form-control" placeholder="Contoh: Ahmad Fauzan" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="student-input-username">Username Siswa (Manual / Otomatis)</label>
-            <input type="text" id="student-input-username" class="form-control" placeholder="Ketik manual atau klik Otomatis" required>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="student-input-password">Password Siswa (Manual / Otomatis)</label>
-            <input type="text" id="student-input-password" class="form-control" placeholder="Ketik manual atau klik Otomatis" required>
-          </div>
-          <div style="display: flex; gap: 0.5rem;">
-            <button type="button" class="btn btn-outline" onclick="DataKelasApp.generateSingleStudentCredential()">
-              Otomatis
-            </button>
-            <button type="submit" class="btn btn-primary" style="flex: 1;">
-              Tambah Siswa
-            </button>
-          </div>
-        </div>
-      </form>
-
-      <div class="table-responsive">
-        <table class="academic-table">
-          <thead>
-            <tr>
-              <th style="width: 55px;">No</th>
-              <th>Nama Siswa</th>
-              <th>Kelas / Fase</th>
-              <th>Username Siswa (Dapat Diubah Manual)</th>
-              <th>Password Siswa (Dapat Diubah Manual)</th>
-              <th style="width: 210px;">Aksi Rilis & Kelola</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-data-kelas-siswa"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">2. Penyusunan Jadwal Pelajaran (Senin – Sabtu)</h3>
-          <p class="card-subtitle">Susun mata pelajaran dari hari Senin sampai Sabtu. Pisahkan dengan tanda koma (,) jika terdapat lebih dari satu mata pelajaran pada hari yang sama.</p>
-        </div>
-        <button type="button" class="btn btn-outline btn-sm write-action-btn" onclick="DataKelasApp.fillDefaultScheduleTemplate()">
-          Isi Contoh Jadwal Standar Kurikulum
+    <!-- BILAH NAVIGASI 4 TAB DATA KELAS (ANTI-SCROLL MEMANJANG) -->
+    <div class="dk-tabs-navbar no-print">
+      <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+        <button type="button" id="btn-dk-tab-siswa" class="dk-tab-btn active-dk-tab" onclick="DataKelasApp.switchTab('siswa')">
+          <span>👥 1. Data & Akun Siswa</span>
+          <span id="dk-badge-count-siswa" class="dk-tab-badge">0</span>
+        </button>
+        <button type="button" id="btn-dk-tab-jadwal" class="dk-tab-btn" onclick="DataKelasApp.switchTab('jadwal')">
+          <span>📅 2. Jadwal Pelajaran (Senin–Sabtu)</span>
+          <span id="dk-badge-count-jadwal" class="dk-tab-badge">6 Hari</span>
+        </button>
+        <button type="button" id="btn-dk-tab-dpl" class="dk-tab-btn" onclick="DataKelasApp.switchTab('dpl')">
+          <span>🎯 3. Master Deskripsi DPL (SK BSKAP 058/2025)</span>
+          <span id="dk-badge-count-dpl" class="dk-tab-badge">0</span>
+        </button>
+        <button type="button" id="btn-dk-tab-ekskul" class="dk-tab-btn" onclick="DataKelasApp.switchTab('ekskul')">
+          <span>🏆 4. Program Ekstrakurikuler</span>
+          <span id="dk-badge-count-ekskul" class="dk-tab-badge">0</span>
         </button>
       </div>
 
-      <div class="alert-box alert-info" style="margin-top: 0; margin-bottom: 1.25rem;">
-        <strong>Sinkronisasi Otomatis:</strong> Jadwal pelajaran yang Anda susun di bawah ini akan digunakan secara otomatis pada menu <strong>Penilaian Akademik</strong>, <strong>Rekap Penilaian Harian</strong>, dan <strong>Analisis Nilai Rapor</strong>.
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button type="button" class="btn btn-outline btn-sm" style="background: #1e293b; color: #fde68a; border-color: #475569;" onclick="DataKelasApp.showAllTabsSimultaneously()">
+          📑 Tampilkan Semua Sekaligus
+        </button>
       </div>
+    </div>
 
-      <div class="grid-3">
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Senin">Jadwal Hari Senin :</label>
-          <textarea id="schedule-day-Senin" class="form-control" rows="3" placeholder="Contoh: Pendidikan Pancasila, Bahasa Indonesia, Matematika"></textarea>
+    <!-- =================================================================== -->
+    <!-- TAB 1: PENDAFTARAN NAMA SISWA & RILIS USERNAME / PASSWORD SISWA     -->
+    <!-- =================================================================== -->
+    <div id="dk-panel-siswa" class="dk-tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 0.25rem;">LEMBAR 1 DARI 4 — DATA PESERTA DIDIK</span>
+            <h3 class="card-title">1. Pendaftaran Nama Siswa & Rilis Username / Password Siswa</h3>
+            <p class="card-subtitle">Daftarkan nama siswa di kelas Anda. Anda dapat merilis Username dan Password untuk masing-masing siswa secara manual maupun otomatis.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="DataKelasApp.releaseAllStudentAccountsAuto()">
+              ⚡ Rilis Otomatis Semua Akun Siswa
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="DataKelasApp.switchTab('jadwal')">
+              Lanjut ke Jadwal Pelajaran &raquo;
+            </button>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Selasa">Jadwal Hari Selasa :</label>
-          <textarea id="schedule-day-Selasa" class="form-control" rows="3" placeholder="Contoh: Matematika, IPAS, Seni Budaya"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Rabu">Jadwal Hari Rabu :</label>
-          <textarea id="schedule-day-Rabu" class="form-control" rows="3" placeholder="Contoh: Bahasa Indonesia, Pendidikan Agama dan Budi Pekerti"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Kamis">Jadwal Hari Kamis :</label>
-          <textarea id="schedule-day-Kamis" class="form-control" rows="3" placeholder="Contoh: IPAS, PJOK, Bahasa Inggris"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Jumat">Jadwal Hari Jumat :</label>
-          <textarea id="schedule-day-Jumat" class="form-control" rows="3" placeholder="Contoh: Pendidikan Pancasila, Muatan Lokal"></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="schedule-day-Sabtu">Jadwal Hari Sabtu :</label>
-          <textarea id="schedule-day-Sabtu" class="form-control" rows="3" placeholder="Contoh: Seni Budaya, Bahasa Indonesia, Prakarya"></textarea>
+
+        <form id="form-add-student" class="write-action-btn" onsubmit="DataKelasApp.handleAddStudent(event)" style="background: #f8fafc; padding: 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
+          <div class="grid-4" style="align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="student-input-nama">Nama Lengkap Siswa</label>
+              <input type="text" id="student-input-nama" class="form-control" placeholder="Contoh: Ahmad Fauzan" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="student-input-username">Username Siswa (Manual / Otomatis)</label>
+              <input type="text" id="student-input-username" class="form-control" placeholder="Ketik manual atau klik Otomatis" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="student-input-password">Password Siswa (Manual / Otomatis)</label>
+              <input type="text" id="student-input-password" class="form-control" placeholder="Ketik manual atau klik Otomatis" required>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-outline" onclick="DataKelasApp.generateSingleStudentCredential()">
+                Otomatis
+              </button>
+              <button type="submit" class="btn btn-primary" style="flex: 1;">
+                + Tambah Siswa
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 55px;">No</th>
+                <th>Nama Siswa</th>
+                <th>Kelas / Fase</th>
+                <th>Username Siswa (Dapat Diubah Manual)</th>
+                <th>Password Siswa (Dapat Diubah Manual)</th>
+                <th style="width: 210px;">Aksi Rilis & Kelola</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-data-kelas-siswa"></tbody>
+          </table>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">3. Pengaturan Deskripsi Penilaian DPL (Dimensi Profil Lulusan)</h3>
-          <p class="card-subtitle">Tentukan Dimensi, Sub-Dimensi, serta rumusan deskripsi capaian untuk nilai <strong>B</strong>, <strong>C</strong>, dan <strong>M</strong> yang nantinya otomatis digabungkan dengan nama siswa.</p>
+    <!-- =================================================================== -->
+    <!-- TAB 2: PENYUSUNAN JADWAL PELAJARAN (SENIN - SABTU)                  -->
+    <!-- =================================================================== -->
+    <div id="dk-panel-jadwal" class="dk-tab-panel hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-info" style="margin-bottom: 0.25rem;">LEMBAR 2 DARI 4 — JADWAL MINGGUAN KELAS</span>
+            <h3 class="card-title">2. Penyusunan Jadwal Pelajaran (Senin – Sabtu)</h3>
+            <p class="card-subtitle">Susun mata pelajaran dari hari Senin sampai Sabtu. Pisahkan dengan tanda koma (,) jika terdapat lebih dari satu mata pelajaran pada hari yang sama.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.switchTab('siswa')">
+              &laquo; Kembali ke Data Siswa
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="DataKelasApp.fillDefaultScheduleTemplate()">
+              📋 Isi Contoh Jadwal Standar Kurikulum
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="DataKelasApp.switchTab('dpl')">
+              Lanjut ke Master DPL &raquo;
+            </button>
+          </div>
         </div>
-        <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="DataKelasApp.loadStandardDplPresets()">
-          Muat Template 8 Dimensi Profil Lulusan
-        </button>
-      </div>
 
-      <form id="form-add-dpl-master" class="write-action-btn" onsubmit="DataKelasApp.handleAddDplMaster(event)" style="background: #f8fafc; padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" for="dpl-master-dimensi">Dimensi Profil Lulusan :</label>
-            <input type="text" id="dpl-master-dimensi" list="datalist-dpl-dimensi" class="form-control" placeholder="Pilih atau ketik Dimensi (Contoh: Penalaran Kritis)" required>
-            <datalist id="datalist-dpl-dimensi">
-              <option value="Keimanan dan Ketakwaan terhadap Tuhan YME"></option>
-              <option value="Kewargaan"></option>
-              <option value="Penalaran Kritis"></option>
-              <option value="Kreativitas"></option>
-              <option value="Kolaborasi"></option>
-              <option value="Kemandirian"></option>
-              <option value="Kesehatan"></option>
-              <option value="Komunikasi"></option>
-            </datalist>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="dpl-master-subdimensi">Sub-Dimensi :</label>
-            <input type="text" id="dpl-master-subdimensi" class="form-control" placeholder="Contoh: Mengidentifikasi, mengklarifikasi, dan mengolah informasi" required>
-          </div>
+        <div class="alert-box alert-info" style="margin-top: 0; margin-bottom: 1.25rem;">
+          <strong>Sinkronisasi Otomatis:</strong> Jadwal pelajaran yang Anda susun di bawah ini akan digunakan secara otomatis pada menu <strong>Penilaian Akademik</strong>, <strong>Rekap Penilaian Harian</strong>, <strong>Generator Modul RPM</strong>, dan <strong>Analisis Nilai Rapor</strong>.
         </div>
 
         <div class="grid-3">
           <div class="form-group">
-            <label class="form-label" for="dpl-master-desc-B">Deskripsi Nilai B (Berkembang) :</label>
-            <textarea id="dpl-master-desc-B" class="form-control" rows="3" placeholder="Contoh: mulai berkembang dalam memahami dan mengolah informasi sederhana dengan bimbingan guru." required></textarea>
+            <label class="form-label" for="schedule-day-Senin">Jadwal Hari Senin :</label>
+            <textarea id="schedule-day-Senin" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: Pendidikan Pancasila, Bahasa Indonesia, Matematika"></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label" for="dpl-master-desc-C">Deskripsi Nilai C (Cakap) :</label>
-            <textarea id="dpl-master-desc-C" class="form-control" rows="3" placeholder="Contoh: telah cakap dan mampu mengolah informasi serta menyampaikan alasan logis secara mandiri." required></textarea>
+            <label class="form-label" for="schedule-day-Selasa">Jadwal Hari Selasa :</label>
+            <textarea id="schedule-day-Selasa" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: Matematika, IPAS, Seni Budaya"></textarea>
           </div>
           <div class="form-group">
-            <label class="form-label" for="dpl-master-desc-M">Deskripsi Nilai M (Mahir) :</label>
-            <textarea id="dpl-master-desc-M" class="form-control" rows="3" placeholder="Contoh: sangat mahir dan konsisten menganalisis informasi secara kritis serta menjadi teladan bagi rekan sekelas." required></textarea>
+            <label class="form-label" for="schedule-day-Rabu">Jadwal Hari Rabu :</label>
+            <textarea id="schedule-day-Rabu" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: Bahasa Indonesia, Pendidikan Agama dan Budi Pekerti"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="schedule-day-Kamis">Jadwal Hari Kamis :</label>
+            <textarea id="schedule-day-Kamis" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: IPAS, PJOK, Bahasa Inggris"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="schedule-day-Jumat">Jadwal Hari Jumat :</label>
+            <textarea id="schedule-day-Jumat" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: Pendidikan Pancasila, Muatan Lokal"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="schedule-day-Sabtu">Jadwal Hari Sabtu :</label>
+            <textarea id="schedule-day-Sabtu" class="form-control" rows="3" oninput="DataKelasApp.readScheduleFieldsToBucket()" placeholder="Contoh: Seni Budaya, Bahasa Indonesia, Prakarya"></textarea>
           </div>
         </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-          <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.autoGenerateDplDescriptionByAI()">
-            Susun Deskripsi B, C, dan M Otomatis (AI Akademik)
-          </button>
-          <button type="submit" class="btn btn-primary">
-            Tambahkan ke Master DPL Kelas
+        <div class="write-action-btn" style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
+          <button type="button" class="btn btn-success" onclick="DataKelasApp.saveAllDataKelas()">
+            💾 Simpan Jadwal Pelajaran
           </button>
         </div>
-      </form>
-
-      <div class="table-responsive">
-        <table class="academic-table">
-          <thead>
-            <tr>
-              <th style="width: 50px;">No</th>
-              <th>Dimensi</th>
-              <th>Sub-Dimensi</th>
-              <th>Deskripsi B</th>
-              <th>Deskripsi C</th>
-              <th>Deskripsi M</th>
-              <th style="width: 100px;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-data-kelas-dpl"></tbody>
-        </table>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">4. Penyusunan Ekstrakurikuler Siswa yang Diminati</h3>
-          <p class="card-subtitle">Susun program ekstrakurikuler yang diminati siswa (seperti Pramuka, Sepak Bola, Seni Tari, PMR, dll.) untuk diintegrasikan ke halaman penilaian Ekstrakurikuler.</p>
-        </div>
-        <button type="button" class="btn btn-outline btn-sm write-action-btn" onclick="DataKelasApp.addDefaultEkskulList()">
-          Tambahkan Ekstrakurikuler Populer
-        </button>
-      </div>
-
-      <form id="form-add-ekskul-master" class="write-action-btn" onsubmit="DataKelasApp.handleAddEkskulMaster(event)" style="background: #f8fafc; padding: 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <div class="grid-3" style="align-items: end;">
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="ekskul-master-nama">Nama Program Ekstrakurikuler</label>
-            <input type="text" id="ekskul-master-nama" list="datalist-ekskul-populer" class="form-control" placeholder="Contoh: Pramuka / Sepak Bola / Seni Tari" required>
-            <datalist id="datalist-ekskul-populer">
-              <option value="Pramuka"></option>
-              <option value="Sepak Bola"></option>
-              <option value="Futsal"></option>
-              <option value="Seni Tari & Budaya"></option>
-              <option value="Palang Merah Remaja (PMR) / Dokter Kecil"></option>
-              <option value="Paskibra"></option>
-              <option value="Pencak Silat"></option>
-              <option value="Kerohanian / Tahfidz"></option>
-              <option value="Sains & Robotik / TIK"></option>
-              <option value="Paduan Suara & Musik"></option>
-            </datalist>
-          </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="ekskul-master-jadwal">Hari / Keterangan Latihan</label>
-            <input type="text" id="ekskul-master-jadwal" class="form-control" placeholder="Contoh: Setiap Jumat Sore / Pembina Kelas">
-          </div>
+    <!-- =================================================================== -->
+    <!-- TAB 3: PENGATURAN DESKRIPSI PENILAIAN DPL (SK BSKAP 058/H/KR/2025)  -->
+    <!-- =================================================================== -->
+    <div id="dk-panel-dpl" class="dk-tab-panel hidden">
+      <div class="card">
+        <div class="card-header">
           <div>
-            <button type="submit" class="btn btn-primary btn-block">
-              Tambahkan Ekstrakurikuler
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+              <span class="badge badge-success">LEMBAR 3 DARI 4 — STANDAR RESMI SK BSKAP NOMOR 058/H/KR/2025</span>
+              <span class="badge badge-primary">1 Dimensi &rarr; Banyak Sub-Dimensi</span>
+            </div>
+            <h3 class="card-title">3. Pengaturan Master Deskripsi Penilaian DPL (Dimensi & Multi Sub-Dimensi)</h3>
+            <p class="card-subtitle">
+              Pilih <strong>Jenjang Pendidikan (SD/MI, PAUD, SMP, SMA, SMK)</strong> untuk memuat otomatis seluruh <strong>8 Dimensi & Sub-Dimensi Resmi 100% Akurat</strong>, atau pilih <strong>1 Dimensi</strong> untuk mencentang/menambahkan beberapa <strong>Sub-Dimensi</strong> sekaligus dengan deskripsi <strong>Berkembang (B), Cakap (C), dan Mahir (M)</strong> yang berbeda-beda.
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.switchTab('jadwal')">
+              &laquo; Kembali ke Jadwal
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="DataKelasApp.switchTab('ekskul')">
+              Lanjut ke Ekstrakurikuler &raquo;
             </button>
           </div>
         </div>
-      </form>
 
-      <div class="table-responsive">
-        <table class="academic-table">
-          <thead>
-            <tr>
-              <th style="width: 55px;">No</th>
-              <th>Nama Program Ekstrakurikuler</th>
-              <th>Jadwal / Keterangan</th>
-              <th>Indikator Akademik Otomatis</th>
-              <th style="width: 120px;">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-data-kelas-ekskul"></tbody>
-        </table>
+        <!-- PANEL OTOMATISASI STANDAR RESMI SK BSKAP NOMOR 058/H/KR/2025 BERDASARKAN JENJANG -->
+        <div class="card write-action-btn" style="background: linear-gradient(135deg, #f0fdf4 0%, #eff6ff 100%); border: 2px solid #14b8a6; margin-bottom: 1.35rem; padding: 1.15rem 1.35rem;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="flex: 1; min-width: 280px;">
+              <span class="badge badge-success" style="margin-bottom: 0.3rem;">OTOMATISASI ALUR PERKEMBANGAN KOMPETENSI (SK BSKAP 058/H/KR/2025)</span>
+              <h4 style="font-size: 1.02rem; color: var(--dark); margin-bottom: 0.2rem;">
+                Muat Otomatis Seluruh 8 Dimensi & Sub-Dimensi Resmi Sesuai Jenjang Sekolah
+              </h4>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">
+                Saat Anda memilih jenjang (misalnya <strong>SD / MI / Sederajat</strong>) dan mengklik tombol muat otomatis, sistem langsung mengisi seluruh 8 Dimensi beserta 25 Sub-Dimensi dan deskripsi nilai <strong>B, C, M</strong> 100% akurat sesuai regulasi. Anda tetap bebas melakukan <strong>Edit, Tambah, atau Hapus</strong> kapan saja.
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap;">
+              <div class="form-group" style="margin-bottom: 0; min-width: 230px;">
+                <label class="form-label" for="dpl-jenjang-select" style="font-size: 0.8rem; color: #0f766e;">Pilih Jenjang Satuan Pendidikan :</label>
+                <select id="dpl-jenjang-select" class="form-control" style="font-weight: 700; border-color: #14b8a6;" onchange="DataKelasApp.handleDplJenjangChange(this.value)">
+                  <option value="SD" selected>SD / MI / SDLB / Paket A (25 Sub-Dimensi)</option>
+                  <option value="PAUD">PAUD / TK / RA Sederajat (23 Sub-Dimensi)</option>
+                  <option value="SMP">SMP / MTs / SMPLB / Paket B (25 Sub-Dimensi)</option>
+                  <option value="SMA">SMA / MA / SMALB / Paket C (25 Sub-Dimensi)</option>
+                  <option value="SMK">SMK / MAK Sederajat (26 Sub-Dimensi + K3)</option>
+                </select>
+              </div>
+
+              <button type="button" class="btn btn-success" onclick="DataKelasApp.loadOfficialBskapDplByJenjang(false)">
+                📥 Muat Semua 8 Dimensi & Sub-Dimensi Resmi
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="border-color: #f59e0b; color: #b45309;" onclick="DataKelasApp.loadOfficialBskapDplByJenjang(true)">
+                🔄 Reset ke Standar BSKAP
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- PANEL FORMULIR BUILDER: PILIH 1 DIMENSI -> PILIH / TAMBAH BANYAK SUB-DIMENSI SEKALIGUS -->
+        <div class="card write-action-btn" style="background: #f8fafc; border: 2px solid #93c5fd; margin-bottom: 1.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 1px dashed #93c5fd;">
+            <div>
+              <span class="badge badge-primary" style="margin-bottom: 0.25rem;">BUILDER FLEKSIBEL: 1 DIMENSI &rarr; MULTI SUB-DIMENSI</span>
+              <h4 style="font-size: 1rem; color: var(--dark);">
+                Pilih 1 Dimensi, Centang Beberapa Sub-Dimensi Sekaligus, atau Tambah Sub-Dimensi Kustom
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Setiap Sub-Dimensi yang dicentang memiliki kolom deskripsi <strong>Berkembang (B)</strong>, <strong>Cakap (C)</strong>, dan <strong>Mahir (M)</strong> tersendiri yang dapat Anda sesuaikan sebelum disimpan ke tabel kelas.
+              </p>
+            </div>
+            <button type="button" id="btn-toggle-dpl-builder-body" class="btn btn-outline btn-sm" onclick="DataKelasApp.toggleDplBuilderCollapse()">
+              Sembunyikan / Tampilkan Form Builder
+            </button>
+          </div>
+
+          <div id="dpl-multi-builder-body">
+            <div class="grid-2" style="align-items: end; margin-bottom: 1rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="dpl-builder-dimensi-select">1. Pilih Dimensi Profil Lulusan (Atau Pilih "Ketik Dimensi Baru") :</label>
+                <select id="dpl-builder-dimensi-select" class="form-control" style="font-weight: 700;" onchange="DataKelasApp.handleBuilderDimensiSelectChange(this.value)">
+                  <option value="Keimanan dan Ketakwaan terhadap Tuhan YME">1. Keimanan dan Ketakwaan terhadap Tuhan YME</option>
+                  <option value="Kewargaan">2. Kewargaan</option>
+                  <option value="Penalaran Kritis">3. Penalaran Kritis</option>
+                  <option value="Kreativitas">4. Kreativitas</option>
+                  <option value="Kolaborasi">5. Kolaborasi</option>
+                  <option value="Kemandirian">6. Kemandirian</option>
+                  <option value="Kesehatan">7. Kesehatan</option>
+                  <option value="Komunikasi">8. Komunikasi</option>
+                  <option value="__CUSTOM__">+ Ketik Nama Dimensi Baru Secara Manual...</option>
+                </select>
+              </div>
+
+              <div id="dpl-builder-custom-dimensi-wrap" class="form-group hidden" style="margin-bottom: 0;">
+                <label class="form-label" for="dpl-builder-custom-dimensi-input">Nama Dimensi Baru (Kustom) :</label>
+                <input type="text" id="dpl-builder-custom-dimensi-input" class="form-control" placeholder="Ketik nama dimensi baru...">
+              </div>
+
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.setAllBuilderSubdimensionsChecked(true)">
+                  ☑️ Centang Semua Sub-Dimensi
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.addCustomSubdimensionRowToBuilder()">
+                  ➕ Tambah Baris Sub-Dimensi Baru
+                </button>
+              </div>
+            </div>
+
+            <!-- DAFTAR KARTU MULTI SUB-DIMENSI BESERTA DESKRIPSI B, C, M MASING-MASING -->
+            <div id="dpl-builder-subdimensions-container" style="margin-bottom: 1rem;"></div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; padding-top: 0.85rem; border-top: 1px solid var(--border);">
+              <span style="font-size: 0.8rem; color: var(--text-muted);">
+                💡 <em>Tips:</em> Jika Sub-Dimensi yang dicentang sudah ada di tabel kelas, deskripsinya akan otomatis diperbarui. Jika belum ada, akan ditambahkan sebagai Sub-Dimensi baru.
+              </span>
+              <button type="button" class="btn btn-primary" onclick="DataKelasApp.saveSelectedBuilderSubdimensions()">
+                💾 Simpan Semua Sub-Dimensi Tercentang ke Kelas
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- FILTER CHIP PER DIMENSI AGAR TABEL MASTER DPL RAPI & TIDAK PERLU SCROLL PANJANG -->
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.65rem;">
+          <div>
+            <h4 style="font-size: 1.02rem; color: var(--dark);">Daftar Master Dimensi & Sub-Dimensi Aktif di Kelas Ini</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted);">
+              Klik tab nama dimensi di bawah untuk memfilter tampilan per dimensi. Klik <strong>✏️ Edit</strong> untuk mengubah Dimensi, Sub-Dimensi, atau Deskripsi B/C/M, atau klik <strong>🗑️ Hapus</strong>.
+            </p>
+          </div>
+          <div class="write-action-btn" style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;" onclick="DataKelasApp.clearAllDplMaster()">
+              🗑️ Kosongkan Semua DPL
+            </button>
+          </div>
+        </div>
+
+        <div id="dpl-master-dimension-filter-chips" class="dpl-dimensi-filter-bar"></div>
+
+        <!-- KONTAINER TABEL MASTER DPL TERKELOMPOK PER DIMENSI -->
+        <div id="dpl-master-grouped-tables-container"></div>
+
+        <div class="table-responsive hidden">
+          <table class="academic-table">
+            <tbody id="tbody-data-kelas-dpl"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
-    <div class="card write-action-btn" style="background: #f0fdf4; border: 2px solid #86efac; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+    <!-- MODAL POP-UP EDIT DIMENSI, SUB-DIMENSI & DESKRIPSI B, C, M -->
+    <div id="modal-edit-dpl-item" class="modal-overlay hidden">
+      <div class="modal-box" style="max-width: 720px;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 0.25rem;">EDITOR FLEKSIBEL MASTER DPL</span>
+            <h3 class="card-title" id="modal-edit-dpl-title">Edit Dimensi, Sub-Dimensi & Deskripsi Penilaian</h3>
+            <p class="card-subtitle">Ubah nama Dimensi, nama Sub-Dimensi, maupun rumusan kalimat capaian Berkembang (B), Cakap (C), dan Mahir (M).</p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.closeEditDplModal()">Tutup</button>
+        </div>
+
+        <form id="form-modal-edit-dpl" onsubmit="DataKelasApp.saveEditedDplItem(event)">
+          <input type="hidden" id="edit-dpl-item-id">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="edit-dpl-dimensi-input">Nama Dimensi Profil Lulusan :</label>
+              <input type="text" id="edit-dpl-dimensi-input" list="datalist-dpl-dimensi" class="form-control" required>
+              <datalist id="datalist-dpl-dimensi">
+                <option value="Keimanan dan Ketakwaan terhadap Tuhan YME"></option>
+                <option value="Kewargaan"></option>
+                <option value="Penalaran Kritis"></option>
+                <option value="Kreativitas"></option>
+                <option value="Kolaborasi"></option>
+                <option value="Kemandirian"></option>
+                <option value="Kesehatan"></option>
+                <option value="Komunikasi"></option>
+              </datalist>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="edit-dpl-subdimensi-input">Nama Sub-Dimensi :</label>
+              <input type="text" id="edit-dpl-subdimensi-input" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-dpl-desc-B" style="color: #b45309;">Deskripsi Tahap Berkembang (B) :</label>
+            <textarea id="edit-dpl-desc-B" class="form-control" rows="3" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-dpl-desc-C" style="color: #1d4ed8;">Deskripsi Tahap Cakap (C — Standar Kelulusan) :</label>
+            <textarea id="edit-dpl-desc-C" class="form-control" rows="3" required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-dpl-desc-M" style="color: #15803d;">Deskripsi Tahap Mahir (M — Melampaui Standar) :</label>
+            <textarea id="edit-dpl-desc-M" class="form-control" rows="3" required></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.autoComposeModalDplDescriptions()">
+              ✨ Susun Otomatis Kalimat B, C, M
+            </button>
+            <div style="display: flex; gap: 0.5rem;">
+              <button type="button" class="btn btn-outline" onclick="DataKelasApp.closeEditDplModal()">Batal</button>
+              <button type="submit" class="btn btn-success">💾 Simpan Perubahan DPL</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: PENYUSUNAN EKSTRAKURIKULER SISWA YANG DIMINATI               -->
+    <!-- =================================================================== -->
+    <div id="dk-panel-ekskul" class="dk-tab-panel hidden">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom: 0.25rem;">LEMBAR 4 DARI 4 — PROGRAM BAKAT & MINAT</span>
+            <h3 class="card-title">4. Penyusunan Ekstrakurikuler Siswa yang Diminati</h3>
+            <p class="card-subtitle">Susun program ekstrakurikuler yang diminati siswa (seperti Pramuka, Sepak Bola, Seni Tari, PMR, dll.) untuk diintegrasikan ke halaman penilaian Ekstrakurikuler.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.switchTab('dpl')">
+              &laquo; Kembali ke Master DPL
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="DataKelasApp.addDefaultEkskulList()">
+              + Tambahkan Ekstrakurikuler Populer
+            </button>
+          </div>
+        </div>
+
+        <form id="form-add-ekskul-master" class="write-action-btn" onsubmit="DataKelasApp.handleAddEkskulMaster(event)" style="background: #f8fafc; padding: 1.15rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
+          <div class="grid-3" style="align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="ekskul-master-nama">Nama Program Ekstrakurikuler</label>
+              <input type="text" id="ekskul-master-nama" list="datalist-ekskul-populer" class="form-control" placeholder="Contoh: Pramuka / Sepak Bola / Seni Tari" required>
+              <datalist id="datalist-ekskul-populer">
+                <option value="Pramuka"></option>
+                <option value="Sepak Bola"></option>
+                <option value="Futsal"></option>
+                <option value="Seni Tari & Budaya"></option>
+                <option value="Palang Merah Remaja (PMR) / Dokter Kecil"></option>
+                <option value="Paskibra"></option>
+                <option value="Pencak Silat"></option>
+                <option value="Kerohanian / Tahfidz"></option>
+                <option value="Sains & Robotik / TIK"></option>
+                <option value="Paduan Suara & Musik"></option>
+              </datalist>
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="ekskul-master-jadwal">Hari / Keterangan Latihan</label>
+              <input type="text" id="ekskul-master-jadwal" class="form-control" placeholder="Contoh: Setiap Jumat Sore / Pembina Kelas">
+            </div>
+            <div>
+              <button type="submit" class="btn btn-primary btn-block">
+                + Tambahkan Ekstrakurikuler
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 55px;">No</th>
+                <th>Nama Program Ekstrakurikuler</th>
+                <th>Jadwal / Keterangan</th>
+                <th>Indikator Akademik Otomatis</th>
+                <th style="width: 120px;">Aksi</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-data-kelas-ekskul"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER KONFIRMASI SIMPAN DATA KELAS -->
+    <div class="card write-action-btn no-print" style="background: #f0fdf4; border: 2px solid #86efac; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
       <div>
-        <h4 style="color: #14532d; font-size: 1.05rem;">Konfirmasi Penyimpanan Data Kelas</h4>
-        <p style="font-size: 0.86rem; color: #166534;">Klik tombol Simpan di samping untuk mengunci dan menyinkronkan seluruh Siswa, Jadwal Pelajaran, Master DPL, dan Ekstrakurikuler ke semua pilar pembelajaran.</p>
+        <h4 style="color: #14532d; font-size: 1.02rem;">Konfirmasi Penyimpanan & Sinkronisasi Master Data Kelas</h4>
+        <p style="font-size: 0.84rem; color: #166534;">Klik tombol Simpan di samping untuk mengunci dan menyinkronkan seluruh Siswa, Jadwal Pelajaran, Master DPL (SK BSKAP 058/H/KR/2025), dan Ekstrakurikuler ke semua pilar pembelajaran.</p>
       </div>
       <button type="button" class="btn btn-success" onclick="DataKelasApp.saveAllDataKelas()">
-        Simpan Data Kelas Sekarang
+        💾 Simpan Seluruh Data Kelas Sekarang
       </button>
     </div>
   </section>
+
 
     <section id="view-pilar-intrakurikuler" class="app-view hidden">
     <div class="card" style="background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%); color: #ffffff; border: none;">
@@ -8088,18 +8413,826 @@ const IntraApp = {
   }
 };
 
-  const DataKelasApp = {
-  daysOrder: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+  // ============================================================================
+// DATABASE RESMI ALUR PERKEMBANGAN KOMPETENSI 8 DIMENSI PROFIL LULUSAN
+// SESUAI SK KEPALA BSKAP KEMENDIKDASMEN NOMOR 058/H/KR/2025 (100% AKURAT)
+// ============================================================================
+const OFFICIAL_BSKAP_058_2025_DPL = {
+  SD: [
+    // 1. DIMENSI KEIMANAN DAN KETAKWAAN TERHADAP TUHAN YME (SD/MI)
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Tuhan Yang Maha Esa',
+      descB: 'mengenal ajaran Tuhan Yang Maha Esa melalui cerita, doa, dan praktek ibadah sesuai agamanya serta mulai memahami nilai kebaikan dalam kehidupan nyata.',
+      descC: 'membiasakan diri melaksanakan ajaran Tuhan Yang Maha Esa dalam kehidupan nyata secara konsisten dengan bimbingan orang tua dan guru serta mampu mensyukurinya.',
+      descM: 'melaksanakan ibadah secara mandiri sesuai ajaran Tuhan Yang Maha Esa secara konsisten dalam kehidupan nyata serta menjadi contoh dalam beribadah dan sikap religius di sekolah dan keluarga.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Sesama Manusia',
+      descB: 'mengenal dan mencoba bersikap jujur, peduli, dan tanggung jawab dengan bimbingan.',
+      descC: 'membiasakan bersikap jujur, adil, peduli, dan bertanggung jawab dalam interaksi dalam kehidupan nyata.',
+      descM: 'mampu mengajak teman sebaya untuk bersikap jujur, adil, peduli, dan bertanggung jawab serta menunjukkan inisiatif kebaikan dalam interaksi sehari-hari.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Lingkungan Alam',
+      descB: 'menunjukkan pemahaman tentang pentingnya menjaga kebersihan lingkungan dan kelestarian alam dengan bimbingan.',
+      descC: 'membiasakan menjaga kebersihan lingkungan dan kelestarian alam secara konsisten dan mandiri.',
+      descM: 'menjadi contoh bagi teman dalam kepedulian lingkungan serta mampu menunjukkan inisiatif dalam menjaga kebersihan lingkungan dan kelestarian alam.'
+    },
+    // 2. DIMENSI KEWARGAAN (SD/MI)
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Lokal',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di keluarga, satuan pendidikan, dan masyarakat.',
+      descC: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di keluarga, satuan pendidikan, dan masyarakat dengan bimbingan.',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di keluarga, satuan pendidikan, dan masyarakat secara mandiri.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Nasional',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional.',
+      descC: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional dengan bimbingan.',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional secara mandiri.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Global',
+      descB: 'mengenali keberadaan negara lain di dunia dan simbol-simbolnya.',
+      descC: 'mengenal aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global untuk menguatkan wawasan kebangsaan.',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global dan menghargai keberagamannya dengan tetap menjaga identitas diri dan budaya nasional.'
+    },
+    // 3. DIMENSI PENALARAN KRITIS (SD/MI)
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyampaian Argumentasi',
+      descB: 'menyampaikan argumen sederhana namun belum tepat.',
+      descC: 'menyampaikan argumen sederhana secara runtut disertai alasan.',
+      descM: 'menyampaikan argumen sederhana secara runtut disertai alasan secara mandiri.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Pengambilan Keputusan',
+      descB: 'mengambil keputusan namun belum logis dan belum berdasarkan informasi yang relevan.',
+      descC: 'mengambil keputusan secara logis berdasarkan informasi yang relevan.',
+      descM: 'mengambil keputusan secara logis berdasarkan informasi yang relevan secara mandiri.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyelesaian Masalah',
+      descB: 'menyelesaikan masalah sederhana dan menghasilkan solusi namun kurang tepat.',
+      descC: 'menyelesaikan masalah sederhana dan menghasilkan solusi yang tepat sesuai dengan konteks.',
+      descM: 'menyelesaikan masalah sederhana dan menghasilkan solusi yang tepat sesuai dengan konteks secara mandiri.'
+    },
+    // 4. DIMENSI KREATIVITAS (SD/MI)
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Gagasan Baru',
+      descB: 'menyampaikan gagasan secara sederhana meskipun belum runtut.',
+      descC: 'menyampaikan gagasan sederhana dengan runtut dan jelas.',
+      descM: 'menyampaikan beberapa gagasan sederhana dengan jelas, logis, dan relevan.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Fleksibilitas Berpikir',
+      descB: 'menemukan solusi masalah sederhana yang ditemui di lingkungan kelas dengan bantuan orang dewasa.',
+      descC: 'menemukan solusi alternatif dengan mengadaptasi berbagai gagasan.',
+      descM: 'menemukan beberapa solusi alternatif dan memberikan umpan balik pada alternatif solusinya.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Karya',
+      descB: 'membuat tindakan dan/atau karya sederhana yang kreatif sesuai minat dan kesukaannya.',
+      descC: 'membuat tindakan dan/atau karya sederhana yang kreatif dengan berbagai ide yang sesuai minat dan kesukaannya.',
+      descM: 'membuat tindakan dan/atau karya sederhana yang kreatif dengan berbagai ide yang sesuai minat dan kesukaannya serta mengkritisi tindakan dan/atau karya yang dihasilkan.'
+    },
+    // 5. DIMENSI KOLABORASI (SD/MI)
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Peduli',
+      descB: 'mulai menunjukkan kepedulian pada teman sebaya dan anggota keluarga dengan bimbingan guru dan orang tua di lingkungan satuan pendidikan dan keluarga.',
+      descC: 'menunjukkan kepedulian secara konsisten pada teman sebaya dan anggota keluarga dengan bimbingan guru dan orang tua di lingkungan satuan pendidikan dan keluarga.',
+      descM: 'menunjukkan inisiatif kepedulian secara konsisten pada teman sebaya dan anggota keluarga di lingkungan satuan pendidikan dan keluarga.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Berbagi',
+      descB: 'mulai berbagi hal yang dianggap penting dan berharga kepada teman sebaya dan anggota keluarga dengan bimbingan guru dan orang tua.',
+      descC: 'berbagi hal yang dianggap penting dan berharga kepada teman atau anggota keluarga dengan bimbingan guru dan orang tua.',
+      descM: 'menunjukkan inisiatif untuk berbagi hal yang dianggap penting dan berharga kepada teman atau anggota keluarga.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Kerja Sama',
+      descB: 'mulai bekerjasama dengan teman sebaya dan anggota keluarga dengan bimbingan guru dan orang tua di lingkungan satuan pendidikan dan keluarga.',
+      descC: 'bekerjasama dengan teman sebaya dan anggota keluarga dengan bimbingan guru dan orang tua di lingkungan satuan pendidikan dan keluarga.',
+      descM: 'menunjukkan inisiatif untuk bekerjasama dengan teman sebaya dan anggota keluarga di lingkungan satuan pendidikan dan keluarga.'
+    },
+    // 6. DIMENSI KEMANDIRIAN (SD/MI)
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Bertanggung Jawab',
+      descB: 'melakukan upaya mencapai tujuan pembelajaran sesuai arahan.',
+      descC: 'berlatih menetapkan tujuan pembelajaran untuk dirinya.',
+      descM: 'berlatih mencapai tujuan pembelajaran yang telah ditentukan sendiri secara tepat waktu.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Kepemimpinan',
+      descB: 'menjalankan peran yang diberikan dalam konteks pembelajaran sesuai arahan.',
+      descC: 'menjalankan peran yang diberikan dalam konteks pembelajaran dengan arahan minimal.',
+      descM: 'berinisiatif untuk menjalankan peran dalam konteks pembelajaran secara otonom.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Pengembangan Diri',
+      descB: 'mengenal minat dan bakat sebagai potensi diri dengan bimbingan penuh.',
+      descC: 'mengenal minat dan bakat sebagai potensi diri dan mengeksplorasi berbagai kegiatan pengembangan diri dengan bimbingan.',
+      descM: 'mengenal minat dan bakat sebagai potensi diri dan mengeksplorasi berbagai kegiatan pengembangan diri dengan bimbingan minimal.'
+    },
+    // 7. DIMENSI KESEHATAN (SD/MI)
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Hidup Bersih dan Sehat',
+      descB: 'berperilaku hidup bersih dan sehat dengan memperhatikan dan menjaga kebersihan diri namun masih perlu bimbingan.',
+      descC: 'berperilaku hidup bersih dan sehat dengan memperhatikan dan menjaga kebersihan diri dengan bimbingan minimal.',
+      descM: 'mengajak orang lain untuk bersama-sama berperilaku hidup bersih dan sehat dengan memperhatikan dan menjaga kebersihan diri secara otonom dan teratur.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kebugaran, Kesehatan Fisik, dan Kesehatan Mental',
+      descB: 'berperilaku sehat fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, serta mengendalikan emosi dengan bimbingan penuh.',
+      descC: 'berperilaku sehat fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, serta mengendalikan emosi dengan bimbingan.',
+      descM: 'mengajak teman sebaya agar berperilaku sehat secara fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, serta mengendalikan emosi dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kesehatan Lingkungan',
+      descB: 'berperan aktif meningkatkan kesehatan lingkungan rumah dan sekolah dengan bimbingan penuh.',
+      descC: 'berperan aktif meningkatkan kesehatan lingkungan rumah dan sekolah.',
+      descM: 'mengajak teman sebaya untuk meningkatkan kesehatan lingkungan rumah dan sekolah.'
+    },
+    // 8. DIMENSI KOMUNIKASI (SD/MI)
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menyimak',
+      descB: 'mendengarkan secara aktif sejumlah teks lisan sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'mendengarkan secara aktif sejumlah teks lisan sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan sederhana.',
+      descM: 'mendengarkan secara aktif sejumlah teks lisan sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan sederhana dan kritis.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Berbicara',
+      descB: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan sederhana namun belum tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan sederhana secara cukup tepat, lancar, dan efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan sederhana secara benar, tepat, lancar, dan efektif.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Membaca',
+      descB: 'membaca secara aktif sejumlah teks tertulis sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'membaca secara aktif sejumlah teks tertulis sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan sederhana.',
+      descM: 'membaca secara aktif sejumlah teks tertulis sederhana yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan sederhana dan kritis.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menulis',
+      descB: 'menyampaikan, menggali, dan menanggapi berbagai jenis informasi melalui teks tertulis sederhana namun belum tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi berbagai jenis informasi melalui teks tertulis sederhana secara cukup tepat, lancar, dan efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi berbagai jenis informasi melalui teks tertulis sederhana secara benar, tepat, lancar, dan efektif.'
+    }
+  ],
 
-  openView() {
+  PAUD: [
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Tuhan Yang Maha Esa',
+      descB: 'mengenal Tuhan beserta ciptaan-Nya.',
+      descC: 'mencontoh dan membiasakan perilaku sesuai perintah Tuhan secara sederhana, seperti berdoa, mengucapkan salam, atau bersyukur, dengan bimbingan orang dewasa.',
+      descM: 'membiasakan diri melakukan perilaku sesuai perintah Tuhan dalam keseharian secara konsisten, seperti berdoa, mengucapkan salam, atau bersyukur serta menjadi contoh sederhana bagi teman sebaya.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Sesama',
+      descB: 'mengenal konsep perilaku baik dan buruk, seperti berbagi atau berbohong, dan mampu meniru perilaku yang diajarkan oleh orang dewasa dalam situasi tertentu dengan pengawasan dan bimbingan yang ketat.',
+      descC: 'memahami konsep dasar akhlak mulia dalam kehidupan sehari-hari melalui sikap kasih sayang, kejujuran, keadilan, dan tanggung jawab dalam berinteraksi dengan teman sebaya atau keluarga.',
+      descM: 'menunjukkan perilaku akhlak mulia dalam kehidupan sehari-hari melalui sikap kasih sayang, kejujuran, keadilan, dan tanggung jawab dalam berinteraksi dengan sesama dengan bimbingan orang dewasa.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Lingkungan Alam',
+      descB: 'menunjukkan kesadaran pentingnya menjaga lingkungan alam.',
+      descC: 'menjaga lingkungan alam dalam kehidupan sehari-hari.',
+      descM: 'menjaga lingkungan alam dalam kehidupan sehari-hari dan mengajak teman sebaya.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Lokal',
+      descB: 'mengenal aturan yang berlaku di satuan pendidikan dan keluarga.',
+      descC: 'mematuhi aturan yang berlaku di satuan pendidikan dan keluarga dengan bimbingan.',
+      descM: 'mematuhi aturan yang berlaku di satuan pendidikan dan keluarga secara mandiri.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Nasional',
+      descB: 'mengenal diri, keluarga, teman, dan aturan yang berlaku di masyarakat dalam kehidupan sehari-hari.',
+      descC: 'menunjukkan pemahaman tentang diri, keluarga, teman, dan mematuhi aturan yang berlaku di masyarakat dalam kehidupan sehari-hari dengan bimbingan.',
+      descM: 'menunjukkan pemahaman tentang diri, keluarga, teman, dan mematuhi aturan yang berlaku di masyarakat dalam kehidupan sehari-hari secara mandiri.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Global',
+      descB: 'mengenali keberadaan negara lain.',
+      descC: 'mengenali keberadaan negara lain di dunia dan simbol-simbolnya dengan bimbingan.',
+      descM: 'mengenali keberadaan negara lain di dunia dan simbol-simbolnya secara mandiri.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyampaian Argumentasi',
+      descB: 'menyampaikan pendapat sederhana.',
+      descC: 'menyampaikan pendapat singkat dengan alasan sederhana.',
+      descM: 'menyampaikan pendapat singkat secara runtut dengan alasan sederhana.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Pengambilan Keputusan',
+      descB: 'menentukan pilihan dengan mengikuti pilihan teman sebaya.',
+      descC: 'menentukan pilihan berdasarkan preferensi diri.',
+      descM: 'menentukan pilihan berdasarkan preferensi diri dengan alasan yang relevan.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyelesaian Masalah',
+      descB: 'mencoba menyelesaikan tantangan yang dialami.',
+      descC: 'menyelesaikan tantangan yang dialami.',
+      descM: 'menyelesaikan tantangan yang dialami dengan tepat.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Gagasan Baru',
+      descB: 'menyampaikan gagasan imajinatif secara verbal atau non verbal.',
+      descC: 'menyampaikan gagasan imajinatif sederhana.',
+      descM: 'mengembangkan gagasan imajinatif sederhana.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Fleksibilitas Berpikir',
+      descB: 'meniru pola berpikir orang lain dalam menyelesaikan masalah sederhana.',
+      descC: 'menunjukkan proses berpikir fleksibel dalam menyelesaikan masalah sederhana.',
+      descM: 'menentukan solusi dalam menyelesaikan masalah sederhana.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Karya',
+      descB: 'menirukan bentuk karya dan/atau tindakan sederhana berdasarkan pikiran dan/atau perasaannya.',
+      descC: 'mengeksplorasi bentuk karya dan/atau tindakan sederhana berdasarkan pikiran dan/atau perasaannya menggunakan keterampilan motorik halus dan kasar.',
+      descM: 'mengekspresikan karya dan/atau tindakan sederhana berdasarkan pikiran dan/atau perasaannya menggunakan keterampilan motorik halus dan kasar.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Peduli',
+      descB: 'mulai mengenali perilaku peduli orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descC: 'mengenali perilaku peduli orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descM: 'menunjukkan kepedulian pada teman sebaya dan anggota keluarga dalam kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Berbagi',
+      descB: 'mulai mengenali perilaku berbagi orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descC: 'mengenali perilaku berbagi orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descM: 'berbagi dengan teman sebaya dan anggota keluarga dalam kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Kerja Sama',
+      descB: 'mulai mengenali perilaku kerja sama orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descC: 'mengenali perilaku kerja sama orang lain pada kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.',
+      descM: 'bekerjasama dengan teman sebaya dan anggota keluarga dalam kegiatan bermain dan interaksi di lingkungan satuan pendidikan dan keluarga melalui bimbingan guru atau orang tua.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Bertanggung Jawab',
+      descB: 'menyelesaikan tugas yang diberikan oleh guru dengan bimbingan penuh.',
+      descC: 'menyelesaikan tugas yang diberikan oleh guru dengan bimbingan.',
+      descM: 'menyelesaikan tugas yang diberikan oleh guru dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Kepemimpinan',
+      descB: 'menjalankan peran yang diberikan dalam konteks bermain bermakna sesuai arahan.',
+      descC: 'menjalankan peran yang diberikan dalam konteks bermain bermakna dengan arahan minimal.',
+      descM: 'berinisiatif untuk menjalankan peran yang diberikan dalam konteks bermain bermakna secara otonom.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Pengembangan Diri',
+      descB: 'mengikuti arahan atau mencontoh hal baru dari guru atau teman sebaya saat bermain bermakna.',
+      descC: 'mengikuti arahan atau mencontoh hal baru dari guru atau teman sebaya saat bermain bermakna dan berani mencoba cara baru.',
+      descM: 'mencoba cara baru dan mengulang untuk memperbaikinya secara mandiri.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Hidup Bersih dan Sehat',
+      descB: 'mengenal kebiasaan hidup bersih dan sehat dengan mencuci tangan pakai sabun dengan air mengalir, menggosok gigi, mandi teratur, dan mengkonsumsi makanan sehat bergizi seimbang dengan bimbingan.',
+      descC: 'membiasakan diri hidup bersih dan sehat dengan mencuci tangan pakai sabun dengan air mengalir, menggosok gigi, mandi teratur, dan mengkonsumsi makanan sehat bergizi seimbang dengan bimbingan.',
+      descM: 'mengingatkan teman sebaya untuk membiasakan diri hidup bersih dan sehat dengan mencuci tangan pakai sabun dengan air mengalir, menggosok gigi, mandi teratur, dan mengkonsumsi makanan sehat bergizi seimbang.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kebugaran, Kesehatan Fisik, dan Kesehatan Mental',
+      descB: 'mengenali pentingnya berperilaku sehat fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, tidur teratur, menerapkan pola makan sehat dan bergizi seimbang, dan mengendalikan emosi dengan bimbingan.',
+      descC: 'membiasakan diri hidup sehat fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, tidur teratur, menerapkan pola makan sehat dan bergizi seimbang, dan mengendalikan emosi dengan bimbingan.',
+      descM: 'mengajak teman sebaya agar membiasakan diri hidup sehat fisik dan mental, menjaga kebugaran dengan berolahraga secara teratur, tidur teratur, menerapkan pola makan sehat dan bergizi seimbang, dan mengendalikan emosi dengan bimbingan.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kesehatan Lingkungan',
+      descB: 'mengenal pentingnya peningkatan kebersihan lingkungan rumah dan sekolah dengan bimbingan penuh.',
+      descC: 'ikut meningkatkan kebersihan lingkungan rumah dan sekolah dengan bimbingan.',
+      descM: 'mengajak teman sebaya untuk meningkatkan kebersihan lingkungan rumah dan sekolah.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menyimak',
+      descB: 'mendengarkan secara aktif sejumlah teks lisan yang singkat dan sangat sederhana yang dipilih untuk mendapatkan informasi eksplisit.',
+      descC: 'mendengarkan secara aktif sejumlah teks lisan yang singkat dan sangat sederhana yang dipilih untuk mendapatkan informasi eksplisit dan memberikan tanggapan sederhana.',
+      descM: 'mendengarkan secara aktif sejumlah teks lisan yang singkat dan sangat sederhana yang dipilih untuk mendapatkan informasi eksplisit dan memberikan tanggapan sederhana dan kritis.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Berbicara',
+      descB: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan singkat dan sangat sederhana namun belum tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan singkat dan sangat sederhana secara cukup tepat, lancar, dan efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi melalui teks lisan singkat dan sangat sederhana secara benar, tepat, lancar, dan efektif.'
+    }
+  ],
+
+  SMP: [
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Tuhan Yang Maha Esa',
+      descB: 'memahami dan mengamalkan ajaran Tuhan Yang Maha Esa yang dianutnya belum berdasarkan kesadaran diri atau masih berdasarkan perintah orang lain.',
+      descC: 'memahami dan mengamalkan ajaran Tuhan Yang Maha Esa yang dianutnya berdasarkan kesadaran dirinya secara konsisten.',
+      descM: 'memahami dan mengamalkan ajaran Tuhan Yang Maha Esa lebih mendalam berdasarkan kesadaran diri secara konsisten dan mampu mengajak orang lain dalam kehidupan sehari-hari.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Sesama Manusia',
+      descB: 'menunjukkan perilaku akhlak mulia dalam kehidupan sosial dengan saling menghormati dan berintegritas namun belum konsisten.',
+      descC: 'menunjukkan perilaku akhlak mulia dengan mengembangkan sikap kasih sayang, kejujuran, keadilan, dan tanggung jawab secara konsisten dalam kehidupan pribadi dan sosial.',
+      descM: 'menunjukkan perilaku akhlak mulia dengan mengembangkan sikap kasih sayang, kejujuran, keadilan, dan tanggung jawab secara konsisten dalam kehidupan pribadi dan sosial serta mampu mengajak orang lain.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Lingkungan Alam',
+      descB: 'memiliki kesadaran untuk menjaga keseimbangan dan kelestarian lingkungan alam sesuai dengan pengetahuan yang dimilikinya.',
+      descC: 'menjaga keseimbangan dan kelestarian lingkungan alam dengan menggunakan pengetahuan yang dimilikinya.',
+      descM: 'menjaga keseimbangan dan kelestarian lingkungan alam dengan menggunakan pengetahuan yang dimilikinya bersama-sama dengan orang lain.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Lokal',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di masyarakatnya.',
+      descC: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di masyarakat sekitarnya dengan bimbingan.',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di masyarakatnya dan mampu mengajak orang lain untuk melakukan hal yang sama secara mandiri.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Nasional',
+      descB: 'memiliki ketertarikan dalam menghargai keragaman masyarakat, budaya nasional untuk menguatkan wawasan kebangsaan.',
+      descC: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional dan menghargai keberagaman budayanya, serta berinisiatif menjaga Negara Kesatuan Republik Indonesia (NKRI).',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional dan berinisiatif untuk menjaga NKRI, serta mampu mengajak orang lain melakukan hal yang sama.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Global',
+      descB: 'memiliki ketertarikan dalam menghargai keragaman masyarakat, budaya global untuk menguatkan wawasan kebangsaan.',
+      descC: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global dan menghargai keberagamannya dengan tetap menjaga identitas diri dan budaya nasional.',
+      descM: 'berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global dan menghargai keberagamannya dengan tetap menjaga identitas diri dan budaya nasional, serta mampu mengajak orang lain melakukan yang sama.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyampaian Argumentasi',
+      descB: 'menyampaikan argumen logis secara runtut disertai alasan sederhana.',
+      descC: 'menyampaikan argumen logis secara runtut disertai alasan yang kuat.',
+      descM: 'menyampaikan argumen yang logis secara runtut, didukung data dan bukti kuat yang relevan, dan mampu menghargai dan menanggapi argumen orang lain.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Pengambilan Keputusan',
+      descB: 'membuat keputusan secara logis dengan membandingkan beberapa pendapat/sudut pandang serta beberapa informasi yang relevan dengan bimbingan.',
+      descC: 'membuat keputusan secara logis dengan membandingkan beberapa pendapat/sudut pandang serta beberapa informasi yang relevan secara mandiri.',
+      descM: 'membuat keputusan secara logis dengan membandingkan beberapa pendapat/sudut pandang serta beberapa informasi yang relevan secara mandiri serta mempertimbangkan dampak yang ditimbulkan.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyelesaian Masalah',
+      descB: 'menyelesaikan masalah sederhana dan menghasilkan solusi logis dan kontekstual namun kurang tepat.',
+      descC: 'menyelesaikan masalah sederhana dan menghasilkan solusi logis dan kontekstual yang tepat dengan bimbingan.',
+      descM: 'menyelesaikan masalah sederhana dan menghasilkan solusi logis dan kontekstual yang tepat secara mandiri.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Gagasan Baru',
+      descB: 'menyampaikan gagasan inovatif dari contoh atau referensi yang diberikan.',
+      descC: 'mengembangkan gagasan inovatif untuk menyelesaikan masalah sekitar.',
+      descM: 'mengembangkan beberapa gagasan inovatif untuk menyelesaikan masalah di lingkungan yang lebih luas.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Fleksibilitas Berpikir',
+      descB: 'menemukan solusi masalah di lingkungan sekitar.',
+      descC: 'menemukan beberapa alternatif solusi masalah di lingkungan sekitar dan memberikan umpan balik.',
+      descM: 'menemukan beberapa alternatif solusi masalah di lingkungan sekitar dan mengevaluasi alternatif solusinya.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Karya',
+      descB: 'menciptakan tindakan dan/atau karya kreatif serta dapat mengidentifikasi dampaknya bagi dirinya.',
+      descC: 'menciptakan tindakan dan/atau karya kreatif yang kompleks serta dapat menganalisis dampaknya bagi dirinya dan orang lain.',
+      descM: 'menciptakan tindakan dan/atau karya kreatif yang kompleks serta dapat mengevaluasi dampaknya bagi orang lain dan lingkungan sekitarnya.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Peduli',
+      descB: 'menunjukkan kepedulian untuk berkolaborasi namun belum konsisten.',
+      descC: 'menunjukkan kepedulian secara konsisten untuk berkolaborasi.',
+      descM: 'mengajak teman untuk peduli berkolaborasi.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Berbagi',
+      descB: 'saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan untuk tujuan saling memberdayakan namun belum konsisten.',
+      descC: 'saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan untuk tujuan saling memberdayakan.',
+      descM: 'mengambil inisiatif untuk saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan untuk tujuan saling memberdayakan.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Kerja Sama',
+      descB: 'bekerjasama dengan berbagai pihak dari dalam satuan pendidikan untuk peningkatan kualitas bersama namun belum konsisten.',
+      descC: 'bekerjasama dengan berbagai pihak dari dalam satuan pendidikan untuk peningkatan kualitas bersama secara konsisten.',
+      descM: 'mengambil inisiatif untuk bekerjasama dengan berbagai pihak dari dalam dan luar satuan pendidikan untuk peningkatan kualitas bersama.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Bertanggung Jawab',
+      descB: 'menetapkan target pembelajaran dan melakukan upaya untuk mencapainya dengan bimbingan penuh.',
+      descC: 'menetapkan target pembelajaran dan melakukan upaya untuk mencapainya dengan bimbingan.',
+      descM: 'menetapkan target pembelajaran dan melakukan upaya untuk mencapainya dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Kepemimpinan',
+      descB: 'memotivasi dan meregulasi diri sendiri dalam mencapai target yang ditetapkan dengan bimbingan penuh.',
+      descC: 'memotivasi dan meregulasi diri sendiri dalam mencapai target yang ditetapkan dengan bimbingan.',
+      descM: 'memotivasi dan mengorganisasi teman sebaya untuk mencapai target yang ditetapkan bersama secara tuntas dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Pengembangan Diri',
+      descB: 'mengidentifikasi potensi dan bakat diri, menyusun rencana pengembangan diri untuk mewujudkan cita-cita dengan bimbingan penuh.',
+      descC: 'mengidentifikasi potensi dan bakat diri, menyusun dan mengaktualisasi rencana pengembangan diri untuk mewujudkan cita-cita dengan bimbingan.',
+      descM: 'mengaktualisasi rencana pengembangan diri untuk mewujudkan cita-cita serta mampu beradaptasi dengan perubahan dan menghadapi tantangan dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Hidup Bersih dan Sehat',
+      descB: 'menjaga kebersihan diri dan keluarga untuk meraih kesehatan namun belum konsisten.',
+      descC: 'menjaga kebersihan diri dan keluarga untuk meraih kesehatan secara konsisten.',
+      descM: 'mengajak orang lain untuk bersama-sama menjaga kebersihan diri dan keluarga guna meraih kesehatan yang prima.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kebugaran, Kesehatan Fisik, dan Kesehatan Mental',
+      descB: 'meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi dengan bimbingan penuh.',
+      descC: 'meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi dengan bimbingan.',
+      descM: 'mengajak orang lain agar meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi dengan bimbingan minimal.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kesehatan Lingkungan',
+      descB: 'berperan aktif meningkatkan kesehatan lingkungan rumah dan sekolah.',
+      descC: 'berperan aktif meningkatkan kesehatan lingkungan rumah, sekolah, dan masyarakat luas.',
+      descM: 'mengajak orang lain untuk meningkatkan kesehatan lingkungan rumah, sekolah, dan masyarakat luas.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menyimak',
+      descB: 'mendengarkan secara aktif sejumlah teks lisan yang dipilih untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'mendengarkan secara aktif sejumlah teks lisan yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan yang relevan.',
+      descM: 'mendengarkan secara aktif sejumlah teks lisan yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan relevan dan kritis.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Berbicara',
+      descB: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi namun belum tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi dengan cara yang cukup tepat, lancar, dan efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi dengan cara yang benar, tepat, lancar, dan efektif.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Membaca',
+      descB: 'membaca secara aktif sejumlah teks tertulis yang dipilih untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'membaca secara aktif sejumlah teks tertulis yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan yang relevan.',
+      descM: 'membaca secara aktif sejumlah teks tertulis yang dipilih untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan relevan dan kritis.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menulis',
+      descB: 'menyampaikan, menggali, dan menanggapi informasi secara tertulis dengan beberapa jenis teks terpilih namun belum tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi informasi secara tertulis dengan beberapa jenis teks terpilih dengan cara yang cukup tepat, lancar, dan efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi informasi secara tertulis dengan beberapa jenis teks terpilih dengan cara yang benar, tepat, lancar, dan efektif.'
+    }
+  ],
+
+  SMA: [
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Tuhan Yang Maha Esa',
+      descB: 'menghayati dan mengamalkan ajaran Tuhan Yang Maha Esa namun belum konsisten.',
+      descC: 'menghayati dan mengamalkan ajaran Tuhan Yang Maha Esa secara konsisten, serta mampu menegakkannya dalam kehidupan.',
+      descM: 'menghayati dan mengamalkan ajaran Tuhan Yang Maha Esa secara konsisten, serta mampu menegakkannya dalam kehidupan dan mampu mengajak serta menjadi teladan bagi orang lain.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Sesama Manusia',
+      descB: 'menunjukkan perilaku akhlak mulia yang mencerminkan kedewasaan moral dan spiritual serta pemahaman nilai saling menghormati dan berintegritas.',
+      descC: 'menunjukkan perilaku akhlak mulia yang mencerminkan kedewasaan moral dan spiritual serta menginternalisasi nilai kasih sayang, kejujuran, keadilan, dan tanggung jawab dalam kehidupan pribadi, sosial, dan akademik.',
+      descM: 'menunjukkan perilaku akhlak mulia yang mencerminkan kedewasaan moral dan spiritual, menginternalisasi nilai kasih sayang, kejujuran, keadilan, dan tanggung jawab dalam kehidupan pribadi, sosial, dan akademik serta memberikan kebermanfaatan kepada sesama.'
+    },
+    {
+      dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
+      subdimensi: 'Hubungan dengan Lingkungan Alam',
+      descB: 'mewujudkan rasa tanggung jawab dengan mulai membangun kesadaran terhadap lingkungan alam dan mengidentifikasi solusi dari permasalahannya.',
+      descC: 'mewujudkan rasa tanggung jawab secara konsisten dengan membangun kepedulian terhadap lingkungan alam, merumuskan solusi, dan mengimplementasikannya.',
+      descM: 'mewujudkan rasa tanggung jawab secara konsisten dengan aktif membangun kepedulian terhadap lingkungan alam sekitarnya, menciptakan serta mengimplementasikan solusi dari permasalahan lingkungan, dan melakukan evaluasi serta menjadi teladan bagi orang lain dalam menjaga kelestarian lingkungan.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Lokal',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di masyarakatnya.',
+      descC: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di masyarakatnya.',
+      descM: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di masyarakatnya dan mampu mengajak orang lain untuk melakukan hal yang sama.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Nasional',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional.',
+      descC: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional dan menghargai keberagaman budayanya, serta berpartisipasi aktif menjaga NKRI.',
+      descM: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup nasional dan berpartisipasi aktif untuk menjaga NKRI, serta mampu mengajak orang lain melakukan hal yang sama.'
+    },
+    {
+      dimensi: 'Kewargaan',
+      subdimensi: 'Kewargaan Global',
+      descB: 'menunjukkan kesadaran atas aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global.',
+      descC: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global dan menghargai keberagamannya dengan tetap menjaga identitas diri dan budaya nasional.',
+      descM: 'terbiasa berperilaku sesuai aturan, norma, dan nilai sosial budaya yang berlaku di lingkup global dan menghargai keberagamannya dengan tetap menjaga identitas diri dan budaya nasional, serta mampu mengajak orang lain melakukan yang sama.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyampaian Argumentasi',
+      descB: 'menyampaikan argumen logis secara runtut disertai alasan sederhana.',
+      descC: 'menyampaikan argumen logis secara runtut disertai alasan dan bukti kuat, dan mampu menanggapi argumen orang lain.',
+      descM: 'menyampaikan argumen yang logis secara runtut, didukung teori, data, dan bukti kuat yang relevan, dan mampu mempertahankan argumennya.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Pengambilan Keputusan',
+      descB: 'membuat keputusan berdasarkan subjektivitas.',
+      descC: 'mengambil keputusan berbasis bukti dengan data dan informasi dari berbagai sumber yang relevan yang saling terkait.',
+      descM: 'membuat keputusan berbasis bukti dengan mempertimbangkan logika, etika, dan estetika, serta dampak yang ditimbulkan.'
+    },
+    {
+      dimensi: 'Penalaran Kritis',
+      subdimensi: 'Penyelesaian Masalah',
+      descB: 'menyelesaikan masalah kompleks dengan menerapkan pendekatan ilmiah dan menghasilkan solusi logis dan kontekstual namun kurang tepat.',
+      descC: 'menyelesaikan masalah kompleks dengan menerapkan pendekatan ilmiah dan menghasilkan solusi logis dan kontekstual yang tepat dengan bimbingan.',
+      descM: 'menyelesaikan masalah kompleks dengan menerapkan pendekatan ilmiah dan menghasilkan solusi logis dan kontekstual secara mandiri.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Gagasan Baru',
+      descB: 'menganalisis beberapa gagasan inovatif yang logis dan efektif.',
+      descC: 'menghubungkan beberapa gagasan inovatif yang logis dan efektif untuk menghasilkan kombinasi gagasan baru.',
+      descM: 'menghasilkan beberapa gagasan inovatif yang logis dan efektif dengan memikirkan segala resikonya.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Fleksibilitas Berpikir',
+      descB: 'menemukan beberapa alternatif solusi terhadap permasalahan di lingkungan sekitar.',
+      descC: 'menemukan beberapa alternatif solusi dan membandingkan efektivitasnya terhadap permasalahan di lingkungan sekitar.',
+      descM: 'menentukan alternatif solusi yang efektif terhadap permasalahan di lingkungan serta merefleksi hasil solusi.'
+    },
+    {
+      dimensi: 'Kreativitas',
+      subdimensi: 'Karya',
+      descB: 'menghasilkan karya inovatif dengan menggunakan berbagai sudut pandang.',
+      descC: 'menghasilkan karya inovatif dengan menggunakan berbagai sudut pandang dengan mempertimbangkan dampak dan resikonya.',
+      descM: 'menghasilkan karya inovatif yang kompleks dengan menggunakan berbagai sudut pandang dan mengevaluasi dampak dan resikonya.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Peduli',
+      descB: 'menunjukkan kepedulian terhadap kondisi di lingkungan satuan pendidikan dan masyarakat secara berkelompok.',
+      descC: 'menunjukkan kepedulian secara konsisten terhadap kondisi di lingkungan satuan pendidikan dan masyarakat secara berkelompok.',
+      descM: 'mengambil inisiatif untuk peduli terhadap kondisi di lingkungan satuan pendidikan dan masyarakat.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Berbagi',
+      descB: 'saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan bagi satuan pendidikan atau masyarakat untuk tujuan saling memberdayakan namun belum konsisten.',
+      descC: 'saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan secara aktif dan konsisten agar bermanfaat bagi satuan pendidikan dan masyarakat untuk tujuan saling memberdayakan.',
+      descM: 'mengambil inisiatif untuk saling berkontribusi dalam pemanfaatan bersama sumber daya, pengetahuan, dan gagasan secara konsisten bagi satuan pendidikan dan masyarakat untuk tujuan saling memberdayakan.'
+    },
+    {
+      dimensi: 'Kolaborasi',
+      subdimensi: 'Kerja Sama',
+      descB: 'bekerjasama dengan berbagai pihak dari dalam dan luar satuan pendidikan untuk peningkatan kualitas bersama namun belum konsisten.',
+      descC: 'bekerjasama dengan berbagai pihak dari dalam dan luar satuan pendidikan untuk peningkatan kualitas bersama secara konsisten.',
+      descM: 'mengambil inisiatif untuk bekerjasama dengan berbagai pihak baik dalam lingkup lokal, nasional, maupun global untuk peningkatan kualitas bersama.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Bertanggung Jawab',
+      descB: 'menetapkan target pembelajaran dan melakukan upaya untuk mencapainya dengan bimbingan.',
+      descC: 'menetapkan target pembelajaran dan melakukan upaya untuk mencapai secara tuntas.',
+      descM: 'mencapai target pembelajaran yang telah ditentukan sendiri secara tuntas.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Kepemimpinan',
+      descB: 'memotivasi dan meregulasi diri sendiri dalam mencapai target yang ditetapkan namun belum konsisten.',
+      descC: 'memotivasi dan meregulasi diri sendiri dalam mencapai target yang ditetapkan secara konsisten.',
+      descM: 'memotivasi dan mengorganisasi teman sebaya untuk mencapai target yang ditetapkan bersama secara tuntas.'
+    },
+    {
+      dimensi: 'Kemandirian',
+      subdimensi: 'Pengembangan Diri',
+      descB: 'mengidentifikasi potensi dan bakat diri, menyusun rencana pengembangan diri untuk mewujudkan cita-cita.',
+      descC: 'mengidentifikasi potensi dan bakat diri, menyusun dan mengaktualisasi rencana pengembangan diri untuk mewujudkan cita-cita.',
+      descM: 'mengaktualisasi rencana pengembangan diri untuk mewujudkan cita-cita serta mampu beradaptasi dengan perubahan dan menghadapi tantangan.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Hidup Bersih dan Sehat',
+      descB: 'menjaga kebersihan diri, keluarga, dan masyarakat untuk meraih kesehatan namun belum konsisten.',
+      descC: 'menjaga kebersihan diri, keluarga, dan masyarakat untuk meraih kesehatan secara konsisten.',
+      descM: 'menggerakkan orang lain agar menjaga kebersihan diri, keluarga, dan masyarakat untuk meraih kesehatan yang prima.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kebugaran, Kesehatan Fisik, dan Kesehatan Mental',
+      descB: 'meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi namun belum konsisten.',
+      descC: 'meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi secara konsisten.',
+      descM: 'menggerakkan orang lain agar meningkatkan kebugaran, kesehatan fisik, dan kesehatan mental dengan berolahraga secara teratur, menerapkan pola makan sehat dan bergizi seimbang, mencegah dan mengatasi stress, serta mengendalikan emosi secara konsisten.'
+    },
+    {
+      dimensi: 'Kesehatan',
+      subdimensi: 'Kesehatan Lingkungan',
+      descB: 'berkontribusi dalam meningkatkan kesehatan lingkungan rumah, sekolah, dan masyarakat yang lebih luas namun belum konsisten.',
+      descC: 'berkontribusi dalam meningkatkan kesehatan lingkungan rumah, sekolah, dan masyarakat yang lebih luas secara konsisten.',
+      descM: 'menggerakkan orang lain untuk berkontribusi dalam meningkatkan kesehatan lingkungan rumah, sekolah, dan masyarakat yang lebih luas secara konsisten.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menyimak',
+      descB: 'mendengarkan secara aktif berbagai teks lisan untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'mendengarkan secara aktif berbagai teks lisan untuk mendapatkan informasi eksplisit dan implisit dan memberikan tanggapan yang relevan.',
+      descM: 'mendengarkan secara aktif berbagai teks lisan untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan relevan, kritis dan terstruktur.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Berbicara',
+      descB: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi dengan cara yang tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi dengan cara yang tepat, lancar, dan cukup efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi secara lisan berbagai jenis informasi dengan cara yang benar, tepat, lancar, dan sangat efektif.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Membaca',
+      descB: 'membaca secara aktif berbagai teks tertulis untuk mendapatkan informasi eksplisit dan implisit.',
+      descC: 'membaca secara aktif berbagai teks tertulis untuk mendapatkan informasi eksplisit dan implisit dan memberikan tanggapan yang relevan.',
+      descM: 'membaca secara aktif berbagai teks tertulis untuk mendapatkan informasi eksplisit dan implisit, dan memberikan tanggapan relevan, kritis dan terstruktur.'
+    },
+    {
+      dimensi: 'Komunikasi',
+      subdimensi: 'Menulis',
+      descB: 'menyampaikan, menggali, dan menanggapi secara tertulis berbagai jenis informasi melalui berbagai jenis teks dengan cara yang tepat dan lancar.',
+      descC: 'menyampaikan, menggali, dan menanggapi secara tertulis berbagai jenis informasi melalui berbagai jenis teks dengan cara yang tepat, lancar, dan cukup efektif.',
+      descM: 'menyampaikan, menggali, dan menanggapi secara tertulis berbagai jenis informasi melalui berbagai jenis teks dengan cara yang benar, tepat, lancar, dan sangat efektif.'
+    }
+  ]
+};
+
+// SMK mewarisi struktur SMA dengan penyesuaian konteks dunia kerja & tambahan Sub-Dimensi K3 pada Kesehatan
+OFFICIAL_BSKAP_058_2025_DPL.SMK = [
+  ...OFFICIAL_BSKAP_058_2025_DPL.SMA.map(item => ({
+    dimensi: item.dimensi,
+    subdimensi: item.subdimensi,
+    descB: item.descB.replace(/\.$/, ' sesuai konteks bidang keahlian dan dunia kerja.'),
+    descC: item.descC.replace(/\.$/, ' sesuai konteks bidang keahlian dan dunia kerja.'),
+    descM: item.descM.replace(/\.$/, ' sesuai konteks bidang keahlian dan dunia kerja.')
+  })),
+  {
+    dimensi: 'Kesehatan',
+    subdimensi: 'Prinsip Keselamatan dan Kesehatan Kerja (K3) di Dunia Kerja',
+    descB: 'mampu menerapkan prinsip keselamatan dan kesehatan kerja (K3) di lingkungan sekolah dan dunia kerja, namun belum konsisten.',
+    descC: 'mampu menerapkan prinsip keselamatan dan kesehatan kerja (K3) di lingkungan sekolah dan dunia kerja secara konsisten.',
+    descM: 'mampu menjadi teladan, mengajak dan memotivasi orang lain dalam penerapan prinsip keselamatan dan kesehatan kerja (K3) di lingkungan sekolah dan dunia kerja.'
+  }
+];
+
+const DataKelasApp = {
+  daysOrder: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+  activeTab: 'siswa',
+  activeDplFilterDimensi: 'ALL',
+  builderSubdimensionDrafts: [],
+
+  detectDefaultJenjang(bucket) {
+    const schoolStr = String((bucket && bucket.schoolDisplay) || '').toUpperCase();
+    const classStr = String((bucket && (bucket.kelasFaseLabel || bucket.classKey)) || '').toUpperCase();
+    if (schoolStr.includes('SMK') || schoolStr.includes('MAK')) return 'SMK';
+    if (schoolStr.includes('SMA') || schoolStr.includes('MAN') || schoolStr.includes('MA ') || classStr.includes('FASE E') || classStr.includes('FASE F')) return 'SMA';
+    if (schoolStr.includes('SMP') || schoolStr.includes('MTS') || classStr.includes('FASE D')) return 'SMP';
+    if (schoolStr.includes('PAUD') || schoolStr.includes('TK') || schoolStr.includes('RA ')) return 'PAUD';
+    return 'SD';
+  },
+
+  openView(initialTab = null) {
     const bucket = DB.getActiveClassBucket();
     if (!bucket) return;
 
+    const detectedJenjang = bucket.dplSelectedJenjang || this.detectDefaultJenjang(bucket);
+    bucket.dplSelectedJenjang = detectedJenjang;
+
+    const jenjangSel = document.getElementById('dpl-jenjang-select');
+    if (jenjangSel) jenjangSel.value = detectedJenjang;
+
+    // Jika masih menggunakan 3 DPL bawaan lama (DPL_M_1 / DPL_DEF_1), otomatis upgrade ke 25 Sub-Dimensi Resmi SK BSKAP 058/H/KR/2025
+    const currentDpl = bucket.dplMaster || [];
+    const isOldDefaultOnly = currentDpl.length <= 3 && currentDpl.every(d => String(d.id || '').startsWith('DPL_M_') || String(d.id || '').startsWith('DPL_DEF_'));
+    if (currentDpl.length === 0 || isOldDefaultOnly) {
+      this.populateBucketWithOfficialBskap(bucket, detectedJenjang, true);
+    }
+
     this.renderStudentsTable();
     this.loadScheduleFields();
+    this.initDplMultiBuilder();
     this.renderDplMasterTable();
     this.renderEkskulMasterTable();
+    this.updateTabBadges();
+
+    this.switchTab(initialTab || this.activeTab || 'siswa');
     UI.switchView('view-pilar-data-kelas');
+  },
+
+  switchTab(tabKey) {
+    this.activeTab = tabKey;
+    const tabs = ['siswa', 'jadwal', 'dpl', 'ekskul'];
+    tabs.forEach(k => {
+      const btn = document.getElementById(`btn-dk-tab-${k}`);
+      const panel = document.getElementById(`dk-panel-${k}`);
+      if (btn) {
+        if (k === tabKey) btn.classList.add('active-dk-tab');
+        else btn.classList.remove('active-dk-tab');
+      }
+      if (panel) {
+        if (k === tabKey) panel.classList.remove('hidden');
+        else panel.classList.add('hidden');
+      }
+    });
+    this.updateTabBadges();
+  },
+
+  showAllTabsSimultaneously() {
+    const tabs = ['siswa', 'jadwal', 'dpl', 'ekskul'];
+    tabs.forEach(k => {
+      const btn = document.getElementById(`btn-dk-tab-${k}`);
+      const panel = document.getElementById(`dk-panel-${k}`);
+      if (btn) btn.classList.remove('active-dk-tab');
+      if (panel) panel.classList.remove('hidden');
+    });
+  },
+
+  updateTabBadges() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const bSiswa = document.getElementById('dk-badge-count-siswa');
+    const bJadwal = document.getElementById('dk-badge-count-jadwal');
+    const bDpl = document.getElementById('dk-badge-count-dpl');
+    const bEkskul = document.getElementById('dk-badge-count-ekskul');
+
+    if (bSiswa) bSiswa.textContent = `${(bucket.students || []).length} Siswa`;
+    if (bDpl) bDpl.textContent = `${(bucket.dplMaster || []).length} Sub-Dimensi`;
+    if (bEkskul) bEkskul.textContent = `${(bucket.ekskulMaster || []).length} Ekskul`;
+
+    if (bJadwal) {
+      const sched = bucket.schedule || {};
+      const activeDays = Object.values(sched).filter(arr => Array.isArray(arr) && arr.length > 0).length;
+      bJadwal.textContent = `${activeDays} Hari`;
+    }
   },
 
   buildStudentAutoCredentials(nama, indexNum = 1) {
@@ -8171,6 +9304,7 @@ const IntraApp = {
     if (passInp) passInp.value = '';
 
     this.renderStudentsTable();
+    this.updateTabBadges();
     UI.showNotif(
       'Siswa Berhasil Didaftarkan',
       `Siswa "${nama}" telah ditambahkan dengan Username: ${username} dan Password: ${password}.`,
@@ -8282,9 +9416,13 @@ const IntraApp = {
 
     if (!window.confirm(`Hapus siswa "${std.nama}" dari daftar kelas?`)) return;
 
+    if (typeof DB.markRecordDeleted === 'function') {
+      DB.markRecordDeleted(studentId);
+    }
     bucket.students = bucket.students.filter(s => s.id !== studentId);
     DB.save();
     this.renderStudentsTable();
+    this.updateTabBadges();
   },
 
   loadScheduleFields() {
@@ -8316,6 +9454,7 @@ const IntraApp = {
           .filter(s => s.length > 0);
       }
     });
+    this.updateTabBadges();
   },
 
   fillDefaultScheduleTemplate() {
@@ -8333,198 +9472,741 @@ const IntraApp = {
 
     DB.save();
     this.loadScheduleFields();
+    this.updateTabBadges();
     UI.showNotif('Template Jadwal Dimuat', 'Jadwal pelajaran standar hari Senin sampai Sabtu berhasil dimuat.', 'success');
   },
 
-  autoGenerateDplDescriptionByAI() {
-    const dimEl = document.getElementById('dpl-master-dimensi');
-    const subEl = document.getElementById('dpl-master-subdimensi');
-    const bEl = document.getElementById('dpl-master-desc-B');
-    const cEl = document.getElementById('dpl-master-desc-C');
-    const mEl = document.getElementById('dpl-master-desc-M');
-
-    const dimensi = dimEl && dimEl.value.trim() ? dimEl.value.trim() : 'Penalaran Kritis';
-    const subdimensi = subEl && subEl.value.trim()
-      ? subEl.value.trim()
-      : `Penerapan perilaku dan kompetensi ${dimensi.toLowerCase()} dalam pembelajaran`;
-
-    if (dimEl && !dimEl.value.trim()) dimEl.value = dimensi;
-    if (subEl && !subEl.value.trim()) subEl.value = subdimensi;
-
-    const lowerSub = subdimensi.charAt(0).toLowerCase() + subdimensi.slice(1);
-    if (bEl) {
-      bEl.value = `mulai berkembang dalam ${lowerSub} pada dimensi ${dimensi}, namun masih memerlukan bimbingan dan motivasi bertahap dari guru.`;
-    }
-    if (cEl) {
-      cEl.value = `telah cakap dan mampu menunjukkan kemampuan ${lowerSub} pada dimensi ${dimensi} secara konsisten dan mandiri sesuai harapan.`;
-    }
-    if (mEl) {
-      mEl.value = `sangat mahir, proaktif, dan membudayakan kemampuan ${lowerSub} pada dimensi ${dimensi} secara teladan di lingkungan kelas.`;
-    }
-  },
-
-  handleAddDplMaster(event) {
-    event.preventDefault();
-    const bucket = DB.getActiveClassBucket();
+  // ==========================================================================
+  // MANAJEMEN MASTER DPL: 1 DIMENSI -> MULTI SUB-DIMENSI (SK BSKAP 058/2025)
+  // ==========================================================================
+  populateBucketWithOfficialBskap(bucket, jenjangCode = 'SD', replaceExisting = false) {
     if (!bucket) return;
+    const presetArray = OFFICIAL_BSKAP_058_2025_DPL[jenjangCode] || OFFICIAL_BSKAP_058_2025_DPL.SD;
 
-    const dimensi = document.getElementById('dpl-master-dimensi').value.trim();
-    const subdimensi = document.getElementById('dpl-master-subdimensi').value.trim();
-    const descB = document.getElementById('dpl-master-desc-B').value.trim();
-    const descC = document.getElementById('dpl-master-desc-C').value.trim();
-    const descM = document.getElementById('dpl-master-desc-M').value.trim();
-
-    if (!dimensi || !subdimensi || !descB || !descC || !descM) {
-      UI.showNotif('Data DPL Belum Lengkap', 'Harap isi Dimensi, Sub-Dimensi, serta Deskripsi B, C, dan M.', 'warning');
-      return;
+    if (replaceExisting || !Array.isArray(bucket.dplMaster)) {
+      bucket.dplMaster = [];
     }
 
-    if (!bucket.dplMaster) bucket.dplMaster = [];
-    bucket.dplMaster.push({
-      id: 'DPL_M_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-      dimensi,
-      subdimensi,
-      descB,
-      descC,
-      descM
+    presetArray.forEach((item, idx) => {
+      const existingIdx = bucket.dplMaster.findIndex(
+        d => d.dimensi.toLowerCase() === item.dimensi.toLowerCase() &&
+             d.subdimensi.toLowerCase() === item.subdimensi.toLowerCase()
+      );
+
+      const newObj = {
+        id: existingIdx >= 0 ? bucket.dplMaster[existingIdx].id : `DPL_BSKAP_${jenjangCode}_${idx + 1}_${Date.now()}`,
+        dimensi: item.dimensi,
+        subdimensi: item.subdimensi,
+        descB: item.descB,
+        descC: item.descC,
+        descM: item.descM,
+        updatedTimestamp: Date.now()
+      };
+
+      if (existingIdx >= 0) {
+        bucket.dplMaster[existingIdx] = newObj;
+      } else {
+        bucket.dplMaster.push(newObj);
+      }
     });
 
     DB.save();
-    document.getElementById('form-add-dpl-master').reset();
+  },
+
+  handleDplJenjangChange(jenjangVal) {
+    const bucket = DB.getActiveClassBucket();
+    if (bucket) {
+      bucket.dplSelectedJenjang = jenjangVal;
+      DB.save();
+    }
+    this.initDplMultiBuilder();
+  },
+
+  loadOfficialBskapDplByJenjang(resetClean = false) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const jenjangSel = document.getElementById('dpl-jenjang-select');
+    const jenjang = jenjangSel ? jenjangSel.value : 'SD';
+
+    if (resetClean) {
+      const ok = window.confirm(
+        `Reset Master DPL kelas ini ke standar resmi SK BSKAP Nomor 058/H/KR/2025 untuk jenjang ${jenjang}?`
+      );
+      if (!ok) return;
+      if (Array.isArray(bucket.dplMaster) && typeof DB.markRecordDeleted === 'function') {
+        bucket.dplMaster.forEach(d => DB.markRecordDeleted(d.id));
+      }
+    }
+
+    this.populateBucketWithOfficialBskap(bucket, jenjang, resetClean);
+    this.activeDplFilterDimensi = 'ALL';
+    this.initDplMultiBuilder();
     this.renderDplMasterTable();
+    this.updateTabBadges();
 
     UI.showNotif(
-      'Master Deskripsi DPL Ditambahkan',
-      `Dimensi "${dimensi}" beserta deskripsi nilai B, C, dan M berhasil ditambahkan ke Data Kelas.`,
+      `Standar DPL Jenjang ${jenjang} Berhasil Dimuat`,
+      `Seluruh 8 Dimensi dan ${(bucket.dplMaster || []).length} Sub-Dimensi resmi beserta deskripsi B, C, dan M (SK BSKAP Nomor 058/H/KR/2025) telah aktif di kelas ini.`,
       'success'
     );
   },
 
   loadStandardDplPresets() {
+    this.loadOfficialBskapDplByJenjang(false);
+  },
+
+  toggleDplBuilderCollapse() {
+    const bodyEl = document.getElementById('dpl-multi-builder-body');
+    if (bodyEl) bodyEl.classList.toggle('hidden');
+  },
+
+  initDplMultiBuilder() {
+    const selectEl = document.getElementById('dpl-builder-dimensi-select');
+    const chosenDim = selectEl ? selectEl.value : 'Keimanan dan Ketakwaan terhadap Tuhan YME';
+    this.handleBuilderDimensiSelectChange(chosenDim);
+  },
+
+  handleBuilderDimensiSelectChange(dimensiValue) {
+    const customWrap = document.getElementById('dpl-builder-custom-dimensi-wrap');
+    const jenjangSel = document.getElementById('dpl-jenjang-select');
+    const jenjang = jenjangSel ? jenjangSel.value : 'SD';
     const bucket = DB.getActiveClassBucket();
-    if (!bucket) return;
 
-    const presets = [
-      {
-        dimensi: 'Keimanan dan Ketakwaan terhadap Tuhan YME',
-        subdimensi: 'Mengamalkan nilai-nilai ajaran agama dan akhlak mulia dalam keseharian',
-        descB: 'mulai berkembang dalam membiasakan perilaku berdoa, bersyukur, dan berakhlak santun melalui pengingatan guru.',
-        descC: 'telah cakap dan konsisten mengamalkan sikap berdoa, jujur, serta santun kepada guru dan sesama teman.',
-        descM: 'sangat mahir dan menjadi teladan utama dalam mengamalkan nilai keimanan, kejujuran, serta kepedulian sosial di kelas.'
-      },
-      {
-        dimensi: 'Kewargaan',
-        subdimensi: 'Menghargai keberagaman budaya dan menaati kesepakatan kelas',
-        descB: 'mulai berkembang dalam memahami aturan kelas dan menghargai perbedaan pendapat bersama teman.',
-        descC: 'telah cakap mematuhi kesepakatan kelas serta menghormati keberagaman latar belakang teman secara harmonis.',
-        descM: 'sangat mahir memelopori sikap toleransi, cinta tanah air, dan kedisiplinan terhadap tata tertib sekolah.'
-      },
-      {
-        dimensi: 'Penalaran Kritis',
-        subdimensi: 'Mengidentifikasi, mengklarifikasi, dan mengolah informasi secara objektif',
-        descB: 'mulai berkembang dalam mengajukan pertanyaan dan mengolah informasi sederhana dengan bimbingan guru.',
-        descC: 'telah cakap menganalisis informasi pembelajaran dan menyampaikan alasan yang logis secara mandiri.',
-        descM: 'sangat mahir mengevaluasi berbagai informasi secara kritis dan merumuskan pemecahan masalah dengan tepat.'
-      },
-      {
-        dimensi: 'Kreativitas',
-        subdimensi: 'Menghasilkan gagasan dan karya inovatif dalam pembelajaran',
-        descB: 'mulai berkembang dalam mencoba ide baru dan mengekspresikan gagasan sederhana dengan arahan guru.',
-        descC: 'telah cakap mengembangkan ide kreatif dan menghasilkan karya pembelajaran yang orisinal.',
-        descM: 'sangat mahir menciptakan gagasan baru yang solutif dan menghasilkan karya berkualitas tinggi secara mandiri.'
-      },
-      {
-        dimensi: 'Kolaborasi',
-        subdimensi: 'Kerja sama tim dan kepedulian berbagi dalam kegiatan kelompok',
-        descB: 'mulai berkembang dalam berpartisipasi pada tugas kelompok dengan dorongan dari rekan dan guru.',
-        descC: 'telah cakap bekerja sama secara aktif, komunikatif, dan bertanggung jawab dalam mencapai tujuan kelompok.',
-        descM: 'sangat mahir mengoordinasikan kerja kelompok, membantu teman yang kesulitan, dan menjaga kekompakan tim.'
-      },
-      {
-        dimensi: 'Kemandirian',
-        subdimensi: 'Regulasi diri, inisiatif, dan tanggung jawab terhadap tugas belajar',
-        descB: 'mulai berkembang dalam menyelesaikan tugas mandiri dan mengelola waktu belajar dengan bimbingan guru.',
-        descC: 'telah cakap menunjukkan inisiatif belajar dan menyelesaikan tugas mandiri secara tuntas dan tepat waktu.',
-        descM: 'sangat mahir mengatur target belajarnya sendiri, ulet menghadapi tantangan, dan konsisten bertanggung jawab.'
-      },
-      {
-        dimensi: 'Kesehatan',
-        subdimensi: 'Menjaga kebugaran fisik, kebersihan diri, dan kesehatan mental-lingkungan',
-        descB: 'mulai berkembang dalam menjaga kerapian diri serta kebersihan meja dan lingkungan kelas.',
-        descC: 'telah cakap menerapkan perilaku hidup bersih, sehat, dan bersemangat mengikuti aktivitas pembelajaran.',
-        descM: 'sangat mahir menjaga kebugaran diri serta aktif menggerakkan kebiasaan hidup bersih dan sehat di sekolah.'
-      },
-      {
-        dimensi: 'Komunikasi',
-        subdimensi: 'Menyampaikan gagasan secara efektif, santun, dan menyimak secara aktif',
-        descB: 'mulai berkembang dalam menyampaikan pendapat secara lisan maupun tulisan dengan bimbingan guru.',
-        descC: 'telah cakap menyimak dengan baik dan mengomunikasikan gagasan secara runtut, jelas, serta santun.',
-        descM: 'sangat mahir berargumentasi secara komunikatif, persuasif, dan santun dalam berbagai forum diskusi kelas.'
-      }
-    ];
+    if (dimensiValue === '__CUSTOM__') {
+      if (customWrap) customWrap.classList.remove('hidden');
+      this.builderSubdimensionDrafts = [
+        {
+          tempId: 'SUB_DRAFT_' + Date.now(),
+          checked: true,
+          subdimensi: '',
+          descB: '',
+          descC: '',
+          descM: ''
+        }
+      ];
+      this.renderBuilderSubdimensionCards();
+      return;
+    }
 
-    if (!bucket.dplMaster) bucket.dplMaster = [];
-    presets.forEach((p, idx) => {
-      const exists = bucket.dplMaster.some(
-        item => item.dimensi.toLowerCase() === p.dimensi.toLowerCase()
-      );
-      if (!exists) {
-        bucket.dplMaster.push({
-          id: 'DPL_PRESET_' + Date.now() + '_' + idx,
-          ...p
+    if (customWrap) customWrap.classList.add('hidden');
+
+    const officialList = (OFFICIAL_BSKAP_058_2025_DPL[jenjang] || OFFICIAL_BSKAP_058_2025_DPL.SD).filter(
+      item => item.dimensi.toLowerCase() === dimensiValue.toLowerCase()
+    );
+
+    const existingInBucket = ((bucket && bucket.dplMaster) || []).filter(
+      item => item.dimensi.toLowerCase() === dimensiValue.toLowerCase()
+    );
+
+    const draftsMap = new Map();
+
+    officialList.forEach((offItem, idx) => {
+      const key = offItem.subdimensi.toLowerCase();
+      const savedMatch = existingInBucket.find(b => b.subdimensi.toLowerCase() === key);
+      draftsMap.set(key, {
+        tempId: `SUB_DRAFT_${idx}_${Date.now()}`,
+        checked: true,
+        subdimensi: savedMatch ? savedMatch.subdimensi : offItem.subdimensi,
+        descB: savedMatch ? savedMatch.descB : offItem.descB,
+        descC: savedMatch ? savedMatch.descC : offItem.descC,
+        descM: savedMatch ? savedMatch.descM : offItem.descM,
+        isAlreadyInClass: Boolean(savedMatch)
+      });
+    });
+
+    existingInBucket.forEach((bItem, idx) => {
+      const key = bItem.subdimensi.toLowerCase();
+      if (!draftsMap.has(key)) {
+        draftsMap.set(key, {
+          tempId: `SUB_CUST_${idx}_${Date.now()}`,
+          checked: true,
+          subdimensi: bItem.subdimensi,
+          descB: bItem.descB,
+          descC: bItem.descC,
+          descM: bItem.descM,
+          isAlreadyInClass: true
         });
       }
     });
 
-    DB.save();
-    this.renderDplMasterTable();
-    UI.showNotif(
-      '8 Dimensi Profil Lulusan Dimuat',
-      'Seluruh 8 Dimensi Profil Lulusan beserta deskripsi nilai B, C, dan M berhasil dimuat ke Data Kelas.',
-      'success'
-    );
+    this.builderSubdimensionDrafts = Array.from(draftsMap.values());
+    this.renderBuilderSubdimensionCards();
   },
 
-  renderDplMasterTable() {
-    const tbody = document.getElementById('tbody-data-kelas-dpl');
-    const bucket = DB.getActiveClassBucket();
-    if (!tbody || !bucket) return;
+  renderBuilderSubdimensionCards() {
+    const container = document.getElementById('dpl-builder-subdimensions-container');
+    if (!container) return;
 
-    const list = bucket.dplMaster || [];
-    if (list.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-            Belum ada deskripsi penilaian DPL. Silakan isi formulir di atas atau klik "Muat Template 8 Dimensi Profil Lulusan".
-          </td>
-        </tr>
+    if (this.builderSubdimensionDrafts.length === 0) {
+      container.innerHTML = `
+        <div class="alert-box alert-info">
+          Belum ada baris Sub-Dimensi. Klik tombol <strong>"➕ Tambah Baris Sub-Dimensi Baru"</strong> di atas.
+        </div>
       `;
       return;
     }
 
-    tbody.innerHTML = list.map((item, idx) => `
-      <tr>
-        <td>${idx + 1}</td>
-        <td><strong>${UI.escapeHtml(item.dimensi)}</strong></td>
-        <td>${UI.escapeHtml(item.subdimensi)}</td>
-        <td><span class="badge badge-warning" style="margin-bottom:0.25rem;">B</span><div style="font-size:0.82rem;">${UI.escapeHtml(item.descB)}</div></td>
-        <td><span class="badge badge-primary" style="margin-bottom:0.25rem;">C</span><div style="font-size:0.82rem;">${UI.escapeHtml(item.descC)}</div></td>
-        <td><span class="badge badge-success" style="margin-bottom:0.25rem;">M</span><div style="font-size:0.82rem;">${UI.escapeHtml(item.descM)}</div></td>
-        <td>
-          <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="DataKelasApp.deleteDplMaster('${item.id}')">
-            Hapus
-          </button>
-        </td>
-      </tr>
+    container.innerHTML = this.builderSubdimensionDrafts.map((draft, idx) => `
+      <div class="dpl-subItem-builder-card ${draft.checked ? 'selected-sub-card' : ''}">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.75rem; padding-bottom: 0.55rem; border-bottom: 1px solid #e2e8f0;">
+          <label style="display: flex; align-items: center; gap: 0.55rem; font-weight: 800; font-size: 0.92rem; color: var(--primary); cursor: pointer;">
+            <input
+              type="checkbox"
+              style="width: 18px; height: 18px;"
+              ${draft.checked ? 'checked' : ''}
+              onchange="DataKelasApp.toggleBuilderSubdimensionCheck(${idx}, this.checked)"
+            >
+            <span>Sub-Dimensi #${idx + 1} (Centang untuk Disimpan/Diaktifkan)</span>
+            ${draft.isAlreadyInClass ? '<span class="badge badge-success" style="font-size:0.7rem;">Sudah Ada di Kelas</span>' : '<span class="badge badge-info" style="font-size:0.7rem;">Sub-Dimensi Baru</span>'}
+          </label>
+
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.22rem 0.6rem;" onclick="DataKelasApp.autoComposeBuilderRow(${idx})">
+              ✨ Buat Deskripsi Otomatis B, C, M
+            </button>
+            ${this.builderSubdimensionDrafts.length > 1 ? `
+              <button type="button" class="btn btn-danger btn-sm" style="font-size: 0.75rem; padding: 0.22rem 0.6rem;" onclick="DataKelasApp.removeBuilderSubdimensionRow(${idx})">
+                ✕ Hapus Baris
+              </button>
+            ` : ''}
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label class="form-label" style="font-size: 0.8rem;">Nama Sub-Dimensi #${idx + 1} :</label>
+          <input
+            type="text"
+            class="form-control"
+            style="font-weight: 700;"
+            value="${UI.escapeHtml(draft.subdimensi)}"
+            placeholder="Contoh: Hubungan dengan Tuhan Yang Maha Esa / Penyampaian Argumentasi / Menyimak..."
+            oninput="DataKelasApp.updateBuilderDraftField(${idx}, 'subdimensi', this.value)"
+          >
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.78rem; color: #b45309;">Deskripsi Berkembang (B) :</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              style="font-size: 0.82rem;"
+              placeholder="Deskripsi capaian tahap Berkembang (B)..."
+              oninput="DataKelasApp.updateBuilderDraftField(${idx}, 'descB', this.value)"
+            >${UI.escapeHtml(draft.descB)}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.78rem; color: #1d4ed8;">Deskripsi Cakap (C — Standar) :</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              style="font-size: 0.82rem;"
+              placeholder="Deskripsi capaian tahap Cakap (C)..."
+              oninput="DataKelasApp.updateBuilderDraftField(${idx}, 'descC', this.value)"
+            >${UI.escapeHtml(draft.descC)}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" style="font-size: 0.78rem; color: #15803d;">Deskripsi Mahir (M — Melampaui) :</label>
+            <textarea
+              class="form-control"
+              rows="3"
+              style="font-size: 0.82rem;"
+              placeholder="Deskripsi capaian tahap Mahir (M)..."
+              oninput="DataKelasApp.updateBuilderDraftField(${idx}, 'descM', this.value)"
+            >${UI.escapeHtml(draft.descM)}</textarea>
+          </div>
+        </div>
+      </div>
     `).join('');
   },
 
-  deleteDplMaster(dplId) {
+  toggleBuilderSubdimensionCheck(index, isChecked) {
+    if (!this.builderSubdimensionDrafts[index]) return;
+    this.builderSubdimensionDrafts[index].checked = Boolean(isChecked);
+    this.renderBuilderSubdimensionCards();
+  },
+
+  setAllBuilderSubdimensionsChecked(checkState) {
+    this.builderSubdimensionDrafts.forEach(d => {
+      d.checked = Boolean(checkState);
+    });
+    this.renderBuilderSubdimensionCards();
+  },
+
+  updateBuilderDraftField(index, field, val) {
+    if (!this.builderSubdimensionDrafts[index]) return;
+    this.builderSubdimensionDrafts[index][field] = val;
+  },
+
+  addCustomSubdimensionRowToBuilder() {
+    this.builderSubdimensionDrafts.push({
+      tempId: 'SUB_NEW_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      checked: true,
+      subdimensi: '',
+      descB: '',
+      descC: '',
+      descM: '',
+      isAlreadyInClass: false
+    });
+    this.renderBuilderSubdimensionCards();
+  },
+
+  removeBuilderSubdimensionRow(index) {
+    this.builderSubdimensionDrafts.splice(index, 1);
+    this.renderBuilderSubdimensionCards();
+  },
+
+  autoComposeBuilderRow(index) {
+    const row = this.builderSubdimensionDrafts[index];
+    if (!row) return;
+
+    const dimSelect = document.getElementById('dpl-builder-dimensi-select');
+    const customDimInp = document.getElementById('dpl-builder-custom-dimensi-input');
+    const dimName = dimSelect && dimSelect.value === '__CUSTOM__'
+      ? (customDimInp && customDimInp.value.trim() ? customDimInp.value.trim() : 'Profil Lulusan')
+      : (dimSelect ? dimSelect.value : 'Profil Lulusan');
+
+    const subName = row.subdimensi && row.subdimensi.trim()
+      ? row.subdimensi.trim()
+      : `Aspek ${dimName}`;
+    row.subdimensi = subName;
+
+    const lowerSub = subName.charAt(0).toLowerCase() + subName.slice(1);
+    row.descB = `mulai berkembang dalam menunjukkan kemampuan ${lowerSub} pada dimensi ${dimName} dengan bimbingan guru.`;
+    row.descC = `telah cakap dan konsisten dalam menerapkan kemampuan ${lowerSub} pada dimensi ${dimName} sesuai harapan.`;
+    row.descM = `sangat mahir, mandiri, dan menjadi teladan bagi teman sebaya dalam mengamalkan ${lowerSub} pada dimensi ${dimName}.`;
+
+    this.renderBuilderSubdimensionCards();
+  },
+
+  saveSelectedBuilderSubdimensions() {
+    if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
     if (!bucket) return;
-    bucket.dplMaster = (bucket.dplMaster || []).filter(item => item.id !== dplId);
+
+    const dimSelect = document.getElementById('dpl-builder-dimensi-select');
+    const customDimInp = document.getElementById('dpl-builder-custom-dimensi-input');
+
+    const dimensiName = dimSelect && dimSelect.value === '__CUSTOM__'
+      ? (customDimInp ? customDimInp.value.trim() : '')
+      : (dimSelect ? dimSelect.value.trim() : '');
+
+    if (!dimensiName) {
+      UI.showNotif('Nama Dimensi Kosong', 'Harap pilih atau ketik nama Dimensi Profil Lulusan terlebih dahulu.', 'warning');
+      return;
+    }
+
+    const selectedRows = this.builderSubdimensionDrafts.filter(r => r.checked);
+    if (selectedRows.length === 0) {
+      UI.showNotif('Belum Ada Sub-Dimensi Tercentang', 'Centang minimal satu Sub-Dimensi untuk disimpan.', 'warning');
+      return;
+    }
+
+    for (const r of selectedRows) {
+      if (!r.subdimensi || !r.subdimensi.trim() || !r.descB.trim() || !r.descC.trim() || !r.descM.trim()) {
+        UI.showNotif(
+          'Deskripsi Sub-Dimensi Belum Lengkap',
+          'Pastikan setiap Sub-Dimensi yang dicentang telah memiliki Nama Sub-Dimensi serta Deskripsi B, C, dan M.',
+          'warning'
+        );
+        return;
+      }
+    }
+
+    if (!Array.isArray(bucket.dplMaster)) bucket.dplMaster = [];
+
+    let addedCount = 0;
+    let updatedCount = 0;
+
+    selectedRows.forEach((r, idx) => {
+      const cleanSub = r.subdimensi.trim();
+      const existingIdx = bucket.dplMaster.findIndex(
+        item => item.dimensi.toLowerCase() === dimensiName.toLowerCase() &&
+                item.subdimensi.toLowerCase() === cleanSub.toLowerCase()
+      );
+
+      if (existingIdx >= 0) {
+        bucket.dplMaster[existingIdx].dimensi = dimensiName;
+        bucket.dplMaster[existingIdx].subdimensi = cleanSub;
+        bucket.dplMaster[existingIdx].descB = r.descB.trim();
+        bucket.dplMaster[existingIdx].descC = r.descC.trim();
+        bucket.dplMaster[existingIdx].descM = r.descM.trim();
+        bucket.dplMaster[existingIdx].updatedTimestamp = Date.now();
+        updatedCount++;
+      } else {
+        bucket.dplMaster.push({
+          id: 'DPL_M_' + Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000),
+          dimensi: dimensiName,
+          subdimensi: cleanSub,
+          descB: r.descB.trim(),
+          descC: r.descC.trim(),
+          descM: r.descM.trim(),
+          updatedTimestamp: Date.now()
+        });
+        addedCount++;
+      }
+    });
+
+    DB.save();
+    this.activeDplFilterDimensi = dimensiName;
+    this.handleBuilderDimensiSelectChange(dimSelect ? dimSelect.value : dimensiName);
+    this.renderDplMasterTable();
+    this.updateTabBadges();
+
+    UI.showNotif(
+      'Sub-Dimensi DPL Berhasil Disimpan',
+      `Dimensi "${dimensiName}": ${addedCount} Sub-Dimensi baru ditambahkan dan ${updatedCount} Sub-Dimensi diperbarui.`,
+      'success'
+    );
+  },
+
+  setDplFilterDimensi(dimName) {
+    this.activeDplFilterDimensi = dimName || 'ALL';
+    this.renderDplMasterTable();
+  },
+
+  renderDplMasterTable() {
+    const bucket = DB.getActiveClassBucket();
+    const filterContainer = document.getElementById('dpl-master-dimension-filter-chips');
+    const groupedContainer = document.getElementById('dpl-master-grouped-tables-container');
+    if (!bucket || !groupedContainer) return;
+
+    const list = bucket.dplMaster || [];
+    const groupedMap = new Map();
+
+    list.forEach(item => {
+      if (!item || !item.dimensi) return;
+      const dName = item.dimensi.trim();
+      if (!groupedMap.has(dName)) {
+        groupedMap.set(dName, []);
+      }
+      groupedMap.get(dName).push(item);
+    });
+
+    const allDimensions = Array.from(groupedMap.keys());
+    if (this.activeDplFilterDimensi !== 'ALL' && !groupedMap.has(this.activeDplFilterDimensi)) {
+      this.activeDplFilterDimensi = 'ALL';
+    }
+
+    if (filterContainer) {
+      let chipsHtml = `
+        <button
+          type="button"
+          class="dpl-dimensi-chip ${this.activeDplFilterDimensi === 'ALL' ? 'active-dim-chip' : ''}"
+          onclick="DataKelasApp.setDplFilterDimensi('ALL')"
+        >
+          📚 Semua Dimensi (${allDimensions.length} Dimensi / ${list.length} Sub-Dimensi)
+        </button>
+      `;
+
+      allDimensions.forEach((dimName, dIdx) => {
+        const countSub = groupedMap.get(dimName).length;
+        const isAct = this.activeDplFilterDimensi === dimName;
+        const safeDim = UI.escapeHtml(dimName).replace(/'/g, "\\'");
+        chipsHtml += `
+          <button
+            type="button"
+            class="dpl-dimensi-chip ${isAct ? 'active-dim-chip' : ''}"
+            onclick="DataKelasApp.setDplFilterDimensi('${safeDim}')"
+          >
+            ${dIdx + 1}. ${UI.escapeHtml(dimName)} (${countSub})
+          </button>
+        `;
+      });
+
+      filterContainer.innerHTML = chipsHtml;
+    }
+
+    if (list.length === 0) {
+      groupedContainer.innerHTML = `
+        <div class="alert-box alert-warning">
+          Belum ada Master Deskripsi DPL di kelas ini. Klik tombol <strong>"📥 Muat Semua 8 Dimensi & Sub-Dimensi Resmi"</strong> di atas untuk memuat standar SK BSKAP Nomor 058/H/KR/2025 secara instan.
+        </div>
+      `;
+      return;
+    }
+
+    const targetDimensions = this.activeDplFilterDimensi === 'ALL'
+      ? allDimensions
+      : [this.activeDplFilterDimensi];
+
+    groupedContainer.innerHTML = targetDimensions.map((dimName, gIdx) => {
+      const subItems = groupedMap.get(dimName) || [];
+      const safeDim = UI.escapeHtml(dimName).replace(/'/g, "\\'");
+
+      const rowsHtml = subItems.map((item, sIdx) => `
+        <tr>
+          <td style="width: 48px; text-align: center; font-weight: 700;">${sIdx + 1}</td>
+          <td style="width: 210px;">
+            <div style="font-weight: 800; color: var(--dark); font-size: 0.9rem;">${UI.escapeHtml(item.subdimensi)}</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">Dimensi: ${UI.escapeHtml(item.dimensi)}</div>
+          </td>
+          <td>
+            <span class="badge badge-warning" style="margin-bottom: 0.25rem;">Berkembang (B)</span>
+            <div style="font-size: 0.82rem; line-height: 1.5;">${UI.escapeHtml(item.descB)}</div>
+          </td>
+          <td>
+            <span class="badge badge-primary" style="margin-bottom: 0.25rem;">Cakap (C)</span>
+            <div style="font-size: 0.82rem; line-height: 1.5;">${UI.escapeHtml(item.descC)}</div>
+          </td>
+          <td>
+            <span class="badge badge-success" style="margin-bottom: 0.25rem;">Mahir (M)</span>
+            <div style="font-size: 0.82rem; line-height: 1.5;">${UI.escapeHtml(item.descM)}</div>
+          </td>
+          <td style="width: 155px;">
+            <div class="write-action-btn" style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.openEditDplModal('${item.id}')">
+                ✏️ Edit
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="DataKelasApp.deleteDplMaster('${item.id}')">
+                🗑️ Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+
+      return `
+        <div style="margin-bottom: 1.25rem; border: 2px solid #cbd5e1; border-radius: 10px; overflow: hidden; background: #ffffff; box-shadow: var(--shadow-sm);">
+          <div class="dpl-group-header">
+            <div>
+              <span class="badge badge-warning" style="margin-right: 0.4rem;">DIMENSI #${gIdx + 1}</span>
+              <strong style="font-size: 1rem;">${UI.escapeHtml(dimName)}</strong>
+              <span class="badge badge-info" style="margin-left: 0.4rem;">${subItems.length} Sub-Dimensi</span>
+            </div>
+            <div class="write-action-btn" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-warning btn-sm" style="color: #0f172a; font-weight: 700;" onclick="DataKelasApp.openAddSubdimensionModalForDimensi('${safeDim}')">
+                + Tambah Sub-Dimensi
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.16); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="DataKelasApp.promptRenameDimension('${safeDim}')">
+                ✏️ Edit Nama Dimensi
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="DataKelasApp.deleteEntireDimension('${safeDim}')">
+                🗑️ Hapus Dimensi
+              </button>
+            </div>
+          </div>
+
+          <div class="table-responsive" style="border: none; border-radius: 0;">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 48px; text-align: center;">No</th>
+                  <th style="width: 210px;">Sub-Dimensi</th>
+                  <th>Deskripsi Nilai B (Berkembang)</th>
+                  <th>Deskripsi Nilai C (Cakap)</th>
+                  <th>Deskripsi Nilai M (Mahir)</th>
+                  <th style="width: 155px;">Aksi (Edit / Hapus)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  openEditDplModal(dplId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const item = (bucket.dplMaster || []).find(d => d.id === dplId);
+    if (!item) return;
+
+    document.getElementById('modal-edit-dpl-title').textContent = 'Edit Dimensi, Sub-Dimensi & Deskripsi Penilaian';
+    document.getElementById('edit-dpl-item-id').value = item.id;
+    document.getElementById('edit-dpl-dimensi-input').value = item.dimensi;
+    document.getElementById('edit-dpl-subdimensi-input').value = item.subdimensi;
+    document.getElementById('edit-dpl-desc-B').value = item.descB;
+    document.getElementById('edit-dpl-desc-C').value = item.descC;
+    document.getElementById('edit-dpl-desc-M').value = item.descM;
+
+    const modal = document.getElementById('modal-edit-dpl-item');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  openAddSubdimensionModalForDimensi(dimensiName) {
+    if (AppState.isReadOnlyInspection) return;
+    document.getElementById('modal-edit-dpl-title').textContent = `Tambah Sub-Dimensi Baru pada "${dimensiName}"`;
+    document.getElementById('edit-dpl-item-id').value = '__NEW__';
+    document.getElementById('edit-dpl-dimensi-input').value = dimensiName;
+    document.getElementById('edit-dpl-subdimensi-input').value = '';
+    document.getElementById('edit-dpl-desc-B').value = '';
+    document.getElementById('edit-dpl-desc-C').value = '';
+    document.getElementById('edit-dpl-desc-M').value = '';
+
+    const modal = document.getElementById('modal-edit-dpl-item');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeEditDplModal() {
+    const modal = document.getElementById('modal-edit-dpl-item');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  autoComposeModalDplDescriptions() {
+    const dimInp = document.getElementById('edit-dpl-dimensi-input');
+    const subInp = document.getElementById('edit-dpl-subdimensi-input');
+    const bInp = document.getElementById('edit-dpl-desc-B');
+    const cInp = document.getElementById('edit-dpl-desc-C');
+    const mInp = document.getElementById('edit-dpl-desc-M');
+
+    const dim = dimInp && dimInp.value.trim() ? dimInp.value.trim() : 'Profil Lulusan';
+    const sub = subInp && subInp.value.trim() ? subInp.value.trim() : `Kompetensi ${dim}`;
+    if (subInp && !subInp.value.trim()) subInp.value = sub;
+
+    const lowerSub = sub.charAt(0).toLowerCase() + sub.slice(1);
+    if (bInp) bInp.value = `mulai berkembang dalam ${lowerSub} pada dimensi ${dim} dengan bimbingan guru.`;
+    if (cInp) cInp.value = `telah cakap dan konsisten dalam menerapkan ${lowerSub} pada dimensi ${dim} sesuai standar.`;
+    if (mInp) mInp.value = `sangat mahir, mandiri, dan menjadi teladan bagi teman sebaya dalam ${lowerSub} pada dimensi ${dim}.`;
+  },
+
+  saveEditedDplItem(event) {
+    event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const idVal = document.getElementById('edit-dpl-item-id').value;
+    const dimensi = document.getElementById('edit-dpl-dimensi-input').value.trim();
+    const subdimensi = document.getElementById('edit-dpl-subdimensi-input').value.trim();
+    const descB = document.getElementById('edit-dpl-desc-B').value.trim();
+    const descC = document.getElementById('edit-dpl-desc-C').value.trim();
+    const descM = document.getElementById('edit-dpl-desc-M').value.trim();
+
+    if (!dimensi || !subdimensi || !descB || !descC || !descM) {
+      UI.showNotif('Data Belum Lengkap', 'Harap lengkapi Dimensi, Sub-Dimensi, dan Deskripsi B, C, serta M.', 'warning');
+      return;
+    }
+
+    if (!Array.isArray(bucket.dplMaster)) bucket.dplMaster = [];
+
+    if (idVal === '__NEW__') {
+      bucket.dplMaster.push({
+        id: 'DPL_M_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        dimensi,
+        subdimensi,
+        descB,
+        descC,
+        descM,
+        updatedTimestamp: Date.now()
+      });
+    } else {
+      const target = bucket.dplMaster.find(d => d.id === idVal);
+      if (target) {
+        target.dimensi = dimensi;
+        target.subdimensi = subdimensi;
+        target.descB = descB;
+        target.descC = descC;
+        target.descM = descM;
+        target.updatedTimestamp = Date.now();
+      }
+    }
+
+    DB.save();
+    this.closeEditDplModal();
+    this.initDplMultiBuilder();
+    this.renderDplMasterTable();
+    this.updateTabBadges();
+
+    UI.showNotif(
+      'Data DPL Berhasil Disimpan',
+      `Sub-Dimensi "${subdimensi}" pada Dimensi "${dimensi}" berhasil disimpan.`,
+      'success'
+    );
+  },
+
+  promptRenameDimension(oldDimName) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const newName = window.prompt(`Ubah nama Dimensi "${oldDimName}" menjadi:`, oldDimName);
+    if (!newName || !newName.trim() || newName.trim() === oldDimName) return;
+
+    const cleanNew = newName.trim();
+    (bucket.dplMaster || []).forEach(item => {
+      if (item.dimensi.toLowerCase() === oldDimName.toLowerCase()) {
+        item.dimensi = cleanNew;
+        item.updatedTimestamp = Date.now();
+      }
+    });
+
+    if (this.activeDplFilterDimensi === oldDimName) {
+      this.activeDplFilterDimensi = cleanNew;
+    }
+
     DB.save();
     this.renderDplMasterTable();
+    UI.showNotif('Nama Dimensi Diperbarui', `Dimensi berhasil diubah menjadi "${cleanNew}".`, 'success');
+  },
+
+  deleteEntireDimension(dimName) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !Array.isArray(bucket.dplMaster)) return;
+
+    const ok = window.confirm(`Hapus seluruh Sub-Dimensi di bawah Dimensi "${dimName}"?`);
+    if (!ok) return;
+
+    bucket.dplMaster.forEach(item => {
+      if (item.dimensi.toLowerCase() === dimName.toLowerCase() && typeof DB.markRecordDeleted === 'function') {
+        DB.markRecordDeleted(item.id);
+      }
+    });
+
+    bucket.dplMaster = bucket.dplMaster.filter(item => item.dimensi.toLowerCase() !== dimName.toLowerCase());
+    if (this.activeDplFilterDimensi === dimName) {
+      this.activeDplFilterDimensi = 'ALL';
+    }
+
+    DB.save();
+    this.initDplMultiBuilder();
+    this.renderDplMasterTable();
+    this.updateTabBadges();
+  },
+
+  deleteDplMaster(dplId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const target = (bucket.dplMaster || []).find(item => item.id === dplId);
+    if (!target) return;
+
+    if (!window.confirm(`Hapus Sub-Dimensi "${target.subdimensi}" (${target.dimensi})?`)) return;
+
+    if (typeof DB.markRecordDeleted === 'function') {
+      DB.markRecordDeleted(dplId);
+    }
+    bucket.dplMaster = (bucket.dplMaster || []).filter(item => item.id !== dplId);
+    DB.save();
+    this.initDplMultiBuilder();
+    this.renderDplMasterTable();
+    this.updateTabBadges();
+  },
+
+  clearAllDplMaster() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    if (!window.confirm('Kosongkan seluruh daftar Master DPL di kelas ini? Anda dapat memuatnya kembali kapan saja.')) return;
+
+    if (Array.isArray(bucket.dplMaster) && typeof DB.markRecordDeleted === 'function') {
+      bucket.dplMaster.forEach(d => DB.markRecordDeleted(d.id));
+    }
+    bucket.dplMaster = [];
+    this.activeDplFilterDimensi = 'ALL';
+    DB.save();
+    this.renderDplMasterTable();
+    this.updateTabBadges();
   },
 
   handleAddEkskulMaster(event) {
@@ -8552,6 +10234,7 @@ const IntraApp = {
     if (namaInp) namaInp.value = '';
     if (jadwalInp) jadwalInp.value = '';
     this.renderEkskulMasterTable();
+    this.updateTabBadges();
 
     UI.showNotif(
       'Ekstrakurikuler Ditambahkan',
@@ -8586,6 +10269,7 @@ const IntraApp = {
 
     DB.save();
     this.renderEkskulMasterTable();
+    this.updateTabBadges();
     UI.showNotif('Daftar Ekstrakurikuler Dimuat', 'Program ekstrakurikuler populer berhasil ditambahkan ke Data Kelas.', 'success');
   },
 
@@ -8624,17 +10308,26 @@ const IntraApp = {
   deleteEkskulMaster(ekskulId) {
     const bucket = DB.getActiveClassBucket();
     if (!bucket) return;
+    if (typeof DB.markRecordDeleted === 'function') {
+      DB.markRecordDeleted(ekskulId);
+    }
     bucket.ekskulMaster = (bucket.ekskulMaster || []).filter(e => e.id !== ekskulId);
     DB.save();
     this.renderEkskulMasterTable();
+    this.updateTabBadges();
   },
 
-  saveAllDataKelas() {
+  async saveAllDataKelas() {
     this.readScheduleFieldsToBucket();
-    DB.save();
+    if (typeof DB.saveImmediate === 'function') {
+      await DB.saveImmediate();
+    } else {
+      DB.save();
+    }
+    this.updateTabBadges();
     UI.showNotif(
-      'Data Kelas Berhasil Disimpan',
-      'Seluruh daftar nama & akun siswa, jadwal pelajaran Senin–Sabtu, deskripsi penilaian DPL (B, C, M), serta program ekstrakurikuler telah disimpan dan disinkronkan.',
+      'Data Kelas Berhasil Disimpan Permanen',
+      'Seluruh daftar nama & akun siswa, jadwal pelajaran Senin–Sabtu, Master DPL (SK BSKAP Nomor 058/H/KR/2025), serta program ekstrakurikuler telah disimpan dan disinkronkan ke seluruh pilar.',
       'success'
     );
   }
