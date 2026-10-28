@@ -5975,184 +5975,467 @@ body {
     </div>
       </section>
 
-   <section id="view-student-dashboard" class="app-view hidden">
-    <div class="card" style="background: linear-gradient(135deg, #78350f 0%, #d97706 55%, #0f766e 100%); color: #ffffff; border: none;">
+     <section id="view-student-dashboard" class="app-view hidden">
+    <style>
+      .std-hero-banner {
+        background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #0f766e 100%);
+        color: #ffffff;
+        border-radius: var(--radius-lg);
+        padding: 1.65rem 2rem;
+        margin-bottom: 1.15rem;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .std-tabs-navbar {
+        background: #0f172a;
+        padding: 0.8rem 1.15rem;
+        border-radius: var(--radius-lg);
+        margin-bottom: 1.35rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.55rem;
+        box-shadow: var(--shadow-md);
+        border: 1px solid #1e293b;
+      }
+      .std-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.58rem 1.05rem;
+        font-size: 0.83rem;
+        font-weight: 700;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #1e293b;
+        color: #e2e8f0 !important;
+        cursor: pointer;
+        transition: all 0.18s ease;
+      }
+      .std-tab-btn:hover {
+        background: #334155;
+        color: #ffffff !important;
+        transform: translateY(-1px);
+      }
+      .std-tab-btn.active-std-tab {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+        color: #0f172a !important;
+        border-color: #fde68a !important;
+        box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.28);
+      }
+      .std-tab-pill {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.1rem 0.48rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 800;
+        background: rgba(255, 255, 255, 0.16);
+        color: inherit;
+      }
+      .std-tab-btn.active-std-tab .std-tab-pill {
+        background: #0f172a;
+        color: #ffffff;
+      }
+      .std-presensi-card {
+        background: #ffffff;
+        border: 2px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 1.15rem 1.25rem;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+      }
+      .std-dpl-highlight-box {
+        border-radius: var(--radius-lg);
+        padding: 1.25rem;
+        height: 100%;
+        box-shadow: var(--shadow-sm);
+      }
+      .std-dpl-chip-item {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.65rem 0.85rem;
+        margin-bottom: 0.55rem;
+        font-size: 0.84rem;
+      }
+    </style>
+
+    <!-- HEADER UTAMA PORTAL SISWA -->
+    <div class="std-hero-banner no-print">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
-          <span class="badge badge-primary" style="margin-bottom: 0.35rem;">PORTAL BELAJAR SISWA TERPADU</span>
-          <h2 id="student-dash-welcome" style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.2rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+            <span class="badge badge-warning">PORTAL AKADEMIK & CAPAIAN BELAJAR SISWA</span>
+            <span id="student-sync-badge" class="badge badge-success">✓ Tersinkronisasi Guru Kelas & Guru Mapel</span>
+          </div>
+          <h2 id="student-dash-welcome" style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.25rem;">
             Halo, Siswa
           </h2>
-          <p id="student-dash-subinfo" style="font-size: 0.88rem; color: #fef3c7;">
+          <p id="student-dash-subinfo" style="font-size: 0.88rem; color: #dbeafe;">
             Kelas: - | Sekolah: - | Wali Kelas: -
           </p>
         </div>
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-primary" style="background: #1e3a8a; border: 1px solid rgba(255,255,255,0.4); box-shadow: var(--shadow-md);" onclick="StudentApp.openStudentGradesView()">
-            📊 Menu Lihat Penilaian &rarr;
+        <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-warning btn-sm" onclick="StudentApp.syncStudentDataFromCloud()">
+            🔄 Segarkan Data & Nilai Terbaru
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="window.print()">
+            🖨️ Cetak Laporan Siswa
           </button>
         </div>
       </div>
     </div>
 
-    <div class="grid-4" style="margin-bottom: 1.25rem;">
-      <div class="card" style="margin-bottom: 0; background: #f0fdf4; border-color: #86efac;">
-        <div class="card-subtitle">Kehadiran Anda (Hadir)</div>
-        <div id="student-stat-hadir" style="font-size: 1.6rem; font-weight: 800; color: var(--success);">0 Hari</div>
-        <div class="form-hint" id="student-stat-attendance-detail">Sakit: 0 | Izin: 0 | Alpa: 0</div>
-      </div>
-
-      <div class="card" style="margin-bottom: 0; background: #eff6ff; border-color: #93c5fd;">
-        <div class="card-subtitle">Kelompok Kokurikuler (P5) Anda</div>
-        <div id="student-stat-group-name" style="font-size: 1.2rem; font-weight: 800; color: var(--primary-light); margin-top: 0.3rem;">Belum Terbagi</div>
-        <div class="form-hint" id="student-stat-group-role">Peran: Anggota Tim</div>
-      </div>
-
-      <div class="card" style="margin-bottom: 0; background: #fffbeb; border-color: #fde68a;">
-        <div class="card-subtitle">Tahap Projek P5 Berjalan</div>
-        <div id="student-stat-project-stage" style="font-size: 1.2rem; font-weight: 800; color: var(--accent); margin-top: 0.3rem;">-</div>
-        <div class="form-hint" id="student-stat-project-theme">Tema: -</div>
-      </div>
-
-      <div class="card" style="margin-bottom: 0; background: #f5f3ff; border: 2px solid #a78bfa; cursor: pointer;" onclick="StudentApp.openStudentGradesView()">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div class="card-subtitle" style="color: #5b21b6; font-weight: 700;">Capaian Akademik</div>
-          <span class="badge badge-primary">Klik Lihat</span>
-        </div>
-        <div style="font-size: 1.15rem; font-weight: 800; color: #4c1d95; margin-top: 0.3rem;">Lihat Penilaian</div>
-        <div class="form-hint" style="color: #6d28d9;">Nilai Akhir & History Per Mapel &rarr;</div>
+    <!-- BILAH NAVIGASI 5 TAB PORTAL SISWA (RAPI & ANTI-SCROLL PANJANG) -->
+    <div class="std-tabs-navbar no-print">
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+        <button type="button" id="btn-std-tab-kehadiran" class="std-tab-btn active-std-tab" onclick="StudentApp.switchStudentTab('kehadiran')">
+          <span>📅 1. Kehadiran (H/S/I/A) & Jadwal</span>
+          <span id="std-tab-badge-kehadiran" class="std-tab-pill">0 Hari</span>
+        </button>
+        <button type="button" id="btn-std-tab-akademik" class="std-tab-btn" onclick="StudentApp.switchStudentTab('akademik')">
+          <span>📚 2. Rekap Nilai Akademik</span>
+          <span id="std-tab-badge-akademik" class="std-tab-pill">0 Mapel</span>
+        </button>
+        <button type="button" id="btn-std-tab-dpl" class="std-tab-btn" onclick="StudentApp.switchStudentTab('dpl')">
+          <span>🎯 3. Analisis DPL (Unggul & Lemah)</span>
+          <span id="std-tab-badge-dpl" class="std-tab-pill">0 Aspek</span>
+        </button>
+        <button type="button" id="btn-std-tab-kokurikuler" class="std-tab-btn" onclick="StudentApp.switchStudentTab('kokurikuler')">
+          <span>🌱 4. Nilai Kokurikuler</span>
+          <span id="std-tab-badge-koku" class="std-tab-pill">P5 / Koku</span>
+        </button>
+        <button type="button" id="btn-std-tab-ekskul" class="std-tab-btn" onclick="StudentApp.switchStudentTab('ekskul')">
+          <span>🏆 5. Nilai Ekstrakurikuler</span>
+          <span id="std-tab-badge-ekskul" class="std-tab-pill">0 Ekskul</span>
+        </button>
       </div>
     </div>
 
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div>
-            <h3 class="card-title">Jadwal Pelajaran Kelas Anda (Senin – Sabtu)</h3>
-            <p class="card-subtitle">Tersinkronisasi otomatis dengan jadwal yang disusun oleh Guru Kelas.</p>
-          </div>
+    <!-- =================================================================== -->
+    <!-- TAB 1: REKAP KEHADIRAN (HADIR, SAKIT, IZIN, ALPA) & JADWAL KELAS    -->
+    <!-- =================================================================== -->
+    <div id="std-panel-kehadiran" class="std-tab-panel">
+      <!-- 4 KARTU UTAMA JUMLAH HARI HADIR, SAKIT, IZIN, ALPA -->
+      <div class="grid-4" style="margin-bottom: 1.25rem;">
+        <div class="std-presensi-card" style="background: #f0fdf4; border-color: #86efac;">
+          <span class="badge badge-success" style="margin-bottom: 0.35rem;">HADIR (H)</span>
+          <div id="student-stat-hadir" style="font-size: 2rem; font-weight: 900; color: #15803d; line-height: 1.15;">0 Hari</div>
+          <div class="form-hint" id="student-stat-persen-hadir" style="color: #166534; font-weight: 700;">Persentase Kehadiran: 0%</div>
         </div>
-        <div id="student-schedule-grid" class="grid-2"></div>
+
+        <div class="std-presensi-card" style="background: #f0f9ff; border-color: #7dd3fc;">
+          <span class="badge badge-info" style="margin-bottom: 0.35rem;">SAKIT (S)</span>
+          <div id="student-stat-sakit" style="font-size: 2rem; font-weight: 900; color: #0369a1; line-height: 1.15;">0 Hari</div>
+          <div class="form-hint" style="color: #075985;">Keterangan Sakit Tercatat</div>
+        </div>
+
+        <div class="std-presensi-card" style="background: #fffbeb; border-color: #fde68a;">
+          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">IZIN (I)</span>
+          <div id="student-stat-izin" style="font-size: 2rem; font-weight: 900; color: #b45309; line-height: 1.15;">0 Hari</div>
+          <div class="form-hint" style="color: #92400e;">Keterangan Izin Tercatat</div>
+        </div>
+
+        <div class="std-presensi-card" style="background: #fef2f2; border-color: #fca5a5;">
+          <span class="badge badge-danger" style="margin-bottom: 0.35rem;">ALPA (A)</span>
+          <div id="student-stat-alpa" style="font-size: 2rem; font-weight: 900; color: #b91c1c; line-height: 1.15;">0 Hari</div>
+          <div class="form-hint" style="color: #991b1b;">Tanpa Keterangan</div>
+        </div>
       </div>
 
-      <div class="card">
+      <div class="grid-2">
+        <!-- JADWAL PELAJARAN KELAS -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div>
+              <span class="badge badge-primary" style="margin-bottom: 0.25rem;">JADWAL MINGGUAN KELAS</span>
+              <h3 class="card-title">Jadwal Pelajaran Anda (Senin – Sabtu)</h3>
+              <p class="card-subtitle">Tersinkronisasi otomatis dengan jadwal Data Kelas.</p>
+            </div>
+          </div>
+          <div id="student-schedule-grid" class="grid-2"></div>
+        </div>
+
+        <!-- TABEL RIWAYAT PRESENSI HARIAN SISWA -->
+        <div class="card" style="margin-bottom: 0;">
+          <div class="card-header">
+            <div>
+              <span class="badge badge-success" style="margin-bottom: 0.25rem;">REKAM JEJAK PRESENSI INDIVIDU</span>
+              <h3 class="card-title">Riwayat Kehadiran Harian Anda</h3>
+              <p class="card-subtitle" id="student-stat-attendance-detail">Total Hari Efektif Tercatat: 0 Hari</p>
+            </div>
+          </div>
+          <div class="table-responsive" style="max-height: 330px; overflow-y: auto;">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 45px;">No</th>
+                  <th>Hari & Tanggal</th>
+                  <th style="text-align: center;">Status</th>
+                  <th>Catatan Guru</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-student-attendance-history"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: REKAP PENILAIAN AKADEMIK KHUSUS SISWA (GURU KELAS & MAPEL)   -->
+    <!-- =================================================================== -->
+    <div id="std-panel-akademik" class="std-tab-panel hidden">
+      <div class="grid-3" style="margin-bottom: 1.25rem;">
+        <div class="card" style="margin-bottom: 0; background: #eff6ff; border-color: #93c5fd; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Total Mata Pelajaran Terdaftar</div>
+          <div id="student-grades-stat-mapel" style="font-size: 1.65rem; font-weight: 800; color: var(--primary-light);">0 Mapel</div>
+          <div class="form-hint">Gabungan Guru Kelas & Guru Mapel</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; background: #f0fdfa; border-color: #5eead4; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Total Penilaian Masuk</div>
+          <div id="student-grades-stat-records" style="font-size: 1.65rem; font-weight: 800; color: var(--secondary);">0 Penilaian</div>
+          <div class="form-hint">Penilaian Formatif & Sumatif</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; background: #f0fdf4; border-color: #86efac; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Rata-Rata Nilai Akademik Anda</div>
+          <div id="student-grades-stat-average" style="font-size: 1.65rem; font-weight: 800; color: var(--success);">0</div>
+          <div class="form-hint">Rerata dari mata pelajaran yang sudah dinilai</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 0;">
         <div class="card-header">
           <div>
-            <h3 class="card-title">Papan Informasi Projek Kokurikuler (P5) Hari Ini</h3>
-            <p class="card-subtitle">Panduan fokus kegiatan dan alat/bahan yang perlu dipersiapkan kelompok Anda.</p>
+            <span class="badge badge-primary" style="margin-bottom: 0.25rem;">SINKRONISASI NILAI GURU KELAS & GURU MAPEL</span>
+            <h3 class="card-title" id="student-grades-header-name">Rekapitulasi Nilai Akademik per Mata Pelajaran</h3>
+            <p class="card-subtitle" id="student-grades-header-sub">
+              Klik pada <strong>Angka Nilai Akhir</strong> atau tombol <strong>Lihat Detail Nilai</strong> untuk membuka rincian tanggal penilaian, Tujuan Pembelajaran, nilai Pengetahuan, dan Keterampilan.
+            </p>
+          </div>
+          <span class="badge badge-info">Klik Nilai untuk Rincian</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">No</th>
+                <th>Mata Pelajaran</th>
+                <th style="text-align: center;">Jumlah Penilaian</th>
+                <th style="text-align: center;">Rata-Rata Formatif</th>
+                <th style="text-align: center;">Rata-Rata Sumatif</th>
+                <th style="text-align: center;">Rata-Rata Pengetahuan</th>
+                <th style="text-align: center;">Rata-Rata Keterampilan</th>
+                <th style="text-align: center; background: #f0fdf4;">Nilai Akhir Mapel</th>
+                <th class="no-print" style="width: 175px;">Rincian Riwayat</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-student-subject-grades"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: ANALISIS PENILAIAN DPL (DIMENSI UNGGUL & PERLU BIMBINGAN)    -->
+    <!-- =================================================================== -->
+    <div id="std-panel-dpl" class="std-tab-panel hidden">
+      <!-- DUA KARTU SOROTAN: DIMENSI/SUB-DIMENSI UNGGUL VS PERLU BIMBINGAN -->
+      <div class="grid-2" style="margin-bottom: 1.25rem;">
+        <div class="std-dpl-highlight-box" style="background: #f0fdf4; border: 2px solid #86efac;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+            <span class="badge badge-success">🌟 DIMENSI & SUB-DIMENSI UNGGUL (MAHIR / CAKAP)</span>
+            <span id="student-dpl-strong-count" class="badge badge-primary">0 Sub-Dimensi</span>
+          </div>
+          <h4 style="font-size: 1.02rem; color: #14532d; margin-bottom: 0.35rem;">
+            Kekuatan Karakter & Kompetensi Profil Lulusan Anda
+          </h4>
+          <p style="font-size: 0.8rem; color: #166534; margin-bottom: 0.85rem;">
+            Daftar Dimensi dan Sub-Dimensi tempat Anda telah mencapai predikat <strong>Mahir (M)</strong> atau <strong>Cakap (C)</strong>:
+          </p>
+          <div id="student-dpl-strengths-list"></div>
+        </div>
+
+        <div class="std-dpl-highlight-box" style="background: #fffbeb; border: 2px solid #fcd34d;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem;">
+            <span class="badge badge-warning">📈 DIMENSI & SUB-DIMENSI PERLU DITINGKATKAN (BERKEMBANG)</span>
+            <span id="student-dpl-weak-count" class="badge badge-danger">0 Sub-Dimensi</span>
+          </div>
+          <h4 style="font-size: 1.02rem; color: #78350f; margin-bottom: 0.35rem;">
+            Aspek Dimensi yang Masih Perlu Latihan & Bimbingan
+          </h4>
+          <p style="font-size: 0.8rem; color: #92400e; margin-bottom: 0.85rem;">
+            Daftar Dimensi dan Sub-Dimensi yang masih berada pada tahap <strong>Berkembang (B)</strong> sehingga perlu terus dilatih:
+          </p>
+          <div id="student-dpl-weaknesses-list"></div>
+        </div>
+      </div>
+
+      <!-- TABEL LENGKAP PENILAIAN DPL SISWA -->
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-primary" style="margin-bottom: 0.25rem;">RINCIAN CAPAIAN 8 DIMENSI PROFIL LULUSAN</span>
+            <h3 class="card-title">Tabel Rekap Penilaian Dimensi Profil Lulusan (DPL) Anda</h3>
+            <p class="card-subtitle">Menampilkan seluruh hasil asesmen Dimensi dan Sub-Dimensi yang telah dinilai oleh Bapak/Ibu Guru.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">No</th>
+                <th style="width: 120px;">Tanggal</th>
+                <th style="width: 210px;">Dimensi Profil Lulusan</th>
+                <th style="width: 220px;">Sub-Dimensi</th>
+                <th style="width: 140px; text-align: center;">Predikat Capaian</th>
+                <th>Deskripsi Capaian Individu Siswa</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-student-dpl-records"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: NILAI & CAPAIAN KOKURIKULER SISWA (TANPA JURNAL LOGBOOK)     -->
+    <!-- =================================================================== -->
+    <div id="std-panel-kokurikuler" class="std-tab-panel hidden">
+      <div class="grid-3" style="margin-bottom: 1.25rem;">
+        <div class="card" style="margin-bottom: 0; background: #eff6ff; border-color: #93c5fd; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Kelompok Kokurikuler Anda</div>
+          <div id="student-stat-group-name" style="font-size: 1.25rem; font-weight: 800; color: var(--primary-light); margin-top: 0.25rem;">Belum Terbagi</div>
+          <div class="form-hint" id="student-stat-group-role">Peran: Anggota Tim</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; background: #f0fdfa; border-color: #5eead4; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Tema & Kegiatan Kokurikuler Kelas</div>
+          <div id="student-stat-project-theme" style="font-size: 1.1rem; font-weight: 800; color: var(--secondary); margin-top: 0.25rem;">-</div>
+          <div class="form-hint" id="student-stat-project-stage">Tahap: -</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; background: #f0fdf4; border-color: #86efac; padding: 1.1rem 1.25rem;">
+          <div class="card-subtitle">Status Penilaian Kokurikuler</div>
+          <div id="student-koku-grade-summary" style="font-size: 1.25rem; font-weight: 800; color: var(--success); margin-top: 0.25rem;">-</div>
+          <div class="form-hint">Capaian Dimensi Profil Lulusan</div>
+        </div>
+      </div>
+
+      <!-- HASIL PENILAIAN KOKURIKULER & DESKRIPSI RAPOR KOKURIKULER SISWA -->
+      <div class="card" style="margin-bottom: 1.25rem;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-success" style="margin-bottom: 0.25rem;">HASIL ASESMEN KOKURIKULER INDIVIDU</span>
+            <h3 class="card-title">Rekap Nilai Kokurikuler & Deskripsi Rapor Kokurikuler Anda</h3>
+            <p class="card-subtitle">Menampilkan predikat capaian dimensi (Sangat Baik / Baik / Cukup / Kurang), catatan guru, serta narasi rapor kokurikuler.</p>
+          </div>
+        </div>
+
+        <div id="student-koku-assessment-result-box"></div>
+      </div>
+
+      <!-- PAPAN INFORMASI KEGIATAN KOKURIKULER KELAS -->
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-info" style="margin-bottom: 0.25rem;">INFORMASI KEGIATAN KOKURIKULER KELAS</span>
+            <h3 class="card-title">Panduan Fokus Kegiatan & Persiapan Kokurikuler</h3>
           </div>
         </div>
         <div id="student-project-board-box"></div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-header">
-        <div>
-          <h3 class="card-title">Jurnal Logbook Progres Harian Kelompok (Kokurikuler P5)</h3>
-          <p class="card-subtitle">Perwakilan kelompok dapat mengirimkan ringkasan kegiatan hari ini, kendala yang ditemui, serta mengunggah foto dokumentasi kerja.</p>
+    <!-- =================================================================== -->
+    <!-- TAB 5: NILAI & CAPAIAN EKSTRAKURIKULER SISWA                        -->
+    <!-- =================================================================== -->
+    <div id="std-panel-ekskul" class="std-tab-panel hidden">
+      <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom: 0.25rem;">REKAPITULASI PENILAIAN EKSTRAKURIKULER SISWA</span>
+            <h3 class="card-title">Daftar Nilai & Deskripsi Kemahiran Ekstrakurikuler Anda</h3>
+            <p class="card-subtitle">
+              Menampilkan cabang ekstrakurikuler yang dinilai, predikat capaian (A / B / C / D), indikator kemahiran yang sudah dikuasai, serta aspek yang perlu ditingkatkan.
+            </p>
+          </div>
+          <span id="student-ekskul-total-badge" class="badge badge-primary">0 Data Ekstrakurikuler</span>
         </div>
-        <span class="badge badge-warning">Terhubung Langsung ke Halaman Guru</span>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">No</th>
+                <th style="width: 120px;">Tanggal</th>
+                <th style="width: 190px;">Program Ekstrakurikuler</th>
+                <th style="width: 140px; text-align: center;">Predikat Nilai</th>
+                <th style="width: 220px;">Indikator Kemahiran (Unggul)</th>
+                <th style="width: 220px;">Aspek Perlu Bimbingan</th>
+                <th>Deskripsi Capaian Ekstrakurikuler</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-student-ekskul-records"></tbody>
+          </table>
+        </div>
       </div>
-
-      <form id="form-student-logbook" onsubmit="StudentApp.handleSubmitStudentLogbook(event)" style="background: #f8fafc; padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid var(--border); margin-bottom: 1.25rem;">
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label" for="student-logbook-progres">Ringkasan Kegiatan yang Dikerjakan Kelompok Hari Ini :</label>
-            <textarea id="student-logbook-progres" class="form-control" rows="3" placeholder="Tuliskan apa saja yang telah dikerjakan kelompok Anda hari ini..." required></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="student-logbook-kendala">Hambatan / Kendala yang Ditemui :</label>
-            <textarea id="student-logbook-kendala" class="form-control" rows="3" placeholder="Tuliskan kendala kelompok atau ketik 'Tidak ada kendala berarti'..." required></textarea>
-          </div>
-        </div>
-
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-          <div style="flex: 1; min-width: 240px;">
-            <label class="form-label" for="student-logbook-photo">Unggah Foto Dokumentasi Kerja Kelompok (Opsional) :</label>
-            <input type="file" id="student-logbook-photo" class="form-control" accept="image/*" onchange="StudentApp.previewStudentPhoto(this)">
-            <input type="hidden" id="student-logbook-photo-data">
-          </div>
-          <button type="submit" class="btn btn-primary" style="margin-top: 1.2rem;">
-            Kirim Logbook Kelompok ke Guru
-          </button>
-        </div>
-      </form>
-
-      <h4 style="font-size: 0.96rem; color: var(--dark); margin-bottom: 0.75rem;">Riwayat Logbook Kelompok & Tanggapan (Feedback) Guru</h4>
-      <div id="student-logbook-history-list"></div>
     </div>
   </section>
 
-  <section id="view-student-grades" class="app-view hidden">
-    <div class="card no-print" style="background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 60%, #d97706 100%); color: #ffffff; border: none;">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <span class="badge badge-warning" style="margin-bottom: 0.35rem;">MENU LIHAT PENILAIAN AKADEMIK SISWA</span>
-          <h2 id="student-grades-header-name" style="font-size: 1.45rem; font-weight: 800; margin-bottom: 0.25rem;">
-            Rekapitulasi Nilai Akhir Mata Pelajaran
-          </h2>
-          <p id="student-grades-header-sub" style="font-size: 0.88rem; color: #e0f2fe;">
-            Klik pada <strong>Angka Nilai Akhir</strong> atau tombol <strong>Lihat History Lengkap</strong> di setiap mata pelajaran untuk melihat rincian hari/tanggal, tujuan pembelajaran, nilai pengetahuan, nilai keterampilan, dan nilai akhirnya.
-          </p>
-        </div>
-        <div style="display: flex; gap: 0.65rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.18); color: #ffffff; border-color: rgba(255,255,255,0.4);" onclick="StudentApp.openStudentDashboard()">
-            &larr; Kembali ke Beranda Siswa
-          </button>
-        </div>
-      </div>
-    </div>
+  <!-- VIEW CADANGAN (DIARAHKAN OTOMATIS KE TAB 2 AKADEMIK) -->
+  <section id="view-student-grades" class="app-view hidden"></section>
 
-    <div class="grid-3" style="margin-bottom: 1.25rem;">
-      <div class="card" style="margin-bottom: 0; background: #eff6ff; border-color: #93c5fd;">
-        <div class="card-subtitle">Total Mata Pelajaran Terdaftar</div>
-        <div id="student-grades-stat-mapel" style="font-size: 1.65rem; font-weight: 800; color: var(--primary-light);">0 Mapel</div>
-        <div class="form-hint">Sesuai jadwal & penilaian kelas Anda</div>
-      </div>
-
-      <div class="card" style="margin-bottom: 0; background: #f0fdfa; border-color: #5eead4;">
-        <div class="card-subtitle">Total Aktivitas Penilaian Tercatat</div>
-        <div id="student-grades-stat-records" style="font-size: 1.65rem; font-weight: 800; color: var(--secondary);">0 Penilaian</div>
-        <div class="form-hint">Gabungan penilaian Formatif & Sumatif</div>
-      </div>
-
-      <div class="card" style="margin-bottom: 0; background: #f0fdf4; border-color: #86efac;">
-        <div class="card-subtitle">Rata-Rata Nilai Akhir Keseluruhan</div>
-        <div id="student-grades-stat-average" style="font-size: 1.65rem; font-weight: 800; color: var(--success);">0</div>
-        <div class="form-hint">Rerata dari mata pelajaran yang sudah dinilai</div>
-      </div>
-    </div>
-
-    <div class="card">
+  <!-- MODAL POP-UP DETAIL RIWAYAT NILAI PER MATA PELAJARAN -->
+  <div id="modal-student-grade-history" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 920px;">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Daftar Nilai Akhir Setiap Mata Pelajaran</h3>
+          <span class="badge badge-primary" style="margin-bottom: 0.35rem;">RINCIAN RIWAYAT PENILAIAN MATA PELAJARAN</span>
+          <h3 class="card-title">Mata Pelajaran: <span id="student-hist-modal-mapel" style="color: var(--primary-light);">-</span></h3>
           <p class="card-subtitle">
-            Klik pada <strong>Nilai Akhir</strong> pada kolom tabel di bawah ini untuk memunculkan riwayat lengkap penilaian mata pelajaran tersebut.
+            Nama Siswa: <strong id="student-hist-modal-student">-</strong> | Nilai Akhir Mata Pelajaran: <strong id="student-hist-modal-final" style="color: var(--success);">-</strong>
           </p>
         </div>
-        <span class="badge badge-primary">Klik Nilai untuk History Lengkap</span>
+        <button type="button" class="btn btn-outline btn-sm" onclick="StudentApp.closeSubjectGradeHistoryModal()">
+          Tutup Rincian
+        </button>
       </div>
 
+      <div id="student-hist-narrative-cards" style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem;"></div>
+
+      <h4 style="font-size: 0.95rem; color: var(--dark); margin-bottom: 0.65rem;">Tabel Riwayat Penilaian Formatif & Sumatif (Guru Kelas & Guru Mapel)</h4>
       <div class="table-responsive">
         <table class="academic-table">
           <thead>
             <tr>
-              <th style="width: 55px;">No</th>
-              <th>Mata Pelajaran</th>
-              <th style="text-align: center;">Jumlah Penilaian</th>
-              <th style="text-align: center;">Rata-Rata Pengetahuan</th>
-              <th style="text-align: center;">Rata-Rata Keterampilan</th>
-              <th style="text-align: center;">Nilai Akhir Mata Pelajaran (Klik Nilai)</th>
-              <th style="width: 220px;">Aksi Detail</th>
+              <th style="width: 50px;">No</th>
+              <th>Hari & Tanggal</th>
+              <th>Jenis & Penilai</th>
+              <th>Tujuan Pembelajaran</th>
+              <th style="text-align: center;">Nilai Pengetahuan</th>
+              <th style="text-align: center;">Nilai Keterampilan</th>
+              <th style="text-align: center;">Nilai Akhir</th>
             </tr>
           </thead>
-          <tbody id="tbody-student-subject-grades"></tbody>
+          <tbody id="tbody-student-hist-modal-rows"></tbody>
         </table>
       </div>
+
+      <div style="margin-top: 1.25rem; text-align: right;">
+        <button type="button" class="btn btn-primary" onclick="StudentApp.closeSubjectGradeHistoryModal()">
+          Selesai & Tutup
+        </button>
+      </div>
     </div>
-  </section>
+  </div>
 
   <div id="modal-student-grade-history" class="modal-overlay hidden">
     <div class="modal-box" style="max-width: 920px;">
@@ -21196,207 +21479,490 @@ Format JSON wajib:
 };
 
   const StudentApp = {
+  daysOrder: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+  activeTab: 'kehadiran',
+
+  normalizeTextKey(str) {
+    return String(str || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ');
+  },
+
   getStudentContext() {
     const user = AppState.currentUser;
     if (!user || user.role !== 'SISWA') return null;
 
-    const bucket = (DB.data.classData || {})[user.bucketKey];
-    if (!bucket) return null;
+    const primaryBucket = (DB.data.classData || {})[user.bucketKey] || null;
+    const targetSchoolKey = user.schoolKey || (primaryBucket && primaryBucket.schoolKey) || '';
+    const targetClassKey = DB.extractClassKey(user.kelas || (primaryBucket && primaryBucket.classKey) || '');
+    const normUserName = this.normalizeTextKey(user.nama);
 
-    const studentRecord = (bucket.students || []).find(s => s.id === user.id);
-    if (!studentRecord) return null;
+    const matchingBuckets = [];
+    const matchingStudentIds = new Set([user.id]);
+    let matchedStudentObj = null;
+    let studentIndexInClass = -1;
+
+    Object.values(DB.data.classData || {}).forEach(bucket => {
+      if (!bucket) return;
+      const sameSchool = !targetSchoolKey || bucket.schoolKey === targetSchoolKey;
+      if (!sameSchool) return;
+
+      const bClassKey = DB.extractClassKey(bucket.classKey || bucket.kelasFaseLabel || '');
+      const stdIdx = (bucket.students || []).findIndex(s =>
+        s && (
+          s.id === user.id ||
+          this.normalizeTextKey(s.nama) === normUserName ||
+          (user.username && s.username && this.normalizeTextKey(s.username) === this.normalizeTextKey(user.username))
+        )
+      );
+
+      if (bClassKey === targetClassKey || stdIdx >= 0 || bucket === primaryBucket) {
+        matchingBuckets.push(bucket);
+        if (stdIdx >= 0) {
+          const st = bucket.students[stdIdx];
+          matchingStudentIds.add(st.id);
+          if (!matchedStudentObj) {
+            matchedStudentObj = st;
+            studentIndexInClass = stdIdx;
+          }
+        }
+      }
+    });
+
+    if (matchingBuckets.length === 0 && primaryBucket) {
+      matchingBuckets.push(primaryBucket);
+    }
+
+    const mainBucket = primaryBucket || matchingBuckets[0] || null;
+    if (!matchedStudentObj && mainBucket) {
+      const idx = (mainBucket.students || []).findIndex(s =>
+        s && (s.id === user.id || this.normalizeTextKey(s.nama) === normUserName)
+      );
+      if (idx >= 0) {
+        matchedStudentObj = mainBucket.students[idx];
+        studentIndexInClass = idx;
+        matchingStudentIds.add(matchedStudentObj.id);
+      }
+    }
 
     return {
       user,
-      bucket,
-      student: studentRecord
+      mainBucket,
+      matchingBuckets,
+      matchingStudentIds: Array.from(matchingStudentIds),
+      studentObj: matchedStudentObj || { id: user.id, nama: user.nama, kelas: user.kelas },
+      studentIndex: studentIndexInClass,
+      normUserName
     };
   },
 
-  openStudentDashboard() {
-    const ctx = this.getStudentContext();
-    if (!ctx) {
-      UI.showNotif('Sesi Siswa Tidak Ditemukan', 'Silakan login kembali melalui Portal Siswa.', 'warning');
-      AppAuth.logout();
-      return;
+  isRecordMatchingStudent(studentIdField, studentNameField, ctx) {
+    if (!ctx) return false;
+    if (studentIdField && ctx.matchingStudentIds.includes(studentIdField)) return true;
+    if (studentNameField && this.normalizeTextKey(studentNameField) === ctx.normUserName) return true;
+    return false;
+  },
+
+  extractStudentScoreFromMap(scoresMap, ctx, bucketStudents = []) {
+    if (!scoresMap || !ctx) return null;
+
+    // 1. Cek berdasarkan semua kemungkinan ID siswa
+    for (const sid of ctx.matchingStudentIds) {
+      if (scoresMap[sid]) return scoresMap[sid];
     }
 
-    const { bucket, student } = ctx;
-    KokuApp.ensureKokurikulerStructure(bucket);
+    // 2. Cek berdasarkan nama lengkap siswa di dalam properti objek skor
+    for (const val of Object.values(scoresMap)) {
+      if (val && val.studentName && this.normalizeTextKey(val.studentName) === ctx.normUserName) {
+        return val;
+      }
+      if (val && val.nama && this.normalizeTextKey(val.nama) === ctx.normUserName) {
+        return val;
+      }
+    }
+
+    // 3. Fallback urutan indeks siswa jika jumlah kunci sama dengan jumlah siswa di kelas
+    const keys = Object.keys(scoresMap);
+    if (ctx.studentIndex >= 0 && bucketStudents.length > 0 && keys.length === bucketStudents.length) {
+      const keyAtIdx = keys[ctx.studentIndex];
+      if (keyAtIdx && scoresMap[keyAtIdx]) return scoresMap[keyAtIdx];
+    }
+
+    return null;
+  },
+
+  async openStudentDashboard(initialTab = null) {
+    const user = AppState.currentUser;
+    if (!user || user.role !== 'SISWA') return;
+
+    AppState.activeMode = 'STUDENT';
+    UI.updateNavbar();
+
+    // Tarik otomatis pembaruan dari Cloud Supabase (tanpa memblokir tampilan instan)
+    if (supabaseClient && typeof DB.init === 'function' && !this._hasInitialSynced) {
+      this._hasInitialSynced = true;
+      try {
+        await DB.init();
+      } catch (e) {
+        // Lanjut gunakan data lokal jika offline
+      }
+    }
+
+    const ctx = this.getStudentContext();
+    if (!ctx || !ctx.mainBucket) return;
 
     const welcomeEl = document.getElementById('student-dash-welcome');
     const subinfoEl = document.getElementById('student-dash-subinfo');
 
-    if (welcomeEl) {
-      welcomeEl.textContent = `Halo, ${student.nama}`;
-    }
+    if (welcomeEl) welcomeEl.textContent = `Halo, ${ctx.studentObj.nama}`;
     if (subinfoEl) {
-      subinfoEl.textContent = `Kelas: ${student.kelas || bucket.kelasFaseLabel || bucket.classKey} | Sekolah: ${bucket.schoolDisplay} | Wali Kelas: ${bucket.homeroomTeacherName || '-'}`;
+      subinfoEl.textContent = `Kelas: ${ctx.studentObj.kelas || ctx.mainBucket.kelasFaseLabel || ctx.mainBucket.classKey} | Sekolah: ${ctx.mainBucket.schoolDisplay} | Wali Kelas: ${ctx.mainBucket.homeroomTeacherName || '-'}`;
     }
 
-    this.renderStudentStats(bucket, student);
-    this.renderStudentSchedule(bucket);
-    this.renderStudentProjectBoard(bucket);
-    this.renderStudentLogbookHistory(bucket, student);
+    this.renderAttendanceAndScheduleTab(ctx);
+    this.renderAcademicGradesTab(ctx);
+    this.renderDplAnalysisTab(ctx);
+    this.renderKokurikulerTab(ctx);
+    this.renderEkstrakurikulerTab(ctx);
 
+    const targetTab = initialTab || this.activeTab || 'kehadiran';
+    this.switchStudentTab(targetTab);
     UI.switchView('view-student-dashboard');
   },
 
+  async syncStudentDataFromCloud() {
+    if (supabaseClient && typeof DB.pullFromSupabaseManual === 'function') {
+      await DB.pullFromSupabaseManual();
+    }
+    this.openStudentDashboard(this.activeTab || 'kehadiran');
+  },
+
   openStudentGradesView() {
-    const ctx = this.getStudentContext();
-    if (!ctx) return;
-
-    const { bucket, student } = ctx;
-    const headerName = document.getElementById('student-grades-header-name');
-    const headerSub = document.getElementById('student-grades-header-sub');
-
-    if (headerName) {
-      headerName.textContent = `Daftar Nilai Akhir Mata Pelajaran — ${student.nama}`;
-    }
-    if (headerSub) {
-      headerSub.textContent = `Kelas: ${student.kelas || bucket.kelasFaseLabel || bucket.classKey} | Sekolah: ${bucket.schoolDisplay}. Klik pada angka Nilai Akhir di bawah untuk melihat history lengkap penilaiannya.`;
-    }
-
-    this.renderStudentSubjectGradesTable(bucket, student);
-    UI.switchView('view-student-grades');
+    this.openStudentDashboard('akademik');
   },
 
-  getStudentAllSubjects(bucket) {
-    const subjectSet = new Set();
-
-    Object.values(bucket.schedule || {}).forEach(dayArr => {
-      if (Array.isArray(dayArr)) {
-        dayArr.forEach(s => {
-          if (s && s.trim()) subjectSet.add(s.trim());
-        });
+  switchStudentTab(tabKey) {
+    this.activeTab = tabKey;
+    const tabs = ['kehadiran', 'akademik', 'dpl', 'kokurikuler', 'ekskul'];
+    tabs.forEach(k => {
+      const btn = document.getElementById(`btn-std-tab-${k}`);
+      const panel = document.getElementById(`std-panel-${k}`);
+      if (btn) {
+        if (k === tabKey) btn.classList.add('active-std-tab');
+        else btn.classList.remove('active-std-tab');
+      }
+      if (panel) {
+        if (k === tabKey) panel.classList.remove('hidden');
+        else panel.classList.add('hidden');
       }
     });
-
-    (bucket.academicAssessments || []).forEach(rec => {
-      if (rec.mapel && rec.mapel.trim()) {
-        subjectSet.add(rec.mapel.trim());
-      }
-    });
-
-    if (subjectSet.size === 0) {
-      ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS', 'Seni Budaya', 'PJOK'].forEach(s => subjectSet.add(s));
-    }
-
-    return Array.from(subjectSet);
   },
 
-  calculateSubjectGradeSummaryForStudent(bucket, studentId, subjectName) {
-    const records = (bucket.academicAssessments || [])
-      .filter(
-        rec =>
-          rec.mapel &&
-          rec.mapel.toLowerCase() === subjectName.toLowerCase() &&
-          rec.studentScores &&
-          rec.studentScores[studentId]
-      )
-      .sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1));
+  // ==========================================================================
+  // TAB 1: REKAP KEHADIRAN (HADIR, SAKIT, IZIN, ALPA) & JADWAL PELAJARAN
+  // ==========================================================================
+  renderAttendanceAndScheduleTab(ctx) {
+    const presensiMap = new Map();
 
-    if (records.length === 0) {
-      return {
-        hasScore: false,
-        count: 0,
-        avgPengetahuan: 0,
-        avgKeterampilan: 0,
-        finalScore: 0,
-        records: []
-      };
-    }
-
-    let sumPeng = 0;
-    let sumKet = 0;
-    let sumFinalHarian = 0;
-
-    records.forEach(rec => {
-      const sc = rec.studentScores[studentId];
-      sumPeng += parseFloat(sc.pureKnowledge) || 0;
-      sumKet += parseFloat(sc.pureSkill) || 0;
-      sumFinalHarian += parseFloat(sc.finalRekap) || 0;
+    ctx.matchingBuckets.forEach(bucket => {
+      Object.entries(bucket.presensiRecords || {}).forEach(([dateISO, rec]) => {
+        if (!rec || !rec.items) return;
+        const item = this.extractStudentScoreFromMap(rec.items, ctx, bucket.students || []);
+        if (item && item.status) {
+          presensiMap.set(dateISO, {
+            dateISO,
+            status: item.status,
+            note: item.note || ''
+          });
+        }
+      });
     });
 
-    const count = records.length;
-    const avgPeng = Math.round((sumPeng / count) * 10) / 10;
-    const avgKet = Math.round((sumKet / count) * 10) / 10;
+    let hadir = 0;
+    let sakit = 0;
+    let izin = 0;
+    let alpa = 0;
 
-    const formatifList = records.filter(r => r.jenisAsesmen === 'FORMATIF');
-    const sumatifList = records.filter(r => r.jenisAsesmen === 'SUMATIF');
+    const sortedDates = Array.from(presensiMap.keys()).sort().reverse();
+    sortedDates.forEach(dISO => {
+      const st = presensiMap.get(dISO).status;
+      if (st === 'H') hadir++;
+      else if (st === 'S') sakit++;
+      else if (st === 'I') izin++;
+      else if (st === 'A') alpa++;
+    });
 
-    let finalSubjectScore = 0;
-    if (formatifList.length > 0 && sumatifList.length > 0) {
-      const avgF = formatifList.reduce((acc, r) => acc + (parseFloat(r.studentScores[studentId].finalRekap) || 0), 0) / formatifList.length;
-      const avgS = sumatifList.reduce((acc, r) => acc + (parseFloat(r.studentScores[studentId].finalRekap) || 0), 0) / sumatifList.length;
-      finalSubjectScore = (avgF * 0.6) + (avgS * 0.4);
-    } else {
-      finalSubjectScore = sumFinalHarian / count;
+    const totalDays = hadir + sakit + izin + alpa;
+    const persenHadir = totalDays > 0 ? Math.round((hadir / totalDays) * 100) : 0;
+
+    const elHadir = document.getElementById('student-stat-hadir');
+    const elPersen = document.getElementById('student-stat-persen-hadir');
+    const elSakit = document.getElementById('student-stat-sakit');
+    const elIzin = document.getElementById('student-stat-izin');
+    const elAlpa = document.getElementById('student-stat-alpa');
+    const elDetail = document.getElementById('student-stat-attendance-detail');
+    const tabBadge = document.getElementById('std-tab-badge-kehadiran');
+
+    if (elHadir) elHadir.textContent = `${hadir} Hari`;
+    if (elPersen) elPersen.textContent = `Persentase Kehadiran: ${persenHadir}% (${totalDays} Hari Efektif)`;
+    if (elSakit) elSakit.textContent = `${sakit} Hari`;
+    if (elIzin) elIzin.textContent = `${izin} Hari`;
+    if (elAlpa) elAlpa.textContent = `${alpa} Hari`;
+    if (elDetail) elDetail.textContent = `Total Hari Efektif Tercatat: ${totalDays} Hari (H:${hadir} | S:${sakit} | I:${izin} | A:${alpa})`;
+    if (tabBadge) tabBadge.textContent = `${hadir}H / ${sakit}S / ${izin}I / ${alpa}A`;
+
+    // Render Tabel Riwayat Kehadiran Siswa
+    const tbodyAtt = document.getElementById('tbody-student-attendance-history');
+    if (tbodyAtt) {
+      if (sortedDates.length === 0) {
+        tbodyAtt.innerHTML = `
+          <tr>
+            <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
+              Belum ada riwayat presensi harian yang tercatat untuk Anda.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbodyAtt.innerHTML = sortedDates.map((dISO, idx) => {
+          const row = presensiMap.get(dISO);
+          let badgeHtml = '<span class="badge badge-success">Hadir (H)</span>';
+          if (row.status === 'S') badgeHtml = '<span class="badge badge-info">Sakit (S)</span>';
+          else if (row.status === 'I') badgeHtml = '<span class="badge badge-warning">Izin (I)</span>';
+          else if (row.status === 'A') badgeHtml = '<span class="badge badge-danger">Alpa (A)</span>';
+
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <strong>${UI.escapeHtml(DateTimeUtil.formatIndonesianDate(dISO))}</strong>
+                <div style="font-size: 0.72rem; color: var(--text-muted);">${UI.escapeHtml(dISO)}</div>
+              </td>
+              <td style="text-align: center;">${badgeHtml}</td>
+              <td style="font-size: 0.82rem; color: var(--text-muted);">${UI.escapeHtml(row.note || '-')}</td>
+            </tr>
+          `;
+        }).join('');
+      }
     }
 
-    return {
-      hasScore: true,
-      count: count,
-      avgPengetahuan: avgPeng,
-      avgKeterampilan: avgKet,
-      finalScore: Math.round(finalSubjectScore * 10) / 10,
-      records: records
+    // Render Jadwal Pelajaran Kelas
+    const schedGrid = document.getElementById('student-schedule-grid');
+    if (schedGrid) {
+      const sched = ctx.mainBucket.schedule || {};
+      const todayName = DateTimeUtil.getCurrentDayName();
+
+      schedGrid.innerHTML = this.daysOrder.map(day => {
+        const subjects = Array.isArray(sched[day]) ? sched[day] : [];
+        const isToday = day === todayName;
+        const listHtml = subjects.length > 0
+          ? subjects.map(s => `<span class="badge badge-primary" style="margin: 0.15rem;">${UI.escapeHtml(s)}</span>`).join('')
+          : `<span style="font-size: 0.8rem; color: var(--text-muted);">Tidak ada jadwal</span>`;
+
+        return `
+          <div style="padding: 0.85rem; border: 2px solid ${isToday ? 'var(--primary-light)' : 'var(--border)'}; background: ${isToday ? '#eff6ff' : '#f8fafc'}; border-radius: var(--radius-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <strong style="color: var(--dark); font-size: 0.9rem;">Hari ${day}</strong>
+              ${isToday ? '<span class="badge badge-success">Hari Ini</span>' : ''}
+            </div>
+            <div>${listHtml}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  },
+
+  // ==========================================================================
+  // TAB 2: REKAP PENILAIAN AKADEMIK (SINKRON GURU KELAS & GURU MAPEL)
+  // ==========================================================================
+  getConsolidatedStudentAssessments(ctx) {
+    const assessmentMap = new Map();
+
+    ctx.matchingBuckets.forEach(bucket => {
+      const rekapPolicy = (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.getRekapWeightPolicy === 'function')
+        ? PenilaianApp.getRekapWeightPolicy(bucket)
+        : { bobotPengetahuan: 70, bobotKeterampilan: 30 };
+
+      const wPeng = rekapPolicy.bobotPengetahuan / 100;
+      const wKet = rekapPolicy.bobotKeterampilan / 100;
+
+      (bucket.academicAssessments || []).forEach(rec => {
+        if (!rec || !rec.id || !rec.scores) return;
+        const scEntry = this.extractStudentScoreFromMap(rec.scores, ctx, bucket.students || []);
+        if (!scEntry) return;
+
+        const isSkipKet = Boolean(rec.skipKeterampilan);
+        const pVal = parseFloat(scEntry.murniPengetahuan);
+        const kVal = isSkipKet ? null : parseFloat(scEntry.murniKeterampilan);
+
+        let finalDaily = parseFloat(scEntry.nilaiAkhir);
+        if (isNaN(finalDaily) || finalDaily <= 0) {
+          if (!isNaN(pVal)) {
+            finalDaily = isSkipKet
+              ? Math.round(pVal * 10) / 10
+              : Math.round(((pVal * wPeng) + ((isNaN(kVal) ? pVal : kVal) * wKet)) * 10) / 10;
+          }
+        }
+
+        if (!isNaN(finalDaily)) {
+          assessmentMap.set(rec.id, {
+            id: rec.id,
+            dateISO: rec.dateISO || DateTimeUtil.getTodayISO(),
+            savedAt: rec.savedAt || '',
+            mapel: String(rec.mapel || 'Mata Pelajaran').trim(),
+            jenisAsesmen: String(rec.jenisAsesmen || 'FORMATIF').toUpperCase().trim(),
+            teacherName: rec.teacherName || ctx.mainBucket.homeroomTeacherName || 'Guru',
+            tpPengetahuan: rec.tpPengetahuan || '-',
+            tpKeterampilan: rec.tpKeterampilan || '-',
+            soloLevel: rec.soloLevel || '-',
+            jenisInstrumen: rec.jenisInstrumen || '-',
+            skipKeterampilan: isSkipKet,
+            murniPengetahuan: !isNaN(pVal) ? Math.round(pVal * 10) / 10 : finalDaily,
+            murniKeterampilan: (!isSkipKet && !isNaN(kVal)) ? Math.round(kVal * 10) / 10 : null,
+            nilaiAkhir: Math.round(finalDaily * 10) / 10,
+            note: scEntry.note || ''
+          });
+        }
+      });
+    });
+
+    return Array.from(assessmentMap.values()).sort((a, b) => a.dateISO.localeCompare(b.dateISO));
+  },
+
+  getStudentAllSubjects(ctx, studentRecords) {
+    const ordered = [];
+    const seen = new Set();
+
+    const addSubj = (name) => {
+      const clean = String(name || '').trim();
+      if (!clean) return;
+      const k = this.normalizeTextKey(clean);
+      if (!seen.has(k)) {
+        seen.add(k);
+        ordered.push(clean);
+      }
     };
+
+    // 1. Utamakan semua mata pelajaran yang sudah memiliki nilai (dari Guru Kelas maupun Guru Mapel)
+    (studentRecords || []).forEach(r => addSubj(r.mapel));
+
+    // 2. Tambahkan dari jadwal pelajaran kelas
+    const sched = (ctx.mainBucket && ctx.mainBucket.schedule) || {};
+    Object.values(sched).forEach(arr => {
+      if (Array.isArray(arr)) arr.forEach(s => addSubj(s));
+    });
+
+    if (ordered.length === 0) {
+      ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS', 'Seni Budaya', 'PJOK'].forEach(s => addSubj(s));
+    }
+
+    return ordered;
   },
 
-  renderStudentSubjectGradesTable(bucket, student) {
-    const tbody = document.getElementById('tbody-student-subject-grades');
+  renderAcademicGradesTab(ctx) {
+    const allRecords = this.getConsolidatedStudentAssessments(ctx);
+    const subjects = this.getStudentAllSubjects(ctx, allRecords);
+
+    const raporPolicy = (typeof RaporApp !== 'undefined' && typeof RaporApp.getWeightPolicy === 'function')
+      ? RaporApp.getWeightPolicy(ctx.mainBucket)
+      : { bobotFormatif: 60, bobotSumatif: 40, emptyMode: 'ADAPTIVE_100' };
+
+    const wForm = raporPolicy.bobotFormatif / 100;
+    const wSum = raporPolicy.bobotSumatif / 100;
+
+    let totalAssessedMapel = 0;
+    let sumAllFinalScores = 0;
+
+    const rowsData = subjects.map(subj => {
+      const normSubj = this.normalizeTextKey(subj);
+      const subjRecords = allRecords.filter(r => this.normalizeTextKey(r.mapel) === normSubj);
+
+      if (subjRecords.length === 0) {
+        return {
+          mapel: subj,
+          count: 0,
+          avgForm: null,
+          avgSum: null,
+          avgPeng: null,
+          avgKet: null,
+          finalScore: null
+        };
+      }
+
+      const formRecs = subjRecords.filter(r => r.jenisAsesmen !== 'SUMATIF');
+      const sumRecs = subjRecords.filter(r => r.jenisAsesmen === 'SUMATIF');
+      const ketRecs = subjRecords.filter(r => !r.skipKeterampilan && r.murniKeterampilan !== null);
+
+      const avgForm = formRecs.length > 0
+        ? Math.round((formRecs.reduce((a, b) => a + b.nilaiAkhir, 0) / formRecs.length) * 10) / 10
+        : null;
+
+      const avgSum = sumRecs.length > 0
+        ? Math.round((sumRecs.reduce((a, b) => a + b.nilaiAkhir, 0) / sumRecs.length) * 10) / 10
+        : null;
+
+      const avgPeng = Math.round((subjRecords.reduce((a, b) => a + b.murniPengetahuan, 0) / subjRecords.length) * 10) / 10;
+      const avgKet = ketRecs.length > 0
+        ? Math.round((ketRecs.reduce((a, b) => a + b.murniKeterampilan, 0) / ketRecs.length) * 10) / 10
+        : null;
+
+      let finalScore = 0;
+      if (avgForm !== null && avgSum !== null) {
+        finalScore = Math.round(((avgForm * wForm) + (avgSum * wSum)) * 10) / 10;
+      } else if (avgForm !== null) {
+        finalScore = raporPolicy.emptyMode === 'ADAPTIVE_100' ? avgForm : Math.round(avgForm * wForm * 10) / 10;
+      } else if (avgSum !== null) {
+        finalScore = raporPolicy.emptyMode === 'ADAPTIVE_100' ? avgSum : Math.round(avgSum * wSum * 10) / 10;
+      }
+
+      totalAssessedMapel++;
+      sumAllFinalScores += finalScore;
+
+      return {
+        mapel: subj,
+        count: subjRecords.length,
+        avgForm,
+        avgSum,
+        avgPeng,
+        avgKet,
+        finalScore
+      };
+    });
+
+    const overallAverage = totalAssessedMapel > 0
+      ? Math.round((sumAllFinalScores / totalAssessedMapel) * 10) / 10
+      : 0;
+
     const statMapelEl = document.getElementById('student-grades-stat-mapel');
     const statRecEl = document.getElementById('student-grades-stat-records');
     const statAvgEl = document.getElementById('student-grades-stat-average');
+    const tabBadge = document.getElementById('std-tab-badge-akademik');
+    const tbody = document.getElementById('tbody-student-subject-grades');
+
+    if (statMapelEl) statMapelEl.textContent = `${subjects.length} Mapel (${totalAssessedMapel} Dinilai)`;
+    if (statRecEl) statRecEl.textContent = `${allRecords.length} Penilaian`;
+    if (statAvgEl) statAvgEl.textContent = overallAverage;
+    if (tabBadge) tabBadge.textContent = `${allRecords.length} Nilai`;
 
     if (!tbody) return;
 
-    const subjects = this.getStudentAllSubjects(bucket);
-    let totalAssessedSubjects = 0;
-    let totalAssessmentRecords = 0;
-    let sumFinalScores = 0;
+    tbody.innerHTML = rowsData.map((row, idx) => {
+      const safeMapel = UI.escapeHtml(row.mapel).replace(/'/g, "\\'");
 
-    const rowsData = subjects.map(sub => {
-      const summary = this.calculateSubjectGradeSummaryForStudent(bucket, student.id, sub);
-      if (summary.hasScore) {
-        totalAssessedSubjects++;
-        totalAssessmentRecords += summary.count;
-        sumFinalScores += summary.finalScore;
-      }
-      return {
-        subjectName: sub,
-        summary: summary
-      };
-    });
-
-    if (statMapelEl) statMapelEl.textContent = `${subjects.length} Mapel`;
-    if (statRecEl) statRecEl.textContent = `${totalAssessmentRecords} Penilaian`;
-    if (statAvgEl) {
-      const overallAvg = totalAssessedSubjects > 0
-        ? Math.round((sumFinalScores / totalAssessedSubjects) * 10) / 10
-        : 0;
-      statAvgEl.textContent = overallAvg;
-    }
-
-    tbody.innerHTML = rowsData.map((item, idx) => {
-      const { subjectName, summary } = item;
-      const escapedSub = UI.escapeHtml(subjectName).replace(/'/g, "\\'");
-
-      if (!summary.hasScore) {
+      if (row.count === 0) {
         return `
           <tr>
             <td>${idx + 1}</td>
-            <td><strong>${UI.escapeHtml(subjectName)}</strong></td>
+            <td><strong>${UI.escapeHtml(row.mapel)}</strong></td>
             <td style="text-align: center;"><span class="badge badge-warning">Belum Ada Nilai</span></td>
             <td style="text-align: center; color: var(--text-muted);">-</td>
             <td style="text-align: center; color: var(--text-muted);">-</td>
-            <td style="text-align: center;">
-              <span style="color: var(--text-muted); font-size: 0.85rem;">Belum Dinilai</span>
-            </td>
-            <td>
-              <button type="button" class="btn btn-outline btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${escapedSub}')">
-                Lihat History
+            <td style="text-align: center; color: var(--text-muted);">-</td>
+            <td style="text-align: center; color: var(--text-muted);">-</td>
+            <td style="text-align: center; color: var(--text-muted);">-</td>
+            <td class="no-print">
+              <button type="button" class="btn btn-outline btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')">
+                Cek Riwayat
               </button>
             </td>
           </tr>
@@ -21406,23 +21972,25 @@ Format JSON wajib:
       return `
         <tr>
           <td>${idx + 1}</td>
-          <td><strong>${UI.escapeHtml(subjectName)}</strong></td>
-          <td style="text-align: center;"><span class="badge badge-info">${summary.count} Kali Penilaian</span></td>
-          <td style="text-align: center;"><strong>${summary.avgPengetahuan}</strong></td>
-          <td style="text-align: center;"><strong>${summary.avgKeterampilan}</strong></td>
-          <td style="text-align: center;">
+          <td><strong>${UI.escapeHtml(row.mapel)}</strong></td>
+          <td style="text-align: center;"><span class="badge badge-info">${row.count}x Penilaian</span></td>
+          <td style="text-align: center;">${row.avgForm !== null ? `<strong>${row.avgForm}</strong>` : '-'}</td>
+          <td style="text-align: center;">${row.avgSum !== null ? `<strong>${row.avgSum}</strong>` : '-'}</td>
+          <td style="text-align: center;">${row.avgPeng !== null ? row.avgPeng : '-'}</td>
+          <td style="text-align: center;">${row.avgKet !== null ? row.avgKet : '<span style="font-size:0.75rem; color:var(--text-muted);">100% Peng</span>'}</td>
+          <td style="text-align: center; background: #f0fdf4;">
             <span
               class="clickable-score"
-              style="font-size: 1.08rem; background: #dcfce7; color: #166534; padding: 0.28rem 0.85rem; border-radius: 999px; display: inline-block;"
-              title="Klik untuk melihat history lengkap penilaian ${UI.escapeHtml(subjectName)}"
-              onclick="StudentApp.openSubjectGradeHistoryModal('${escapedSub}')"
+              style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 999px; display: inline-block;"
+              title="Klik untuk melihat rincian riwayat penilaian"
+              onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')"
             >
-              ${summary.finalScore}
+              ${row.finalScore}
             </span>
           </td>
-          <td>
-            <button type="button" class="btn btn-primary btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${escapedSub}')">
-              Lihat History Lengkap &rarr;
+          <td class="no-print">
+            <button type="button" class="btn btn-primary btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')">
+              Lihat Detail Nilai
             </button>
           </td>
         </tr>
@@ -21430,91 +21998,90 @@ Format JSON wajib:
     }).join('');
   },
 
-  openSubjectGradeHistoryModal(subjectName) {
+  openSubjectGradeHistoryModal(mapelName) {
     const ctx = this.getStudentContext();
     if (!ctx) return;
 
-    const { bucket, student } = ctx;
-    const summary = this.calculateSubjectGradeSummaryForStudent(bucket, student.id, subjectName);
+    const allRecords = this.getConsolidatedStudentAssessments(ctx);
+    const normMapel = this.normalizeTextKey(mapelName);
+    const matched = allRecords.filter(r => this.normalizeTextKey(r.mapel) === normMapel);
 
-    const mapelEl = document.getElementById('student-hist-modal-mapel');
-    const studentEl = document.getElementById('student-hist-modal-student');
-    const finalEl = document.getElementById('student-hist-modal-final');
-    const cardsContainer = document.getElementById('student-hist-narrative-cards');
-    const tbody = document.getElementById('tbody-student-hist-modal-rows');
+    const modalMapelEl = document.getElementById('student-hist-modal-mapel');
+    const modalStudentEl = document.getElementById('student-hist-modal-student');
+    const modalFinalEl = document.getElementById('student-hist-modal-final');
+    const narrativeCardsEl = document.getElementById('student-hist-narrative-cards');
+    const tbodyRows = document.getElementById('tbody-student-hist-modal-rows');
 
-    if (mapelEl) mapelEl.textContent = subjectName;
-    if (studentEl) studentEl.textContent = student.nama;
-    if (finalEl) finalEl.textContent = summary.hasScore ? summary.finalScore : 'Belum Ada Nilai';
+    if (modalMapelEl) modalMapelEl.textContent = mapelName;
+    if (modalStudentEl) modalStudentEl.textContent = ctx.studentObj.nama;
 
-    if (!summary.hasScore || summary.records.length === 0) {
-      if (cardsContainer) {
-        cardsContainer.innerHTML = `
+    if (matched.length === 0) {
+      if (modalFinalEl) modalFinalEl.textContent = 'Belum Ada Nilai';
+      if (narrativeCardsEl) {
+        narrativeCardsEl.innerHTML = `
           <div class="alert-box alert-info" style="margin-top: 0;">
-            Belum ada riwayat penilaian yang diinput oleh Guru untuk mata pelajaran <strong>${UI.escapeHtml(subjectName)}</strong>.
+            Belum ada riwayat penilaian yang diinput oleh Bapak/Ibu Guru untuk mata pelajaran <strong>${UI.escapeHtml(mapelName)}</strong>.
           </div>
         `;
       }
-      if (tbody) {
-        tbody.innerHTML = `
+      if (tbodyRows) {
+        tbodyRows.innerHTML = `
           <tr>
             <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-              Belum ada data riwayat penilaian pada mata pelajaran ini.
+              Belum ada data riwayat penilaian.
             </td>
           </tr>
         `;
       }
     } else {
-      if (cardsContainer) {
-        cardsContainer.innerHTML = summary.records.map((rec, idx) => {
-          const sc = rec.studentScores[student.id];
-          const dayName = rec.dayName || DateTimeUtil.getDayNameFromISO(rec.dateISO);
-          const formattedDate = DateTimeUtil.formatIndonesianDate(rec.dateISO);
+      const avgFinal = Math.round((matched.reduce((a, b) => a + b.nilaiAkhir, 0) / matched.length) * 10) / 10;
+      if (modalFinalEl) modalFinalEl.textContent = avgFinal;
+
+      if (narrativeCardsEl) {
+        narrativeCardsEl.innerHTML = matched.map((r, idx) => {
+          const fullDate = DateTimeUtil.formatIndonesianDate(r.dateISO);
+          const ketText = r.skipKeterampilan || r.murniKeterampilan === null
+            ? 'Tanpa Penilaian Keterampilan (Diambil 100% Nilai Pengetahuan)'
+            : `Nilai Keterampilan: <strong>${r.murniKeterampilan}</strong>`;
 
           return `
-            <div style="padding: 1rem 1.15rem; background: #eff6ff; border-left: 5px solid var(--primary-light); border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--dark); line-height: 1.6;">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.3rem;">
-                <span class="badge badge-primary">Penilaian #${idx + 1} (${UI.escapeHtml(rec.jenisAsesmen)})</span>
-                <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">${UI.escapeHtml(formattedDate)}</span>
+            <div style="padding: 0.9rem 1.1rem; background: #f8fafc; border: 1px solid var(--border); border-left: 4px solid var(--primary-light); border-radius: var(--radius-sm); font-size: 0.86rem; line-height: 1.55;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.25rem;">
+                <span class="badge badge-primary">Pertemuan #${idx + 1} — ${UI.escapeHtml(r.jenisAsesmen)}</span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">${UI.escapeHtml(fullDate)} | Penilai: ${UI.escapeHtml(r.teacherName)}</span>
               </div>
-              <div>
-                <strong>Hari ${UI.escapeHtml(dayName)}</strong>, Pelajaran <strong>${UI.escapeHtml(rec.mapel)}</strong> —
-                <strong>Tujuan Pembelajaran:</strong> ${UI.escapeHtml(rec.tpPengetahuan || '-')},
-                <strong>Nilai Pengetahuannya:</strong> <span class="badge badge-primary">${sc.pureKnowledge}</span>,
-                <strong>Nilai Keterampilannya:</strong> <span class="badge badge-info">${sc.pureSkill}</span>,
-                <strong>Nilai Akhirnya:</strong> <span class="badge badge-success" style="font-size: 0.88rem;">${sc.finalRekap}</span>.
+              <div><strong>Tujuan Pembelajaran:</strong> ${UI.escapeHtml(r.tpPengetahuan)}</div>
+              <div style="margin-top: 0.25rem;">
+                Nilai Pengetahuan: <strong>${r.murniPengetahuan}</strong> &nbsp;|&nbsp; ${ketText} &nbsp;|&nbsp;
+                <span style="color: var(--success); font-weight: 800;">Nilai Akhir: ${r.nilaiAkhir}</span>
               </div>
             </div>
           `;
         }).join('');
       }
 
-      if (tbody) {
-        tbody.innerHTML = summary.records.map((rec, idx) => {
-          const sc = rec.studentScores[student.id];
-          const formattedDate = DateTimeUtil.formatIndonesianDate(rec.dateISO);
-
-          return `
-            <tr>
-              <td>${idx + 1}</td>
-              <td>
-                <strong>${UI.escapeHtml(formattedDate)}</strong>
-                <div style="font-size: 0.74rem; color: var(--text-muted);">${UI.escapeHtml(rec.dateISO)}</div>
-              </td>
-              <td>
-                <strong>${UI.escapeHtml(rec.mapel)}</strong>
-                <div><span class="badge badge-primary" style="font-size: 0.7rem;">${UI.escapeHtml(rec.jenisAsesmen)}</span></div>
-              </td>
-              <td>
-                <div style="font-weight: 600; color: var(--dark);">${UI.escapeHtml(rec.tpPengetahuan || '-')}</div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">Instrumen: ${UI.escapeHtml(rec.jenisInstrumen || '-')}</div>
-              </td>
-              <td style="text-align: center;"><span class="badge badge-primary" style="font-size: 0.9rem;">${sc.pureKnowledge}</span></td>
-              <td style="text-align: center;"><span class="badge badge-info" style="font-size: 0.9rem;">${sc.pureSkill}</span></td>
-              <td style="text-align: center;"><span class="badge badge-success" style="font-size: 0.95rem;">${sc.finalRekap}</span></td>
-            </tr>
-          `;
-        }).join('');
+      if (tbodyRows) {
+        tbodyRows.innerHTML = matched.map((r, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <strong>${UI.escapeHtml(DateTimeUtil.formatIndonesianDate(r.dateISO))}</strong>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">${UI.escapeHtml(r.dateISO)}</div>
+            </td>
+            <td>
+              <span class="badge ${r.jenisAsesmen === 'SUMATIF' ? 'badge-warning' : 'badge-primary'}">${UI.escapeHtml(r.jenisAsesmen)}</span>
+              <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(r.teacherName)}</div>
+            </td>
+            <td style="font-size: 0.83rem;">${UI.escapeHtml(r.tpPengetahuan)}</td>
+            <td style="text-align: center;"><span class="badge badge-info">${r.murniPengetahuan}</span></td>
+            <td style="text-align: center;">
+              ${r.skipKeterampilan || r.murniKeterampilan === null
+                ? '<span style="font-size:0.75rem; color:var(--text-muted);">100% Peng</span>'
+                : `<span class="badge badge-warning">${r.murniKeterampilan}</span>`}
+            </td>
+            <td style="text-align: center;"><span class="badge badge-success" style="font-size: 0.92rem;">${r.nilaiAkhir}</span></td>
+          </tr>
+        `).join('');
       }
     }
 
@@ -21527,235 +22094,388 @@ Format JSON wajib:
     if (modal) modal.classList.add('hidden');
   },
 
-  renderStudentStats(bucket, student) {
-    const recordsObj = bucket.presensiRecords || {};
-    let countH = 0;
-    let countS = 0;
-    let countI = 0;
-    let countA = 0;
+  // ==========================================================================
+  // TAB 3: ANALISIS PENILAIAN DPL (UNGGUL DI DIMENSI APA & LEMAH DI DIMENSI APA)
+  // ==========================================================================
+  renderDplAnalysisTab(ctx) {
+    const latestBySubdimensi = new Map();
 
-    Object.values(recordsObj).forEach(rec => {
-      const item = rec && rec.items && rec.items[student.id];
-      if (item) {
-        if (item.status === 'H') countH++;
-        else if (item.status === 'S') countS++;
-        else if (item.status === 'I') countI++;
-        else if (item.status === 'A') countA++;
-      }
+    ctx.matchingBuckets.forEach(bucket => {
+      const masterMap = new Map();
+      (bucket.dplMaster || []).forEach(m => {
+        if (m && m.id) masterMap.set(m.id, m);
+      });
+
+      (bucket.dplAssessments || []).forEach(rec => {
+        if (!rec) return;
+
+        // Format 1: Record langsung per item penilaian DPL siswa
+        if (this.isRecordMatchingStudent(rec.studentId, rec.studentName, ctx)) {
+          const masterItem = rec.dplId ? masterMap.get(rec.dplId) : null;
+          const dimensi = rec.dimensi || (masterItem && masterItem.dimensi) || 'Dimensi Profil Lulusan';
+          const subdimensi = rec.subdimensi || (masterItem && masterItem.subdimensi) || 'Sub-Dimensi';
+          const predicate = String(rec.predicate || rec.tahap || 'C').toUpperCase().trim();
+          const desc = rec.description || rec.narrative || rec.deskripsi || '';
+
+          const key = `${this.normalizeTextKey(dimensi)}__${this.normalizeTextKey(subdimensi)}`;
+          latestBySubdimensi.set(key, {
+            dateISO: rec.dateISO || DateTimeUtil.getTodayISO(),
+            dimensi,
+            subdimensi,
+            predicate,
+            description: desc
+          });
+        }
+      });
     });
 
-    const hadirEl = document.getElementById('student-stat-hadir');
-    const detailEl = document.getElementById('student-stat-attendance-detail');
-    if (hadirEl) hadirEl.textContent = `${countH} Hari`;
-    if (detailEl) detailEl.textContent = `Sakit: ${countS} | Izin: ${countI} | Alpa: ${countA}`;
+    const allDplItems = Array.from(latestBySubdimensi.values());
 
-    const koku = bucket.kokurikuler || {};
-    const groupObj = (koku.groups || []).find(g => g.id === student.kokuGroupId);
-    const groupName = groupObj ? groupObj.nama : 'Belum Terbagi';
-    const roleName = student.kokuRole || 'Anggota Tim';
+    // Kelompokkan Unggul (Mahir = M, Cakap = C) vs Lemah / Perlu Bimbingan (Berkembang = B)
+    const strongList = allDplItems
+      .filter(it => it.predicate === 'M' || it.predicate === 'C')
+      .sort((a, b) => (a.predicate === 'M' && b.predicate !== 'M' ? -1 : 1));
 
-    const grpNameEl = document.getElementById('student-stat-group-name');
-    const grpRoleEl = document.getElementById('student-stat-group-role');
-    if (grpNameEl) grpNameEl.textContent = groupName;
-    if (grpRoleEl) grpRoleEl.textContent = `Peran: ${roleName}`;
+    const weakList = allDplItems.filter(it => it.predicate === 'B');
 
-    const pInfo = koku.projectInfo || {};
-    const stageEl = document.getElementById('student-stat-project-stage');
-    const themeEl = document.getElementById('student-stat-project-theme');
-    if (stageEl) stageEl.textContent = `Tahap: ${pInfo.tahapAktif || 'PENGENALAN'}`;
-    if (themeEl) themeEl.textContent = `Tema: ${pInfo.tema || '-'}`;
-  },
+    const strongCountEl = document.getElementById('student-dpl-strong-count');
+    const weakCountEl = document.getElementById('student-dpl-weak-count');
+    const strongContainer = document.getElementById('student-dpl-strengths-list');
+    const weakContainer = document.getElementById('student-dpl-weaknesses-list');
+    const tbodyDpl = document.getElementById('tbody-student-dpl-records');
+    const tabBadge = document.getElementById('std-tab-badge-dpl');
 
-  renderStudentSchedule(bucket) {
-    const grid = document.getElementById('student-schedule-grid');
-    if (!grid) return;
+    if (strongCountEl) strongCountEl.textContent = `${strongList.length} Sub-Dimensi Unggul`;
+    if (weakCountEl) weakCountEl.textContent = `${weakList.length} Perlu Bimbingan`;
+    if (tabBadge) tabBadge.textContent = `${allDplItems.length} DPL`;
 
-    const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
-    const sched = bucket.schedule || {};
-
-    grid.innerHTML = days.map(day => {
-      const subjects = Array.isArray(sched[day]) ? sched[day] : [];
-      const listHtml = subjects.length > 0
-        ? `<ol style="padding-left: 1.15rem; font-size: 0.82rem; color: var(--text); margin-top: 0.35rem;">
-            ${subjects.map(s => `<li>${UI.escapeHtml(s)}</li>`).join('')}
-          </ol>`
-        : `<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.35rem;">Belum diatur</div>`;
-
-      return `
-        <div style="padding: 0.85rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm);">
-          <strong style="color: var(--primary); font-size: 0.88rem;">Hari ${day}</strong>
-          ${listHtml}
-        </div>
-      `;
-    }).join('');
-  },
-
-  renderStudentProjectBoard(bucket) {
-    const box = document.getElementById('student-project-board-box');
-    if (!box) return;
-
-    const info = (bucket.kokurikuler && bucket.kokurikuler.projectInfo) || {};
-
-    box.innerHTML = `
-      <div style="padding: 1rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: var(--primary-light); text-transform: uppercase;">
-          Judul & Tema Projek Kelas
-        </div>
-        <div style="font-size: 1rem; font-weight: 800; color: var(--dark); margin-top: 0.2rem;">
-          ${UI.escapeHtml(info.judul || 'Projek Kokurikuler P5')}
-        </div>
-        <div style="font-size: 0.82rem; color: var(--primary); margin-top: 0.15rem;">
-          Tema: ${UI.escapeHtml(info.tema || '-')} | Alokasi: ${UI.escapeHtml(info.alokasi || '-')}
-        </div>
-      </div>
-
-      <div style="padding: 0.9rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-sm); margin-bottom: 0.75rem;">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #92400e; text-transform: uppercase;">
-          Fokus Kegiatan Hari Ini
-        </div>
-        <p style="font-size: 0.85rem; color: #78350f; margin-top: 0.25rem;">
-          ${UI.escapeHtml(info.fokusHarian || '-')}
-        </p>
-      </div>
-
-      <div style="padding: 0.9rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius-sm);">
-        <div style="font-size: 0.75rem; font-weight: 800; color: #166534; text-transform: uppercase;">
-          Alat, Bahan, & Persiapan Kelompok
-        </div>
-        <p style="font-size: 0.85rem; color: #14532d; margin-top: 0.25rem;">
-          ${UI.escapeHtml(info.persiapan || '-')}
-        </p>
-      </div>
-    `;
-  },
-
-  previewStudentPhoto(fileInput) {
-    const file = fileInput && fileInput.files ? fileInput.files[0] : null;
-    const hiddenInp = document.getElementById('student-logbook-photo-data');
-    if (!file) {
-      if (hiddenInp) hiddenInp.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      if (hiddenInp) hiddenInp.value = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  },
-
-  handleSubmitStudentLogbook(event) {
-    event.preventDefault();
-    const ctx = this.getStudentContext();
-    if (!ctx) return;
-
-    const { bucket, student } = ctx;
-    const koku = KokuApp.ensureKokurikulerStructure(bucket);
-
-    const progresEl = document.getElementById('student-logbook-progres');
-    const kendalaEl = document.getElementById('student-logbook-kendala');
-    const photoHiddenEl = document.getElementById('student-logbook-photo-data');
-    const photoFileEl = document.getElementById('student-logbook-photo');
-
-    const progres = progresEl ? progresEl.value.trim() : '';
-    const kendala = kendalaEl ? kendalaEl.value.trim() : '';
-    const photoDataUrl = photoHiddenEl ? photoHiddenEl.value : '';
-
-    if (!progres || !kendala) {
-      UI.showNotif('Data Belum Lengkap', 'Harap isi ringkasan kegiatan dan kendala kelompok terlebih dahulu.', 'warning');
-      return;
-    }
-
-    const groupObj = (koku.groups || []).find(g => g.id === student.kokuGroupId) || koku.groups[0];
-    const groupId = groupObj ? groupObj.id : 'GRP_1';
-    const groupName = groupObj ? groupObj.nama : 'Kelompok Projek';
-
-    const newEntry = {
-      id: 'LOG_STD_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-      dateISO: DateTimeUtil.getTodayISO(),
-      timeStr: DateTimeUtil.getCurrentTimeStr(),
-      groupId: groupId,
-      groupName: groupName,
-      tahap: (koku.projectInfo && koku.projectInfo.tahapAktif) || 'Kontekstualisasi',
-      progres: progres,
-      kendala: kendala,
-      photoDataUrl: photoDataUrl || '',
-      submittedBy: `${student.nama} (${student.kokuRole || 'Perwakilan Kelompok'})`,
-      teacherFeedback: ''
-    };
-
-    koku.logbooks.unshift(newEntry);
-    DB.save();
-
-    if (progresEl) progresEl.value = '';
-    if (kendalaEl) kendalaEl.value = '';
-    if (photoHiddenEl) photoHiddenEl.value = '';
-    if (photoFileEl) photoFileEl.value = '';
-
-    this.renderStudentLogbookHistory(bucket, student);
-
-    UI.showNotif(
-      'Logbook Kelompok Berhasil Dikirim',
-      `Catatan progres harian untuk ${groupName} telah terkirim dan langsung tampil di halaman Logbook Guru.`,
-      'success'
-    );
-  },
-
-  renderStudentLogbookHistory(bucket, student) {
-    const container = document.getElementById('student-logbook-history-list');
-    if (!container) return;
-
-    const koku = KokuApp.ensureKokurikulerStructure(bucket);
-    const logs = (koku.logbooks || []).filter(
-      l => !student.kokuGroupId || l.groupId === student.kokuGroupId
-    );
-
-    if (logs.length === 0) {
-      container.innerHTML = `
-        <div class="alert-box alert-info" style="margin-top: 0;">
-          Belum ada riwayat jurnal Logbook untuk kelompok Anda. Silakan kirimkan laporan kegiatan hari ini melalui formulir di atas.
-        </div>
-      `;
-      return;
-    }
-
-    container.innerHTML = logs.map(item => {
-      const photoHtml = item.photoDataUrl
-        ? `<div style="margin-top: 0.6rem;"><img src="${item.photoDataUrl}" alt="Foto Dokumentasi" style="max-height: 160px; border-radius: 6px; border: 1px solid var(--border);"></div>`
-        : '';
-
-      const feedbackHtml = item.teacherFeedback
-        ? `
-          <div style="margin-top: 0.65rem; padding: 0.65rem 0.85rem; background: #f0fdf4; border-left: 4px solid var(--success); font-size: 0.84rem; color: #14532d;">
-            <strong>Tanggapan / Feedback Guru:</strong> ${UI.escapeHtml(item.teacherFeedback)}
-          </div>
-        `
-        : `
-          <div style="margin-top: 0.65rem; font-size: 0.78rem; color: var(--text-muted); font-style: italic;">
-            Menunggu tanggapan balik (feedback) dari Guru.
+    if (strongContainer) {
+      if (strongList.length === 0) {
+        strongContainer.innerHTML = `
+          <div style="font-size: 0.83rem; color: var(--text-muted); background: #ffffff; padding: 0.85rem; border-radius: 6px;">
+            Belum ada data capaian DPL dengan predikat Mahir (M) atau Cakap (C).
           </div>
         `;
+      } else {
+        strongContainer.innerHTML = strongList.map(item => `
+          <div class="std-dpl-chip-item" style="border-left: 4px solid ${item.predicate === 'M' ? '#16a34a' : '#2563eb'};">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+              <strong style="color: var(--dark);">${UI.escapeHtml(item.dimensi)}</strong>
+              <span class="badge ${item.predicate === 'M' ? 'badge-success' : 'badge-primary'}">
+                ${item.predicate === 'M' ? 'Mahir (M) — Sangat Unggul' : 'Cakap (C) — Standar Terpenuhi'}
+              </span>
+            </div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.2rem;">
+              Sub-Dimensi: ${UI.escapeHtml(item.subdimensi)}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.45;">
+              ${UI.escapeHtml(item.description)}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    if (weakContainer) {
+      if (weakList.length === 0) {
+        weakContainer.innerHTML = `
+          <div style="font-size: 0.83rem; color: #166534; background: #ffffff; padding: 0.85rem; border-radius: 6px; font-weight: 600;">
+            ${allDplItems.length > 0
+              ? '🎉 Luar biasa! Tidak ada dimensi yang berada pada kategori lemah/berkembang. Seluruh dimensi yang dinilai telah mencapai tahap Cakap atau Mahir.'
+              : 'Belum ada catatan dimensi yang memerlukan bimbingan khusus.'}
+          </div>
+        `;
+      } else {
+        weakContainer.innerHTML = weakList.map(item => `
+          <div class="std-dpl-chip-item" style="border-left: 4px solid #d97706;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+              <strong style="color: var(--dark);">${UI.escapeHtml(item.dimensi)}</strong>
+              <span class="badge badge-warning">Berkembang (B) — Perlu Ditingkatkan</span>
+            </div>
+            <div style="font-size: 0.8rem; font-weight: 700; color: #b45309; margin-bottom: 0.2rem;">
+              Sub-Dimensi: ${UI.escapeHtml(item.subdimensi)}
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.45;">
+              ${UI.escapeHtml(item.description)}
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    if (tbodyDpl) {
+      if (allDplItems.length === 0) {
+        tbodyDpl.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
+              Belum ada penilaian Dimensi Profil Lulusan (DPL) yang diinput oleh Bapak/Ibu Guru untuk Anda.
+            </td>
+          </tr>
+        `;
+      } else {
+        tbodyDpl.innerHTML = allDplItems.map((it, idx) => {
+          let predBadge = '<span class="badge badge-primary">Cakap (C)</span>';
+          if (it.predicate === 'M') predBadge = '<span class="badge badge-success">Mahir (M)</span>';
+          else if (it.predicate === 'B') predBadge = '<span class="badge badge-warning">Berkembang (B)</span>';
+
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${UI.escapeHtml(it.dateISO)}</td>
+              <td><strong>${UI.escapeHtml(it.dimensi)}</strong></td>
+              <td><span style="font-weight: 700; color: var(--primary);">${UI.escapeHtml(it.subdimensi)}</span></td>
+              <td style="text-align: center;">${predBadge}</td>
+              <td style="font-size: 0.84rem; line-height: 1.5;">${UI.escapeHtml(it.description)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+  },
+
+  // ==========================================================================
+  // TAB 4: NILAI & CAPAIAN KOKURIKULER SISWA (TANPA JURNAL LOGBOOK)
+  // ==========================================================================
+  renderKokurikulerTab(ctx) {
+    const koku = (ctx.mainBucket && ctx.mainBucket.kokurikuler) || {};
+    const pInfo = koku.projectInfo || {};
+    const groups = koku.groups || [];
+    const foundGroup = groups.find(g => g.id === ctx.studentObj.kokuGroupId);
+
+    const groupNameEl = document.getElementById('student-stat-group-name');
+    const groupRoleEl = document.getElementById('student-stat-group-role');
+    const projThemeEl = document.getElementById('student-stat-project-theme');
+    const projStageEl = document.getElementById('student-stat-project-stage');
+    const gradeSummaryEl = document.getElementById('student-koku-grade-summary');
+    const resultBoxEl = document.getElementById('student-koku-assessment-result-box');
+    const boardBoxEl = document.getElementById('student-project-board-box');
+    const tabBadge = document.getElementById('std-tab-badge-koku');
+
+    if (groupNameEl) groupNameEl.textContent = foundGroup ? foundGroup.nama : 'Belum Terbagi';
+    if (groupRoleEl) groupRoleEl.textContent = `Peran: ${ctx.studentObj.kokuRole || 'Anggota Tim'}`;
+    if (projThemeEl) projThemeEl.textContent = pInfo.judul || pInfo.tema || 'Kegiatan Kokurikuler Kelas';
+    if (projStageEl) projStageEl.textContent = `Tahap Aktif: ${pInfo.tahapAktif || 'PELAKSANAAN'}`;
+
+    // Cari nilai kokurikuler siswa dari berbagai struktur penyimpanan KokuApp
+    const kokuAssessmentsList = [];
+    let customRowData = null;
+
+    ctx.matchingBuckets.forEach(bucket => {
+      const bKoku = bucket.kokurikuler || {};
+      const charMap = bKoku.characterAssessments || {};
+
+      // Format A: charMap disimpan langsung per studentId (misal { pred1, pred2, dim1, dim2, note, ... })
+      const directStudentEntry = this.extractStudentScoreFromMap(charMap, ctx, bucket.students || []);
+      if (directStudentEntry && (directStudentEntry.pred1 || directStudentEntry.predicate || directStudentEntry.dim1)) {
+        customRowData = directStudentEntry;
+      }
+
+      // Format B: charMap disimpan per nama Dimensi -> { [studentId]: { predicate, note, description } }
+      Object.entries(charMap).forEach(([dimKey, mapVal]) => {
+        if (!mapVal || typeof mapVal !== 'object') return;
+        const stdEntry = this.extractStudentScoreFromMap(mapVal, ctx, bucket.students || []);
+        if (stdEntry && (stdEntry.predicate || stdEntry.grade)) {
+          kokuAssessmentsList.push({
+            dimensi: dimKey,
+            predicate: stdEntry.predicate || stdEntry.grade,
+            note: stdEntry.note || stdEntry.catatan || '',
+            description: stdEntry.description || stdEntry.deskripsi || ''
+          });
+        }
+      });
+    });
+
+    const predLabels = {
+      SB: { text: 'Sangat Baik (SB)', badge: 'badge-success' },
+      B: { text: 'Baik (B)', badge: 'badge-primary' },
+      BSH: { text: 'Berkembang Sesuai Harapan (BSH)', badge: 'badge-primary' },
+      C: { text: 'Cukup (C)', badge: 'badge-warning' },
+      MB: { text: 'Mulai Berkembang (MB)', badge: 'badge-warning' },
+      K: { text: 'Kurang / Perlu Bimbingan (K)', badge: 'badge-danger' }
+    };
+
+    if (customRowData) {
+      const p1 = predLabels[customRowData.pred1] || { text: customRowData.pred1 || 'Baik (B)', badge: 'badge-primary' };
+      const p2 = predLabels[customRowData.pred2] || { text: customRowData.pred2 || 'Baik (B)', badge: 'badge-primary' };
+
+      if (gradeSummaryEl) gradeSummaryEl.textContent = `${customRowData.pred1 || 'B'} & ${customRowData.pred2 || 'B'}`;
+      if (tabBadge) tabBadge.textContent = `Nilai: ${customRowData.pred1 || 'B'}`;
+
+      if (resultBoxEl) {
+        resultBoxEl.innerHTML = `
+          <div class="grid-2" style="margin-bottom: 1rem;">
+            <div style="padding: 1rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: var(--radius-md);">
+              <div style="font-size: 0.78rem; font-weight: 700; color: #166534; text-transform: uppercase;">Dimensi Utama 1</div>
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">${UI.escapeHtml(customRowData.dim1 || 'Penalaran Kritis')}</div>
+              <span class="badge ${p1.badge}">${UI.escapeHtml(p1.text)}</span>
+            </div>
+            <div style="padding: 1rem; background: #eff6ff; border: 1px solid #93c5fd; border-radius: var(--radius-md);">
+              <div style="font-size: 0.78rem; font-weight: 700; color: #1e40af; text-transform: uppercase;">Dimensi Pendamping 2</div>
+              <div style="font-size: 1.05rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">${UI.escapeHtml(customRowData.dim2 || 'Komunikasi')}</div>
+              <span class="badge ${p2.badge}">${UI.escapeHtml(p2.text)}</span>
+            </div>
+          </div>
+          <div style="padding: 1rem; background: #f8fafc; border: 1px solid var(--border); border-left: 4px solid var(--secondary); border-radius: var(--radius-sm); font-size: 0.88rem; line-height: 1.6;">
+            <div><strong>Catatan Pendidik:</strong> ${UI.escapeHtml(customRowData.note || customRowData.catatan || 'Aktif mengikuti kegiatan kokurikuler dengan baik.')}</div>
+            ${customRowData.deskripsi ? `<div style="margin-top: 0.45rem;"><strong>Deskripsi Rapor Kokurikuler:</strong> ${UI.escapeHtml(customRowData.deskripsi)}</div>` : ''}
+          </div>
+        `;
+      }
+    } else if (kokuAssessmentsList.length > 0) {
+      if (gradeSummaryEl) gradeSummaryEl.textContent = `${kokuAssessmentsList.length} Dimensi Dinilai`;
+      if (tabBadge) tabBadge.textContent = `${kokuAssessmentsList.length} Nilai`;
+
+      if (resultBoxEl) {
+        resultBoxEl.innerHTML = `
+          <div class="table-responsive">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 50px;">No</th>
+                  <th>Dimensi Profil Lulusan</th>
+                  <th style="text-align: center;">Predikat Capaian</th>
+                  <th>Catatan & Deskripsi Rapor Kokurikuler</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${kokuAssessmentsList.map((item, idx) => {
+                  const pMeta = predLabels[item.predicate] || { text: item.predicate, badge: 'badge-primary' };
+                  const descText = item.description || `Ananda ${ctx.studentObj.nama} menunjukkan capaian ${pMeta.text} pada dimensi ${item.dimensi} dalam kegiatan kokurikuler "${pInfo.judul || pInfo.tema || 'Kelas'}".`;
+                  return `
+                    <tr>
+                      <td>${idx + 1}</td>
+                      <td><strong>${UI.escapeHtml(item.dimensi)}</strong></td>
+                      <td style="text-align: center;"><span class="badge ${pMeta.badge}">${UI.escapeHtml(pMeta.text)}</span></td>
+                      <td style="font-size: 0.85rem; line-height: 1.55;">
+                        ${UI.escapeHtml(descText)}
+                        ${item.note ? `<div style="font-size:0.78rem; color:var(--secondary); margin-top:0.25rem;"><strong>Catatan Guru:</strong> ${UI.escapeHtml(item.note)}</div>` : ''}
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
+        `;
+      }
+    } else {
+      if (gradeSummaryEl) gradeSummaryEl.textContent = 'Menunggu Penilaian';
+      if (tabBadge) tabBadge.textContent = 'Aktif';
+      if (resultBoxEl) {
+        resultBoxEl.innerHTML = `
+          <div class="alert-box alert-info" style="margin-top: 0;">
+            Bapak/Ibu Guru belum menginput nilai asesmen akhir Kokurikuler untuk Anda. Silakan ikuti panduan kegiatan kokurikuler kelas di bawah ini.
+          </div>
+        `;
+      }
+    }
+
+    if (boardBoxEl) {
+      boardBoxEl.innerHTML = `
+        <div style="background: #f0fdfa; border: 1px solid #5eead4; padding: 1.1rem; border-radius: var(--radius-md);">
+          <span class="badge badge-success" style="margin-bottom: 0.35rem;">Tema: ${UI.escapeHtml(pInfo.tema || 'Gaya Hidup Berkelanjutan')}</span>
+          <h4 style="font-size: 1.05rem; color: var(--dark); margin-bottom: 0.65rem;">${UI.escapeHtml(pInfo.judul || 'Projek Kolaborasi Kelas')}</h4>
+          <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+            <strong style="color: var(--primary);">Target Kompetensi:</strong><br>
+            ${UI.escapeHtml(pInfo.targetMingguan || '-')}
+          </div>
+          <div style="font-size: 0.85rem; margin-bottom: 0.5rem;">
+            <strong style="color: var(--secondary);">Fokus Aktivitas Hari Ini:</strong><br>
+            ${UI.escapeHtml(pInfo.fokusHarian || '-')}
+          </div>
+          <div style="font-size: 0.85rem; background: #ffffff; padding: 0.65rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border);">
+            <strong style="color: var(--accent);">Alat, Bahan & Persiapan Siswa:</strong><br>
+            ${UI.escapeHtml(pInfo.persiapan || '-')}
+          </div>
+        </div>
+      `;
+    }
+  },
+
+  // ==========================================================================
+  // TAB 5: NILAI & CAPAIAN EKSTRAKURIKULER SISWA
+  // ==========================================================================
+  renderEkstrakurikulerTab(ctx) {
+    const ekskulRows = [];
+
+    ctx.matchingBuckets.forEach(bucket => {
+      (bucket.ekskulAssessments || []).forEach(rec => {
+        if (!rec) return;
+
+        // Format 1: Record langsung per siswa
+        if (this.isRecordMatchingStudent(rec.studentId, rec.studentName, ctx)) {
+          ekskulRows.push({
+            dateISO: rec.dateISO || DateTimeUtil.getTodayISO(),
+            programName: rec.programName || rec.namaProgram || 'Ekstrakurikuler',
+            grade: rec.grade || rec.predicate || rec.skor || 'B',
+            masteredIndicator: rec.masteredIndicator || rec.mahir || '-',
+            weaknessIndicator: rec.weaknessIndicator || rec.kekurangan || 'Tidak Ada (Sudah Menguasai Seluruh Indikator)',
+            description: rec.description || rec.deskripsi || ''
+          });
+        }
+        // Format 2: Record sesi berisi map scores/items per studentId
+        else if (rec.scores || rec.items) {
+          const mapObj = rec.scores || rec.items;
+          const stdEntry = this.extractStudentScoreFromMap(mapObj, ctx, bucket.students || []);
+          if (stdEntry) {
+            ekskulRows.push({
+              dateISO: rec.dateISO || DateTimeUtil.getTodayISO(),
+              programName: rec.programName || rec.namaProgram || 'Ekstrakurikuler',
+              grade: stdEntry.grade || stdEntry.predicate || 'B',
+              masteredIndicator: stdEntry.masteredIndicator || '-',
+              weaknessIndicator: stdEntry.weaknessIndicator || 'Tidak Ada',
+              description: stdEntry.description || ''
+            });
+          }
+        }
+      });
+    });
+
+    const totalBadgeEl = document.getElementById('student-ekskul-total-badge');
+    const tabBadge = document.getElementById('std-tab-badge-ekskul');
+    const tbody = document.getElementById('tbody-student-ekskul-records');
+
+    if (totalBadgeEl) totalBadgeEl.textContent = `${ekskulRows.length} Cabang Ekstrakurikuler Dinilai`;
+    if (tabBadge) tabBadge.textContent = `${ekskulRows.length} Ekskul`;
+
+    if (!tbody) return;
+
+    if (ekskulRows.length === 0) {
+      const availableEkskul = ((ctx.mainBucket && ctx.mainBucket.ekskulMaster) || []).map(e => e.nama).join(', ');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+            Belum ada nilai ekstrakurikuler yang diinput untuk Anda.
+            ${availableEkskul ? `<div style="margin-top:0.35rem; font-size:0.8rem;">Program Ekstrakurikuler Kelas: <strong>${UI.escapeHtml(availableEkskul)}</strong></div>` : ''}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const gradeMeta = {
+      A: { label: 'Sangat Baik (A)', badge: 'badge-success' },
+      B: { label: 'Baik (B)', badge: 'badge-primary' },
+      C: { label: 'Cukup (C)', badge: 'badge-warning' },
+      D: { label: 'Perlu Bimbingan (D)', badge: 'badge-danger' }
+    };
+
+    tbody.innerHTML = ekskulRows.map((row, idx) => {
+      const g = gradeMeta[row.grade] || { label: `Baik (${row.grade})`, badge: 'badge-primary' };
+      const weakClean = (!row.weaknessIndicator || row.weaknessIndicator === 'NONE')
+        ? 'Tidak Ada (Menguasai Seluruh Indikator)'
+        : row.weaknessIndicator;
 
       return `
-        <div style="padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); background: #ffffff; margin-bottom: 0.85rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.45rem;">
-            <div>
-              <span class="badge badge-primary">${UI.escapeHtml(item.groupName)}</span>
-              <span class="badge badge-warning">${UI.escapeHtml(item.tahap)}</span>
-            </div>
-            <span style="font-size: 0.78rem; color: var(--text-muted);">
-              ${UI.escapeHtml(DateTimeUtil.formatIndonesianDate(item.dateISO))} (${UI.escapeHtml(item.timeStr || '-')})
-            </span>
-          </div>
-          <div style="font-size: 0.85rem; margin-bottom: 0.3rem;">
-            <strong>Progres Kegiatan:</strong> ${UI.escapeHtml(item.progres)}
-          </div>
-          <div style="font-size: 0.85rem; color: #92400e;">
-            <strong>Kendala:</strong> ${UI.escapeHtml(item.kendala)}
-          </div>
-          ${photoHtml}
-          ${feedbackHtml}
-        </div>
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${UI.escapeHtml(row.dateISO)}</td>
+          <td><strong>${UI.escapeHtml(row.programName)}</strong></td>
+          <td style="text-align: center;"><span class="badge ${g.badge}">${UI.escapeHtml(g.label)}</span></td>
+          <td style="font-size: 0.82rem; color: #15803d; font-weight: 600;">✓ ${UI.escapeHtml(row.masteredIndicator)}</td>
+          <td style="font-size: 0.82rem; color: #b45309;">${UI.escapeHtml(weakClean)}</td>
+          <td style="font-size: 0.84rem; line-height: 1.5;">${UI.escapeHtml(row.description)}</td>
+        </tr>
       `;
     }).join('');
   }
