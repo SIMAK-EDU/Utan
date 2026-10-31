@@ -6634,11 +6634,98 @@ const supabaseClient = (
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
+const DELETED_BLACKLIST_STORAGE_KEY = 'SIMAK_EDU_DELETED_BLACKLIST_V1';
+
 const DB = {
   data: null,
   isSyncing: false,
   saveTimeout: null,
   lastLocalDeleteTimestamp: 0,
+
+  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat
+  getLocalBlacklist() {
+    try {
+      const raw = localStorage.getItem(DELETED_BLACKLIST_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          accountIds: Array.isArray(parsed.accountIds) ? parsed.accountIds.map(String) : [],
+          pendingIds: Array.isArray(parsed.pendingIds) ? parsed.pendingIds.map(String) : [],
+          deletedAccountNips: Array.isArray(parsed.deletedAccountNips) ? parsed.deletedAccountNips.map(String) : []
+        };
+      }
+    } catch (e) {
+      console.warn('Gagal membaca blacklist lokal:', e);
+    }
+    return { accountIds: [], pendingIds: [], deletedAccountNips: [] };
+  },
+
+  saveLocalBlacklist(bl) {
+    try {
+      localStorage.setItem(DELETED_BLACKLIST_STORAGE_KEY, JSON.stringify({
+        accountIds: Array.from(new Set((bl.accountIds || []).map(String))),
+        pendingIds: Array.from(new Set((bl.pendingIds || []).map(String))),
+        deletedAccountNips: Array.from(new Set((bl.deletedAccountNips || []).map(String)))
+      }));
+    } catch (e) {
+      console.warn('Gagal menyimpan blacklist lokal:', e);
+    }
+  },
+
+  // Mengunci ID log atau ID akun yang dihapus agar permanen dan tidak pernah muncul kembali
+  lockPermanentDeletion({ accId = null, pendingId = null, accNip = null }) {
+    const bl = this.getLocalBlacklist();
+
+    if (accId) {
+      const idStr = String(accId);
+      if (!bl.accountIds.includes(idStr)) bl.accountIds.push(idStr);
+    }
+    if (pendingId) {
+      const pIdStr = String(pendingId);
+      if (!bl.pendingIds.includes(pIdStr)) bl.pendingIds.push(pIdStr);
+    }
+    if (accNip) {
+      const cleanNip = String(accNip).replace(/\s+/g, '').trim();
+      if (cleanNip && !bl.deletedAccountNips.includes(cleanNip)) {
+        bl.deletedAccountNips.push(cleanNip);
+      }
+    }
+
+    this.saveLocalBlacklist(bl);
+
+    if (this.data) {
+      if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
+      if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
+      if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
+
+      if (accId && !this.data.deletedAccountIds.includes(String(accId))) {
+        this.data.deletedAccountIds.push(String(accId));
+      }
+      if (pendingId && !this.data.deletedPendingIds.includes(String(pendingId))) {
+        this.data.deletedPendingIds.push(String(pendingId));
+      }
+      if (accNip) {
+        const cleanNip = String(accNip).replace(/\s+/g, '').trim();
+        if (cleanNip && !this.data.deletedAccountNips.includes(cleanNip)) {
+          this.data.deletedAccountNips.push(cleanNip);
+        }
+      }
+    }
+  },
+
+  // Membuka kunci NIP apabila Admin di kemudian hari mendaftarkan ulang guru dengan NIP tersebut
+  unlockNipForNewAccount(nipRaw) {
+    const cleanNip = String(nipRaw || '').replace(/\s+/g, '').trim();
+    if (!cleanNip) return;
+
+    const bl = this.getLocalBlacklist();
+    bl.deletedAccountNips = (bl.deletedAccountNips || []).filter(n => n !== cleanNip);
+    this.saveLocalBlacklist(bl);
+
+    if (this.data && Array.isArray(this.data.deletedAccountNips)) {
+      this.data.deletedAccountNips = this.data.deletedAccountNips.filter(n => n !== cleanNip);
+    }
+  },
 
   async init() {
     this.updateCloudBadge('MEMUAT DATA CLOUD...', 'warning');
@@ -6700,22 +6787,24 @@ const DB = {
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
       this.saveTimeout = setTimeout(() => {
         this.pushToSupabaseImmediate();
-      }, 400);
+      }, 300);
     }
   },
 
-  // Fungsi penyimpanan instan tanpa jeda (khusus aksi krusial Admin seperti Hapus Permanen & Edit Akun)
-  async saveImmediate() {
+  // Menyimpan instan ke localStorage (0 ms) lalu mengirim ke Cloud di latar belakang tanpa memblokir tampilan tabel
+  saveImmediate() {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
     this.ensureIntegrity();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+
     if (supabaseClient) {
       this.updateCloudBadge('MENGUNCI PERUBAHAN DI CLOUD...', 'warning');
-      await this.pushToSupabaseImmediate();
+      return this.pushToSupabaseImmediate();
     }
+    return Promise.resolve();
   },
 
   async pushToSupabaseImmediate() {
@@ -6735,13 +6824,13 @@ const DB = {
 
       if (error) {
         console.error('Gagal menyimpan ke Supabase:', error.message);
-        this.updateCloudBadge('GAGAL SINKRON CLOUD', 'danger');
+        this.updateCloudBadge('TERSIMPAN DI LOKAL', 'warning');
       } else {
         this.updateCloudBadge('TERSIMPAN DI CLOUD', 'success');
       }
     } catch (err) {
       console.error('Error jaringan Supabase:', err);
-      this.updateCloudBadge('GANGGUAN JARINGAN', 'danger');
+      this.updateCloudBadge('TERSIMPAN DI LOKAL', 'warning');
     } finally {
       this.isSyncing = false;
     }
@@ -6766,21 +6855,7 @@ const DB = {
         .maybeSingle();
 
       if (!error && row && row.payload) {
-        // Pertahankan daftar hitam penghapusan lokal agar akun terhapus tidak hidup kembali
-        const localDeletedIds = (this.data && Array.isArray(this.data.deletedAccountIds)) ? this.data.deletedAccountIds : [];
-        const localDeletedRegIds = (this.data && Array.isArray(this.data.deletedPendingIds)) ? this.data.deletedPendingIds : [];
-
         this.data = row.payload;
-        if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
-        if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
-
-        localDeletedIds.forEach(id => {
-          if (!this.data.deletedAccountIds.includes(id)) this.data.deletedAccountIds.push(id);
-        });
-        localDeletedRegIds.forEach(id => {
-          if (!this.data.deletedPendingIds.includes(id)) this.data.deletedPendingIds.push(id);
-        });
-
         this.ensureIntegrity();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         this.refreshCurrentActiveView();
@@ -6809,26 +6884,12 @@ const DB = {
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
-          // Abaikan pantulan realtime jika sedang proses menyimpan atau baru saja menghapus akun (< 4 detik)
+          // Abaikan pantulan realtime selama 6 detik setelah Admin melakukan penghapusan
           if (this.isSyncing) return;
-          if (Date.now() - this.lastLocalDeleteTimestamp < 4000) return;
+          if (Date.now() - this.lastLocalDeleteTimestamp < 6000) return;
 
           if (payload.new && payload.new.payload) {
-            const currentDeletedAccIds = (this.data && Array.isArray(this.data.deletedAccountIds)) ? [...this.data.deletedAccountIds] : [];
-            const currentDeletedPendingIds = (this.data && Array.isArray(this.data.deletedPendingIds)) ? [...this.data.deletedPendingIds] : [];
-
             this.data = payload.new.payload;
-
-            if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
-            if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
-
-            currentDeletedAccIds.forEach(id => {
-              if (!this.data.deletedAccountIds.includes(id)) this.data.deletedAccountIds.push(id);
-            });
-            currentDeletedPendingIds.forEach(id => {
-              if (!this.data.deletedPendingIds.includes(id)) this.data.deletedPendingIds.push(id);
-            });
-
             this.ensureIntegrity();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
             this.refreshCurrentActiveView();
@@ -6882,10 +6943,36 @@ const DB = {
   },
 
   ensureIntegrity() {
+    if (!this.data) return;
     if (!this.data.accounts) this.data.accounts = [];
     if (!this.data.pendingTeachers) this.data.pendingTeachers = [];
     if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
     if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
+    if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
+
+    // Gabungkan daftar hitam lokal perangkat dengan daftar hitam dari Cloud
+    const localBl = this.getLocalBlacklist();
+    localBl.accountIds.forEach(id => {
+      if (!this.data.deletedAccountIds.includes(String(id))) {
+        this.data.deletedAccountIds.push(String(id));
+      }
+    });
+    localBl.pendingIds.forEach(id => {
+      if (!this.data.deletedPendingIds.includes(String(id))) {
+        this.data.deletedPendingIds.push(String(id));
+      }
+    });
+    localBl.deletedAccountNips.forEach(nip => {
+      if (!this.data.deletedAccountNips.includes(String(nip))) {
+        this.data.deletedAccountNips.push(String(nip));
+      }
+    });
+
+    this.saveLocalBlacklist({
+      accountIds: this.data.deletedAccountIds,
+      pendingIds: this.data.deletedPendingIds,
+      deletedAccountNips: this.data.deletedAccountNips
+    });
 
     if (!this.data.pillarLocks) {
       this.data.pillarLocks = {
@@ -6898,17 +6985,27 @@ const DB = {
     if (!this.data.classData) this.data.classData = {};
     if (!this.data.schoolVisiMisi) this.data.schoolVisiMisi = {};
 
-    // Filter permanen: pastikan akun atau pengajuan yang pernah dihapus Admin tidak pernah muncul lagi
-    const deletedAccSet = new Set(this.data.deletedAccountIds);
-    const deletedPendSet = new Set(this.data.deletedPendingIds);
+    const deletedAccSet = new Set(this.data.deletedAccountIds.map(String));
+    const deletedPendSet = new Set(this.data.deletedPendingIds.map(String));
+    const deletedNipSet = new Set(this.data.deletedAccountNips.map(String));
 
-    this.data.accounts = this.data.accounts.filter(acc => {
-      if (acc && acc.isMasterAdmin === true) return true;
-      return acc && !deletedAccSet.has(acc.id);
+    // Pastikan setiap item memiliki ID valid & saring semua akun yang pernah dihapus
+    this.data.accounts = this.data.accounts.filter((acc, idx) => {
+      if (!acc) return false;
+      if (acc.isMasterAdmin === true) return true;
+      if (!acc.id) acc.id = 'ACC_LEGACY_' + idx + '_' + String(acc.nip || '').replace(/\D/g, '');
+      const cleanNip = String(acc.nip || '').replace(/\s+/g, '').trim();
+      if (deletedAccSet.has(String(acc.id))) return false;
+      if (cleanNip && deletedNipSet.has(cleanNip)) return false;
+      return true;
     });
 
-    this.data.pendingTeachers = this.data.pendingTeachers.filter(pt => {
-      return pt && !deletedPendSet.has(pt.id);
+    // Pastikan setiap log pengajuan memiliki ID valid & saring semua log yang pernah dihapus permanen
+    this.data.pendingTeachers = this.data.pendingTeachers.filter((pt, idx) => {
+      if (!pt) return false;
+      if (!pt.id) pt.id = 'REG_LEGACY_' + idx + '_' + String(pt.nip || '').replace(/\D/g, '');
+      if (deletedPendSet.has(String(pt.id))) return false;
+      return true;
     });
 
     const hasAndri = this.data.accounts.some(acc => acc.isMasterAdmin === true);
@@ -7070,6 +7167,7 @@ const DB = {
       pendingTeachers: [],
       deletedAccountIds: [],
       deletedPendingIds: [],
+      deletedAccountNips: [],
       pillarLocks: {
         data_kelas: false,
         intrakurikuler: false,
@@ -7958,8 +8056,9 @@ const LandingUI = {
   }
 });
 
-  const AdminApp = {
+  const ADMIN_PRO_METHODS = {
   openAdminDashboard() {
+    Object.assign(AdminApp, ADMIN_PRO_METHODS);
     if (!AppState.currentUser || !AppState.currentUser.isMasterAdmin) {
       UI.showNotif('Akses Ditolak', 'Halaman ini khusus untuk Administrator Utama.', 'danger');
       return;
@@ -7969,6 +8068,7 @@ const LandingUI = {
     AppState.isReadOnlyInspection = false;
     AppState.inspectedTeacherId = null;
 
+    DB.ensureIntegrity();
     UI.updateNavbar();
     SchoolNormalizer.refreshSchoolDatalist();
     this.renderAdminStats();
@@ -7979,13 +8079,13 @@ const LandingUI = {
   },
 
   renderAdminStats() {
-    const pendingList = (DB.data.pendingTeachers || []).filter(p => p.status === 'PENDING');
-    const teacherList = (DB.data.accounts || []).filter(a => a.role === 'GURU_KELAS' || a.role === 'GURU_MAPEL');
-    const principalList = (DB.data.accounts || []).filter(a => a.role === 'KEPALA_SEKOLAH');
+    const pendingList = (DB.data.pendingTeachers || []).filter(p => p && p.status === 'PENDING');
+    const teacherList = (DB.data.accounts || []).filter(a => a && (a.role === 'GURU_KELAS' || a.role === 'GURU_MAPEL'));
+    const principalList = (DB.data.accounts || []).filter(a => a && a.role === 'KEPALA_SEKOLAH');
 
     const schoolKeys = new Set();
     (DB.data.accounts || []).forEach(a => {
-      if (a.schoolKey) schoolKeys.add(a.schoolKey);
+      if (a && a.schoolKey) schoolKeys.add(a.schoolKey);
     });
 
     const elPending = document.getElementById('stat-admin-pending');
@@ -8005,13 +8105,17 @@ const LandingUI = {
     }
   },
 
+  // =========================================================================
+  // 1. TABEL NOTIFIKASI PENGAJUAN GURU BARU (SETUJUI, TOLAK, & HAPUS PERMANEN LOG)
+  // =========================================================================
   renderPendingTeachersTable() {
     const tbody = document.getElementById('tbody-admin-pending-teachers');
     const emptyBox = document.getElementById('admin-pending-empty');
     if (!tbody) return;
 
+    DB.ensureIntegrity();
     const list = DB.data.pendingTeachers || [];
-    const pendingCount = list.filter(item => item.status === 'PENDING').length;
+    const pendingCount = list.filter(item => item && item.status === 'PENDING').length;
 
     if (emptyBox) {
       if (pendingCount === 0) {
@@ -8033,6 +8137,12 @@ const LandingUI = {
     }
 
     tbody.innerHTML = list.map((item, idx) => {
+      // Pastikan setiap baris memiliki ID unik yang valid agar tombol hapus tidak pernah gagal
+      if (!item.id) {
+        item.id = 'REG_FIX_' + idx + '_' + String(item.nip || Date.now()).replace(/\D/g, '');
+      }
+      const safeId = String(item.id).replace(/'/g, "\\'");
+
       const roleLabel = item.role === 'GURU_MAPEL'
         ? `Guru Mapel (${UI.escapeHtml(item.mapelDiampu || '-')})`
         : item.role === 'KEPALA_SEKOLAH'
@@ -8050,24 +8160,27 @@ const LandingUI = {
       if (item.status === 'PENDING') {
         actionButtons = `
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-success btn-sm" onclick="AdminApp.openApproveModal('${item.id}')">
+            <button type="button" class="btn btn-success btn-sm" onclick="AdminApp.openApproveModal('${safeId}')">
               Verifikasi / Edit & Setujui
             </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.rejectTeacherRequest('${item.id}')">
+            <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.rejectTeacherRequest('${safeId}', ${idx})">
               Tolak
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;" onclick="AdminApp.deletePendingLog('${safeId}', ${idx})">
+              🗑️ Hapus Permanen Log
             </button>
           </div>
         `;
       } else {
         actionButtons = `
-          <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;" onclick="AdminApp.deletePendingLog('${item.id}')">
+          <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.deletePendingLog('${safeId}', ${idx})">
             🗑️ Hapus Permanen Log
           </button>
         `;
       }
 
       return `
-        <tr>
+        <tr id="row-pending-item-${idx}">
           <td>${idx + 1}</td>
           <td><strong>${UI.escapeHtml(item.nama)}</strong></td>
           <td><span style="font-family: monospace;">${UI.escapeHtml(item.nip)}</span></td>
@@ -8127,7 +8240,7 @@ const LandingUI = {
   },
 
   openApproveModal(regId) {
-    const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
+    const req = (DB.data.pendingTeachers || []).find(r => r && String(r.id) === String(regId));
     if (!req) return;
 
     SchoolNormalizer.refreshSchoolDatalist();
@@ -8173,7 +8286,7 @@ const LandingUI = {
     document.getElementById('approve-release-password').value = creds.password;
   },
 
-  async confirmApproveTeacher(event) {
+  confirmApproveTeacher(event) {
     event.preventDefault();
     const regId = document.getElementById('approve-reg-id').value;
     const editedNama = document.getElementById('approve-teacher-nama').value.trim();
@@ -8188,7 +8301,7 @@ const LandingUI = {
     const username = document.getElementById('approve-release-username').value.trim();
     const password = document.getElementById('approve-release-password').value.trim();
 
-    const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
+    const req = (DB.data.pendingTeachers || []).find(r => r && String(r.id) === String(regId));
     if (!req) return;
 
     if (!editedNama || !editedNip || !editedSekolahRaw || !username || !password) {
@@ -8196,8 +8309,13 @@ const LandingUI = {
       return;
     }
 
+    // Buka kunci NIP apabila sebelumnya pernah dihapus
+    if (typeof DB.unlockNipForNewAccount === 'function') {
+      DB.unlockNipForNewAccount(editedNip);
+    }
+
     const duplicateUser = (DB.data.accounts || []).find(
-      acc => String(acc.username).toLowerCase() === username.toLowerCase()
+      acc => acc && String(acc.username).toLowerCase() === username.toLowerCase()
     );
     if (duplicateUser) {
       UI.showNotif('Username Sudah Digunakan', `Username "${username}" telah dipakai oleh akun ${duplicateUser.nama}. Silakan ubah username tersebut.`, 'danger');
@@ -8230,7 +8348,6 @@ const LandingUI = {
       createdAt: DateTimeUtil.getCurrentDateTimeStr()
     };
 
-    // Perbarui juga log pengajuan dengan data hasil koreksi Admin
     req.nama = editedNama;
     req.nip = editedNip;
     req.role = editedRole;
@@ -8245,53 +8362,95 @@ const LandingUI = {
     req.releasedPassword = password;
 
     DB.data.accounts.push(newAccount);
-    await DB.saveImmediate();
 
+    // Perbarui tampilan secara instan terlebih dahulu
     this.closeApproveModal();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
     this.renderAccountsTable();
     SchoolNormalizer.refreshSchoolDatalist();
 
+    // Simpan di latar belakang
+    DB.saveImmediate();
+
     UI.showNotif(
       'Pendaftaran Disetujui & Akun Dirilis',
-      `Akun ${newAccount.nama} telah dikelompokkan ke sekolah ${newAccount.schoolDisplay} dengan Username: ${username} dan Password: ${password}.`,
+      `Akun ${newAccount.nama} (${newAccount.schoolDisplay}) telah disetujui dengan Username: ${username} dan Password: ${password}.`,
       'success'
     );
   },
 
-  async rejectTeacherRequest(regId) {
-    const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
+  rejectTeacherRequest(regId, fallbackIdx = -1) {
+    let req = (DB.data.pendingTeachers || []).find(r => r && String(r.id) === String(regId));
+    if (!req && fallbackIdx >= 0 && DB.data.pendingTeachers && DB.data.pendingTeachers[fallbackIdx]) {
+      req = DB.data.pendingTeachers[fallbackIdx];
+    }
     if (!req) return;
 
     req.status = 'REJECTED';
-    await DB.saveImmediate();
+
+    // Perbarui tabel langsung tanpa jeda
     this.renderAdminStats();
     this.renderPendingTeachersTable();
 
+    // Simpan ke Cloud di latar belakang
+    DB.saveImmediate();
+
     UI.showNotif(
       'Pengajuan Ditolak',
-      `Permintaan pendaftaran atas nama ${req.nama} (NIP: ${req.nip}) telah ditolak.`,
+      `Permintaan pendaftaran atas nama ${req.nama} (NIP: ${req.nip}) telah diubah menjadi DITOLAK. Anda dapat menekan "Hapus Permanen Log" untuk membersihkan baris ini.`,
       'warning'
     );
   },
 
-  async deletePendingLog(regId) {
-    if (!Array.isArray(DB.data.deletedPendingIds)) {
-      DB.data.deletedPendingIds = [];
-    }
-    if (!DB.data.deletedPendingIds.includes(regId)) {
-      DB.data.deletedPendingIds.push(regId);
+  // FUNGSI HAPUS PERMANEN LOG PENGAJUAN GURU BARU (INSTAN 0 DETIK & ANTI MUNCUL KEMBALI)
+  deletePendingLog(regId, fallbackIdx = -1) {
+    const list = DB.data.pendingTeachers || [];
+    let target = list.find(r => r && String(r.id) === String(regId));
+    if (!target && fallbackIdx >= 0 && list[fallbackIdx]) {
+      target = list[fallbackIdx];
     }
 
+    const deletedName = target ? target.nama : 'Pengajuan Guru';
+    const targetIdStr = target && target.id ? String(target.id) : String(regId);
+
+    // 1. Kunci ID Log ke dalam daftar hitam permanen agar tidak pernah hidup lagi
+    if (typeof DB.lockPermanentDeletion === 'function') {
+      DB.lockPermanentDeletion({ pendingId: targetIdStr });
+    } else {
+      if (!Array.isArray(DB.data.deletedPendingIds)) DB.data.deletedPendingIds = [];
+      if (!DB.data.deletedPendingIds.includes(targetIdStr)) DB.data.deletedPendingIds.push(targetIdStr);
+    }
+
+    // 2. Hapus item dari array DB.data.pendingTeachers
     DB.lastLocalDeleteTimestamp = Date.now();
-    DB.data.pendingTeachers = (DB.data.pendingTeachers || []).filter(r => r.id !== regId);
+    DB.data.pendingTeachers = list.filter((r, idx) => {
+      if (!r) return false;
+      if (String(r.id) === targetIdStr) return false;
+      if (target && r === target) return false;
+      if (!target && idx === fallbackIdx) return false;
+      return true;
+    });
 
-    await DB.saveImmediate();
+    // 3. Perbarui tabel HTML & statistik SEKARANG JUGA (sebelum request jaringan)
     this.renderAdminStats();
     this.renderPendingTeachersTable();
+    SchoolNormalizer.refreshSchoolDatalist();
+
+    // 4. Kunci perubahan ke localStorage & Cloud Supabase di latar belakang
+    DB.saveImmediate();
+
+    // 5. Berikan respon notifikasi profesional bahwa log telah terhapus permanen
+    UI.showNotif(
+      'Log Pengajuan Dihapus Permanen',
+      `Riwayat pengajuan atas nama ${deletedName} telah dihapus secara permanen dari tabel.`,
+      'success'
+    );
   },
 
+  // =========================================================================
+  // 2. KONTROL KUNCI / BUKA PILAR HALAMAN GURU KELAS
+  // =========================================================================
   renderPillarLocksState() {
     const locks = DB.data.pillarLocks || {
       data_kelas: false,
@@ -8332,7 +8491,7 @@ const LandingUI = {
     });
   },
 
-  async togglePillarLock(pillarKey) {
+  togglePillarLock(pillarKey) {
     if (!DB.data.pillarLocks) {
       DB.data.pillarLocks = {
         data_kelas: false,
@@ -8343,8 +8502,8 @@ const LandingUI = {
     }
 
     DB.data.pillarLocks[pillarKey] = !DB.data.pillarLocks[pillarKey];
-    await DB.saveImmediate();
     this.renderPillarLocksState();
+    DB.saveImmediate();
 
     const isLocked = DB.data.pillarLocks[pillarKey];
     UI.showNotif(
@@ -8354,15 +8513,15 @@ const LandingUI = {
     );
   },
 
-  async setAllPillarsLock(lockState) {
+  setAllPillarsLock(lockState) {
     DB.data.pillarLocks = {
       data_kelas: Boolean(lockState),
       intrakurikuler: Boolean(lockState),
       kokurikuler: Boolean(lockState),
       ekstrakurikuler: Boolean(lockState)
     };
-    await DB.saveImmediate();
     this.renderPillarLocksState();
+    DB.saveImmediate();
 
     UI.showNotif(
       lockState ? 'Semua Pilar Dikunci' : 'Semua Pilar Dibuka',
@@ -8373,6 +8532,9 @@ const LandingUI = {
     );
   },
 
+  // =========================================================================
+  // 3. MANAJEMEN AKUN GURU & KEPALA SEKOLAH (TAMBAH, EDIT, & HAPUS PERMANEN)
+  // =========================================================================
   toggleCreateRoleFields() {
     const roleSelect = document.getElementById('admin-add-role');
     const kelasWrap = document.getElementById('admin-add-kelas-wrap');
@@ -8409,7 +8571,7 @@ const LandingUI = {
     document.getElementById('admin-add-password').value = creds.password;
   },
 
-  async handleCreateAccount(event) {
+  handleCreateAccount(event) {
     event.preventDefault();
 
     const role = document.getElementById('admin-add-role').value;
@@ -8426,8 +8588,12 @@ const LandingUI = {
       return;
     }
 
+    if (typeof DB.unlockNipForNewAccount === 'function') {
+      DB.unlockNipForNewAccount(nip);
+    }
+
     const dupUsername = (DB.data.accounts || []).find(
-      acc => String(acc.username).toLowerCase() === username.toLowerCase()
+      acc => acc && String(acc.username).toLowerCase() === username.toLowerCase()
     );
     if (dupUsername) {
       UI.showNotif('Username Sudah Terpakai', `Username "${username}" sudah digunakan oleh ${dupUsername.nama}. Gunakan username lain.`, 'danger');
@@ -8435,7 +8601,7 @@ const LandingUI = {
     }
 
     const dupNip = (DB.data.accounts || []).find(
-      acc => AppAuth.cleanNip(acc.nip) === nip
+      acc => acc && AppAuth.cleanNip(acc.nip) === nip
     );
     if (dupNip) {
       UI.showNotif('NIP Sudah Terdaftar', `NIP "${nip}" sudah terdaftar pada akun ${dupNip.nama}. Anda dapat mengeditnya langsung melalui tombol Edit pada tabel di bawah.`, 'warning');
@@ -8469,7 +8635,6 @@ const LandingUI = {
     };
 
     DB.data.accounts.push(newAcc);
-    await DB.saveImmediate();
 
     const form = document.getElementById('form-admin-create-account');
     if (form) form.reset();
@@ -8481,6 +8646,8 @@ const LandingUI = {
     this.renderAdminStats();
     this.renderAccountsTable();
 
+    DB.saveImmediate();
+
     UI.showNotif(
       'Akun Berhasil Ditambahkan & Dirilis',
       `Akun ${nama} (${normSchool.display}) telah aktif dengan Username: ${username} dan Password: ${password}.`,
@@ -8488,9 +8655,6 @@ const LandingUI = {
     );
   },
 
-  // =========================================================================
-  // FITUR BARU: MODAL EDIT DATA PENGGUNA & PENGELOMPOKAN ULANG SEKOLAH/KELAS
-  // =========================================================================
   toggleEditModalRoleFields() {
     const roleSelect = document.getElementById('edit-acc-role');
     const kelasWrap = document.getElementById('edit-acc-kelas-wrap');
@@ -8520,7 +8684,7 @@ const LandingUI = {
   },
 
   openEditAccountModal(accId) {
-    const acc = (DB.data.accounts || []).find(a => a.id === accId);
+    const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(accId));
     if (!acc) return;
 
     SchoolNormalizer.refreshSchoolDatalist();
@@ -8533,7 +8697,6 @@ const LandingUI = {
     const roleSelect = document.getElementById('edit-acc-role');
     if (roleSelect) {
       roleSelect.value = acc.role || 'GURU_KELAS';
-      // Kunci perubahan peran ke Kepala Sekolah jika ini akun Super Admin utama
       roleSelect.disabled = Boolean(acc.isMasterAdmin);
     }
 
@@ -8567,11 +8730,11 @@ const LandingUI = {
     if (modal) modal.classList.add('hidden');
   },
 
-  async saveEditedAccount(event) {
+  saveEditedAccount(event) {
     event.preventDefault();
 
     const accId = document.getElementById('edit-acc-id').value;
-    const acc = (DB.data.accounts || []).find(a => a.id === accId);
+    const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(accId));
     if (!acc) return;
 
     const newNama = document.getElementById('edit-acc-nama').value.trim();
@@ -8589,18 +8752,16 @@ const LandingUI = {
       return;
     }
 
-    // Validasi duplikasi Username dengan akun lain
     const dupUsername = (DB.data.accounts || []).find(
-      other => other.id !== acc.id && String(other.username).toLowerCase() === newUsername.toLowerCase()
+      other => other && String(other.id) !== String(acc.id) && String(other.username).toLowerCase() === newUsername.toLowerCase()
     );
     if (dupUsername) {
       UI.showNotif('Username Sudah Digunakan', `Username "${newUsername}" sudah dipakai oleh ${dupUsername.nama}.`, 'danger');
       return;
     }
 
-    // Validasi duplikasi NIP dengan akun lain
     const dupNip = (DB.data.accounts || []).find(
-      other => other.id !== acc.id && AppAuth.cleanNip(other.nip) === newNip
+      other => other && String(other.id) !== String(acc.id) && AppAuth.cleanNip(other.nip) === newNip
     );
     if (dupNip) {
       UI.showNotif('NIP Sudah Terdaftar', `NIP "${newNip}" sudah terdaftar atas nama ${dupNip.nama}.`, 'danger');
@@ -8623,7 +8784,6 @@ const LandingUI = {
       ? (newMapelInput || 'Guru Mapel')
       : (newRole === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas');
 
-    // Update properti akun
     acc.nama = newNama;
     acc.nip = newNip;
     acc.role = newRole;
@@ -8636,7 +8796,6 @@ const LandingUI = {
     acc.username = newUsername;
     acc.password = newPassword;
 
-    // Migrasikan atau perbarui Bucket Data Kelas secara otomatis agar data siswa tidak hilang saat pindah sekolah/kelas
     const newBucketKey = `${normSchool.key}__${finalClassKey}`;
     if (DB.data.classData && DB.data.classData[oldBucketKey]) {
       const oldBucket = DB.data.classData[oldBucketKey];
@@ -8664,9 +8823,8 @@ const LandingUI = {
       }
     }
 
-    // Sinkronkan riwayat di pendingTeachers jika guru pernah mendaftar lewat form depan
     (DB.data.pendingTeachers || []).forEach(pt => {
-      if (AppAuth.cleanNip(pt.nip) === oldNip || AppAuth.cleanNip(pt.nip) === newNip) {
+      if (pt && (AppAuth.cleanNip(pt.nip) === oldNip || AppAuth.cleanNip(pt.nip) === newNip)) {
         pt.nama = newNama;
         pt.nip = newNip;
         pt.role = newRole;
@@ -8681,38 +8839,44 @@ const LandingUI = {
       }
     });
 
-    // Jika yang diedit adalah akun yang sedang login (Andri), segarkan info sesi & navbar
-    if (AppState.currentUser && AppState.currentUser.id === acc.id) {
+    if (AppState.currentUser && String(AppState.currentUser.id) === String(acc.id)) {
       AppState.currentUser = acc;
       UI.updateNavbar();
     }
 
-    await DB.saveImmediate();
     this.closeEditAccountModal();
     SchoolNormalizer.refreshSchoolDatalist();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
     this.renderAccountsTable();
 
+    DB.saveImmediate();
+
     UI.showNotif(
       'Data Pengguna Berhasil Diperbarui',
-      `Data ${newNama} telah diperbarui dan dikelompokkan ke sekolah ${normSchool.display} (${finalKelasFase}). Perubahan telah dikunci secara permanen di Cloud.`,
+      `Data ${newNama} telah diperbarui dan dikelompokkan ke sekolah ${normSchool.display} (${finalKelasFase}).`,
       'success'
     );
   },
 
-  // =========================================================================
-  // TABEL DAFTAR AKUN TERKELOMPOK PER SEKOLAH & FITUR HAPUS PERMANEN
-  // =========================================================================
   renderAccountsTable() {
     const tbody = document.getElementById('tbody-admin-accounts');
     const searchInput = document.getElementById('admin-search-account');
     if (!tbody) return;
 
+    DB.ensureIntegrity();
     const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
     const allAccounts = DB.data.accounts || [];
 
+    // Pastikan setiap akun memiliki ID unik yang valid
+    allAccounts.forEach((acc, idx) => {
+      if (acc && !acc.id) {
+        acc.id = 'ACC_FIX_' + idx + '_' + String(acc.nip || Date.now()).replace(/\D/g, '');
+      }
+    });
+
     const filtered = allAccounts.filter(acc => {
+      if (!acc) return false;
       if (!query) return true;
       const hay = `${acc.nama} ${acc.nip} ${acc.schoolDisplay} ${acc.kelasFase} ${acc.mapelDiampu} ${acc.username}`.toLowerCase();
       return hay.includes(query);
@@ -8729,7 +8893,6 @@ const LandingUI = {
       return;
     }
 
-    // Urutkan otomatis berdasarkan kelompok Sekolah (Standar Sistem), lalu Peran (Kepsek -> Guru Kelas -> Guru Mapel), lalu Nama
     const sorted = [...filtered].sort((a, b) => {
       const schA = String(a.schoolDisplay || 'ZZZ').toUpperCase();
       const schB = String(b.schoolDisplay || 'ZZZ').toUpperCase();
@@ -8743,10 +8906,11 @@ const LandingUI = {
     let rowNumber = 0;
 
     sorted.forEach(acc => {
+      const safeId = String(acc.id).replace(/'/g, "\\'");
+      const safeNip = String(acc.nip || '').replace(/'/g, "\\'");
       const schoolGroupName = acc.schoolDisplay || 'SEKOLAH BELUM DITENTUKAN';
       const schoolGroupKey = acc.schoolKey || 'SCH_DEFAULT';
 
-      // Tampilkan baris pembatas Kelompok Sekolah agar Admin mudah melihat pengelompokan guru per sekolah
       if (schoolGroupName !== currentSchoolGroup) {
         currentSchoolGroup = schoolGroupName;
         const countInSchool = sorted.filter(x => (x.schoolDisplay || 'SEKOLAH BELUM DITENTUKAN') === currentSchoolGroup).length;
@@ -8778,7 +8942,7 @@ const LandingUI = {
       const actionHtml = acc.isMasterAdmin
         ? `
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
-            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${acc.id}')">
+            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${safeId}')">
               ✏️ Edit Data
             </button>
             <span class="badge badge-success" title="Akun Super Administrator Utama dilindungi secara permanen">Akun Utama</span>
@@ -8786,17 +8950,17 @@ const LandingUI = {
         `
         : `
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${acc.id}')">
+            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${safeId}')">
               ✏️ Edit Data / Sekolah
             </button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.deleteAccount('${acc.id}')">
+            <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.deleteAccount('${safeId}', '${safeNip}')">
               🗑️ Hapus Permanen
             </button>
           </div>
         `;
 
       htmlRows += `
-        <tr>
+        <tr id="row-acc-item-${UI.escapeHtml(acc.id)}">
           <td>${rowNumber}</td>
           <td><strong>${UI.escapeHtml(acc.nama)}</strong></td>
           <td><span style="font-family: monospace;">${UI.escapeHtml(acc.nip || '-')}</span></td>
@@ -8816,79 +8980,114 @@ const LandingUI = {
     tbody.innerHTML = htmlRows;
   },
 
-  async deleteAccount(accId) {
-    const target = (DB.data.accounts || []).find(a => a.id === accId);
+  // FUNGSI HAPUS AKUN GURU / KEPALA SEKOLAH PERMANEN (INSTAN 0 DETIK TANPA TERBLOKIR CONFIRM)
+  deleteAccount(accId, fallbackNip = '') {
+    const accounts = DB.data.accounts || [];
+    const cleanFallbackNip = AppAuth.cleanNip(fallbackNip);
+
+    let target = accounts.find(a => a && String(a.id) === String(accId));
+    if (!target && cleanFallbackNip) {
+      target = accounts.find(a => a && !a.isMasterAdmin && AppAuth.cleanNip(a.nip) === cleanFallbackNip);
+    }
+
     if (!target) return;
 
     if (target.isMasterAdmin) {
-      UI.showNotif('Tindakan Ditolak', 'Akun Administrator Utama tidak dapat dihapus.', 'danger');
+      UI.showNotif('Tindakan Ditolak', 'Akun Super Administrator Utama tidak dapat dihapus.', 'danger');
       return;
     }
 
-    const confirmed = window.confirm(
-      `PERINGATAN HAPUS PERMANEN:\n\nApakah Anda yakin ingin menghapus akun "${target.nama}" (NIP: ${target.nip || '-'}, Sekolah: ${target.schoolDisplay || '-'}) secara PERMANEN?\n\nAkun yang dihapus akan dikunci dalam daftar blokir permanen dan tidak akan muncul kembali.`
-    );
-    if (!confirmed) return;
-
-    // 1. Kunci ID akun ke dalam Tombstone Registry (deletedAccountIds) agar tidak pernah hidup kembali dari cache/cloud
-    if (!Array.isArray(DB.data.deletedAccountIds)) {
-      DB.data.deletedAccountIds = [];
-    }
-    if (!DB.data.deletedAccountIds.includes(accId)) {
-      DB.data.deletedAccountIds.push(accId);
-    }
-
-    // 2. Bersihkan juga riwayat pengajuan (pendingTeachers) yang memiliki NIP atau Username yang sama
-    if (!Array.isArray(DB.data.deletedPendingIds)) {
-      DB.data.deletedPendingIds = [];
-    }
+    const deletedName = target.nama || 'Pengguna';
+    const deletedSchool = target.schoolDisplay || '-';
+    const targetIdStr = String(target.id);
     const targetCleanNip = AppAuth.cleanNip(target.nip);
+    const targetUsername = String(target.username || '').trim().toLowerCase();
+
+    // 1. Kunci ID dan NIP akun ke dalam daftar hitam permanen (Lokal & Cloud)
+    if (typeof DB.lockPermanentDeletion === 'function') {
+      DB.lockPermanentDeletion({
+        accId: targetIdStr,
+        accNip: targetCleanNip
+      });
+    } else {
+      if (!Array.isArray(DB.data.deletedAccountIds)) DB.data.deletedAccountIds = [];
+      if (!DB.data.deletedAccountIds.includes(targetIdStr)) DB.data.deletedAccountIds.push(targetIdStr);
+    }
+
+    // 2. Bersihkan juga log pengajuan terkait di pendingTeachers agar tidak tersisa di tabel atas
     (DB.data.pendingTeachers || []).forEach(pt => {
+      if (!pt) return;
       const matchNip = targetCleanNip && AppAuth.cleanNip(pt.nip) === targetCleanNip;
-      const matchUser = target.username && pt.releasedUsername && String(pt.releasedUsername).toLowerCase() === String(target.username).toLowerCase();
+      const matchUser = targetUsername && pt.releasedUsername && String(pt.releasedUsername).trim().toLowerCase() === targetUsername;
       if (matchNip || matchUser) {
-        if (!DB.data.deletedPendingIds.includes(pt.id)) {
-          DB.data.deletedPendingIds.push(pt.id);
+        if (typeof DB.lockPermanentDeletion === 'function') {
+          DB.lockPermanentDeletion({ pendingId: String(pt.id) });
         }
       }
     });
 
-    DB.data.pendingTeachers = (DB.data.pendingTeachers || []).filter(
-      pt => !DB.data.deletedPendingIds.includes(pt.id)
-    );
+    DB.data.pendingTeachers = (DB.data.pendingTeachers || []).filter(pt => {
+      if (!pt) return false;
+      const matchNip = targetCleanNip && AppAuth.cleanNip(pt.nip) === targetCleanNip;
+      const matchUser = targetUsername && pt.releasedUsername && String(pt.releasedUsername).trim().toLowerCase() === targetUsername;
+      return !(matchNip || matchUser);
+    });
 
     // 3. Hapus akun dari daftar accounts aktif
-    DB.data.accounts = (DB.data.accounts || []).filter(a => a.id !== accId);
+    DB.lastLocalDeleteTimestamp = Date.now();
+    DB.data.accounts = accounts.filter(a => {
+      if (!a) return false;
+      if (a.isMasterAdmin) return true;
+      if (String(a.id) === targetIdStr) return false;
+      if (targetCleanNip && AppAuth.cleanNip(a.nip) === targetCleanNip) return false;
+      return true;
+    });
 
-    // 4. Bersihkan penugasan guru tersebut dari mandat Visi-Misi Kepala Sekolah jika ada
+    // 4. Hapus ruang kelas (classData) yang terhubung dengan guru tersebut
+    if (DB.data.classData) {
+      Object.keys(DB.data.classData).forEach(bucketKey => {
+        const bucket = DB.data.classData[bucketKey];
+        if (bucket && String(bucket.homeroomTeacherId) === targetIdStr) {
+          delete DB.data.classData[bucketKey];
+        }
+      });
+    }
+
+    // 5. Bersihkan ID guru tersebut dari penugasan Visi-Misi Kepala Sekolah
     if (DB.data.schoolVisiMisi) {
       Object.values(DB.data.schoolVisiMisi).forEach(vm => {
         if (vm && Array.isArray(vm.programs)) {
           vm.programs.forEach(prog => {
             if (Array.isArray(prog.assignedTeacherIds)) {
-              prog.assignedTeacherIds = prog.assignedTeacherIds.filter(id => id !== accId);
+              prog.assignedTeacherIds = prog.assignedTeacherIds.filter(id => String(id) !== targetIdStr);
             }
           });
         }
       });
     }
 
-    // 5. Tandai timestamp penghapusan lokal & langsung kunci ke localStorage + Supabase tanpa jeda
-    DB.lastLocalDeleteTimestamp = Date.now();
-    await DB.saveImmediate();
-
+    // 6. Perbarui tabel & statistik di layar SEKARANG JUGA (0 milidetik)
     SchoolNormalizer.refreshSchoolDatalist();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
     this.renderAccountsTable();
 
+    // 7. Simpan perubahan secara permanen ke localStorage & Supabase Cloud di latar belakang
+    DB.saveImmediate();
+
+    // 8. Tampilkan respon konfirmasi profesional bahwa akun telah terhapus permanen
     UI.showNotif(
-      'Pengguna Dihapus Permanen',
-      `Akun atas nama ${target.nama} telah dihapus secara permanen dari sistem dan dikunci di server Cloud.`,
-      'warning'
+      'Akun Pengguna Dihapus Permanen',
+      `Akun atas nama ${deletedName} (${deletedSchool}) telah dihapus secara permanen dari tabel dan dikunci di server Cloud.`,
+      'success'
     );
   }
 };
+
+const AdminApp = Object.assign({}, ADMIN_PRO_METHODS);
+window.addEventListener('DOMContentLoaded', () => {
+  Object.assign(AdminApp, ADMIN_PRO_METHODS);
+});
 
   const TeacherApp = {
   daysList: ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
