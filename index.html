@@ -1059,12 +1059,14 @@ body {
     </div>
   </section>
 
+    <!-- MODAL PERSETUJUAN PENDAFTARAN GURU BARU (DAPAT DIEDIT OLEH ADMIN) -->
   <div id="modal-admin-approve" class="modal-overlay hidden">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 720px;">
       <div class="card-header">
         <div>
-          <h3 class="card-title">Setujui Pendaftaran & Rilis Username / Password</h3>
-          <p class="card-subtitle">Tetapkan Username dan Password resmi yang akan digunakan guru untuk login dan muncul saat Cek NIP.</p>
+          <span class="badge badge-primary" style="margin-bottom: 0.25rem;">VERIFIKASI, KOREKSI DATA & RILIS AKUN</span>
+          <h3 class="card-title">Setujui Pendaftaran & Koreksi Data Guru</h3>
+          <p class="card-subtitle">Admin dapat mengoreksi Nama, NIP, Asal Sekolah, Peran, maupun Kelas/Mapel jika guru keliru mengisi formulir pendaftaran.</p>
         </div>
         <button type="button" class="btn btn-outline btn-sm" onclick="AdminApp.closeApproveModal()">Batal</button>
       </div>
@@ -1073,37 +1075,129 @@ body {
         <input type="hidden" id="approve-reg-id">
         <div class="grid-2">
           <div class="form-group">
-            <label class="form-label">Nama Guru</label>
-            <input type="text" id="approve-teacher-nama" class="form-control" readonly>
+            <label class="form-label" for="approve-teacher-nama">Nama Guru (Dapat Diedit)</label>
+            <input type="text" id="approve-teacher-nama" class="form-control" required>
           </div>
           <div class="form-group">
-            <label class="form-label">NIP</label>
-            <input type="text" id="approve-teacher-nip" class="form-control" readonly>
-          </div>
-        </div>
-        <div class="grid-2">
-          <div class="form-group">
-            <label class="form-label">Asal Sekolah (Ternormalisasi)</label>
-            <input type="text" id="approve-teacher-sekolah" class="form-control" readonly>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Kelas / Fase / Mapel</label>
-            <input type="text" id="approve-teacher-kelas" class="form-control" readonly>
+            <label class="form-label" for="approve-teacher-nip">NIP (Dapat Diedit)</label>
+            <input type="text" id="approve-teacher-nip" class="form-control" required>
           </div>
         </div>
+
         <div class="grid-2">
           <div class="form-group">
+            <label class="form-label" for="approve-teacher-sekolah">Asal Sekolah (Otomatis Dikelompokkan)</label>
+            <input type="text" id="approve-teacher-sekolah" list="datalist-sekolah" class="form-control" oninput="SchoolNormalizer.previewNormalized(this.value, 'approve-school-preview')" required>
+            <div class="form-hint">Kelompok Sekolah: <strong id="approve-school-preview">-</strong></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="approve-teacher-role">Peran Penugasan</label>
+            <select id="approve-teacher-role" class="form-control" onchange="AdminApp.toggleApproveModalRoleFields()" required>
+              <option value="GURU_KELAS">Guru Kelas</option>
+              <option value="GURU_MAPEL">Guru Mata Pelajaran (Mapel)</option>
+              <option value="KEPALA_SEKOLAH">Kepala Sekolah</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group" id="approve-teacher-kelas-wrap">
+            <label class="form-label" for="approve-teacher-kelas">Kelas / Fase yang Diampu</label>
+            <input type="text" id="approve-teacher-kelas" class="form-control" placeholder="Contoh: Kelas 4 / Fase B">
+          </div>
+          <div class="form-group hidden" id="approve-teacher-mapel-wrap">
+            <label class="form-label" for="approve-teacher-mapel">Mata Pelajaran (Khusus Guru Mapel)</label>
+            <input type="text" id="approve-teacher-mapel" class="form-control" placeholder="Contoh: PJOK / PAI / Bahasa Inggris">
+          </div>
+        </div>
+
+        <div class="grid-2" style="background: #f8fafc; padding: 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 1rem;">
+          <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="approve-release-username">Rilis Username Baru</label>
             <input type="text" id="approve-release-username" class="form-control" required>
           </div>
-          <div class="form-group">
+          <div class="form-group" style="margin-bottom: 0;">
             <label class="form-label" for="approve-release-password">Rilis Password Baru</label>
             <input type="text" id="approve-release-password" class="form-control" required>
           </div>
         </div>
-        <div style="display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.5rem;">
+
+        <div style="display: flex; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
           <button type="button" class="btn btn-outline" onclick="AdminApp.generateModalCredentials()">Generate Username & Password Otomatis</button>
-          <button type="submit" class="btn btn-success">Setujui & Rilis Akun Sekarang</button>
+          <button type="submit" class="btn btn-success">Simpan Koreksi & Rilis Akun Sekarang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL EDIT PENGGUNA AKTIF (EDIT NAMA, SEKOLAH, NIP, PERAN, KELAS/MAPEL, USERNAME & PASSWORD) -->
+  <div id="modal-admin-edit-account" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width: 740px;">
+      <div class="card-header">
+        <div>
+          <span class="badge badge-warning" style="margin-bottom: 0.25rem;">MANAJEMEN PERBAIKAN DATA PENGGUNA</span>
+          <h3 class="card-title">Edit Data Pengguna & Pengelompokan Sekolah/Kelas</h3>
+          <p class="card-subtitle">Perubahan sekolah atau kelas akan secara otomatis mengelompokkan ulang guru ke sekolah masing-masing beserta sinkronisasi ruang kelasnya.</p>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" onclick="AdminApp.closeEditAccountModal()">Tutup</button>
+      </div>
+
+      <form id="form-admin-edit-account" onsubmit="AdminApp.saveEditedAccount(event)">
+        <input type="hidden" id="edit-acc-id">
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="edit-acc-nama">Nama Lengkap & Gelar</label>
+            <input type="text" id="edit-acc-nama" class="form-control" placeholder="Masukkan nama lengkap guru..." required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-acc-nip">NIP Pengguna</label>
+            <input type="text" id="edit-acc-nip" class="form-control" placeholder="Masukkan NIP tanpa spasi..." required>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label class="form-label" for="edit-acc-sekolah">Nama Sekolah (Pengelompokan Otomatis)</label>
+            <input type="text" id="edit-acc-sekolah" list="datalist-sekolah" class="form-control" oninput="SchoolNormalizer.previewNormalized(this.value, 'edit-acc-school-preview')" required>
+            <div class="form-hint">Standar Sistem: <strong id="edit-acc-school-preview" style="color: var(--primary-light);">-</strong></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-acc-role">Peran Akun Pengguna</label>
+            <select id="edit-acc-role" class="form-control" onchange="AdminApp.toggleEditModalRoleFields()" required>
+              <option value="GURU_KELAS">Guru Kelas</option>
+              <option value="GURU_MAPEL">Guru Mata Pelajaran (Mapel)</option>
+              <option value="KEPALA_SEKOLAH">Kepala Sekolah</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group" id="edit-acc-kelas-wrap">
+            <label class="form-label" for="edit-acc-kelas">Kelas / Fase yang Diampu</label>
+            <input type="text" id="edit-acc-kelas" class="form-control" placeholder="Contoh: Kelas 4 / Fase B">
+            <div class="form-hint">Format penulisan: <strong>Kelas 1</strong> s.d. <strong>Kelas 6</strong> (Contoh: Kelas 4 / Fase B)</div>
+          </div>
+          <div class="form-group hidden" id="edit-acc-mapel-wrap">
+            <label class="form-label" for="edit-acc-mapel">Mata Pelajaran Diampu (Khusus Guru Mapel)</label>
+            <input type="text" id="edit-acc-mapel" class="form-control" placeholder="Contoh: PJOK / Pendidikan Agama Islam">
+          </div>
+        </div>
+
+        <div class="grid-2" style="background: #f8fafc; padding: 0.95rem; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 1.15rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="edit-acc-username">Username Login</label>
+            <input type="text" id="edit-acc-username" class="form-control" required>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="edit-acc-password">Password Login</label>
+            <input type="text" id="edit-acc-password" class="form-control" required>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.65rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline" onclick="AdminApp.closeEditAccountModal()">Batal</button>
+          <button type="submit" class="btn btn-success">💾 Simpan Perubahan & Kelompokkan Ulang</button>
         </div>
       </form>
     </div>
@@ -6544,11 +6638,11 @@ const DB = {
   data: null,
   isSyncing: false,
   saveTimeout: null,
+  lastLocalDeleteTimestamp: 0,
 
   async init() {
     this.updateCloudBadge('MEMUAT DATA CLOUD...', 'warning');
 
-    // 1. Jika Supabase sudah dikonfigurasi, tarik data utama dari Cloud terlebih dahulu
     if (supabaseClient) {
       try {
         const { data: row, error } = await supabaseClient
@@ -6565,7 +6659,6 @@ const DB = {
           this.subscribeRealtimeChanges();
           return;
         } else if (!error && !row) {
-          // Jika tabel Supabase masih kosong (pertama kali digunakan), ambil data lokal atau default lalu unggah ke Supabase
           const localRaw = localStorage.getItem(STORAGE_KEY);
           this.data = localRaw ? JSON.parse(localRaw) : this.getDefaultData();
           this.ensureIntegrity();
@@ -6578,7 +6671,6 @@ const DB = {
       }
     }
 
-    // 2. Fallback: Jika sedang offline atau URL Supabase belum diisi, gunakan localStorage
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       try {
@@ -6600,16 +6692,29 @@ const DB = {
   },
 
   save() {
-    // Simpan instan ke localStorage agar UI tetap cepat tanpa jeda
+    this.ensureIntegrity();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
-    // Jadwalkan pengiriman ke Supabase Cloud (Debounce 400ms agar hemat kuota saat mengetik cepat)
     if (supabaseClient) {
       this.updateCloudBadge('MENYIMPAN KE CLOUD...', 'warning');
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
       this.saveTimeout = setTimeout(() => {
         this.pushToSupabaseImmediate();
       }, 400);
+    }
+  },
+
+  // Fungsi penyimpanan instan tanpa jeda (khusus aksi krusial Admin seperti Hapus Permanen & Edit Akun)
+  async saveImmediate() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    this.ensureIntegrity();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+    if (supabaseClient) {
+      this.updateCloudBadge('MENGUNCI PERUBAHAN DI CLOUD...', 'warning');
+      await this.pushToSupabaseImmediate();
     }
   },
 
@@ -6646,7 +6751,7 @@ const DB = {
     if (!supabaseClient) {
       UI.showNotif(
         'Supabase Belum Dikonfigurasi',
-        'Harap isi SUPABASE_URL dan SUPABASE_ANON_KEY pada kode Tahap 15.1 terlebih dahulu.',
+        'Harap pastikan SUPABASE_URL dan SUPABASE_ANON_KEY telah terhubung.',
         'warning'
       );
       return;
@@ -6661,7 +6766,21 @@ const DB = {
         .maybeSingle();
 
       if (!error && row && row.payload) {
+        // Pertahankan daftar hitam penghapusan lokal agar akun terhapus tidak hidup kembali
+        const localDeletedIds = (this.data && Array.isArray(this.data.deletedAccountIds)) ? this.data.deletedAccountIds : [];
+        const localDeletedRegIds = (this.data && Array.isArray(this.data.deletedPendingIds)) ? this.data.deletedPendingIds : [];
+
         this.data = row.payload;
+        if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
+        if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
+
+        localDeletedIds.forEach(id => {
+          if (!this.data.deletedAccountIds.includes(id)) this.data.deletedAccountIds.push(id);
+        });
+        localDeletedRegIds.forEach(id => {
+          if (!this.data.deletedPendingIds.includes(id)) this.data.deletedPendingIds.push(id);
+        });
+
         this.ensureIntegrity();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
         this.refreshCurrentActiveView();
@@ -6690,9 +6809,26 @@ const DB = {
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
+          // Abaikan pantulan realtime jika sedang proses menyimpan atau baru saja menghapus akun (< 4 detik)
           if (this.isSyncing) return;
+          if (Date.now() - this.lastLocalDeleteTimestamp < 4000) return;
+
           if (payload.new && payload.new.payload) {
+            const currentDeletedAccIds = (this.data && Array.isArray(this.data.deletedAccountIds)) ? [...this.data.deletedAccountIds] : [];
+            const currentDeletedPendingIds = (this.data && Array.isArray(this.data.deletedPendingIds)) ? [...this.data.deletedPendingIds] : [];
+
             this.data = payload.new.payload;
+
+            if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
+            if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
+
+            currentDeletedAccIds.forEach(id => {
+              if (!this.data.deletedAccountIds.includes(id)) this.data.deletedAccountIds.push(id);
+            });
+            currentDeletedPendingIds.forEach(id => {
+              if (!this.data.deletedPendingIds.includes(id)) this.data.deletedPendingIds.push(id);
+            });
+
             this.ensureIntegrity();
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
             this.refreshCurrentActiveView();
@@ -6748,6 +6884,9 @@ const DB = {
   ensureIntegrity() {
     if (!this.data.accounts) this.data.accounts = [];
     if (!this.data.pendingTeachers) this.data.pendingTeachers = [];
+    if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
+    if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
+
     if (!this.data.pillarLocks) {
       this.data.pillarLocks = {
         data_kelas: false,
@@ -6758,6 +6897,19 @@ const DB = {
     }
     if (!this.data.classData) this.data.classData = {};
     if (!this.data.schoolVisiMisi) this.data.schoolVisiMisi = {};
+
+    // Filter permanen: pastikan akun atau pengajuan yang pernah dihapus Admin tidak pernah muncul lagi
+    const deletedAccSet = new Set(this.data.deletedAccountIds);
+    const deletedPendSet = new Set(this.data.deletedPendingIds);
+
+    this.data.accounts = this.data.accounts.filter(acc => {
+      if (acc && acc.isMasterAdmin === true) return true;
+      return acc && !deletedAccSet.has(acc.id);
+    });
+
+    this.data.pendingTeachers = this.data.pendingTeachers.filter(pt => {
+      return pt && !deletedPendSet.has(pt.id);
+    });
 
     const hasAndri = this.data.accounts.some(acc => acc.isMasterAdmin === true);
     if (!hasAndri) {
@@ -6916,6 +7068,8 @@ const DB = {
     return {
       accounts: [andriAcc],
       pendingTeachers: [],
+      deletedAccountIds: [],
+      deletedPendingIds: [],
       pillarLocks: {
         data_kelas: false,
         intrakurikuler: false,
@@ -7881,7 +8035,9 @@ const LandingUI = {
     tbody.innerHTML = list.map((item, idx) => {
       const roleLabel = item.role === 'GURU_MAPEL'
         ? `Guru Mapel (${UI.escapeHtml(item.mapelDiampu || '-')})`
-        : `Guru Kelas (${UI.escapeHtml(item.kelasFase || '-')})`;
+        : item.role === 'KEPALA_SEKOLAH'
+          ? 'Kepala Sekolah'
+          : `Guru Kelas (${UI.escapeHtml(item.kelasFase || '-')})`;
 
       let statusBadge = '<span class="badge badge-warning">MENUNGGU PERSETUJUAN</span>';
       if (item.status === 'APPROVED') {
@@ -7895,7 +8051,7 @@ const LandingUI = {
         actionButtons = `
           <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
             <button type="button" class="btn btn-success btn-sm" onclick="AdminApp.openApproveModal('${item.id}')">
-              Setujui & Rilis Akun
+              Verifikasi / Edit & Setujui
             </button>
             <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.rejectTeacherRequest('${item.id}')">
               Tolak
@@ -7904,8 +8060,8 @@ const LandingUI = {
         `;
       } else {
         actionButtons = `
-          <button type="button" class="btn btn-outline btn-sm" onclick="AdminApp.deletePendingLog('${item.id}')">
-            Hapus Log
+          <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5;" onclick="AdminApp.deletePendingLog('${item.id}')">
+            🗑️ Hapus Permanen Log
           </button>
         `;
       }
@@ -7942,18 +8098,60 @@ const LandingUI = {
     };
   },
 
+  toggleApproveModalRoleFields() {
+    const roleEl = document.getElementById('approve-teacher-role');
+    const kelasWrap = document.getElementById('approve-teacher-kelas-wrap');
+    const mapelWrap = document.getElementById('approve-teacher-mapel-wrap');
+    const kelasInput = document.getElementById('approve-teacher-kelas');
+    const mapelInput = document.getElementById('approve-teacher-mapel');
+
+    if (!roleEl || !kelasWrap || !mapelWrap) return;
+    const role = roleEl.value;
+
+    if (role === 'KEPALA_SEKOLAH') {
+      kelasWrap.classList.add('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = false;
+      if (mapelInput) mapelInput.required = false;
+    } else if (role === 'GURU_MAPEL') {
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.remove('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = true;
+    } else {
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = false;
+    }
+  },
+
   openApproveModal(regId) {
     const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
     if (!req) return;
 
+    SchoolNormalizer.refreshSchoolDatalist();
+
     const modal = document.getElementById('modal-admin-approve');
     document.getElementById('approve-reg-id').value = req.id;
-    document.getElementById('approve-teacher-nama').value = req.nama;
-    document.getElementById('approve-teacher-nip').value = req.nip;
-    document.getElementById('approve-teacher-sekolah').value = `${req.schoolDisplay} (${req.schoolKey})`;
-    document.getElementById('approve-teacher-kelas').value = req.role === 'GURU_MAPEL'
-      ? `Guru Mapel: ${req.mapelDiampu} (${req.kelasFase})`
-      : `Guru Kelas: ${req.kelasFase}`;
+    document.getElementById('approve-teacher-nama').value = req.nama || '';
+    document.getElementById('approve-teacher-nip').value = req.nip || '';
+    document.getElementById('approve-teacher-sekolah').value = req.schoolDisplay || req.schoolRaw || '';
+
+    const roleEl = document.getElementById('approve-teacher-role');
+    if (roleEl) roleEl.value = req.role || 'GURU_KELAS';
+
+    const kelasEl = document.getElementById('approve-teacher-kelas');
+    if (kelasEl) kelasEl.value = req.kelasFase || 'Kelas 4 / Fase B';
+
+    const mapelEl = document.getElementById('approve-teacher-mapel');
+    if (mapelEl) mapelEl.value = req.mapelDiampu && req.mapelDiampu !== 'Guru Kelas' ? req.mapelDiampu : '';
+
+    this.toggleApproveModalRoleFields();
+    SchoolNormalizer.previewNormalized(
+      document.getElementById('approve-teacher-sekolah').value,
+      'approve-school-preview'
+    );
 
     const creds = this.buildSuggestedCredentials(req.nama, req.nip);
     document.getElementById('approve-release-username').value = creds.username;
@@ -7975,17 +8173,26 @@ const LandingUI = {
     document.getElementById('approve-release-password').value = creds.password;
   },
 
-  confirmApproveTeacher(event) {
+  async confirmApproveTeacher(event) {
     event.preventDefault();
     const regId = document.getElementById('approve-reg-id').value;
+    const editedNama = document.getElementById('approve-teacher-nama').value.trim();
+    const editedNip = AppAuth.cleanNip(document.getElementById('approve-teacher-nip').value);
+    const editedSekolahRaw = document.getElementById('approve-teacher-sekolah').value.trim();
+    const editedRoleEl = document.getElementById('approve-teacher-role');
+    const editedRole = editedRoleEl ? editedRoleEl.value : 'GURU_KELAS';
+    const editedKelas = document.getElementById('approve-teacher-kelas').value.trim();
+    const editedMapelEl = document.getElementById('approve-teacher-mapel');
+    const editedMapel = editedMapelEl ? editedMapelEl.value.trim() : '';
+
     const username = document.getElementById('approve-release-username').value.trim();
     const password = document.getElementById('approve-release-password').value.trim();
 
     const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
     if (!req) return;
 
-    if (!username || !password) {
-      UI.showNotif('Data Belum Lengkap', 'Username dan Password rilis wajib diisi.', 'warning');
+    if (!editedNama || !editedNip || !editedSekolahRaw || !username || !password) {
+      UI.showNotif('Data Belum Lengkap', 'Nama, NIP, Sekolah, Username, dan Password wajib diisi.', 'warning');
       return;
     }
 
@@ -7993,34 +8200,53 @@ const LandingUI = {
       acc => String(acc.username).toLowerCase() === username.toLowerCase()
     );
     if (duplicateUser) {
-      UI.showNotif('Username Sudah Digunakan', `Username "${username}" telah dipakai oleh akun lain. Silakan ubah sedikit username tersebut.`, 'danger');
+      UI.showNotif('Username Sudah Digunakan', `Username "${username}" telah dipakai oleh akun ${duplicateUser.nama}. Silakan ubah username tersebut.`, 'danger');
       return;
     }
 
+    const normSchool = SchoolNormalizer.normalize(editedSekolahRaw);
+    const finalKelasFase = editedRole === 'KEPALA_SEKOLAH'
+      ? 'Kepala Sekolah'
+      : (editedKelas || 'Kelas 4 / Fase B');
+    const finalMapel = editedRole === 'GURU_MAPEL'
+      ? (editedMapel || 'Guru Mapel')
+      : (editedRole === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas');
+
     const newAccount = {
       id: 'ACC_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-      nama: req.nama,
-      nip: req.nip,
-      role: req.role || 'GURU_KELAS',
+      nama: editedNama,
+      nip: editedNip,
+      role: editedRole,
       isMasterAdmin: false,
-      schoolRaw: req.schoolRaw,
-      schoolDisplay: req.schoolDisplay,
-      schoolKey: req.schoolKey,
-      kelasFase: req.kelasFase,
-      classKey: DB.extractClassKey(req.kelasFase),
-      mapelDiampu: req.mapelDiampu || (req.role === 'GURU_MAPEL' ? 'Mata Pelajaran' : 'Guru Kelas'),
+      schoolRaw: normSchool.raw,
+      schoolDisplay: normSchool.display,
+      schoolKey: normSchool.key,
+      kelasFase: finalKelasFase,
+      classKey: editedRole === 'KEPALA_SEKOLAH' ? 'KEPALA SEKOLAH' : DB.extractClassKey(finalKelasFase),
+      mapelDiampu: finalMapel,
       username: username,
       password: password,
       mapelSchedule: {},
       createdAt: DateTimeUtil.getCurrentDateTimeStr()
     };
 
-    DB.data.accounts.push(newAccount);
+    // Perbarui juga log pengajuan dengan data hasil koreksi Admin
+    req.nama = editedNama;
+    req.nip = editedNip;
+    req.role = editedRole;
+    req.schoolRaw = normSchool.raw;
+    req.schoolDisplay = normSchool.display;
+    req.schoolKey = normSchool.key;
+    req.kelasFase = finalKelasFase;
+    req.classKey = newAccount.classKey;
+    req.mapelDiampu = finalMapel;
     req.status = 'APPROVED';
     req.releasedUsername = username;
     req.releasedPassword = password;
 
-    DB.save();
+    DB.data.accounts.push(newAccount);
+    await DB.saveImmediate();
+
     this.closeApproveModal();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
@@ -8029,17 +8255,17 @@ const LandingUI = {
 
     UI.showNotif(
       'Pendaftaran Disetujui & Akun Dirilis',
-      `Akun untuk ${newAccount.nama} (${newAccount.schoolDisplay}) telah aktif dengan Username: ${username} dan Password: ${password}. Guru tersebut kini dapat mengeceknya melalui fitur Cek NIP.`,
+      `Akun ${newAccount.nama} telah dikelompokkan ke sekolah ${newAccount.schoolDisplay} dengan Username: ${username} dan Password: ${password}.`,
       'success'
     );
   },
 
-  rejectTeacherRequest(regId) {
+  async rejectTeacherRequest(regId) {
     const req = (DB.data.pendingTeachers || []).find(r => r.id === regId);
     if (!req) return;
 
     req.status = 'REJECTED';
-    DB.save();
+    await DB.saveImmediate();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
 
@@ -8050,9 +8276,18 @@ const LandingUI = {
     );
   },
 
-  deletePendingLog(regId) {
+  async deletePendingLog(regId) {
+    if (!Array.isArray(DB.data.deletedPendingIds)) {
+      DB.data.deletedPendingIds = [];
+    }
+    if (!DB.data.deletedPendingIds.includes(regId)) {
+      DB.data.deletedPendingIds.push(regId);
+    }
+
+    DB.lastLocalDeleteTimestamp = Date.now();
     DB.data.pendingTeachers = (DB.data.pendingTeachers || []).filter(r => r.id !== regId);
-    DB.save();
+
+    await DB.saveImmediate();
     this.renderAdminStats();
     this.renderPendingTeachersTable();
   },
@@ -8079,13 +8314,15 @@ const LandingUI = {
       const card = document.getElementById(`admin-card-pilar-${key}`);
 
       if (badge) {
-        badge.textContent = isLocked ? 'TERKUNCI' : 'TERBUKA';
         badge.className = isLocked ? 'badge badge-danger' : 'badge badge-success';
+        badge.textContent = isLocked ? 'TERKUNCI' : 'TERBUKA';
       }
 
       if (btn) {
-        btn.textContent = isLocked ? `Buka Kunci Pilar ${pillarNames[key]}` : `Kunci Pilar ${pillarNames[key]}`;
         btn.className = isLocked ? 'btn btn-success btn-sm btn-block' : 'btn btn-danger btn-sm btn-block';
+        btn.textContent = isLocked
+          ? `Buka Kunci Pilar ${pillarNames[key]}`
+          : `Kunci Pilar ${pillarNames[key]}`;
       }
 
       if (card) {
@@ -8095,7 +8332,7 @@ const LandingUI = {
     });
   },
 
-  togglePillarLock(pillarKey) {
+  async togglePillarLock(pillarKey) {
     if (!DB.data.pillarLocks) {
       DB.data.pillarLocks = {
         data_kelas: false,
@@ -8106,106 +8343,113 @@ const LandingUI = {
     }
 
     DB.data.pillarLocks[pillarKey] = !DB.data.pillarLocks[pillarKey];
-    DB.save();
+    await DB.saveImmediate();
     this.renderPillarLocksState();
 
     const isLocked = DB.data.pillarLocks[pillarKey];
     UI.showNotif(
-      isLocked ? 'Pilar Dikunci' : 'Pilar Dibuka',
-      `Status pilar "${pillarKey.replace('_', ' ').toUpperCase()}" pada halaman Guru Kelas berhasil diubah menjadi ${isLocked ? 'TERKUNCI' : 'TERBUKA'}.`,
+      isLocked ? 'Pilar Berhasil Dikunci' : 'Pilar Berhasil Dibuka',
+      `Status akses pilar "${pillarKey.replace('_', ' ').toUpperCase()}" kini ${isLocked ? 'TERKUNCI' : 'TERBUKA'} untuk seluruh Guru Kelas.`,
       isLocked ? 'warning' : 'success'
     );
   },
 
-  setAllPillarsLock(lockState) {
+  async setAllPillarsLock(lockState) {
     DB.data.pillarLocks = {
       data_kelas: Boolean(lockState),
       intrakurikuler: Boolean(lockState),
       kokurikuler: Boolean(lockState),
       ekstrakurikuler: Boolean(lockState)
     };
-    DB.save();
+    await DB.saveImmediate();
     this.renderPillarLocksState();
 
     UI.showNotif(
       lockState ? 'Semua Pilar Dikunci' : 'Semua Pilar Dibuka',
       lockState
-        ? 'Seluruh pilar pada halaman Guru Kelas telah dikunci oleh Admin.'
-        : 'Seluruh pilar pada halaman Guru Kelas telah dibuka kembali oleh Admin.',
+        ? 'Keempat pilar pada halaman Guru Kelas telah dikunci.'
+        : 'Keempat pilar pada halaman Guru Kelas telah dibuka kembali.',
       lockState ? 'warning' : 'success'
     );
   },
 
   toggleCreateRoleFields() {
-    const roleEl = document.getElementById('admin-add-role');
+    const roleSelect = document.getElementById('admin-add-role');
     const kelasWrap = document.getElementById('admin-add-kelas-wrap');
     const mapelWrap = document.getElementById('admin-add-mapel-wrap');
     const kelasInput = document.getElementById('admin-add-kelas');
     const mapelInput = document.getElementById('admin-add-mapel');
 
-    if (!roleEl) return;
-    const role = roleEl.value;
+    if (!roleSelect || !kelasWrap || !mapelWrap) return;
 
-    if (role === 'KEPALA_SEKOLAH') {
-      if (kelasWrap) kelasWrap.classList.add('hidden');
-      if (mapelWrap) mapelWrap.classList.add('hidden');
-      if (kelasInput) kelasInput.value = 'Kepala Satuan Pendidikan';
-    } else if (role === 'GURU_MAPEL') {
-      if (kelasWrap) kelasWrap.classList.remove('hidden');
-      if (mapelWrap) mapelWrap.classList.remove('hidden');
-      if (kelasInput && kelasInput.value === 'Kepala Satuan Pendidikan') kelasInput.value = '';
+    const val = roleSelect.value;
+    if (val === 'KEPALA_SEKOLAH') {
+      kelasWrap.classList.add('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = false;
+      if (mapelInput) mapelInput.required = false;
+    } else if (val === 'GURU_MAPEL') {
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.remove('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = true;
     } else {
-      if (kelasWrap) kelasWrap.classList.remove('hidden');
-      if (mapelWrap) mapelWrap.classList.add('hidden');
-      if (kelasInput && kelasInput.value === 'Kepala Satuan Pendidikan') kelasInput.value = '';
-      if (mapelInput) mapelInput.value = '';
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = false;
     }
   },
 
   autoGenerateFormCredentials() {
     const nama = document.getElementById('admin-add-nama').value;
     const nip = document.getElementById('admin-add-nip').value;
-    const role = document.getElementById('admin-add-role').value;
-
-    const creds = this.buildSuggestedCredentials(nama || (role === 'KEPALA_SEKOLAH' ? 'kepsek' : 'guru'), nip);
+    const creds = this.buildSuggestedCredentials(nama, nip);
     document.getElementById('admin-add-username').value = creds.username;
     document.getElementById('admin-add-password').value = creds.password;
   },
 
-  handleCreateAccount(event) {
+  async handleCreateAccount(event) {
     event.preventDefault();
 
     const role = document.getElementById('admin-add-role').value;
     const nama = document.getElementById('admin-add-nama').value.trim();
     const nip = AppAuth.cleanNip(document.getElementById('admin-add-nip').value);
     const sekolahRaw = document.getElementById('admin-add-sekolah').value.trim();
-    const kelasFase = document.getElementById('admin-add-kelas').value.trim() || (role === 'KEPALA_SEKOLAH' ? 'Kepala Sekolah' : 'Kelas 4 / Fase B');
-    const mapelDiampu = document.getElementById('admin-add-mapel').value.trim() || (role === 'GURU_MAPEL' ? 'Mata Pelajaran Umum' : 'Guru Kelas');
+    const kelasInput = document.getElementById('admin-add-kelas').value.trim();
+    const mapelInput = document.getElementById('admin-add-mapel').value.trim();
     const username = document.getElementById('admin-add-username').value.trim();
     const password = document.getElementById('admin-add-password').value.trim();
 
     if (!nama || !nip || !sekolahRaw || !username || !password) {
-      UI.showNotif('Data Belum Lengkap', 'Harap isi Nama, NIP, Asal Sekolah, Username, dan Password.', 'warning');
+      UI.showNotif('Formulir Belum Lengkap', 'Harap lengkapi Nama, NIP, Asal Sekolah, Username, dan Password.', 'warning');
       return;
     }
 
     const dupUsername = (DB.data.accounts || []).find(
-      a => String(a.username).toLowerCase() === username.toLowerCase()
+      acc => String(acc.username).toLowerCase() === username.toLowerCase()
     );
     if (dupUsername) {
-      UI.showNotif('Username Sudah Terpakai', `Username "${username}" sudah digunakan oleh ${dupUsername.nama}.`, 'danger');
+      UI.showNotif('Username Sudah Terpakai', `Username "${username}" sudah digunakan oleh ${dupUsername.nama}. Gunakan username lain.`, 'danger');
       return;
     }
 
     const dupNip = (DB.data.accounts || []).find(
-      a => AppAuth.cleanNip(a.nip) === nip
+      acc => AppAuth.cleanNip(acc.nip) === nip
     );
     if (dupNip) {
-      UI.showNotif('NIP Sudah Terdaftar', `NIP "${nip}" sudah dimiliki oleh akun ${dupNip.nama}.`, 'danger');
+      UI.showNotif('NIP Sudah Terdaftar', `NIP "${nip}" sudah terdaftar pada akun ${dupNip.nama}. Anda dapat mengeditnya langsung melalui tombol Edit pada tabel di bawah.`, 'warning');
       return;
     }
 
     const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+    const kelasFase = role === 'KEPALA_SEKOLAH'
+      ? 'Kepala Sekolah'
+      : (kelasInput || 'Kelas 4 / Fase B');
+    const mapelDiampu = role === 'GURU_MAPEL'
+      ? (mapelInput || 'Mata Pelajaran')
+      : (role === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas');
+
     const newAcc = {
       id: 'ACC_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       nama: nama,
@@ -8215,9 +8459,9 @@ const LandingUI = {
       schoolRaw: normSchool.raw,
       schoolDisplay: normSchool.display,
       schoolKey: normSchool.key,
-      kelasFase: role === 'KEPALA_SEKOLAH' ? 'Kepala Satuan Pendidikan' : kelasFase,
-      classKey: role === 'KEPALA_SEKOLAH' ? 'KEPSEK' : DB.extractClassKey(kelasFase),
-      mapelDiampu: role === 'GURU_MAPEL' ? mapelDiampu : (role === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas'),
+      kelasFase: kelasFase,
+      classKey: role === 'KEPALA_SEKOLAH' ? 'KEPALA SEKOLAH' : DB.extractClassKey(kelasFase),
+      mapelDiampu: mapelDiampu,
       username: username,
       password: password,
       mapelSchedule: {},
@@ -8225,12 +8469,12 @@ const LandingUI = {
     };
 
     DB.data.accounts.push(newAcc);
-    DB.save();
+    await DB.saveImmediate();
 
     const form = document.getElementById('form-admin-create-account');
     if (form) form.reset();
-    const preview = document.getElementById('admin-school-preview');
-    if (preview) preview.textContent = '-';
+    const prev = document.getElementById('admin-school-preview');
+    if (prev) prev.textContent = '-';
     this.toggleCreateRoleFields();
 
     SchoolNormalizer.refreshSchoolDatalist();
@@ -8239,122 +8483,408 @@ const LandingUI = {
 
     UI.showNotif(
       'Akun Berhasil Ditambahkan & Dirilis',
-      `Akun ${role.replace('_', ' ')} atas nama ${nama} (${normSchool.display}) telah aktif dengan Username: ${username} dan Password: ${password}.`,
+      `Akun ${nama} (${normSchool.display}) telah aktif dengan Username: ${username} dan Password: ${password}.`,
       'success'
     );
   },
 
+  // =========================================================================
+  // FITUR BARU: MODAL EDIT DATA PENGGUNA & PENGELOMPOKAN ULANG SEKOLAH/KELAS
+  // =========================================================================
+  toggleEditModalRoleFields() {
+    const roleSelect = document.getElementById('edit-acc-role');
+    const kelasWrap = document.getElementById('edit-acc-kelas-wrap');
+    const mapelWrap = document.getElementById('edit-acc-mapel-wrap');
+    const kelasInput = document.getElementById('edit-acc-kelas');
+    const mapelInput = document.getElementById('edit-acc-mapel');
+
+    if (!roleSelect || !kelasWrap || !mapelWrap) return;
+    const role = roleSelect.value;
+
+    if (role === 'KEPALA_SEKOLAH') {
+      kelasWrap.classList.add('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = false;
+      if (mapelInput) mapelInput.required = false;
+    } else if (role === 'GURU_MAPEL') {
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.remove('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = true;
+    } else {
+      kelasWrap.classList.remove('hidden');
+      mapelWrap.classList.add('hidden');
+      if (kelasInput) kelasInput.required = true;
+      if (mapelInput) mapelInput.required = false;
+    }
+  },
+
+  openEditAccountModal(accId) {
+    const acc = (DB.data.accounts || []).find(a => a.id === accId);
+    if (!acc) return;
+
+    SchoolNormalizer.refreshSchoolDatalist();
+
+    document.getElementById('edit-acc-id').value = acc.id;
+    document.getElementById('edit-acc-nama').value = acc.nama || '';
+    document.getElementById('edit-acc-nip').value = acc.nip || '';
+    document.getElementById('edit-acc-sekolah').value = acc.schoolDisplay || acc.schoolRaw || '';
+
+    const roleSelect = document.getElementById('edit-acc-role');
+    if (roleSelect) {
+      roleSelect.value = acc.role || 'GURU_KELAS';
+      // Kunci perubahan peran ke Kepala Sekolah jika ini akun Super Admin utama
+      roleSelect.disabled = Boolean(acc.isMasterAdmin);
+    }
+
+    const kelasInput = document.getElementById('edit-acc-kelas');
+    if (kelasInput) {
+      kelasInput.value = acc.kelasFase && acc.kelasFase !== 'Kepala Sekolah' ? acc.kelasFase : 'Kelas 4 / Fase B';
+    }
+
+    const mapelInput = document.getElementById('edit-acc-mapel');
+    if (mapelInput) {
+      mapelInput.value = acc.mapelDiampu && acc.mapelDiampu !== 'Guru Kelas' && acc.mapelDiampu !== 'Manajemen Sekolah'
+        ? acc.mapelDiampu
+        : '';
+    }
+
+    document.getElementById('edit-acc-username').value = acc.username || '';
+    document.getElementById('edit-acc-password').value = acc.password || '';
+
+    this.toggleEditModalRoleFields();
+    SchoolNormalizer.previewNormalized(
+      document.getElementById('edit-acc-sekolah').value,
+      'edit-acc-school-preview'
+    );
+
+    const modal = document.getElementById('modal-admin-edit-account');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeEditAccountModal() {
+    const modal = document.getElementById('modal-admin-edit-account');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  async saveEditedAccount(event) {
+    event.preventDefault();
+
+    const accId = document.getElementById('edit-acc-id').value;
+    const acc = (DB.data.accounts || []).find(a => a.id === accId);
+    if (!acc) return;
+
+    const newNama = document.getElementById('edit-acc-nama').value.trim();
+    const newNip = AppAuth.cleanNip(document.getElementById('edit-acc-nip').value);
+    const newSekolahRaw = document.getElementById('edit-acc-sekolah').value.trim();
+    const roleSelect = document.getElementById('edit-acc-role');
+    const newRole = acc.isMasterAdmin ? 'GURU_KELAS' : (roleSelect ? roleSelect.value : acc.role);
+    const newKelasInput = document.getElementById('edit-acc-kelas').value.trim();
+    const newMapelInput = document.getElementById('edit-acc-mapel').value.trim();
+    const newUsername = document.getElementById('edit-acc-username').value.trim();
+    const newPassword = document.getElementById('edit-acc-password').value.trim();
+
+    if (!newNama || !newNip || !newSekolahRaw || !newUsername || !newPassword) {
+      UI.showNotif('Data Belum Lengkap', 'Nama, NIP, Nama Sekolah, Username, dan Password tidak boleh kosong.', 'warning');
+      return;
+    }
+
+    // Validasi duplikasi Username dengan akun lain
+    const dupUsername = (DB.data.accounts || []).find(
+      other => other.id !== acc.id && String(other.username).toLowerCase() === newUsername.toLowerCase()
+    );
+    if (dupUsername) {
+      UI.showNotif('Username Sudah Digunakan', `Username "${newUsername}" sudah dipakai oleh ${dupUsername.nama}.`, 'danger');
+      return;
+    }
+
+    // Validasi duplikasi NIP dengan akun lain
+    const dupNip = (DB.data.accounts || []).find(
+      other => other.id !== acc.id && AppAuth.cleanNip(other.nip) === newNip
+    );
+    if (dupNip) {
+      UI.showNotif('NIP Sudah Terdaftar', `NIP "${newNip}" sudah terdaftar atas nama ${dupNip.nama}.`, 'danger');
+      return;
+    }
+
+    const oldNip = AppAuth.cleanNip(acc.nip);
+    const oldSchoolKey = acc.schoolKey;
+    const oldClassKey = acc.classKey;
+    const oldBucketKey = `${oldSchoolKey}__${oldClassKey}`;
+
+    const normSchool = SchoolNormalizer.normalize(newSekolahRaw);
+    const finalKelasFase = newRole === 'KEPALA_SEKOLAH'
+      ? 'Kepala Sekolah'
+      : (newKelasInput || 'Kelas 4 / Fase B');
+    const finalClassKey = newRole === 'KEPALA_SEKOLAH'
+      ? 'KEPALA SEKOLAH'
+      : DB.extractClassKey(finalKelasFase);
+    const finalMapel = newRole === 'GURU_MAPEL'
+      ? (newMapelInput || 'Guru Mapel')
+      : (newRole === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas');
+
+    // Update properti akun
+    acc.nama = newNama;
+    acc.nip = newNip;
+    acc.role = newRole;
+    acc.schoolRaw = normSchool.raw;
+    acc.schoolDisplay = normSchool.display;
+    acc.schoolKey = normSchool.key;
+    acc.kelasFase = finalKelasFase;
+    acc.classKey = finalClassKey;
+    acc.mapelDiampu = finalMapel;
+    acc.username = newUsername;
+    acc.password = newPassword;
+
+    // Migrasikan atau perbarui Bucket Data Kelas secara otomatis agar data siswa tidak hilang saat pindah sekolah/kelas
+    const newBucketKey = `${normSchool.key}__${finalClassKey}`;
+    if (DB.data.classData && DB.data.classData[oldBucketKey]) {
+      const oldBucket = DB.data.classData[oldBucketKey];
+      if (oldBucket.homeroomTeacherId === acc.id) {
+        if (oldBucketKey !== newBucketKey) {
+          if (!DB.data.classData[newBucketKey]) {
+            DB.data.classData[newBucketKey] = {
+              ...oldBucket,
+              schoolKey: normSchool.key,
+              schoolDisplay: normSchool.display,
+              classKey: finalClassKey,
+              kelasFaseLabel: finalKelasFase,
+              homeroomTeacherId: acc.id,
+              homeroomTeacherName: newNama
+            };
+            delete DB.data.classData[oldBucketKey];
+          }
+        } else {
+          oldBucket.schoolKey = normSchool.key;
+          oldBucket.schoolDisplay = normSchool.display;
+          oldBucket.classKey = finalClassKey;
+          oldBucket.kelasFaseLabel = finalKelasFase;
+          oldBucket.homeroomTeacherName = newNama;
+        }
+      }
+    }
+
+    // Sinkronkan riwayat di pendingTeachers jika guru pernah mendaftar lewat form depan
+    (DB.data.pendingTeachers || []).forEach(pt => {
+      if (AppAuth.cleanNip(pt.nip) === oldNip || AppAuth.cleanNip(pt.nip) === newNip) {
+        pt.nama = newNama;
+        pt.nip = newNip;
+        pt.role = newRole;
+        pt.schoolRaw = normSchool.raw;
+        pt.schoolDisplay = normSchool.display;
+        pt.schoolKey = normSchool.key;
+        pt.kelasFase = finalKelasFase;
+        pt.classKey = finalClassKey;
+        pt.mapelDiampu = finalMapel;
+        pt.releasedUsername = newUsername;
+        pt.releasedPassword = newPassword;
+      }
+    });
+
+    // Jika yang diedit adalah akun yang sedang login (Andri), segarkan info sesi & navbar
+    if (AppState.currentUser && AppState.currentUser.id === acc.id) {
+      AppState.currentUser = acc;
+      UI.updateNavbar();
+    }
+
+    await DB.saveImmediate();
+    this.closeEditAccountModal();
+    SchoolNormalizer.refreshSchoolDatalist();
+    this.renderAdminStats();
+    this.renderPendingTeachersTable();
+    this.renderAccountsTable();
+
+    UI.showNotif(
+      'Data Pengguna Berhasil Diperbarui',
+      `Data ${newNama} telah diperbarui dan dikelompokkan ke sekolah ${normSchool.display} (${finalKelasFase}). Perubahan telah dikunci secara permanen di Cloud.`,
+      'success'
+    );
+  },
+
+  // =========================================================================
+  // TABEL DAFTAR AKUN TERKELOMPOK PER SEKOLAH & FITUR HAPUS PERMANEN
+  // =========================================================================
   renderAccountsTable() {
     const tbody = document.getElementById('tbody-admin-accounts');
+    const searchInput = document.getElementById('admin-search-account');
     if (!tbody) return;
 
-    const searchInp = document.getElementById('admin-search-account');
-    const keyword = searchInp ? searchInp.value.trim().toLowerCase() : '';
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    const allAccounts = DB.data.accounts || [];
 
-    const filtered = (DB.data.accounts || []).filter(acc => {
-      if (!keyword) return true;
-      return (
-        String(acc.nama || '').toLowerCase().includes(keyword) ||
-        String(acc.nip || '').toLowerCase().includes(keyword) ||
-        String(acc.schoolDisplay || '').toLowerCase().includes(keyword) ||
-        String(acc.username || '').toLowerCase().includes(keyword)
-      );
+    const filtered = allAccounts.filter(acc => {
+      if (!query) return true;
+      const hay = `${acc.nama} ${acc.nip} ${acc.schoolDisplay} ${acc.kelasFase} ${acc.mapelDiampu} ${acc.username}`.toLowerCase();
+      return hay.includes(query);
     });
 
     if (filtered.length === 0) {
       tbody.innerHTML = `
         <tr>
           <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
-            Tidak ditemukan akun yang sesuai dengan kata kunci pencarian.
+            Tidak ada akun pengguna yang cocok dengan pencarian.
           </td>
         </tr>
       `;
       return;
     }
 
-    tbody.innerHTML = filtered.map((acc, idx) => {
+    // Urutkan otomatis berdasarkan kelompok Sekolah (Standar Sistem), lalu Peran (Kepsek -> Guru Kelas -> Guru Mapel), lalu Nama
+    const sorted = [...filtered].sort((a, b) => {
+      const schA = String(a.schoolDisplay || 'ZZZ').toUpperCase();
+      const schB = String(b.schoolDisplay || 'ZZZ').toUpperCase();
+      if (schA !== schB) return schA.localeCompare(schB, 'id');
+      if (a.isMasterAdmin !== b.isMasterAdmin) return a.isMasterAdmin ? -1 : 1;
+      return String(a.nama || '').localeCompare(String(b.nama || ''), 'id');
+    });
+
+    let htmlRows = '';
+    let currentSchoolGroup = null;
+    let rowNumber = 0;
+
+    sorted.forEach(acc => {
+      const schoolGroupName = acc.schoolDisplay || 'SEKOLAH BELUM DITENTUKAN';
+      const schoolGroupKey = acc.schoolKey || 'SCH_DEFAULT';
+
+      // Tampilkan baris pembatas Kelompok Sekolah agar Admin mudah melihat pengelompokan guru per sekolah
+      if (schoolGroupName !== currentSchoolGroup) {
+        currentSchoolGroup = schoolGroupName;
+        const countInSchool = sorted.filter(x => (x.schoolDisplay || 'SEKOLAH BELUM DITENTUKAN') === currentSchoolGroup).length;
+        htmlRows += `
+          <tr style="background: #eff6ff; border-top: 2px solid #93c5fd; border-bottom: 1px solid #bfdbfe;">
+            <td colspan="9" style="padding: 0.55rem 0.85rem; font-weight: 800; color: #1e3a8a; font-size: 0.85rem;">
+              🏫 KELOMPOK SEKOLAH: ${UI.escapeHtml(currentSchoolGroup)}
+              <span class="badge badge-primary" style="margin-left: 0.5rem;">${countInSchool} Pengguna</span>
+              <span style="font-size: 0.74rem; font-weight: 600; color: #64748b; margin-left: 0.5rem;">(ID Sinkronisasi: ${UI.escapeHtml(schoolGroupKey)})</span>
+            </td>
+          </tr>
+        `;
+      }
+
+      rowNumber++;
       let roleBadge = '<span class="badge badge-primary">Guru Kelas</span>';
       if (acc.isMasterAdmin) {
-        roleBadge = '<span class="badge badge-warning">Admin Utama & Guru Kelas</span>';
+        roleBadge = '<span class="badge badge-warning">Super Admin & Guru Kelas</span>';
       } else if (acc.role === 'GURU_MAPEL') {
         roleBadge = '<span class="badge badge-info">Guru Mapel</span>';
       } else if (acc.role === 'KEPALA_SEKOLAH') {
         roleBadge = '<span class="badge badge-success">Kepala Sekolah</span>';
       }
 
-      const detailTask = acc.role === 'GURU_MAPEL'
-        ? `${UI.escapeHtml(acc.mapelDiampu)} (${UI.escapeHtml(acc.kelasFase)})`
+      const kelasMapelInfo = acc.role === 'GURU_MAPEL'
+        ? `<strong>${UI.escapeHtml(acc.mapelDiampu || '-')}</strong><div style="font-size:0.75rem;color:var(--text-muted);">${UI.escapeHtml(acc.kelasFase || '-')}</div>`
         : UI.escapeHtml(acc.kelasFase || '-');
 
-      const actionBtn = acc.isMasterAdmin
-        ? `<span class="badge badge-success">Akun Master Utama</span>`
+      const actionHtml = acc.isMasterAdmin
+        ? `
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${acc.id}')">
+              ✏️ Edit Data
+            </button>
+            <span class="badge badge-success" title="Akun Super Administrator Utama dilindungi secara permanen">Akun Utama</span>
+          </div>
+        `
         : `
-          <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline btn-sm" onclick="AdminApp.promptResetCredentials('${acc.id}')">
-              Ubah Sandi
+          <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-warning btn-sm" onclick="AdminApp.openEditAccountModal('${acc.id}')">
+              ✏️ Edit Data / Sekolah
             </button>
             <button type="button" class="btn btn-danger btn-sm" onclick="AdminApp.deleteAccount('${acc.id}')">
-              Hapus
+              🗑️ Hapus Permanen
             </button>
           </div>
         `;
 
-      return `
+      htmlRows += `
         <tr>
-          <td>${idx + 1}</td>
+          <td>${rowNumber}</td>
           <td><strong>${UI.escapeHtml(acc.nama)}</strong></td>
-          <td><span style="font-family: monospace;">${UI.escapeHtml(acc.nip)}</span></td>
+          <td><span style="font-family: monospace;">${UI.escapeHtml(acc.nip || '-')}</span></td>
           <td>${roleBadge}</td>
           <td>
-            <strong>${UI.escapeHtml(acc.schoolDisplay)}</strong>
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${UI.escapeHtml(acc.schoolKey)}</div>
+            <strong>${UI.escapeHtml(acc.schoolDisplay || '-')}</strong>
+            <div style="font-size: 0.72rem; color: var(--text-muted);">${UI.escapeHtml(acc.schoolKey || '')}</div>
           </td>
-          <td>${detailTask}</td>
-          <td><code style="background: #f1f5f9; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700;">${UI.escapeHtml(acc.username)}</code></td>
-          <td><code style="background: #f1f5f9; padding: 0.15rem 0.45rem; border-radius: 4px; font-weight: 700;">${UI.escapeHtml(acc.password)}</code></td>
-          <td>${actionBtn}</td>
+          <td>${kelasMapelInfo}</td>
+          <td><span style="font-family: monospace; font-weight: 700; color: var(--primary);">${UI.escapeHtml(acc.username)}</span></td>
+          <td><span style="font-family: monospace;">${UI.escapeHtml(acc.password)}</span></td>
+          <td>${actionHtml}</td>
         </tr>
       `;
-    }).join('');
+    });
+
+    tbody.innerHTML = htmlRows;
   },
 
-  promptResetCredentials(accountId) {
-    const acc = (DB.data.accounts || []).find(a => a.id === accountId);
-    if (!acc) return;
+  async deleteAccount(accId) {
+    const target = (DB.data.accounts || []).find(a => a.id === accId);
+    if (!target) return;
 
-    const newUsername = window.prompt(`Perbarui Username untuk ${acc.nama}:`, acc.username);
-    if (newUsername === null || !newUsername.trim()) return;
+    if (target.isMasterAdmin) {
+      UI.showNotif('Tindakan Ditolak', 'Akun Administrator Utama tidak dapat dihapus.', 'danger');
+      return;
+    }
 
-    const newPassword = window.prompt(`Perbarui Password untuk ${acc.nama}:`, acc.password);
-    if (newPassword === null || !newPassword.trim()) return;
-
-    acc.username = newUsername.trim();
-    acc.password = newPassword.trim();
-    DB.save();
-    this.renderAccountsTable();
-
-    UI.showNotif(
-      'Username & Password Diperbarui',
-      `Kredensial login untuk ${acc.nama} berhasil diperbarui menjadi Username: ${acc.username} dan Password: ${acc.password}.`,
-      'success'
+    const confirmed = window.confirm(
+      `PERINGATAN HAPUS PERMANEN:\n\nApakah Anda yakin ingin menghapus akun "${target.nama}" (NIP: ${target.nip || '-'}, Sekolah: ${target.schoolDisplay || '-'}) secara PERMANEN?\n\nAkun yang dihapus akan dikunci dalam daftar blokir permanen dan tidak akan muncul kembali.`
     );
-  },
-
-  deleteAccount(accountId) {
-    const acc = (DB.data.accounts || []).find(a => a.id === accountId);
-    if (!acc || acc.isMasterAdmin) return;
-
-    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus akun ${acc.nama} (${acc.schoolDisplay}) secara permanen?`);
     if (!confirmed) return;
 
-    DB.data.accounts = (DB.data.accounts || []).filter(a => a.id !== accountId);
-    DB.save();
+    // 1. Kunci ID akun ke dalam Tombstone Registry (deletedAccountIds) agar tidak pernah hidup kembali dari cache/cloud
+    if (!Array.isArray(DB.data.deletedAccountIds)) {
+      DB.data.deletedAccountIds = [];
+    }
+    if (!DB.data.deletedAccountIds.includes(accId)) {
+      DB.data.deletedAccountIds.push(accId);
+    }
+
+    // 2. Bersihkan juga riwayat pengajuan (pendingTeachers) yang memiliki NIP atau Username yang sama
+    if (!Array.isArray(DB.data.deletedPendingIds)) {
+      DB.data.deletedPendingIds = [];
+    }
+    const targetCleanNip = AppAuth.cleanNip(target.nip);
+    (DB.data.pendingTeachers || []).forEach(pt => {
+      const matchNip = targetCleanNip && AppAuth.cleanNip(pt.nip) === targetCleanNip;
+      const matchUser = target.username && pt.releasedUsername && String(pt.releasedUsername).toLowerCase() === String(target.username).toLowerCase();
+      if (matchNip || matchUser) {
+        if (!DB.data.deletedPendingIds.includes(pt.id)) {
+          DB.data.deletedPendingIds.push(pt.id);
+        }
+      }
+    });
+
+    DB.data.pendingTeachers = (DB.data.pendingTeachers || []).filter(
+      pt => !DB.data.deletedPendingIds.includes(pt.id)
+    );
+
+    // 3. Hapus akun dari daftar accounts aktif
+    DB.data.accounts = (DB.data.accounts || []).filter(a => a.id !== accId);
+
+    // 4. Bersihkan penugasan guru tersebut dari mandat Visi-Misi Kepala Sekolah jika ada
+    if (DB.data.schoolVisiMisi) {
+      Object.values(DB.data.schoolVisiMisi).forEach(vm => {
+        if (vm && Array.isArray(vm.programs)) {
+          vm.programs.forEach(prog => {
+            if (Array.isArray(prog.assignedTeacherIds)) {
+              prog.assignedTeacherIds = prog.assignedTeacherIds.filter(id => id !== accId);
+            }
+          });
+        }
+      });
+    }
+
+    // 5. Tandai timestamp penghapusan lokal & langsung kunci ke localStorage + Supabase tanpa jeda
+    DB.lastLocalDeleteTimestamp = Date.now();
+    await DB.saveImmediate();
+
+    SchoolNormalizer.refreshSchoolDatalist();
     this.renderAdminStats();
+    this.renderPendingTeachersTable();
     this.renderAccountsTable();
 
     UI.showNotif(
-      'Akun Berhasil Dihapus',
-      `Akun atas nama ${acc.nama} telah dihapus dari sistem oleh Admin.`,
+      'Pengguna Dihapus Permanen',
+      `Akun atas nama ${target.nama} telah dihapus secara permanen dari sistem dan dikunci di server Cloud.`,
       'warning'
     );
   }
