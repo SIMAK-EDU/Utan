@@ -3798,7 +3798,7 @@ body {
       </div>
 
       <form id="form-generate-rpm" onsubmit="RpmApp.handleGenerateRpm(event)">
-        <div class="grid-3">
+                <div class="grid-4">
           <div class="form-group">
             <label class="form-label" for="rpm-input-penyusun">1. Nama Penyusun :</label>
             <input type="text" id="rpm-input-penyusun" class="form-control" placeholder="Nama lengkap guru penyusun..." required>
@@ -3811,7 +3811,12 @@ body {
             <label class="form-label" for="rpm-input-kelas-fase">3. Kelas / Fase (Kalibrasi Bahasa & Kognitif Siswa) :</label>
             <input type="text" id="rpm-input-kelas-fase" class="form-control" placeholder="Contoh: Kelas 4 / Fase B (atau Kelas 1 / Fase A)" required>
           </div>
-        </div>
+          <div class="form-group">
+            <label class="form-label" for="rpm-input-tanggal-susun">Tanggal Penyusunan (Terkunci Saat Disimpan) :</label>
+            <input type="date" id="rpm-input-tanggal-susun" class="form-control" required>
+            <div class="form-hint">Terkunci permanen saat modul disimpan (tidak ikut berubah di hari lain).</div>
+          </div>
+                </div>
 
         <div class="grid-3">
           <div class="form-group">
@@ -4169,17 +4174,22 @@ body {
       <div id="rpm-bottom-pager-bar" class="rpm-bottom-pager no-print"></div>
     </div>
 
-    <!-- PANEL ARSIP MODUL RPM & SOAL TERSIMPAN -->
+        <!-- PANEL ARSIP MODUL RPM & SOAL TERSIMPAN -->
     <div id="rpm-saved-archive-card" class="card no-print" style="margin-top: 1.5rem; border: 2px solid #93c5fd;">
       <div class="card-header">
         <div>
           <span class="badge badge-primary" style="margin-bottom: 0.25rem;">ARSIP PERANGKAT AJAR & BANK SOAL GURU</span>
-          <h3 class="card-title">📂 Daftar Modul RPM & Soal yang Tersimpan (Dapat Digunakan di Lain Waktu)</h3>
+          <h3 class="card-title">📂 Daftar Modul RPM & Soal yang Tersimpan (Tanggal Terkunci Permanen)</h3>
           <p class="card-subtitle">
-            Setiap modul RPM dan soal yang Anda simpan tercatat di sini. Klik <strong>Buka & Gunakan</strong> untuk menampilkan kembali atau mencetaknya kapan saja.
+            Setiap modul RPM menampilkan tanggal & waktu asli saat modul tersebut disusun/disimpan. Klik <strong>Buka & Gunakan</strong> untuk menampilkan kembali, atau klik <strong>Hapus Permanen</strong> untuk menghapus dari sistem dan Cloud.
           </p>
         </div>
-        <span id="rpm-saved-archive-badge" class="badge badge-success">0 Modul Tersimpan</span>
+        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+          <span id="rpm-saved-archive-badge" class="badge badge-success">0 Modul Tersimpan</span>
+          <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.clearAllSavedRpmArchive()">
+            🗑️ Hapus Semua Arsip RPM
+          </button>
+        </div>
       </div>
 
       <div class="table-responsive">
@@ -4187,12 +4197,12 @@ body {
           <thead>
             <tr>
               <th style="width: 48px;">No</th>
-              <th style="width: 150px;">Waktu Simpan</th>
+              <th style="width: 175px;">Tanggal & Waktu Simpan (Terkunci)</th>
               <th style="width: 165px;">Mata Pelajaran</th>
               <th>Topik Materi & Tujuan Pembelajaran (TP)</th>
               <th style="width: 135px;">Kelas / Fase</th>
               <th style="width: 150px; text-align: center;">Rincian Soal</th>
-              <th style="width: 220px;">Aksi (Buka / Hapus)</th>
+              <th style="width: 230px;">Aksi (Buka / Hapus Permanen)</th>
             </tr>
           </thead>
           <tbody id="tbody-rpm-saved-archive"></tbody>
@@ -6642,7 +6652,7 @@ const DB = {
   saveTimeout: null,
   lastLocalDeleteTimestamp: 0,
 
-  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat
+  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat (Termasuk Modul RPM)
   getLocalBlacklist() {
     try {
       const raw = localStorage.getItem(DELETED_BLACKLIST_STORAGE_KEY);
@@ -6651,13 +6661,14 @@ const DB = {
         return {
           accountIds: Array.isArray(parsed.accountIds) ? parsed.accountIds.map(String) : [],
           pendingIds: Array.isArray(parsed.pendingIds) ? parsed.pendingIds.map(String) : [],
-          deletedAccountNips: Array.isArray(parsed.deletedAccountNips) ? parsed.deletedAccountNips.map(String) : []
+          deletedAccountNips: Array.isArray(parsed.deletedAccountNips) ? parsed.deletedAccountNips.map(String) : [],
+          rpmIds: Array.isArray(parsed.rpmIds) ? parsed.rpmIds.map(String) : []
         };
       }
     } catch (e) {
       console.warn('Gagal membaca blacklist lokal:', e);
     }
-    return { accountIds: [], pendingIds: [], deletedAccountNips: [] };
+    return { accountIds: [], pendingIds: [], deletedAccountNips: [], rpmIds: [] };
   },
 
   saveLocalBlacklist(bl) {
@@ -6665,15 +6676,17 @@ const DB = {
       localStorage.setItem(DELETED_BLACKLIST_STORAGE_KEY, JSON.stringify({
         accountIds: Array.from(new Set((bl.accountIds || []).map(String))),
         pendingIds: Array.from(new Set((bl.pendingIds || []).map(String))),
-        deletedAccountNips: Array.from(new Set((bl.deletedAccountNips || []).map(String)))
+        deletedAccountNips: Array.from(new Set((bl.deletedAccountNips || []).map(String))),
+        rpmIds: Array.from(new Set((bl.rpmIds || []).map(String)))
       }));
     } catch (e) {
       console.warn('Gagal menyimpan blacklist lokal:', e);
     }
   },
 
-  // Mengunci ID log atau ID akun yang dihapus agar permanen dan tidak pernah muncul kembali
-  lockPermanentDeletion({ accId = null, pendingId = null, accNip = null }) {
+  // Mengunci ID log, ID akun, atau ID Modul RPM yang dihapus agar permanen dan tidak pernah muncul kembali
+  lockPermanentDeletion({ accId = null, pendingId = null, accNip = null, rpmId = null, rpmIds = null }) {
+    this.lastLocalDeleteTimestamp = Date.now();
     const bl = this.getLocalBlacklist();
 
     if (accId) {
@@ -6690,6 +6703,16 @@ const DB = {
         bl.deletedAccountNips.push(cleanNip);
       }
     }
+    if (rpmId) {
+      const rIdStr = String(rpmId);
+      if (!bl.rpmIds.includes(rIdStr)) bl.rpmIds.push(rIdStr);
+    }
+    if (Array.isArray(rpmIds)) {
+      rpmIds.forEach(id => {
+        const rIdStr = String(id);
+        if (rIdStr && !bl.rpmIds.includes(rIdStr)) bl.rpmIds.push(rIdStr);
+      });
+    }
 
     this.saveLocalBlacklist(bl);
 
@@ -6697,6 +6720,7 @@ const DB = {
       if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
       if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
       if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
+      if (!Array.isArray(this.data.deletedRpmIds)) this.data.deletedRpmIds = [];
 
       if (accId && !this.data.deletedAccountIds.includes(String(accId))) {
         this.data.deletedAccountIds.push(String(accId));
@@ -6710,10 +6734,20 @@ const DB = {
           this.data.deletedAccountNips.push(cleanNip);
         }
       }
+      if (rpmId && !this.data.deletedRpmIds.includes(String(rpmId))) {
+        this.data.deletedRpmIds.push(String(rpmId));
+      }
+      if (Array.isArray(rpmIds)) {
+        rpmIds.forEach(id => {
+          const rIdStr = String(id);
+          if (rIdStr && !this.data.deletedRpmIds.includes(rIdStr)) {
+            this.data.deletedRpmIds.push(rIdStr);
+          }
+        });
+      }
     }
   },
 
-  // Membuka kunci NIP apabila Admin di kemudian hari mendaftarkan ulang guru dengan NIP tersebut
   unlockNipForNewAccount(nipRaw) {
     const cleanNip = String(nipRaw || '').replace(/\s+/g, '').trim();
     if (!cleanNip) return;
@@ -6791,7 +6825,6 @@ const DB = {
     }
   },
 
-  // Menyimpan instan ke localStorage (0 ms) lalu mengirim ke Cloud di latar belakang tanpa memblokir tampilan tabel
   saveImmediate() {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
@@ -6884,7 +6917,7 @@ const DB = {
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
-          // Abaikan pantulan realtime selama 6 detik setelah Admin melakukan penghapusan
+          // Abaikan pantulan realtime selama 6 detik setelah pengguna melakukan penghapusan
           if (this.isSyncing) return;
           if (Date.now() - this.lastLocalDeleteTimestamp < 6000) return;
 
@@ -6907,6 +6940,10 @@ const DB = {
       AdminApp.renderPendingTeachersTable();
       AdminApp.renderPillarLocksState();
       AdminApp.renderAccountsTable();
+    } else if (AppState.activeMode === 'TEACHER') {
+      if (typeof RpmApp !== 'undefined' && typeof RpmApp.renderSavedArchiveTable === 'function') {
+        RpmApp.renderSavedArchiveTable();
+      }
     } else if (AppState.activeMode === 'PRINCIPAL') {
       PrincipalApp.renderTeachersSyncPanel();
       if (AppState.principalActiveTab === 'ketercapaian') {
@@ -6949,6 +6986,7 @@ const DB = {
     if (!Array.isArray(this.data.deletedAccountIds)) this.data.deletedAccountIds = [];
     if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
     if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
+    if (!Array.isArray(this.data.deletedRpmIds)) this.data.deletedRpmIds = [];
 
     // Gabungkan daftar hitam lokal perangkat dengan daftar hitam dari Cloud
     const localBl = this.getLocalBlacklist();
@@ -6967,11 +7005,17 @@ const DB = {
         this.data.deletedAccountNips.push(String(nip));
       }
     });
+    (localBl.rpmIds || []).forEach(rId => {
+      if (!this.data.deletedRpmIds.includes(String(rId))) {
+        this.data.deletedRpmIds.push(String(rId));
+      }
+    });
 
     this.saveLocalBlacklist({
       accountIds: this.data.deletedAccountIds,
       pendingIds: this.data.deletedPendingIds,
-      deletedAccountNips: this.data.deletedAccountNips
+      deletedAccountNips: this.data.deletedAccountNips,
+      rpmIds: this.data.deletedRpmIds
     });
 
     if (!this.data.pillarLocks) {
@@ -6988,8 +7032,8 @@ const DB = {
     const deletedAccSet = new Set(this.data.deletedAccountIds.map(String));
     const deletedPendSet = new Set(this.data.deletedPendingIds.map(String));
     const deletedNipSet = new Set(this.data.deletedAccountNips.map(String));
+    const deletedRpmSet = new Set(this.data.deletedRpmIds.map(String));
 
-    // Pastikan setiap item memiliki ID valid & saring semua akun yang pernah dihapus
     this.data.accounts = this.data.accounts.filter((acc, idx) => {
       if (!acc) return false;
       if (acc.isMasterAdmin === true) return true;
@@ -7000,12 +7044,23 @@ const DB = {
       return true;
     });
 
-    // Pastikan setiap log pengajuan memiliki ID valid & saring semua log yang pernah dihapus permanen
     this.data.pendingTeachers = this.data.pendingTeachers.filter((pt, idx) => {
       if (!pt) return false;
       if (!pt.id) pt.id = 'REG_LEGACY_' + idx + '_' + String(pt.nip || '').replace(/\D/g, '');
       if (deletedPendSet.has(String(pt.id))) return false;
       return true;
+    });
+
+    // Saring semua modul RPM di seluruh kelas agar modul yang sudah dihapus permanen tidak pernah muncul lagi
+    Object.values(this.data.classData || {}).forEach(bucket => {
+      if (bucket && Array.isArray(bucket.rpmModules)) {
+        bucket.rpmModules = bucket.rpmModules.filter((mod, idx) => {
+          if (!mod) return false;
+          if (!mod.id) mod.id = 'RPM_LEGACY_' + idx + '_' + String(mod.mapel || '').replace(/\W/g, '');
+          if (deletedRpmSet.has(String(mod.id))) return false;
+          return true;
+        });
+      }
     });
 
     const hasAndri = this.data.accounts.some(acc => acc.isMasterAdmin === true);
@@ -7018,7 +7073,7 @@ const DB = {
     return {
       id: 'ACC_MASTER_ANDRI',
       nama: 'Andri Julian Perdana, S.Pd.',
-      nip: '199007152019031001',
+      nip: 'Null',
       role: 'GURU_KELAS',
       isMasterAdmin: true,
       schoolRaw: 'SDN 2 Sabedo',
@@ -7028,7 +7083,7 @@ const DB = {
       classKey: 'KELAS 4',
       mapelDiampu: 'Guru Kelas',
       username: 'andri',
-      password: '123456',
+      password: 'Demesa12345',
       altPassword: 'admin123',
       mapelSchedule: {},
       createdAt: '2026-01-01 07:00:00'
@@ -15975,11 +16030,12 @@ Format JSON wajib:
   }
 };
 
+const GEMINI_API_KEY_STORAGE = 'SIMAK_EDU_GEMINI_API_KEY_V1';
+
 const RpmApp = {
-  hideAnswerKeysForStudentPrint: false,
-  activeResultPageIndex: 1,
-  paginatedQuestionPages: [],
-  regenCounter: 1,
+  activePage: 1,
+  showAllPagesMode: false,
+  hideAnswerKey: false,
 
   openMainView() {
     const teacher = DB.getActiveTeacherAccount();
@@ -15989,28 +16045,48 @@ const RpmApp = {
     const penyusunInp = document.getElementById('rpm-input-penyusun');
     const sekolahInp = document.getElementById('rpm-input-sekolah');
     const kelasInp = document.getElementById('rpm-input-kelas-fase');
-    const keyInp = document.getElementById('rpm-gemini-api-key-input');
+    const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+    const geminiInp = document.getElementById('rpm-gemini-api-key-input');
 
-    if (penyusunInp && !penyusunInp.value.trim()) penyusunInp.value = teacher.nama || '';
-    if (sekolahInp) sekolahInp.value = teacher.schoolDisplay || bucket.schoolDisplay || '';
+    if (penyusunInp && !penyusunInp.value.trim()) {
+      penyusunInp.value = teacher.nama || '';
+    }
+    if (sekolahInp) {
+      sekolahInp.value = teacher.schoolDisplay || bucket.schoolDisplay || '';
+    }
     if (kelasInp) {
       kelasInp.value = teacher.role === 'GURU_MAPEL'
         ? (bucket.kelasFaseLabel || bucket.classKey)
         : (teacher.kelasFase || bucket.kelasFaseLabel || 'Kelas 4 / Fase B');
     }
-    if (keyInp) {
-      keyInp.value = AcademicAIEngine.getGeminiApiKey();
+
+    // Set tanggal penyusunan default ke hari ini hanya jika kolom tanggal masih kosong
+    if (tglSusunInp && !tglSusunInp.value) {
+      tglSusunInp.value = DateTimeUtil.getTodayISO();
     }
 
-    this.updateEngineStatusBadge();
-    this.loadDaySubjectsChips('TODAY', true);
+    if (geminiInp) {
+      geminiInp.value = localStorage.getItem(GEMINI_API_KEY_STORAGE) || '';
+    }
+
+    this.handleDayFilterChange('TODAY');
     this.checkMathPanelVisibility();
     this.renderSavedArchiveTable();
 
+    // Validasi apakah modul yang sedang aktif di memori sudah dihapus dari arsip
     if (AppState.rpmCurrentDoc) {
-      this.renderGeneratedRpmDocument();
-      this.renderGeneratedQuestionsMultiPages();
-      this.switchResultPage(1);
+      const deletedSet = new Set((DB.data.deletedRpmIds || []).map(String));
+      if (deletedSet.has(String(AppState.rpmCurrentDoc.id))) {
+        AppState.rpmCurrentDoc = null;
+      }
+    }
+
+    if (AppState.rpmCurrentDoc) {
+      const formCard = document.getElementById('rpm-builder-form-card');
+      const resultWrapper = document.getElementById('rpm-result-wrapper');
+      if (formCard) formCard.classList.add('hidden');
+      if (resultWrapper) resultWrapper.classList.remove('hidden');
+      this.renderAllRpmPages();
     } else {
       this.reopenBuilderForm();
     }
@@ -16024,204 +16100,145 @@ const RpmApp = {
   },
 
   saveGeminiApiKey() {
-    const keyInp = document.getElementById('rpm-gemini-api-key-input');
-    const val = keyInp ? keyInp.value.trim() : '';
-    AcademicAIEngine.setGeminiApiKey(val);
-    this.updateEngineStatusBadge();
-
-    const panel = document.getElementById('rpm-gemini-config-panel');
-    if (panel) panel.classList.add('hidden');
-
-    if (val) {
+    const inp = document.getElementById('rpm-gemini-api-key-input');
+    const keyVal = inp ? inp.value.trim() : '';
+    if (keyVal) {
+      localStorage.setItem(GEMINI_API_KEY_STORAGE, keyVal);
       UI.showNotif(
-        'Google Gemini API Key Tersimpan',
-        'Mesin utama pembuatan Modul RPM & Soal kini terhubung langsung ke Google Gemini API (gemini-2.5-flash / gemini-1.5-flash).',
+        'Kunci API Gemini Tersimpan',
+        'Google Gemini API Key berhasil disimpan di perangkat ini dan siap digunakan untuk menyusun Modul RPM & Soal.',
         'success'
       );
     } else {
+      localStorage.removeItem(GEMINI_API_KEY_STORAGE);
       UI.showNotif(
-        'Mode Cloud Generative AI Gratis Aktif',
-        'Kunci API dikosongkan. Sistem otomatis menggunakan Cloud Generative AI Gateway gratis.',
+        'Mode Cloud AI Standar Aktif',
+        'Kunci API dikosongkan. Sistem menggunakan Engine AI Akademik bawaan secara otomatis.',
         'info'
       );
     }
+    this.toggleGeminiKeyConfig();
   },
 
-  updateEngineStatusBadge() {
-    const badge = document.getElementById('rpm-active-engine-badge');
-    if (!badge) return;
-    const hasKey = Boolean(AcademicAIEngine.getGeminiApiKey());
-    if (hasKey) {
-      badge.textContent = '✨ Google Gemini API Resmi Aktif';
-      badge.className = 'badge badge-warning';
-    } else {
-      badge.textContent = '☁️ Cloud Generative AI Murni Aktif';
-      badge.className = 'badge badge-success';
+  scrollToSavedArchive() {
+    const card = document.getElementById('rpm-saved-archive-card');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   },
 
-  loadDaySubjectsChips(filterDay = 'TODAY', autoFillFirst = false) {
+  handleDayFilterChange(dayFilterVal) {
     const teacher = DB.getActiveTeacherAccount();
     const bucket = DB.getActiveClassBucket();
+    if (!teacher || !bucket) return;
+
+    const pill = document.getElementById('rpm-detected-day-pill');
+    const chipsWrap = document.getElementById('rpm-today-subjects-chips');
+    const datalist = document.getElementById('datalist-rpm-mapel');
     const mapelInp = document.getElementById('rpm-input-mapel');
-    const datalistMapel = document.getElementById('datalist-rpm-mapel');
-    const chipsContainer = document.getElementById('rpm-today-subjects-chips');
-    const dayPill = document.getElementById('rpm-detected-day-pill');
-    const filterSelect = document.getElementById('rpm-day-filter-select');
-    if (!bucket || !mapelInp) return;
 
-    const todayDayName = DateTimeUtil.getCurrentDayName();
-    const targetDay = filterDay === 'TODAY' ? todayDayName : filterDay;
-
-    if (filterSelect && filterSelect.value !== filterDay) {
-      filterSelect.value = filterDay;
-    }
+    const todayName = DateTimeUtil.getCurrentDayName();
+    const targetDay = (!dayFilterVal || dayFilterVal === 'TODAY') ? todayName : dayFilterVal;
 
     let subjects = [];
-    if (teacher && teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
-      subjects = [teacher.mapelDiampu];
-      if (dayPill) dayPill.textContent = `Guru Mapel Hari ${todayDayName}: ${teacher.mapelDiampu}`;
+    if (teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
+      subjects = [teacher.mapelDiampu.trim()];
+    } else if (targetDay === 'ALL') {
+      subjects = PenilaianApp.getAvailableSubjectsForTeacher(null);
     } else {
       const sched = bucket.schedule || {};
-      if (targetDay === 'ALL') {
-        const allSet = new Set();
-        Object.values(sched).forEach(arr => {
-          if (Array.isArray(arr)) arr.forEach(s => { if (s && s.trim()) allSet.add(s.trim()); });
-        });
-        subjects = Array.from(allSet);
-        if (dayPill) dayPill.textContent = `Semua Jadwal Mapel Kelas (${subjects.length} Mapel)`;
-      } else {
-        const dayArr = sched[targetDay] || [];
-        subjects = [...new Set(dayArr.map(s => s.trim()).filter(Boolean))];
-        if (subjects.length === 0) {
-          subjects = ['Matematika', 'Bahasa Indonesia', 'IPAS', 'Pendidikan Pancasila'];
-        }
-        if (dayPill) {
-          dayPill.textContent = `Jadwal Terdeteksi Hari ${targetDay}: ${subjects.join(', ')}`;
-        }
-      }
+      subjects = Array.isArray(sched[targetDay]) && sched[targetDay].length > 0
+        ? sched[targetDay].map(s => s.trim()).filter(Boolean)
+        : PenilaianApp.getAvailableSubjectsForTeacher(null);
     }
 
-    if (datalistMapel) {
-      datalistMapel.innerHTML = subjects.map(s => `<option value="${UI.escapeHtml(s)}"></option>`).join('');
+    if (pill) {
+      pill.textContent = targetDay === 'ALL'
+        ? `Semua Jadwal Mapel (${subjects.length} Mapel)`
+        : `Jadwal Hari ${targetDay}: ${subjects.join(', ') || '-'}`;
     }
 
-    if (autoFillFirst && (!mapelInp.value.trim() || filterDay === 'TODAY')) {
-      if (subjects.length > 0 && !mapelInp.value.trim()) {
-        mapelInp.value = subjects[0];
-      }
+    if (datalist) {
+      datalist.innerHTML = subjects.map(s => `<option value="${UI.escapeHtml(s)}"></option>`).join('');
     }
 
-    if (chipsContainer) {
-      chipsContainer.innerHTML = subjects.map(sub => {
-        const isCurrent = mapelInp.value.trim().toLowerCase() === sub.toLowerCase();
+    if (chipsWrap) {
+      chipsWrap.innerHTML = subjects.map(sub => {
         const safeSub = UI.escapeHtml(sub).replace(/'/g, "\\'");
+        const isActive = mapelInp && mapelInp.value.trim().toLowerCase() === sub.toLowerCase();
         return `
-          <span
-            class="rpm-day-subject-chip ${isCurrent ? 'active-chip' : ''}"
-            title="Klik untuk memilih mata pelajaran ${UI.escapeHtml(sub)}"
-            onclick="RpmApp.selectSubjectChip('${safeSub}')"
-          >
-            📘 ${UI.escapeHtml(sub)}
-          </span>
+          <button type="button" class="rpm-day-subject-chip ${isActive ? 'active-chip' : ''}" onclick="RpmApp.selectSubjectChip('${safeSub}')">
+            📚 ${UI.escapeHtml(sub)}
+          </button>
         `;
       }).join('');
     }
 
-    this.checkMathPanelVisibility();
+    if (mapelInp && (!mapelInp.value.trim() || teacher.role === 'GURU_MAPEL') && subjects.length > 0) {
+      mapelInp.value = subjects[0];
+      this.checkMathPanelVisibility();
+    }
   },
 
-  handleDayFilterChange(val) {
+  selectSubjectChip(subjectName) {
     const mapelInp = document.getElementById('rpm-input-mapel');
-    if (mapelInp) mapelInp.value = '';
-    this.loadDaySubjectsChips(val, true);
-  },
-
-  selectSubjectChip(subName) {
-    const mapelInp = document.getElementById('rpm-input-mapel');
-    if (mapelInp) mapelInp.value = subName;
-    const filterSel = document.getElementById('rpm-day-filter-select');
-    this.loadDaySubjectsChips(filterSel ? filterSel.value : 'TODAY', false);
+    if (mapelInp) {
+      mapelInp.value = subjectName;
+    }
+    const daySel = document.getElementById('rpm-day-filter-select');
+    this.handleDayFilterChange(daySel ? daySel.value : 'TODAY');
     this.checkMathPanelVisibility();
   },
 
   handleMapelInputChange() {
-    const filterSel = document.getElementById('rpm-day-filter-select');
-    this.loadDaySubjectsChips(filterSel ? filterSel.value : 'TODAY', false);
     this.checkMathPanelVisibility();
   },
 
   checkMathPanelVisibility() {
-    const mapelEl = document.getElementById('rpm-input-mapel');
-    const materiEl = document.getElementById('rpm-input-materi');
-    const tpEl = document.getElementById('rpm-input-tp');
+    const mapelInp = document.getElementById('rpm-input-mapel');
+    const materiInp = document.getElementById('rpm-input-materi');
+    const tpInp = document.getElementById('rpm-input-tp');
     const mathBox = document.getElementById('rpm-math-special-config-box');
     if (!mathBox) return;
 
-    const mapel = mapelEl ? mapelEl.value : '';
-    const materi = materiEl ? materiEl.value : '';
-    const tp = tpEl ? tpEl.value : '';
+    const combinedText = `${mapelInp ? mapelInp.value : ''} ${materiInp ? materiInp.value : ''} ${tpInp ? tpInp.value : ''}`.toLowerCase();
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|geometri|luas|keliling|volume|sudut|skala|debit|aljabar|angka/.test(combinedText);
 
-    if (AcademicAIEngine.isMathSubjectOrTopic(mapel, materi, tp)) {
+    if (isMath) {
       mathBox.classList.remove('hidden');
     } else {
       mathBox.classList.add('hidden');
     }
   },
 
-  async autoSuggestCpAndTp() {
-    const mapelEl = document.getElementById('rpm-input-mapel');
-    const kelasEl = document.getElementById('rpm-input-kelas-fase');
-    const materiEl = document.getElementById('rpm-input-materi');
-    const soloEl = document.getElementById('rpm-input-solo');
+  autoSuggestCpAndTp() {
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || 'Mata Pelajaran').trim();
+    const materi = (document.getElementById('rpm-input-materi')?.value || 'Konsep Inti Pembelajaran').trim();
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || 'Kelas 4 / Fase B').trim();
+    const solo = (document.getElementById('rpm-input-solo')?.value || 'Relational').trim();
+    const soloMeta = AcademicAIEngine.getSoloVerbMeta(solo);
+
     const cpEl = document.getElementById('rpm-input-cp');
     const tpEl = document.getElementById('rpm-input-tp');
 
-    const mapel = mapelEl && mapelEl.value.trim() ? mapelEl.value.trim() : 'Matematika';
-    const kelasFase = kelasEl && kelasEl.value.trim() ? kelasEl.value.trim() : 'Kelas 4 / Fase B';
-    const soloLevel = soloEl ? soloEl.value : 'Relational';
-    const isMath = AcademicAIEngine.isMathSubjectOrTopic(mapel, materiEl ? materiEl.value : '', '');
-
-    let materi = materiEl && materiEl.value.trim() ? materiEl.value.trim() : '';
-    if (!materi) {
-      if (isMath) materi = 'Pembagian Bilangan Cacah';
-      else if (mapel.toLowerCase().includes('ipas') || mapel.toLowerCase().includes('ipa')) materi = 'Siklus Air dan Pelestarian Lingkungan';
-      else if (mapel.toLowerCase().includes('indonesia')) materi = 'Gagasan Pokok dan Informasi Penting dalam Paragraf';
-      else if (mapel.toLowerCase().includes('pancasila')) materi = 'Musyawarah dan Penerapan Nilai Sila Pancasila';
-      else materi = `Konsep Esensial ${mapel}`;
-      if (materiEl) materiEl.value = materi;
+    if (cpEl) {
+      cpEl.value = `Pada akhir ${kelasFase}, peserta didik memiliki kemampuan memahami konsep esensial pada mata pelajaran ${mapel}, mengaitkan prinsip "${materi}" dengan permasalahan nyata di lingkungan sekitar secara bernalar kritis, serta menerapkan pemahaman tersebut secara mandiri maupun kolaboratif.`;
     }
 
-    const loadingModal = document.getElementById('rpm-ai-loading-modal');
-    const loadingTitle = document.getElementById('rpm-ai-loading-title');
-    if (loadingTitle) loadingTitle.textContent = `Merumuskan Draft CP & TP "${materi}" dengan AI Murni...`;
-    if (loadingModal) loadingModal.classList.remove('hidden');
-
-    try {
-      const aiDraft = await AcademicAIEngine.suggestCpAndTpWithAI(mapel, kelasFase, materi, soloLevel);
-      if (aiDraft) {
-        if (cpEl) cpEl.value = aiDraft.cp;
-        if (tpEl) tpEl.value = aiDraft.tpText;
-        this.checkMathPanelVisibility();
-        UI.showNotif(
-          'CP & TP Berhasil Dirumuskan oleh AI Murni',
-          `Draft Capaian Pembelajaran dan Tujuan Pembelajaran untuk topik "${materi}" (${mapel}) telah disusun secara dinamis oleh ${aiDraft.engineUsed}.`,
-          'success'
-        );
-        return;
-      }
-
-      if (isMath) {
-        if (cpEl) cpEl.value = `Pada akhir ${kelasFase}, peserta didik memiliki pemahaman dan keterampilan operasi hitung pada materi ${materi} serta mampu menerapkannya secara akurat.`;
-        if (tpEl) tpEl.value = `1. Siswa mampu menyelesaikan operasi hitung pada materi ${materi} tanpa kesalahan.\n2. Siswa mampu menentukan hasil perhitungan pada materi ${materi} sesuai tingkat kelas.`;
-      } else {
-        if (cpEl) cpEl.value = `Pada akhir ${kelasFase}, peserta didik mampu memahami konsep ${materi} pada mata pelajaran ${mapel} serta menggunakannya dalam kehidupan sehari-hari.`;
-        if (tpEl) tpEl.value = `1. Siswa mampu mengidentifikasi konsep penting pada materi ${materi} dengan tepat.\n2. Siswa mampu menjelaskan penerapan ${materi} sesuai cakupan kelas.`;
-      }
-      this.checkMathPanelVisibility();
-    } finally {
-      if (loadingModal) loadingModal.classList.add('hidden');
+    if (tpEl) {
+      tpEl.value = [
+        `1. Melalui pengamatan stimulus dan diskusi terbimbing, peserta didik mampu ${soloMeta.verbs} mengenai "${materi}" pada mata pelajaran ${mapel} dengan tepat.`,
+        `2. Melalui latihan terstruktur dan pemecahan masalah kontekstual, peserta didik mampu menerapkan konsep "${materi}" sesuai ranah Taksonomi SOLO tingkat ${soloMeta.level} secara akurat.`,
+        `3. Melalui kegiatan refleksi dan presentasi hasil kerja, peserta didik mampu menyimpulkan kebermaknaan materi "${materi}" dalam kehidupan sehari-hari secara komunikatif.`
+      ].join('\n');
     }
+
+    this.checkMathPanelVisibility();
+    UI.showNotif(
+      'Draft CP & TP Berhasil Disusun',
+      `Rumusan Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) untuk materi "${materi}" telah diisi otomatis. Anda dapat menyesuaikannya bila diperlukan.`,
+      'success'
+    );
   },
 
   selectAllDplCheckboxes(selectAll = true) {
@@ -16234,8 +16251,11 @@ const RpmApp = {
   toggleAutoQuestionBuilder(isChecked) {
     const panel = document.getElementById('rpm-auto-questions-panel');
     if (!panel) return;
-    if (isChecked) panel.classList.remove('hidden');
-    else panel.classList.add('hidden');
+    if (isChecked) {
+      panel.classList.remove('hidden');
+    } else {
+      panel.classList.add('hidden');
+    }
   },
 
   toggleQuestionCountInput(qType, isChecked) {
@@ -16252,113 +16272,203 @@ const RpmApp = {
   },
 
   toggleCustomQuestionTypeInput(isChecked) {
-    const wrap = document.getElementById('rpm-custom-qtype-manual-wrap');
     const countInp = document.getElementById('rpm-qcount-LAINNYA');
-    if (!wrap || !countInp) return;
-    if (isChecked) {
-      wrap.classList.remove('hidden');
-      countInp.classList.remove('hidden');
-    } else {
-      wrap.classList.add('hidden');
-      countInp.classList.add('hidden');
+    const manualWrap = document.getElementById('rpm-custom-qtype-manual-wrap');
+    if (countInp) {
+      if (isChecked) countInp.classList.remove('hidden');
+      else countInp.classList.add('hidden');
+    }
+    if (manualWrap) {
+      if (isChecked) manualWrap.classList.remove('hidden');
+      else manualWrap.classList.add('hidden');
     }
   },
 
-  toggleAnswerKeyVisibility() {
-    this.hideAnswerKeysForStudentPrint = !this.hideAnswerKeysForStudentPrint;
-    const btn = document.getElementById('btn-toggle-teacher-key');
-    if (btn) {
-      if (this.hideAnswerKeysForStudentPrint) {
-        btn.textContent = 'Tampilkan Kunci Jawaban (Mode Pegangan Guru)';
-        btn.className = 'btn btn-warning btn-sm';
-      } else {
-        btn.textContent = 'Sembunyikan Kunci Jawaban (Mode Siswa)';
-        btn.className = 'btn btn-secondary btn-sm';
-      }
-    }
-    const currentPage = this.activeResultPageIndex || 1;
-    this.renderGeneratedQuestionsMultiPages();
-    this.switchResultPage(currentPage);
-  },
+  buildDynamicQuestionSections(params, questionSpecList) {
+    const { mapel, materi, kelasFase, soloLevel, tpRaw, difficulty, mathMode } = params;
+    const soloMeta = AcademicAIEngine.getSoloVerbMeta(soloLevel);
+    const isMathSubject = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan/i.test(`${mapel} ${materi}`);
 
-  collectCurrentQuestionSpecsFromForm() {
-    const enableQuestions = document.getElementById('rpm-enable-auto-questions').checked;
-    const questionSpecList = [];
-    if (!enableQuestions) return { enableQuestions: false, questionSpecList: [], errorMsg: '' };
+    const tpLines = String(tpRaw || '')
+      .split(/\n+/)
+      .map(s => s.replace(/^\d+[\.\)]\s*/, '').trim())
+      .filter(Boolean);
 
-    const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
-    for (const ch of checkedTypes) {
-      const qType = ch.getAttribute('data-qtype');
-      const countEl = document.getElementById(`rpm-qcount-${qType}`);
-      const countVal = countEl ? parseInt(countEl.value, 10) : 5;
+    const sections = [];
 
-      if (qType === 'LAINNYA') {
-        const customNameEl = document.getElementById('rpm-custom-qtype-name');
-        const customNameVal = customNameEl ? customNameEl.value.trim() : '';
-        if (!customNameVal) {
-          return {
-            enableQuestions: true,
-            questionSpecList: [],
-            errorMsg: 'Silakan tuliskan bentuk soal yang Anda inginkan pada kolom "Lainnya".'
-          };
+    (questionSpecList || []).forEach(spec => {
+      const qType = spec.type;
+      const count = Math.max(1, parseInt(spec.count, 10) || 1);
+      const customLabel = spec.customName || '';
+      const items = [];
+
+      for (let i = 1; i <= count; i++) {
+        const focusTp = tpLines.length > 0 ? tpLines[(i - 1) % tpLines.length] : `Memahami dan menerapkan konsep ${materi}`;
+
+        // Jika Matematika & mode Operasi Hitung Langsung / Kombinasi
+        if (isMathSubject && (mathMode === 'DIRECT_CALC' || (mathMode === 'MIXED_MATH' && i % 2 === 1))) {
+          const b = (i % 8) + 2;
+          const resultVal = (i * 12) + 14;
+          const a = b * resultVal;
+          const expr = `${a} ÷ ${b} = ....`;
+
+          if (qType === 'PG') {
+            const correctKeys = ['A', 'B', 'C', 'D'];
+            const keyChar = correctKeys[(i - 1) % 4];
+            const distractors = [resultVal - 2, resultVal + 4, resultVal + 10];
+            const opts = { A: '', B: '', C: '', D: '' };
+            let dIdx = 0;
+            correctKeys.forEach(k => {
+              if (k === keyChar) opts[k] = String(resultVal);
+              else opts[k] = String(distractors[dIdx++]);
+            });
+
+            items.push({
+              no: i,
+              stem: `Hitunglah hasil operasi bilangan berikut ini dengan tepat:`,
+              mathExpression: expr,
+              options: opts,
+              answer: `Kunci Jawaban: ${keyChar} (${resultVal}) — Karena ${b} × ${resultVal} = ${a}.`,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          } else if (qType === 'ISIAN') {
+            items.push({
+              no: i,
+              stem: `Selesaikan operasi hitung langsung berikut:`,
+              mathExpression: expr,
+              answer: `Kunci Jawaban: ${resultVal} (Verifikasi: ${a} ÷ ${b} = ${resultVal}).`,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          }
         }
-        questionSpecList.push({
-          type: 'LAINNYA',
-          customName: customNameVal,
-          count: Math.max(1, countVal || 3)
-        });
-      } else if (qType && countVal > 0) {
-        questionSpecList.push({
-          type: qType,
-          count: countVal
-        });
-      }
-    }
 
-    return { enableQuestions, questionSpecList, errorMsg: '' };
+        // Generator standar kontekstual untuk semua jenis soal
+        if (qType === 'PG') {
+          const correctPool = ['A', 'B', 'C', 'D'];
+          const answerKey = correctPool[(i - 1) % 4];
+          const optionTexts = {
+            A: `Menguraikan bagian dari "${materi}" secara terpisah tanpa mengaitkannya dengan tujuan ${mapel}.`,
+            B: `Menyebutkan istilah dasar "${materi}" tanpa menyertakan bukti atau langkah penerapan yang tepat.`,
+            C: `Menganalisis dan menerapkan konsep "${materi}" secara tepat sesuai indikator: ${focusTp}.`,
+            D: `Mengabaikan hubungan sebab-akibat pada "${materi}" ketika menyelesaikan permasalahan kontekstual.`
+          };
+          if (answerKey !== 'C') {
+            const tmp = optionTexts[answerKey];
+            optionTexts[answerKey] = optionTexts.C;
+            optionTexts.C = tmp;
+          }
+
+          items.push({
+            no: i,
+            stem: `[Tingkat ${difficulty || 'SEDANG'} — SOLO ${soloMeta.level}] Perhatikan konteks pembelajaran ${mapel} (${kelasFase}) tentang "${materi}" yang mengacu pada capaian "${focusTp}". Pernyataan atau tindakan manakah di bawah ini yang paling tepat?`,
+            options: optionTexts,
+            answer: `Kunci Jawaban: ${answerKey} — Sesuai dengan indikator tujuan pembelajaran dan tingkat kognitif ${soloMeta.level}.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'ISIAN') {
+          items.push({
+            no: i,
+            stem: `[Isian Singkat #${i}] Berdasarkan konsep "${materi}" pada mata pelajaran ${mapel}, langkah atau unsur utama yang berfungsi untuk mencapai "${focusTp}" adalah ___________________________.`,
+            answer: `Kunci Isian: Konsep/prinsip inti "${materi}" yang berkaitan langsung dengan ${focusTp}.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'ESAI') {
+          items.push({
+            no: i,
+            stem: `[Esai Terstruktur #${i} — SOLO ${soloMeta.level}] Jelaskan dengan bahasamu sendiri bagaimana konsep "${materi}" diterapkan dalam konteks "${focusTp}", serta berikan contoh nyata yang dapat kamu temukan di lingkungan sekitar!`,
+            answer: `Pedoman Penskoran Esai: Siswa menjelaskan konsep "${materi}" secara runtut, mengaitkannya dengan "${focusTp}", dan memberikan minimal 1 contoh kontekstual yang tepat.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'URAIAN') {
+          items.push({
+            no: i,
+            stem: `[Uraian Pemecahan Masalah #${i} — Tingkat ${difficulty || 'SEDANG'}] Apabila di lingkungan sekolah atau rumah ditemukan kendala yang berkaitan dengan "${materi}", analisislah penyebabnya berdasarkan konsep ${mapel} dan susunlah langkah penyelesaiannya secara sistematis!`,
+            answer: `Rubrik Uraian HOTS: (1) Ketepatan analisis masalah terkait "${materi}", (2) Kesesuaian konsep ${mapel}, (3) Keruntutan solusi sesuai tingkat ${soloMeta.level}.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'BENARSALAH') {
+          const isTrue = i % 2 === 1;
+          items.push({
+            no: i,
+            stem: `[Benar / Salah #${i}] Dalam mempelajari "${materi}" pada mata pelajaran ${mapel}, pemahaman terhadap "${focusTp}" ${isTrue ? 'membantu kita menyelesaikan permasalahan sehari-hari secara tepat dan bertanggung jawab' : 'tidak memiliki manfaat apa pun bagi kehidupan sehari-hari di luar kelas'}. (Benar / Salah)`,
+            answer: `Kunci Jawaban: ${isTrue ? 'BENAR (B)' : 'SALAH (S)'} — Karena konsep "${materi}" dirancang untuk diterapkan secara bermakna (Meaningful Learning).`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'MATCHING') {
+          items.push({
+            no: i,
+            leftPremise: `Aspek Ke-${i}: Penerapan konsep "${materi}" (${focusTp})`,
+            rightResponse: `Pasangan ${String.fromCharCode(64 + i)}: Menghasilkan solusi akurat dan pemahaman tingkat ${soloMeta.level} pada ${mapel}`,
+            answer: `Pasangan Tepat: Aspek Ke-${i} <==> Pasangan ${String.fromCharCode(64 + i)}`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else {
+          items.push({
+            no: i,
+            stem: `[${customLabel || 'Soal Khusus'} #${i} — SOLO ${soloMeta.level}] Cermatilah topik "${materi}" pada mata pelajaran ${mapel} (${kelasFase}). Selesaikan tugas berbasis "${customLabel || 'Analisis Kontekstual'}" berikut untuk membuktikan ketercapaian tujuan: ${focusTp}!`,
+            answer: `Kunci & Pedoman Penilaian: Jawaban siswa memenuhi kriteria "${customLabel || 'Instrumen Khusus'}" dengan mengaitkan konsep "${materi}" secara tepat.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        }
+      }
+
+      const typeTitles = {
+        PG: 'Bagian Pilihan Ganda (PG)',
+        ISIAN: 'Bagian Isian Singkat / Hitung Langsung',
+        ESAI: 'Bagian Esai Terstruktur',
+        URAIAN: 'Bagian Uraian & Pemecahan Masalah (HOTS)',
+        BENARSALAH: 'Bagian Pernyataan Benar / Salah',
+        MATCHING: 'Bagian Mencocokkan Pasangan (Matching)',
+        LAINNYA: `Bagian Soal Khusus: ${customLabel || 'Format Kustom Guru'}`
+      };
+
+      sections.push({
+        type: qType,
+        title: typeTitles[qType] || `Bagian Soal ${qType}`,
+        count: items.length,
+        items: items
+      });
+    });
+
+    return sections;
   },
 
-  async handleGenerateRpm(event) {
-    event.preventDefault();
+  handleGenerateRpm(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
     const bucket = DB.getActiveClassBucket();
 
-    const penyusun = document.getElementById('rpm-input-penyusun').value.trim();
-    const sekolahRaw = document.getElementById('rpm-input-sekolah').value.trim();
+    const penyusun = (document.getElementById('rpm-input-penyusun')?.value || '').trim();
+    const sekolahRaw = (document.getElementById('rpm-input-sekolah')?.value || '').trim();
     const normSchool = SchoolNormalizer.normalize(sekolahRaw);
     const sekolah = normSchool.display;
-    const kelasFase = document.getElementById('rpm-input-kelas-fase').value.trim();
-    const semester = document.getElementById('rpm-input-semester').value;
-    const mapel = document.getElementById('rpm-input-mapel').value.trim();
-    const soloLevel = document.getElementById('rpm-input-solo').value;
-    const materi = document.getElementById('rpm-input-materi').value.trim();
-    const cpInput = document.getElementById('rpm-input-cp').value.trim();
-    const tpInput = document.getElementById('rpm-input-tp').value.trim();
-    const customPromptEl = document.getElementById('rpm-input-custom-prompt');
-    const customPrompt = customPromptEl ? customPromptEl.value.trim() : '';
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim();
+    const semester = document.getElementById('rpm-input-semester')?.value || 'Semester 1 (Ganjil) — 2 x 35 Menit';
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
+    const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+    const tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+    const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+    const difficulty = document.getElementById('rpm-question-difficulty')?.value || 'SEDANG';
+    const mathMode = document.getElementById('rpm-math-mode-select')?.value || 'DIRECT_CALC';
+    const mathConstraint = (document.getElementById('rpm-math-constraint-input')?.value || '').trim();
 
-    const difficultyEl = document.getElementById('rpm-question-difficulty');
-    const mathModeEl = document.getElementById('rpm-math-mode-select');
-    const mathConstraintEl = document.getElementById('rpm-math-constraint-input');
+    // Kunci Tanggal Penyusunan & Penyimpanan secara permanen dari input tanggal (bukan berubah setiap hari)
+    const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+    const chosenDateISO = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+    const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
+    const lockedTimeStr = DateTimeUtil.getCurrentTimeStr();
+    const lockedFullTimestamp = `${lockedFormattedDate} (Pukul ${lockedTimeStr})`;
 
-    const difficulty = difficultyEl ? difficultyEl.value : 'SEDANG';
-    const mathMode = mathModeEl ? mathModeEl.value : 'DIRECT_CALC';
-    const mathConstraint = mathConstraintEl ? mathConstraintEl.value.trim() : '';
-
-    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi || !cpInput || !tpInput) {
+    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
       UI.showNotif(
-        'Formulir Belum Lengkap',
-        'Harap lengkapi seluruh kolom wajib, termasuk Materi Ajar, Capaian Pembelajaran (CP), dan Tujuan Pembelajaran (TP).',
+        'Parameter Modul Belum Lengkap',
+        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Ajar.',
         'warning'
-      );
-      return;
-    }
-
-    const conflictCheck = AcademicAIEngine.checkTpAndMateriConflict(mapel, materi, tpInput);
-    if (conflictCheck.hasConflict) {
-      UI.showNotif(
-        'Klarifikasi Pertentangan TP & Materi',
-        conflictCheck.message,
-        'danger'
       );
       return;
     }
@@ -16369,16 +16479,32 @@ const RpmApp = {
     if (selectedDpl.length === 0) {
       UI.showNotif(
         'Pilih Dimensi Profil Lulusan',
-        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL).',
+        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL) untuk diintegrasikan ke dalam modul.',
         'warning'
       );
       return;
     }
 
-    const { enableQuestions, questionSpecList, errorMsg } = this.collectCurrentQuestionSpecsFromForm();
-    if (errorMsg) {
-      UI.showNotif('Spesifikasi Soal Belum Lengkap', errorMsg, 'warning');
-      return;
+    const enableQuestions = Boolean(document.getElementById('rpm-enable-auto-questions')?.checked);
+    const questionSpecList = [];
+
+    if (enableQuestions) {
+      const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
+      checkedTypes.forEach(ch => {
+        const qType = ch.getAttribute('data-qtype');
+        const countEl = document.getElementById(`rpm-qcount-${qType}`);
+        const countVal = countEl ? parseInt(countEl.value, 10) : 5;
+        const customName = qType === 'LAINNYA'
+          ? (document.getElementById('rpm-custom-qtype-name')?.value || 'Instrumen Kustom').trim()
+          : '';
+        if (qType && countVal > 0) {
+          questionSpecList.push({
+            type: qType,
+            count: countVal,
+            customName: customName
+          });
+        }
+      });
     }
 
     const baseParams = {
@@ -16388,288 +16514,168 @@ const RpmApp = {
       semester,
       mapel,
       materi,
-      cpInput,
-      tpInput,
-      customPrompt,
       soloLevel,
       selectedDpl,
+      cpRaw: cpInput,
+      tpRaw: tpInput,
+      customPrompt,
       difficulty,
       mathMode,
       mathConstraint
     };
 
-    const loadingModal = document.getElementById('rpm-ai-loading-modal');
-    const loadingTitle = document.getElementById('rpm-ai-loading-title');
-    if (loadingTitle) {
-      loadingTitle.textContent = `Generative AI Sedang Merancang Modul & Soal "${materi}"...`;
+    const blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
+
+    // Gunakan CP dan TP yang diketik guru jika diisi
+    if (cpInput) {
+      blueprint.capaianPembelajaran = cpInput;
     }
-    if (loadingModal) loadingModal.classList.remove('hidden');
-
-    try {
-      this.regenCounter++;
-      const aiGenerated = await AcademicAIEngine.generateFullRpmAndQuestionsWithAI(
-        baseParams,
-        enableQuestions ? questionSpecList : [],
-        this.regenCounter
-      );
-
-      AppState.rpmCurrentDoc = {
-        id: 'RPM_' + Date.now(),
-        savedDateISO: DateTimeUtil.getTodayISO(),
-        savedTimeStr: DateTimeUtil.getCurrentTimeStr(),
-        difficulty,
-        mathMode,
-        mathConstraint,
-        customPrompt,
-        questionSpecList,
-        engineUsed: aiGenerated.engineUsed,
-        ...aiGenerated.blueprint,
-        enableQuestions,
-        questionSections: aiGenerated.questionSections
-      };
-
-      const verifPill = document.getElementById('rpm-verification-status-pill');
-      if (verifPill) {
-        verifPill.textContent = `✓ Disusun oleh ${aiGenerated.engineUsed}`;
+    if (tpInput) {
+      const parsedTp = tpInput
+        .split(/\n+/)
+        .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(Boolean);
+      if (parsedTp.length > 0) {
+        blueprint.tujuanPembelajaran = parsedTp;
       }
-
-      if (bucket) {
-        if (!bucket.rpmModules) bucket.rpmModules = [];
-        bucket.rpmModules.unshift(JSON.parse(JSON.stringify(AppState.rpmCurrentDoc)));
-        DB.save();
-        this.renderSavedArchiveTable();
-      }
-
-      const formCard = document.getElementById('rpm-builder-form-card');
-      const resultWrapper = document.getElementById('rpm-result-wrapper');
-      if (formCard) formCard.classList.add('hidden');
-      if (resultWrapper) resultWrapper.classList.remove('hidden');
-
-      this.renderGeneratedRpmDocument();
-      this.renderGeneratedQuestionsMultiPages();
-      this.switchResultPage(1);
-
-      const totalPages = this.getTotalPagesCount();
-      UI.showNotif(
-        'Modul RPM & Soal Dinamis AI Murni Selesai',
-        `Disusun secara kreatif dan presisi oleh ${aiGenerated.engineUsed}: Halaman 1 (Modul RPM 8-3-3-4) dan ${totalPages - 1} Halaman Soal (${mapel} — ${materi}). Otomatis tersimpan ke Arsip.`,
-        'success'
-      );
-    } finally {
-      if (loadingModal) loadingModal.classList.add('hidden');
-    }
-  },
-
-  async regenerateQuestionsOnlyWithAI() {
-    if (AppState.isReadOnlyInspection) return;
-    const doc = AppState.rpmCurrentDoc;
-    if (!doc) return;
-
-    const specs = Array.isArray(doc.questionSpecList) && doc.questionSpecList.length > 0
-      ? doc.questionSpecList
-      : (doc.questionSections || []).map(s => ({ type: s.type, customName: s.customName, count: s.count }));
-
-    if (specs.length === 0) {
-      UI.showNotif('Tidak Ada Spesifikasi Soal', 'Aktifkan pembuatan soal terlebih dahulu pada parameter.', 'warning');
-      return;
     }
 
-    const loadingModal = document.getElementById('rpm-ai-loading-modal');
-    const loadingTitle = document.getElementById('rpm-ai-loading-title');
-    if (loadingTitle) {
-      loadingTitle.textContent = `Meramu Variasi Soal Baru yang Berbeda untuk "${doc.materi}"...`;
+    // Kunci permanen tanggal penyusunan pada blueprint
+    blueprint.savedDateISO = chosenDateISO;
+    blueprint.createdAt = lockedFormattedDate;
+    blueprint.savedTimestamp = lockedFullTimestamp;
+    blueprint.isDateLocked = true;
+
+    const questionSections = enableQuestions && questionSpecList.length > 0
+      ? this.buildDynamicQuestionSections(baseParams, questionSpecList)
+      : [];
+
+    const newDoc = {
+      id: 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      ...blueprint,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint,
+      questionSpecList,
+      enableQuestions,
+      questionSections,
+      savedDateISO: chosenDateISO,
+      createdAt: lockedFormattedDate,
+      savedTimestamp: lockedFullTimestamp,
+      isDateLocked: true
+    };
+
+    AppState.rpmCurrentDoc = newDoc;
+
+    if (bucket) {
+      if (!Array.isArray(bucket.rpmModules)) bucket.rpmModules = [];
+      bucket.rpmModules.unshift(JSON.parse(JSON.stringify(newDoc)));
+      DB.saveImmediate();
     }
-    if (loadingModal) loadingModal.classList.remove('hidden');
-
-    try {
-      this.regenCounter += 7;
-      const baseParams = {
-        penyusun: doc.penyusun,
-        sekolah: doc.sekolah,
-        kelasFase: doc.kelasFase,
-        semester: doc.semester,
-        mapel: doc.mapel,
-        materi: doc.materi,
-        cpInput: doc.cpInput,
-        tpInput: doc.tpInput,
-        customPrompt: (doc.customPrompt || '') + ` [Buat variasi soal dan skenario/angka yang berbeda dari sebelumnya, Variasi #${this.regenCounter}]`,
-        soloLevel: doc.soloLevel,
-        selectedDpl: doc.dplList,
-        difficulty: doc.difficulty || 'SEDANG',
-        mathMode: doc.mathMode || 'DIRECT_CALC',
-        mathConstraint: doc.mathConstraint || ''
-      };
-
-      const aiGenerated = await AcademicAIEngine.generateFullRpmAndQuestionsWithAI(
-        baseParams,
-        specs,
-        this.regenCounter
-      );
-
-      doc.questionSections = aiGenerated.questionSections;
-      doc.engineUsed = aiGenerated.engineUsed;
-
-      this.renderGeneratedQuestionsMultiPages();
-      this.switchResultPage(this.activeResultPageIndex > 1 ? this.activeResultPageIndex : 2);
-
-      UI.showNotif(
-        'Variasi Soal Baru Berhasil Dibuat',
-        `AI Murni (${aiGenerated.engineUsed}) telah menyusun variasi butir soal baru untuk materi "${doc.materi}". Klik "Simpan Hasil RPM & Soal" jika ingin memperbarui arsip.`,
-        'success'
-      );
-    } finally {
-      if (loadingModal) loadingModal.classList.add('hidden');
-    }
-  },
-
-  saveCurrentRpmToArchive() {
-    if (AppState.isReadOnlyInspection) return;
-    const bucket = DB.getActiveClassBucket();
-    const doc = AppState.rpmCurrentDoc;
-    if (!bucket || !doc) {
-      UI.showNotif('Belum Ada Modul Aktif', 'Silakan buat atau buka modul RPM terlebih dahulu.', 'warning');
-      return;
-    }
-
-    doc.savedDateISO = DateTimeUtil.getTodayISO();
-    doc.savedTimeStr = DateTimeUtil.getCurrentTimeStr();
-
-    if (!bucket.rpmModules) bucket.rpmModules = [];
-    const existingIdx = bucket.rpmModules.findIndex(m => m.id === doc.id);
-    if (existingIdx >= 0) {
-      bucket.rpmModules[existingIdx] = JSON.parse(JSON.stringify(doc));
-    } else {
-      bucket.rpmModules.unshift(JSON.parse(JSON.stringify(doc)));
-    }
-
-    DB.save();
-    this.renderSavedArchiveTable();
-
-    UI.showNotif(
-      'Berhasil Disimpan ke Arsip RPM',
-      `Modul RPM & Soal "${doc.mapel} — ${doc.materi}" telah disimpan dan siap digunakan kembali di lain waktu.`,
-      'success'
-    );
-  },
-
-  renderSavedArchiveTable() {
-    const tbody = document.getElementById('tbody-rpm-saved-archive');
-    const badgeEl = document.getElementById('rpm-saved-archive-badge');
-    const countTopEl = document.getElementById('rpm-saved-count-top');
-    const bucket = DB.getActiveClassBucket();
-    if (!tbody || !bucket) return;
-
-    const list = bucket.rpmModules || [];
-    if (countTopEl) countTopEl.textContent = list.length;
-    if (badgeEl) badgeEl.textContent = `${list.length} Modul Tersimpan`;
-
-    if (list.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-            Belum ada arsip Modul RPM & Soal yang tersimpan di kelas ini.
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    tbody.innerHTML = list.map((mod, idx) => {
-      let totalQ = 0;
-      const typeLabels = [];
-      if (Array.isArray(mod.questionSections)) {
-        mod.questionSections.forEach(sec => {
-          const c = (sec.items || []).length;
-          totalQ += c;
-          typeLabels.push(`${sec.type}: ${c}`);
-        });
-      }
-
-      const dateDisplay = DateTimeUtil.formatIndonesianDate(mod.savedDateISO || DateTimeUtil.getTodayISO());
-      const safeId = UI.escapeHtml(mod.id);
-
-      return `
-        <tr>
-          <td>${idx + 1}</td>
-          <td>
-            <div style="font-weight: 700; color: var(--dark); font-size: 0.84rem;">${UI.escapeHtml(dateDisplay)}</div>
-            <div style="font-size: 0.74rem; color: var(--text-muted);">Pukul ${UI.escapeHtml(mod.savedTimeStr || '-')}</div>
-          </td>
-          <td><span class="badge badge-primary">${UI.escapeHtml(mod.mapel)}</span></td>
-          <td>
-            <div style="font-weight: 800; color: var(--dark);">${UI.escapeHtml(mod.materi)}</div>
-            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
-              TP: ${UI.escapeHtml((mod.parsedTpList && mod.parsedTpList[0]) || mod.tpInput || '-')}
-            </div>
-          </td>
-          <td><span class="badge badge-info">${UI.escapeHtml(mod.kelasFase)}</span></td>
-          <td style="text-align: center;">
-            <span class="badge badge-success">${totalQ} Butir Soal</span>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(typeLabels.join(' | ') || 'Tanpa Soal')}</div>
-          </td>
-          <td>
-            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-              <button type="button" class="btn btn-primary btn-sm" onclick="RpmApp.openArchivedRpm('${safeId}')">
-                📂 Buka & Gunakan
-              </button>
-              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.deleteArchivedRpm('${safeId}')">
-                🗑️ Hapus
-              </button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  },
-
-  openArchivedRpm(modId) {
-    const bucket = DB.getActiveClassBucket();
-    if (!bucket || !Array.isArray(bucket.rpmModules)) return;
-
-    const found = bucket.rpmModules.find(m => m.id === modId);
-    if (!found) {
-      UI.showNotif('Arsip Tidak Ditemukan', 'Data modul RPM tersebut tidak ditemukan.', 'warning');
-      return;
-    }
-
-    AppState.rpmCurrentDoc = JSON.parse(JSON.stringify(found));
 
     const formCard = document.getElementById('rpm-builder-form-card');
     const resultWrapper = document.getElementById('rpm-result-wrapper');
     if (formCard) formCard.classList.add('hidden');
     if (resultWrapper) resultWrapper.classList.remove('hidden');
 
-    this.renderGeneratedRpmDocument();
-    this.renderGeneratedQuestionsMultiPages();
-    this.switchResultPage(1);
+    this.activePage = 1;
+    this.showAllPagesMode = false;
+    this.renderAllRpmPages();
+    this.renderSavedArchiveTable();
 
     UI.showNotif(
-      'Arsip Modul RPM & Soal Dimuat',
-      `Menampilkan kembali perangkat ajar "${found.mapel} — ${found.materi}" dari arsip tersimpan.`,
+      'Modul RPM & Soal Berhasil Disusun dan Dikunci Tanggalnya',
+      `Modul Ajar RPM mata pelajaran ${mapel} (${materi}) berhasil disimpan dengan tanggal penyusunan terkunci permanen pada: ${lockedFormattedDate}.`,
       'success'
     );
   },
 
-  deleteArchivedRpm(modId) {
+  regenerateQuestionsOnlyWithAI() {
     if (AppState.isReadOnlyInspection) return;
-    const bucket = DB.getActiveClassBucket();
-    if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) return;
 
-    const target = bucket.rpmModules.find(m => m.id === modId);
-    if (!target) return;
+    const specs = Array.isArray(doc.questionSpecList) && doc.questionSpecList.length > 0
+      ? doc.questionSpecList
+      : [{ type: 'PG', count: 5 }, { type: 'ISIAN', count: 5 }];
 
-    if (!window.confirm(`Hapus arsip Modul RPM "${target.mapel} — ${target.materi}" dari daftar tersimpan?`)) return;
+    doc.questionSections = this.buildDynamicQuestionSections({
+      mapel: doc.mapel,
+      materi: doc.materi,
+      kelasFase: doc.kelasFase,
+      soloLevel: doc.soloLevel,
+      tpRaw: (doc.tujuanPembelajaran || []).join('\n'),
+      difficulty: doc.difficulty || 'SEDANG',
+      mathMode: doc.mathMode || 'DIRECT_CALC'
+    }, specs);
 
-    bucket.rpmModules = bucket.rpmModules.filter(m => m.id !== modId);
-    DB.save();
+    doc.enableQuestions = true;
+    this.syncCurrentDocToArchiveBucket();
+    this.renderAllRpmPages();
     this.renderSavedArchiveTable();
 
-    UI.showNotif('Arsip Dihapus', 'Modul RPM telah dihapus dari daftar arsip.', 'warning');
+    UI.showNotif(
+      'Variasi Soal Baru Berhasil Dibuat',
+      `Butir soal untuk materi "${doc.materi}" telah diperbarui tanpa mengubah tanggal penyusunan modul (${doc.createdAt}).`,
+      'success'
+    );
   },
 
-  scrollToSavedArchive() {
-    const el = document.getElementById('rpm-saved-archive-card');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  // Menyinkronkan perubahan pada dokumen yang sedang dibuka ke dalam arsip bucket tanpa menimpa tanggal simpan asli
+  syncCurrentDocToArchiveBucket() {
+    const doc = AppState.rpmCurrentDoc;
+    const bucket = DB.getActiveClassBucket();
+    if (!doc || !bucket) return;
+
+    if (!Array.isArray(bucket.rpmModules)) bucket.rpmModules = [];
+    const existingIdx = bucket.rpmModules.findIndex(m => m && String(m.id) === String(doc.id));
+
+    if (existingIdx >= 0) {
+      // Pertahankan tanggal simpan asli yang sudah terkunci
+      const originalCreatedAt = bucket.rpmModules[existingIdx].createdAt || doc.createdAt;
+      const originalSavedDateISO = bucket.rpmModules[existingIdx].savedDateISO || doc.savedDateISO;
+      const originalSavedTimestamp = bucket.rpmModules[existingIdx].savedTimestamp || doc.savedTimestamp;
+
+      doc.createdAt = originalCreatedAt;
+      doc.savedDateISO = originalSavedDateISO;
+      doc.savedTimestamp = originalSavedTimestamp;
+      doc.isDateLocked = true;
+
+      bucket.rpmModules[existingIdx] = JSON.parse(JSON.stringify(doc));
+    } else {
+      bucket.rpmModules.unshift(JSON.parse(JSON.stringify(doc)));
+    }
+
+    DB.saveImmediate();
+  },
+
+  saveCurrentRpmToArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) {
+      UI.showNotif('Belum Ada Modul Aktif', 'Silakan susun modul RPM terlebih dahulu sebelum menyimpan ke arsip.', 'warning');
+      return;
+    }
+
+    // Pastikan tanggal penyusunan tidak pernah ditimpa dengan tanggal hari ini jika sudah dikunci
+    if (!doc.createdAt) {
+      const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+      const iso = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+      doc.savedDateISO = iso;
+      doc.createdAt = DateTimeUtil.formatIndonesianDate(iso);
+      doc.savedTimestamp = `${doc.createdAt} (Pukul ${DateTimeUtil.getCurrentTimeStr()})`;
+      doc.isDateLocked = true;
+    }
+
+    this.syncCurrentDocToArchiveBucket();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Tersimpan Permanen di Arsip & Cloud',
+      `Modul RPM "${doc.mapel} — ${doc.materi}" telah tersimpan di Arsip Perangkat Ajar dengan tanggal terkunci: ${doc.createdAt}.`,
+      'success'
+    );
   },
 
   reopenBuilderForm() {
@@ -16679,159 +16685,121 @@ const RpmApp = {
     if (resultWrapper) resultWrapper.classList.add('hidden');
   },
 
-  buildPaginatedQuestionChunks() {
-    const doc = AppState.rpmCurrentDoc;
-    this.paginatedQuestionPages = [];
-
-    if (!doc || !doc.enableQuestions || !Array.isArray(doc.questionSections)) {
-      return this.paginatedQuestionPages;
+  toggleAnswerKeyVisibility() {
+    this.hideAnswerKey = !this.hideAnswerKey;
+    const btn = document.getElementById('btn-toggle-teacher-key');
+    if (btn) {
+      btn.textContent = this.hideAnswerKey
+        ? 'Tampilkan Kunci Jawaban (Mode Guru)'
+        : 'Sembunyikan Kunci Jawaban (Mode Siswa)';
+      btn.className = this.hideAnswerKey ? 'btn btn-warning btn-sm' : 'btn btn-secondary btn-sm';
     }
-
-    doc.questionSections.forEach((sec, secIdx) => {
-      const items = Array.isArray(sec.items) ? sec.items : [];
-      if (items.length === 0) return;
-
-      let maxItemsPerPage = 5;
-      if (sec.type === 'ISIAN' || sec.type === 'MATCHING' || sec.type === 'BENARSALAH') {
-        maxItemsPerPage = 8;
-      } else if (sec.type === 'ESAI' || sec.type === 'URAIAN' || sec.type === 'LAINNYA') {
-        maxItemsPerPage = 5;
-      }
-
-      const totalChunks = Math.ceil(items.length / maxItemsPerPage);
-      for (let c = 0; c < totalChunks; c++) {
-        const chunkItems = items.slice(c * maxItemsPerPage, (c + 1) * maxItemsPerPage);
-        const startNo = chunkItems[0] ? chunkItems[0].no : (c * maxItemsPerPage + 1);
-        const endNo = chunkItems[chunkItems.length - 1] ? chunkItems[chunkItems.length - 1].no : ((c + 1) * maxItemsPerPage);
-
-        const shortTypeLabel = sec.type === 'LAINNYA'
-          ? (sec.customName || 'Soal Khusus')
-          : (sec.type === 'PG' ? 'Pilihan Ganda' : sec.type === 'ISIAN' ? 'Isian / Hitung' : sec.type === 'ESAI' ? 'Esai' : sec.type === 'URAIAN' ? 'Uraian' : sec.type === 'MATCHING' ? 'Mencocokkan' : 'Benar/Salah');
-
-        const tabTitle = totalChunks > 1
-          ? `${shortTypeLabel} (No. ${startNo}–${endNo})`
-          : `${shortTypeLabel} (${items.length} Soal)`;
-
-        this.paginatedQuestionPages.push({
-          sectionIndex: secIdx + 1,
-          type: sec.type,
-          sectionTitle: sec.title,
-          partIndex: c + 1,
-          totalParts: totalChunks,
-          tabTitle: tabTitle,
-          totalSectionCount: items.length,
-          items: chunkItems
-        });
-      }
-    });
-
-    return this.paginatedQuestionPages;
+    this.renderDynamicQuestionPages();
+    this.applyPaginationVisibility();
   },
 
-  getTotalPagesCount() {
-    return 1 + (this.paginatedQuestionPages ? this.paginatedQuestionPages.length : 0);
+  showAllPagesSimultaneously() {
+    this.showAllPagesMode = !this.showAllPagesMode;
+    const btn = document.getElementById('btn-show-all-pages-view');
+    if (btn) {
+      btn.textContent = this.showAllPagesMode
+        ? 'Tampilkan Per Halaman (Mode Tab)'
+        : 'Tampilkan Semua Halaman';
+    }
+    this.applyPaginationVisibility();
   },
 
-  switchResultPage(pageIndex) {
-    const totalPages = this.getTotalPagesCount();
-    if (pageIndex < 1) pageIndex = 1;
-    if (pageIndex > totalPages) pageIndex = totalPages;
-    this.activeResultPageIndex = pageIndex;
+  switchActivePage(pageNum) {
+    this.showAllPagesMode = false;
+    this.activePage = pageNum;
+    const btn = document.getElementById('btn-show-all-pages-view');
+    if (btn) btn.textContent = 'Tampilkan Semua Halaman';
+    this.applyPaginationVisibility();
+  },
+
+  applyPaginationVisibility() {
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) return;
+
+    const sections = (doc.enableQuestions && Array.isArray(doc.questionSections)) ? doc.questionSections : [];
+    const totalPages = 1 + sections.length;
+    if (this.activePage > totalPages) this.activePage = 1;
+
+    const indicatorEl = document.getElementById('rpm-total-pages-indicator');
+    if (indicatorEl) {
+      indicatorEl.textContent = this.showAllPagesMode
+        ? `Menampilkan Semua ${totalPages} Halaman Sekaligus`
+        : `Halaman ${this.activePage} dari ${totalPages}`;
+    }
 
     const page1El = document.getElementById('rpm-print-page-1');
     if (page1El) {
-      if (pageIndex === 1) page1El.classList.remove('hidden');
-      else page1El.classList.add('hidden');
-    }
-
-    for (let i = 2; i <= totalPages; i++) {
-      const pEl = document.getElementById(`rpm-print-page-${i}`);
-      if (pEl) {
-        if (i === pageIndex) pEl.classList.remove('hidden');
-        else pEl.classList.add('hidden');
+      if (this.showAllPagesMode || this.activePage === 1) {
+        page1El.classList.remove('hidden');
+      } else {
+        page1El.classList.add('hidden');
       }
     }
 
-    this.renderPaginationControls(pageIndex, totalPages, false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  },
-
-  renderPaginationControls(activePage, totalPages, isAllShown = false) {
-    const topBar = document.getElementById('rpm-pagination-tabs-bar');
-    const bottomBar = document.getElementById('rpm-bottom-pager-bar');
-    const indicatorEl = document.getElementById('rpm-total-pages-indicator');
-
-    if (indicatorEl) {
-      indicatorEl.textContent = isAllShown
-        ? `Menampilkan Semua ${totalPages} Halaman Sekaligus`
-        : `Halaman Aktif: ${activePage} dari ${totalPages} Halaman`;
+    for (let i = 0; i < sections.length; i++) {
+      const pageNum = i + 2;
+      const pageEl = document.getElementById(`rpm-print-page-${pageNum}`);
+      if (pageEl) {
+        if (this.showAllPagesMode || this.activePage === pageNum) {
+          pageEl.classList.remove('hidden');
+        } else {
+          pageEl.classList.add('hidden');
+        }
+      }
     }
 
-    if (topBar) {
+    // Render tombol tab halaman di atas
+    const tabsBar = document.getElementById('rpm-pagination-tabs-bar');
+    if (tabsBar) {
       let tabsHtml = `
-        <button
-          type="button"
-          class="rpm-page-tab-btn ${!isAllShown && activePage === 1 ? 'active-tab' : ''}"
-          onclick="RpmApp.switchResultPage(1)"
-        >
+        <button type="button" class="rpm-page-tab-btn ${(!this.showAllPagesMode && this.activePage === 1) ? 'active-tab' : ''}" onclick="RpmApp.switchActivePage(1)">
           <span class="rpm-page-tab-num">1</span>
-          <span>Modul Ajar RPM (8-3-3-4)</span>
+          <span>Dokumen Modul RPM (8-3-3-4)</span>
         </button>
       `;
 
-      (this.paginatedQuestionPages || []).forEach((qPage, idx) => {
+      sections.forEach((sec, idx) => {
         const pNum = idx + 2;
-        const isAct = !isAllShown && activePage === pNum;
+        const isActive = !this.showAllPagesMode && this.activePage === pNum;
         tabsHtml += `
-          <button
-            type="button"
-            class="rpm-page-tab-btn ${isAct ? 'active-tab' : ''}"
-            onclick="RpmApp.switchResultPage(${pNum})"
-          >
+          <button type="button" class="rpm-page-tab-btn ${isActive ? 'active-tab' : ''}" onclick="RpmApp.switchActivePage(${pNum})">
             <span class="rpm-page-tab-num">${pNum}</span>
-            <span>Soal: ${UI.escapeHtml(qPage.tabTitle)}</span>
+            <span>${UI.escapeHtml(sec.title)} (${sec.items ? sec.items.length : 0} Soal)</span>
           </button>
         `;
       });
 
-      topBar.innerHTML = tabsHtml;
+      tabsBar.innerHTML = tabsHtml;
     }
 
-    if (bottomBar) {
-      const prevDisabled = activePage <= 1 ? 'disabled' : '';
-      const nextDisabled = activePage >= totalPages ? 'disabled' : '';
-
-      const currentDesc = activePage === 1
-        ? 'Halaman 1: Dokumen Modul Ajar RPM (8-3-3-4)'
-        : `Halaman ${activePage}: ${this.paginatedQuestionPages[activePage - 2] ? this.paginatedQuestionPages[activePage - 2].tabTitle : 'Instrumen Soal'}`;
-
-      bottomBar.innerHTML = `
-        <button type="button" class="btn btn-outline" ${prevDisabled} onclick="RpmApp.switchResultPage(${activePage - 1})">
-          &laquo; Halaman Sebelumnya
+    // Render navigasi halaman di bawah
+    const bottomPager = document.getElementById('rpm-bottom-pager-bar');
+    if (bottomPager) {
+      const prevDisabled = this.activePage <= 1 ? 'disabled' : '';
+      const nextDisabled = this.activePage >= totalPages ? 'disabled' : '';
+      bottomPager.innerHTML = `
+        <button type="button" class="btn btn-outline btn-sm" ${prevDisabled} onclick="RpmApp.switchActivePage(${this.activePage - 1})">
+          &larr; Halaman Sebelumnya
         </button>
-        <div style="text-align: center;">
-          <div style="font-size: 0.92rem; font-weight: 800; color: var(--primary);">${UI.escapeHtml(currentDesc)}</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted);">Halaman ${activePage} dari ${totalPages}</div>
+        <div style="font-size: 0.86rem; font-weight: 700; color: var(--dark);">
+          Halaman Aktif: ${this.activePage} / ${totalPages}
         </div>
-        <button type="button" class="btn btn-primary" ${nextDisabled} onclick="RpmApp.switchResultPage(${activePage + 1})">
-          Halaman Berikutnya &raquo;
+        <button type="button" class="btn btn-primary btn-sm" ${nextDisabled} onclick="RpmApp.switchActivePage(${this.activePage + 1})">
+          Halaman Berikutnya &rarr;
         </button>
       `;
     }
   },
 
-  showAllPagesSimultaneously() {
-    const totalPages = this.getTotalPagesCount();
-    const page1El = document.getElementById('rpm-print-page-1');
-    if (page1El) page1El.classList.remove('hidden');
-
-    for (let i = 2; i <= totalPages; i++) {
-      const pageEl = document.getElementById(`rpm-print-page-${i}`);
-      if (pageEl) pageEl.classList.remove('hidden');
-    }
-
-    this.renderPaginationControls(1, totalPages, true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  renderAllRpmPages() {
+    this.renderGeneratedRpmDocument();
+    this.renderDynamicQuestionPages();
+    this.applyPaginationVisibility();
   },
 
   addCustomLearningStep() {
@@ -16849,32 +16817,84 @@ const RpmApp = {
       return;
     }
 
-    if (!AppState.rpmCurrentDoc.pengalaman3[stageKey]) {
+    if (!AppState.rpmCurrentDoc.pengalaman3) {
+      AppState.rpmCurrentDoc.pengalaman3 = { memahami: [], mengaplikasi: [], merefleksi: [] };
+    }
+    if (!Array.isArray(AppState.rpmCurrentDoc.pengalaman3[stageKey])) {
       AppState.rpmCurrentDoc.pengalaman3[stageKey] = [];
     }
 
     AppState.rpmCurrentDoc.pengalaman3[stageKey].push(stepText);
     if (textInp) textInp.value = '';
 
-    DB.save();
+    this.syncCurrentDocToArchiveBucket();
     this.renderGeneratedRpmDocument();
 
-    UI.showNotif('Langkah Ditambahkan', `Langkah kegiatan baru berhasil ditambahkan ke tahap "${stageKey.toUpperCase()}".`, 'success');
+    UI.showNotif(
+      'Langkah Pengalaman Belajar Ditambahkan',
+      `Langkah kegiatan baru berhasil ditambahkan secara permanen ke bagian "${stageKey.toUpperCase()}".`,
+      'success'
+    );
   },
 
+  // Menghapus langkah pengalaman belajar secara permanen dari modul aktif & arsip Cloud
   removeLearningStep(stageKey, stepIndex) {
     if (AppState.isReadOnlyInspection) return;
-    if (!AppState.rpmCurrentDoc || !AppState.rpmCurrentDoc.pengalaman3[stageKey]) return;
+    if (!AppState.rpmCurrentDoc || !AppState.rpmCurrentDoc.pengalaman3 || !Array.isArray(AppState.rpmCurrentDoc.pengalaman3[stageKey])) {
+      return;
+    }
 
     AppState.rpmCurrentDoc.pengalaman3[stageKey].splice(stepIndex, 1);
-    DB.save();
+    this.syncCurrentDocToArchiveBucket();
     this.renderGeneratedRpmDocument();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Langkah Kegiatan Dihapus Permanen',
+      'Langkah pengalaman belajar tersebut telah dihapus secara permanen dari modul dan disinkronkan ke Cloud.',
+      'info'
+    );
+  },
+
+  // Menghapus 1 butir soal secara permanen dari lembar soal & arsip Cloud
+  removeSingleQuestionItem(sectionIdx, itemIdx) {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc || !Array.isArray(doc.questionSections) || !doc.questionSections[sectionIdx]) return;
+
+    const sec = doc.questionSections[sectionIdx];
+    if (!Array.isArray(sec.items)) return;
+
+    sec.items.splice(itemIdx, 1);
+    // Urutkan ulang nomor soal setelah dihapus
+    sec.items.forEach((it, idx) => {
+      it.no = idx + 1;
+    });
+    sec.count = sec.items.length;
+
+    // Jika seluruh soal pada bagian tersebut habis dihapus, hapus bagian soalnya
+    if (sec.items.length === 0) {
+      doc.questionSections.splice(sectionIdx, 1);
+    }
+
+    this.syncCurrentDocToArchiveBucket();
+    this.renderAllRpmPages();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Butir Soal Dihapus Permanen',
+      'Butir soal telah dihapus secara permanen dari modul dan nomor urut soal telah disesuaikan kembali.',
+      'info'
+    );
   },
 
   renderGeneratedRpmDocument() {
     const doc = AppState.rpmCurrentDoc;
     const container = document.getElementById('rpm-document-content');
     if (!doc || !container) return;
+
+    // Gunakan tanggal yang sudah dikunci saat modul disusun/disimpan, bukan tanggal hari ini
+    const lockedDateDisplay = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : 'Tanggal Terkunci');
 
     const dplBadges = (doc.dplList || []).map(d =>
       `<span class="badge badge-primary" style="margin-right: 0.35rem; margin-bottom: 0.35rem;">${UI.escapeHtml(d)}</span>`
@@ -16886,11 +16906,14 @@ const RpmApp = {
 
     const renderStepList = (stageKey) => {
       const steps = (doc.pengalaman3 && doc.pengalaman3[stageKey]) || [];
+      if (steps.length === 0) {
+        return `<li style="color: var(--text-muted); font-style: italic;">Belum ada langkah kegiatan pada tahap ini.</li>`;
+      }
       return steps.map((st, idx) => `
         <li style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
-          <span contenteditable="true">${UI.escapeHtml(st)}</span>
-          <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; color: var(--danger); border-color: #fca5a5;" onclick="RpmApp.removeLearningStep('${stageKey}', ${idx})">
-            Hapus
+          <span>${UI.escapeHtml(st)}</span>
+          <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.15rem 0.45rem; font-size: 0.72rem; color: var(--danger); border-color: #fca5a5; flex-shrink: 0;" onclick="RpmApp.removeLearningStep('${stageKey}', ${idx})">
+            🗑️ Hapus
           </button>
         </li>
       `).join('');
@@ -16900,13 +16923,18 @@ const RpmApp = {
       <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff;">
         <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.35rem;">
           <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary); letter-spacing: 1px; text-transform: uppercase;">
-            HALAMAN 1 — DOKUMEN RENCANA PEMBELAJARAN MENDALAM (MODUL AJAR / RPM)
+            DOKUMEN RENCANA PEMBELAJARAN MENDALAM (MODUL AJAR / RPM)
           </div>
           <h2 style="font-size: 1.45rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
             ${UI.escapeHtml(doc.sekolah)}
           </h2>
-          <div style="font-size: 0.9rem; font-weight: 600; color: var(--text-muted);">
+          <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">
             Terintegrasi Sistem 8-3-3-4 (8 Dimensi Profil Lulusan, 3 Prinsip, 3 Pengalaman Belajar, 4 Kerangka) & Taksonomi SOLO
+          </div>
+          <div style="margin-top: 0.45rem;">
+            <span class="badge badge-success" style="font-size: 0.78rem;">
+              🔒 Tanggal Penyusunan Terkunci: ${UI.escapeHtml(lockedDateDisplay)}
+            </span>
           </div>
         </div>
 
@@ -16936,14 +16964,16 @@ const RpmApp = {
               </tr>
               <tr>
                 <th>Ranah Taksonomi SOLO</th>
-                <td colspan="3"><span class="badge badge-warning">${UI.escapeHtml(doc.soloLevel)}</span></td>
+                <td><span class="badge badge-warning">${UI.escapeHtml(doc.soloLevel)}</span></td>
+                <th>Tanggal Penyusunan</th>
+                <td><strong>${UI.escapeHtml(lockedDateDisplay)}</strong></td>
               </tr>
             </tbody>
           </table>
         </div>
 
         <h4 style="background: #f1f5f9; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem; color: var(--dark);">
-          B. INTEGRASI SISTEM 8-3-3-4 & CAPAIAN KOMPETENSI AKADEMIK
+          B. INTEGRASI SISTEM 8-3-3-4 & KOMPONEN INTI AKADEMIK
         </h4>
 
         <div style="margin-bottom: 1.15rem;">
@@ -16957,16 +16987,12 @@ const RpmApp = {
           <strong style="display: block; margin-bottom: 0.35rem; color: var(--primary);">
             2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP) :
           </strong>
-          <div contenteditable="true" style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem; line-height: 1.6;">
-            <strong>Capaian Pembelajaran (CP):</strong><br>
-            ${UI.escapeHtml(doc.capaianPembelajaran)}
+          <div style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem;">
+            <strong>Capaian Pembelajaran:</strong> ${UI.escapeHtml(doc.capaianPembelajaran)}
           </div>
-          <div style="background: #f0fdf4; padding: 0.9rem; border: 1px solid #86efac; border-radius: var(--radius-sm);">
-            <strong style="font-size: 0.88rem; color: #14532d; display: block; margin-bottom: 0.4rem;">Tujuan Pembelajaran (TP):</strong>
-            <ol contenteditable="true" style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6; color: var(--dark);">
-              ${tpListHtml}
-            </ol>
-          </div>
+          <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
+            ${tpListHtml}
+          </ol>
         </div>
 
         <div style="margin-bottom: 1.15rem;">
@@ -16974,17 +17000,17 @@ const RpmApp = {
             3. [3] Prinsip Pembelajaran Mendalam (Mindful, Meaningful, Joyful) :
           </strong>
           <div class="grid-3">
-            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #93c5fd; background: #eff6ff; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div style="padding: 0.85rem; border: 1px solid #93c5fd; background: #eff6ff; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #1e40af; display: block; margin-bottom: 0.25rem;">Berkesadaran (Mindful)</strong>
-              ${UI.escapeHtml(doc.prinsip3.mindful)}
+              ${UI.escapeHtml(doc.prinsip3?.mindful || '-')}
             </div>
-            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #5eead4; background: #f0fdfa; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div style="padding: 0.85rem; border: 1px solid #5eead4; background: #f0fdfa; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #0f766e; display: block; margin-bottom: 0.25rem;">Bermakna (Meaningful)</strong>
-              ${UI.escapeHtml(doc.prinsip3.meaningful)}
+              ${UI.escapeHtml(doc.prinsip3?.meaningful || '-')}
             </div>
-            <div contenteditable="true" style="padding: 0.85rem; border: 1px solid #fde68a; background: #fffbeb; border-radius: var(--radius-sm); font-size: 0.84rem;">
+            <div style="padding: 0.85rem; border: 1px solid #fde68a; background: #fffbeb; border-radius: var(--radius-sm); font-size: 0.84rem;">
               <strong style="color: #92400e; display: block; margin-bottom: 0.25rem;">Menggembirakan (Joyful)</strong>
-              ${UI.escapeHtml(doc.prinsip3.joyful)}
+              ${UI.escapeHtml(doc.prinsip3?.joyful || '-')}
             </div>
           </div>
         </div>
@@ -16998,19 +17024,19 @@ const RpmApp = {
               <tbody>
                 <tr>
                   <th style="width: 240px;">1. Praktik Pedagogis</th>
-                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.pedagogis)}</td>
+                  <td>${UI.escapeHtml(doc.kerangka4?.pedagogis || '-')}</td>
                 </tr>
                 <tr>
                   <th>2. Kemitraan Pembelajaran</th>
-                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.kemitraan)}</td>
+                  <td>${UI.escapeHtml(doc.kerangka4?.kemitraan || '-')}</td>
                 </tr>
                 <tr>
                   <th>3. Lingkungan Pembelajaran</th>
-                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.lingkungan)}</td>
+                  <td>${UI.escapeHtml(doc.kerangka4?.lingkungan || '-')}</td>
                 </tr>
                 <tr>
                   <th>4. Pemanfaatan Digital</th>
-                  <td contenteditable="true">${UI.escapeHtml(doc.kerangka4.digital)}</td>
+                  <td>${UI.escapeHtml(doc.kerangka4?.digital || '-')}</td>
                 </tr>
               </tbody>
             </table>
@@ -17032,7 +17058,7 @@ const RpmApp = {
 
         <div style="margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
           <div style="font-weight: 800; color: var(--secondary); margin-bottom: 0.45rem;">
-            Tahap 2: MENGAPLIKASI (Kegiatan Inti & Latihan Terarah — Meaningful Learning)
+            Tahap 2: MENGAPLIKASI (Kegiatan Inti & Kolaborasi Kontekstual — Meaningful Learning)
           </div>
           <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
             ${renderStepList('mengaplikasi')}
@@ -17041,7 +17067,7 @@ const RpmApp = {
 
         <div style="margin-bottom: 1.35rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);">
           <div style="font-weight: 800; color: var(--accent); margin-bottom: 0.45rem;">
-            Tahap 3: MEREFLEKSI (Pembahasan, Evaluasi, & Penutup — Joyful Learning)
+            Tahap 3: MEREFLEKSI (Presentasi, Evaluasi SOLO, & Penutup — Joyful Learning)
           </div>
           <ol style="padding-left: 1.25rem; font-size: 0.88rem; line-height: 1.6;">
             ${renderStepList('merefleksi')}
@@ -17056,7 +17082,7 @@ const RpmApp = {
             <div style="font-weight: 700; text-decoration: underline;">( ................................................ )</div>
           </div>
           <div style="text-align: right;">
-            <div>Disusun pada: ${UI.escapeHtml(doc.createdAt)}</div>
+            <div>Disusun & Disimpan pada: <strong>${UI.escapeHtml(lockedDateDisplay)}</strong></div>
             <div>Guru Kelas / Mata Pelajaran,</div>
             <div style="height: 55px;"></div>
             <div style="font-weight: 700; text-decoration: underline;">${UI.escapeHtml(doc.penyusun)}</div>
@@ -17066,43 +17092,48 @@ const RpmApp = {
     `;
   },
 
-  renderGeneratedQuestionsMultiPages() {
+  renderDynamicQuestionPages() {
     const doc = AppState.rpmCurrentDoc;
     const container = document.getElementById('rpm-dynamic-pages-container');
     if (!doc || !container) return;
 
-    const pages = this.buildPaginatedQuestionChunks();
-    if (pages.length === 0) {
+    const lockedDateDisplay = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : '-');
+    const sections = (doc.enableQuestions && Array.isArray(doc.questionSections)) ? doc.questionSections : [];
+
+    if (sections.length === 0) {
       container.innerHTML = '';
       return;
     }
 
-    const hideKey = Boolean(this.hideAnswerKeysForStudentPrint);
-    const totalAllPages = 1 + pages.length;
-
-    container.innerHTML = pages.map((qPage, idx) => {
-      const pageNum = idx + 2;
+    container.innerHTML = sections.map((sec, sIdx) => {
+      const pageNum = sIdx + 2;
       let itemsContent = '';
 
-      if (qPage.type === 'MATCHING') {
-        const rows = qPage.items.map(it => `
+      if (sec.type === 'MATCHING') {
+        const rows = (sec.items || []).map((it, itemIdx) => `
           <tr>
             <td style="width: 50px; text-align: center;">${it.no}</td>
-            <td contenteditable="true"><strong>${UI.escapeHtml(it.leftPremise || it.stem || '')}</strong></td>
-            <td contenteditable="true">${UI.escapeHtml(it.rightResponse || '')}</td>
-            ${hideKey ? '' : `<td style="background:#f0fdf4; color:#14532d;"><strong>${UI.escapeHtml(it.answer || '')}</strong></td>`}
+            <td>${UI.escapeHtml(it.leftPremise)}</td>
+            <td>${UI.escapeHtml(it.rightResponse)}</td>
+            ${this.hideAnswerKey ? '' : `<td><strong>${UI.escapeHtml(it.answer)}</strong></td>`}
+            <td class="no-print write-action-btn" style="width: 90px; text-align: center;">
+              <button type="button" class="btn btn-outline btn-sm" style="color: var(--danger); border-color: #fca5a5; padding: 0.2rem 0.5rem; font-size: 0.72rem;" onclick="RpmApp.removeSingleQuestionItem(${sIdx}, ${itemIdx})">
+                🗑️ Hapus
+              </button>
+            </td>
           </tr>
         `).join('');
 
         itemsContent = `
-          <div class="table-responsive" style="margin-top: 0.75rem;">
+          <div class="table-responsive" style="margin-top: 0.65rem;">
             <table class="academic-table">
               <thead>
                 <tr>
                   <th>No</th>
-                  <th>Kolom A (Soal / Operasi / Konsep)</th>
-                  <th>Kolom B (Pilihan Pasangan Jawaban)</th>
-                  ${hideKey ? '' : '<th>Kunci Jawaban Guru</th>'}
+                  <th>Kolom A (Pernyataan Konsep)</th>
+                  <th>Kolom B (Pasangan Jawaban)</th>
+                  ${this.hideAnswerKey ? '' : '<th>Kunci Pencocokan</th>'}
+                  <th class="no-print write-action-btn">Aksi</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -17110,98 +17141,289 @@ const RpmApp = {
           </div>
         `;
       } else {
-        itemsContent = qPage.items.map(it => {
+        itemsContent = (sec.items || []).map((it, itemIdx) => {
+          const mathBoxHtml = it.mathExpression
+            ? `<div class="math-direct-box">${UI.escapeHtml(it.mathExpression)}</div>`
+            : '';
+
           let optionsBlock = '';
-          if (it.options && qPage.type === 'PG') {
+          if (sec.type === 'PG' && it.options) {
             optionsBlock = `
-              <div style="margin: 0.45rem 0 0.45rem 1.35rem; font-size: 0.92rem; line-height: 1.65; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.25rem 1rem;">
-                <div contenteditable="true"><strong>A.</strong> ${UI.escapeHtml(it.options.A || '')}</div>
-                <div contenteditable="true"><strong>B.</strong> ${UI.escapeHtml(it.options.B || '')}</div>
-                <div contenteditable="true"><strong>C.</strong> ${UI.escapeHtml(it.options.C || '')}</div>
-                <div contenteditable="true"><strong>D.</strong> ${UI.escapeHtml(it.options.D || '')}</div>
+              <div style="margin: 0.45rem 0 0.45rem 1.25rem; font-size: 0.86rem; line-height: 1.6;">
+                <div><strong>A.</strong> ${UI.escapeHtml(it.options.A)}</div>
+                <div><strong>B.</strong> ${UI.escapeHtml(it.options.B)}</div>
+                <div><strong>C.</strong> ${UI.escapeHtml(it.options.C)}</div>
+                <div><strong>D.</strong> ${UI.escapeHtml(it.options.D)}</div>
               </div>
             `;
-          } else if ((qPage.type === 'ESAI' || qPage.type === 'URAIAN' || qPage.type === 'LAINNYA') && hideKey) {
-            optionsBlock = `<div style="margin-top: 0.65rem; height: 60px; border-bottom: 1px dotted #94a3b8;"></div>`;
           }
 
-          const badgeIndicatorHtml = hideKey
-            ? ''
-            : `<div style="margin-bottom: 0.25rem;"><span class="badge badge-info" style="font-size: 0.72rem;">${UI.escapeHtml(it.indicatorBadge || '')}</span></div>`;
-
-          const answerKeyBlock = hideKey
+          const answerBlock = this.hideAnswerKey
             ? ''
             : `
-              <div style="margin-top: 0.45rem; padding: 0.5rem 0.85rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.84rem; color: #14532d; font-weight: 600;">
-                ${UI.escapeHtml(it.answer || '')}
+              <div style="margin-top: 0.45rem; padding: 0.45rem 0.75rem; background: #f0fdf4; border-left: 3px solid var(--success); font-size: 0.82rem; color: #14532d;">
+                ${UI.escapeHtml(it.answer)}
               </div>
             `;
 
-          const stemRender = it.isDirectMath
-            ? `<div contenteditable="true" class="math-direct-box">${it.no}. &nbsp; ${UI.escapeHtml(it.stem || '')}</div>`
-            : `<div contenteditable="true" style="font-weight: 600; font-size: 0.95rem; color: var(--dark); line-height: 1.55; white-space: pre-line;">${it.no}. ${UI.escapeHtml(it.stem || '')}</div>`;
-
           return `
-            <div style="margin-bottom: 1.15rem; padding-bottom: 0.9rem; border-bottom: 1px dashed var(--border);">
-              ${badgeIndicatorHtml}
-              ${stemRender}
+            <div style="margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed var(--border);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+                <div style="font-weight: 600; font-size: 0.9rem; color: var(--dark); flex: 1;">
+                  ${it.no}. ${UI.escapeHtml(it.stem)}
+                </div>
+                <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="color: var(--danger); border-color: #fca5a5; padding: 0.15rem 0.5rem; font-size: 0.72rem; flex-shrink: 0;" onclick="RpmApp.removeSingleQuestionItem(${sIdx}, ${itemIdx})">
+                  🗑️ Hapus Soal
+                </button>
+              </div>
+              ${mathBoxHtml}
               ${optionsBlock}
-              ${answerKeyBlock}
+              ${answerBlock}
             </div>
           `;
         }).join('');
       }
 
-      const studentIdentityHeader = qPage.partIndex === 1
-        ? `
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 0.85rem 1rem; background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.86rem;">
-            <div>
-              <div><strong>Nama Siswa :</strong> ....................................................</div>
-              <div style="margin-top: 0.35rem;"><strong>Kelas / Fase :</strong> ${UI.escapeHtml(doc.kelasFase)}</div>
-            </div>
-            <div>
-              <div><strong>Mata Pelajaran :</strong> ${UI.escapeHtml(doc.mapel)}</div>
-              <div style="margin-top: 0.35rem;"><strong>Materi Uji :</strong> ${UI.escapeHtml(doc.materi)}</div>
-            </div>
-          </div>
-        `
-        : '';
-
-      const partSubtitle = qPage.totalParts > 1
-        ? ` — Lembar ${qPage.partIndex} dari ${qPage.totalParts}`
-        : '';
-
       return `
-        <div class="rpm-print-page hidden" id="rpm-print-page-${pageNum}">
-          <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff; min-height: 820px;">
-            <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.25rem;">
-              <div style="font-size: 0.84rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">
-                ${hideKey ? `LEMBAR SOAL PESERTA DIDIK — HALAMAN ${pageNum}` : `LAMPIRAN SOAL & KUNCI JAWABAN (${UI.escapeHtml(doc.engineUsed || 'AI Murni')}) — HALAMAN ${pageNum}`}
+        <div id="rpm-print-page-${pageNum}" class="rpm-print-page hidden">
+          <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff;">
+            <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.35rem;">
+              <div style="font-size: 0.82rem; font-weight: 700; color: var(--secondary); text-transform: uppercase;">
+                LAMPIRAN INSTRUMEN ASESMEN (HALAMAN ${pageNum}) — ${UI.escapeHtml(sec.title)}
               </div>
-              <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
-                ${UI.escapeHtml(doc.sekolah)} — ${UI.escapeHtml(doc.mapel)}
+              <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
+                Mata Pelajaran: ${UI.escapeHtml(doc.mapel)} — Materi: ${UI.escapeHtml(doc.materi)}
               </h2>
-              <div style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">
-                Materi: ${UI.escapeHtml(doc.materi)} | Tingkat Kesulitan: ${UI.escapeHtml(doc.difficulty || 'SEDANG')}
+              <div style="font-size: 0.84rem; color: var(--text-muted);">
+                Satuan Pendidikan: ${UI.escapeHtml(doc.sekolah)} | Kelas/Fase: ${UI.escapeHtml(doc.kelasFase)} | Tanggal Penyusunan: <strong>${UI.escapeHtml(lockedDateDisplay)}</strong>
               </div>
             </div>
-
-            ${studentIdentityHeader}
-
-            <h3 style="background: #eff6ff; padding: 0.6rem 0.95rem; border-left: 4px solid var(--primary-light); color: var(--primary); margin-bottom: 1.15rem; font-size: 1rem;">
-              Bagian ${qPage.sectionIndex}. ${UI.escapeHtml(qPage.sectionTitle)}${UI.escapeHtml(partSubtitle)}
-            </h3>
-
             ${itemsContent}
-
-            <div style="margin-top: 1.75rem; padding-top: 0.65rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted);">
-              <span>${UI.escapeHtml(doc.mapel)} — ${UI.escapeHtml(doc.kelasFase)}</span>
-              <span>Halaman ${pageNum} dari ${totalAllPages}</span>
-            </div>
           </div>
         </div>
       `;
     }).join('');
+  },
+
+  // Merender tabel Arsip Modul RPM dengan tanggal asli yang terkunci & tombol Hapus Permanen
+  renderSavedArchiveTable() {
+    const bucket = DB.getActiveClassBucket();
+    const tbody = document.getElementById('tbody-rpm-saved-archive');
+    const badgeCount = document.getElementById('rpm-saved-archive-badge');
+    const topCount = document.getElementById('rpm-saved-count-top');
+
+    if (!tbody) return;
+
+    const deletedSet = new Set(((DB.data && DB.data.deletedRpmIds) || []).map(String));
+    let modules = (bucket && Array.isArray(bucket.rpmModules)) ? bucket.rpmModules : [];
+
+    // Pastikan setiap modul di arsip memiliki ID unik dan saring yang sudah masuk daftar hitam
+    modules = modules.filter((mod, idx) => {
+      if (!mod) return false;
+      if (!mod.id) {
+        mod.id = 'RPM_ARC_' + idx + '_' + String(mod.mapel || '').replace(/\W/g, '');
+      }
+      return !deletedSet.has(String(mod.id));
+    });
+
+    if (bucket) {
+      bucket.rpmModules = modules;
+    }
+
+    if (badgeCount) badgeCount.textContent = `${modules.length} Modul Tersimpan`;
+    if (topCount) topCount.textContent = String(modules.length);
+
+    if (modules.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.35rem;">
+            Belum ada Modul RPM yang tersimpan di arsip kelas ini. Silakan susun modul baru melalui formulir di atas.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = modules.map((mod, idx) => {
+      // Tampilkan tanggal asli saat modul disimpan (bukan tanggal hari ini)
+      const lockedDateText = mod.createdAt || (mod.savedDateISO ? DateTimeUtil.formatIndonesianDate(mod.savedDateISO) : 'Tanggal Terkunci');
+      const lockedTimeSub = mod.savedTimestamp && mod.savedTimestamp.includes('Pukul')
+        ? mod.savedTimestamp.split('(')[1]?.replace(')', '') || ''
+        : (mod.savedDateISO || '');
+
+      const tpPreview = Array.isArray(mod.tujuanPembelajaran) && mod.tujuanPembelajaran.length > 0
+        ? mod.tujuanPembelajaran[0]
+        : '-';
+
+      const totalQuestions = Array.isArray(mod.questionSections)
+        ? mod.questionSections.reduce((acc, s) => acc + ((s.items && s.items.length) || 0), 0)
+        : 0;
+
+      const safeId = String(mod.id).replace(/'/g, "\\'");
+
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>
+            <div style="font-weight: 800; color: var(--dark); font-size: 0.85rem;">
+              🔒 ${UI.escapeHtml(lockedDateText)}
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.15rem;">
+              ${UI.escapeHtml(lockedTimeSub)}
+            </div>
+          </td>
+          <td><strong>${UI.escapeHtml(mod.mapel || '-')}</strong></td>
+          <td>
+            <div style="font-weight: 700; color: var(--primary);">${UI.escapeHtml(mod.materi || '-')}</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+              TP: ${UI.escapeHtml(tpPreview)}
+            </div>
+          </td>
+          <td><span class="badge badge-info">${UI.escapeHtml(mod.kelasFase || '-')}</span></td>
+          <td style="text-align: center;">
+            <span class="badge ${totalQuestions > 0 ? 'badge-success' : 'badge-warning'}">
+              ${totalQuestions > 0 ? `${totalQuestions} Butir Soal` : 'Tanpa Soal'}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="RpmApp.openSavedRpmFromArchive('${safeId}', ${idx})">
+                📂 Buka
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.deleteSavedRpmFromArchive('${safeId}', ${idx})">
+                🗑️ Hapus Permanen
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  // Membuka kembali modul dari arsip dengan mempertahankan tanggal penyusunan asli
+  openSavedRpmFromArchive(rpmId, fallbackIndex = -1) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+
+    let found = bucket.rpmModules.find(m => m && String(m.id) === String(rpmId));
+    if (!found && fallbackIndex >= 0 && bucket.rpmModules[fallbackIndex]) {
+      found = bucket.rpmModules[fallbackIndex];
+    }
+
+    if (!found) {
+      UI.showNotif('Modul Tidak Ditemukan', 'Data modul RPM tersebut sudah tidak tersedia di arsip.', 'warning');
+      return;
+    }
+
+    // Salin ke memori aktif tanpa mengubah properti tanggal penyusunan aslinya
+    AppState.rpmCurrentDoc = JSON.parse(JSON.stringify(found));
+
+    const formCard = document.getElementById('rpm-builder-form-card');
+    const resultWrapper = document.getElementById('rpm-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resultWrapper) resultWrapper.classList.remove('hidden');
+
+    this.activePage = 1;
+    this.showAllPagesMode = false;
+    this.renderAllRpmPages();
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    UI.showNotif(
+      'Modul RPM Arsip Dibuka',
+      `Menampilkan Modul RPM "${found.mapel} — ${found.materi}" yang disusun pada tanggal: ${found.createdAt || found.savedDateISO || '-'}.`,
+      'info'
+    );
+  },
+
+  // Menghapus modul RPM secara permanen dari arsip, memori aktif, localStorage, dan Supabase Cloud
+  deleteSavedRpmFromArchive(rpmId, fallbackIndex = -1) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    if (!Array.isArray(bucket.rpmModules)) bucket.rpmModules = [];
+
+    let targetMod = bucket.rpmModules.find(m => m && String(m.id) === String(rpmId));
+    if (!targetMod && fallbackIndex >= 0 && bucket.rpmModules[fallbackIndex]) {
+      targetMod = bucket.rpmModules[fallbackIndex];
+    }
+
+    const targetId = targetMod && targetMod.id ? String(targetMod.id) : String(rpmId);
+    const modTitle = targetMod ? `${targetMod.mapel} (${targetMod.materi})` : 'Modul RPM';
+
+    const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus permanen modul "${modTitle}" dari Arsip dan Cloud?`);
+    if (!confirmed) return;
+
+    // 1. Kunci ID ke daftar hitam permanen agar tidak pernah ditarik kembali dari Cloud Supabase
+    DB.lockPermanentDeletion({ rpmId: targetId });
+
+    // 2. Hapus dari bucket kelas aktif & seluruh bucket kelas di database
+    bucket.rpmModules = bucket.rpmModules.filter((m, idx) => {
+      if (!m) return false;
+      if (String(m.id) === targetId) return false;
+      if (!m.id && idx === fallbackIndex) return false;
+      return true;
+    });
+
+    Object.values(DB.data.classData || {}).forEach(b => {
+      if (b && Array.isArray(b.rpmModules)) {
+        b.rpmModules = b.rpmModules.filter(m => m && String(m.id) !== targetId);
+      }
+    });
+
+    // 3. Jika modul yang dihapus sedang ditampilkan di halaman, bersihkan tampilan dan kembali ke form
+    if (AppState.rpmCurrentDoc && String(AppState.rpmCurrentDoc.id) === targetId) {
+      AppState.rpmCurrentDoc = null;
+      const docContent = document.getElementById('rpm-document-content');
+      const dynPages = document.getElementById('rpm-dynamic-pages-container');
+      if (docContent) docContent.innerHTML = '';
+      if (dynPages) dynPages.innerHTML = '';
+      this.reopenBuilderForm();
+    }
+
+    // 4. Simpan instan ke localStorage & dorong ke Supabase Cloud
+    DB.saveImmediate();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Modul RPM Dihapus Permanen',
+      `Modul "${modTitle}" telah dihapus secara permanen dari halaman ini, penyimpanan lokal, dan Supabase Cloud.`,
+      'warning'
+    );
+  },
+
+  // Menghapus seluruh arsip modul RPM di kelas aktif secara permanen
+  clearAllSavedRpmArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !Array.isArray(bucket.rpmModules) || bucket.rpmModules.length === 0) {
+      UI.showNotif('Arsip Sudah Kosong', 'Tidak ada modul RPM yang tersimpan di arsip saat ini.', 'info');
+      return;
+    }
+
+    const confirmed = window.confirm(`Hapus permanen seluruh ${bucket.rpmModules.length} Modul RPM di arsip kelas ini? Tindakan ini tidak dapat dibatalkan.`);
+    if (!confirmed) return;
+
+    const allIds = bucket.rpmModules.map(m => m && m.id).filter(Boolean);
+    DB.lockPermanentDeletion({ rpmIds: allIds });
+
+    bucket.rpmModules = [];
+    AppState.rpmCurrentDoc = null;
+
+    const docContent = document.getElementById('rpm-document-content');
+    const dynPages = document.getElementById('rpm-dynamic-pages-container');
+    if (docContent) docContent.innerHTML = '';
+    if (dynPages) dynPages.innerHTML = '';
+
+    this.reopenBuilderForm();
+    DB.saveImmediate();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Seluruh Arsip RPM Dihapus Permanen',
+      'Semua modul RPM pada arsip kelas ini telah dibersihkan secara permanen dan disinkronkan ke Cloud.',
+      'warning'
+    );
   }
 };
 
