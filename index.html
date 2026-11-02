@@ -566,7 +566,7 @@ body {
 </head>
 <body>
 
-<header id="global-navbar" class="global-navbar hidden">
+  <header id="global-navbar" class="global-navbar hidden">
   <div class="brand-wrap">
     <div class="brand-logo">SE</div>
     <div>
@@ -574,6 +574,53 @@ body {
       <div class="brand-subtitle">Sistem Informasi Manajemen Akademik & Kurikulum</div>
     </div>
   </div>
+
+  <div class="nav-center-info">
+    <span id="nav-school-badge" class="school-pill">Sekolah Terpadu</span>
+    <span id="nav-academic-period-badge" class="school-pill" style="background: rgba(245, 158, 11, 0.25); border-color: rgba(253, 230, 138, 0.6); color: #fde68a;">
+      📅 TP 2026/2027 • Semester 1 (Ganjil)
+    </span>
+    <span id="global-realtime-clock" class="realtime-clock-pill">--:--:--</span>
+  </div>
+
+  <div class="nav-right-actions">
+    <div class="user-meta">
+      <div id="nav-user-name" class="user-meta-name">Nama Pengguna</div>
+      <div id="nav-user-role" class="user-meta-role">Peran Akun</div>
+    </div>
+    <button type="button" id="btn-switch-role-gateway" class="btn btn-warning btn-sm hidden" onclick="AppAuth.openRoleGateway()">
+      Pindah Peran (Admin / Guru)
+    </button>
+    <button type="button" id="btn-exit-inspection" class="btn btn-secondary btn-sm hidden" onclick="PrincipalApp.exitTeacherInspection()">
+      Kembali ke Portal Kepala Sekolah
+    </button>
+    <button type="button" id="btn-logout" class="btn btn-danger btn-sm" onclick="AppAuth.logout()">
+      Keluar
+    </button>
+  </div>
+</header>
+
+<div id="readonly-inspector-banner" class="readonly-banner hidden">
+  <div>
+    MODE PEMANTAUAN KEPALA SEKOLAH (HANYA LIHAT / TANPA UBAH DATA) — Memantau Guru: <span id="inspected-teacher-name">-</span>
+  </div>
+  <button type="button" class="btn btn-outline btn-sm" onclick="PrincipalApp.exitTeacherInspection()">
+    Tutup Pemantauan
+  </button>
+</div>
+
+<!-- BANNER INDIKATOR SAAT GURU MELIHAT ARSIP SEMESTER LAMPAU (TIME-MACHINE MODE) -->
+<div id="archive-timemachine-banner" class="readonly-banner hidden" style="background: linear-gradient(90deg, #1e3a8a, #0f766e); border-bottom: 2px solid #fde68a;">
+  <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+    <span class="badge badge-warning">🗂️ MODE PENJELAJAH ARSIP SEMESTER LAMPAU</span>
+    <span>Anda sedang melihat rekaman data historis: <strong id="timemachine-banner-period-label" style="color: #fde68a; text-decoration: underline;">-</strong></span>
+  </div>
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <button type="button" class="btn btn-warning btn-sm" onclick="AcademicPeriodApp.returnToActivePeriod()">
+      ⚡ Kembali ke Semester Aktif Sekarang
+    </button>
+  </div>
+</div>
 
   <div class="nav-center-info">
     <span id="nav-school-badge" class="school-pill">Sekolah Terpadu</span>
@@ -877,6 +924,128 @@ body {
         <div class="card-subtitle">Sekolah Terdaftar</div>
         <div id="stat-admin-schools" style="font-size: 1.8rem; font-weight: 800; color: var(--accent); margin-top: 0.25rem;">0</div>
         <div class="form-hint">Ternormalisasi otomatis</div>
+      </div>
+    </div>
+
+        <!-- PANEL KENDALI TAHUN PELAJARAN, SEMESTER & KENAIKAN KELAS OTOMATIS (EKSKLUSIF ADMIN) -->
+    <div class="card" style="border: 2px solid #3b82f6; background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);">
+      <div class="card-header" style="border-bottom-color: #bfdbfe;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+            <span class="badge badge-primary">PUSAT SIKLUS AKADEMIK & ARSIP TAHUNAN</span>
+            <span id="admin-active-period-display" class="badge badge-success">Aktif: TP 2026/2027 — Semester 1 (Ganjil)</span>
+          </div>
+          <h3 class="card-title">0. Pengaturan Tahun Pelajaran, Semester Aktif & Kenaikan Kelas Otomatis</h3>
+          <p class="card-subtitle">
+            Pengaturan di panel ini berlaku secara terpusat untuk seluruh sekolah, Guru Kelas, Guru Mapel, Kepala Sekolah, dan Siswa. Saat berpindah semester atau tahun pelajaran, data lama otomatis tersimpan di Brankas Arsip.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- SUB-PANEL KIRI: PENGATURAN PERIODE AKTIF GLOBAL -->
+        <form id="form-admin-academic-period" onsubmit="AcademicPeriodApp.saveGlobalAcademicPeriod(event)" style="background: #ffffff; padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid #93c5fd;">
+          <h4 style="font-size: 0.98rem; color: var(--primary); margin-bottom: 0.85rem;">
+            📅 A. Tetapkan Tahun Pelajaran & Semester Berjalan
+          </h4>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="admin-period-tahun">Tahun Pelajaran Aktif :</label>
+              <input
+                type="text"
+                id="admin-period-tahun"
+                list="datalist-tahun-pelajaran"
+                class="form-control"
+                style="font-weight: 700;"
+                placeholder="Contoh: 2026/2027"
+                value="2026/2027"
+                required
+              >
+              <datalist id="datalist-tahun-pelajaran">
+                <option value="2025/2026"></option>
+                <option value="2026/2027"></option>
+                <option value="2027/2028"></option>
+                <option value="2028/2029"></option>
+                <option value="2029/2030"></option>
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="admin-period-semester">Semester Aktif :</label>
+              <select id="admin-period-semester" class="form-control" style="font-weight: 700;" required>
+                <option value="1">Semester 1 (Ganjil)</option>
+                <option value="2">Semester 2 (Genap)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="admin-period-tanggal-rapor">Tanggal Penetapan Rapor :</label>
+              <input type="date" id="admin-period-tanggal-rapor" class="form-control">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="admin-period-lock-past">Proteksi Arsip Semester Lampau :</label>
+              <select id="admin-period-lock-past" class="form-control">
+                <option value="READONLY" selected>Kunci Arsip Lampau (Hanya Lihat & Cetak)</option>
+                <option value="EDITABLE">Izinkan Guru Mengedit Arsip Lampau</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="alert-box alert-info" style="margin-top: 0; margin-bottom: 1rem; font-size: 0.8rem; padding: 0.7rem 0.9rem;">
+            <strong>Info Cerdas:</strong> Berpindah dari <em>Semester 1 ke Semester 2</em> otomatis mempertahankan Daftar Siswa, Akun Siswa, Jadwal, Master DPL, dan Ekskul, serta menyiapkan lembar kosong baru untuk Presensi dan Nilai Semester 2.
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-block">
+            💾 Terapkan Periode Akademik & Sinkronkan Semua Pengguna
+          </button>
+        </form>
+
+        <!-- SUB-PANEL KANAN: PERGANTIAN TAHUN PELAJARAN & KENAIKAN KELAS OTOMATIS -->
+        <div style="background: #fffbeb; padding: 1.2rem; border-radius: var(--radius-md); border: 1px solid #fcd34d; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <h4 style="font-size: 0.98rem; color: #92400e; margin-bottom: 0.4rem;">
+              🚀 B. Pergantian Tahun Pelajaran Baru & Kenaikan Kelas Otomatis
+            </h4>
+            <p style="font-size: 0.8rem; color: #78350f; margin-bottom: 0.95rem; line-height: 1.45;">
+              Gunakan fitur ini saat pergantian Tahun Pelajaran baru. Sistem otomatis <strong>mengarsipkan seluruh data semester sebelumnya</strong>, lalu menaikkan tingkat kelas siswa (<em>Kelas 1 &rarr; Kelas 2 ... Kelas 5 &rarr; Kelas 6, dan Kelas 6 &rarr; Lulus/Alumni</em>) tanpa perlu mengetik ulang nama & akun siswa.
+            </p>
+
+            <div class="grid-2">
+              <div class="form-group">
+                <label class="form-label" for="admin-promo-school-select" style="color: #78350f;">Pilih Cakupan Sekolah :</label>
+                <select id="admin-promo-school-select" class="form-control">
+                  <option value="ALL">Seluruh Sekolah Terdaftar</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="admin-promo-target-tahun" style="color: #78350f;">Tahun Pelajaran Baru Tujuan :</label>
+                <input
+                  type="text"
+                  id="admin-promo-target-tahun"
+                  list="datalist-tahun-pelajaran"
+                  class="form-control"
+                  style="font-weight: 700;"
+                  placeholder="Contoh: 2027/2028"
+                  value="2027/2028"
+                >
+              </div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.5rem;">
+            <button type="button" class="btn btn-secondary btn-block" onclick="AcademicPeriodApp.adminArchiveAllClassesCurrentSemester()">
+              📦 Buat Arsip Serentak Seluruh Kelas (Semester Ini)
+            </button>
+            <button type="button" class="btn btn-warning btn-block" onclick="AcademicPeriodApp.executeSmartClassPromotion()">
+              🎓 Jalankan Kenaikan Kelas & Buka Tahun Pelajaran Baru
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1286,6 +1455,97 @@ body {
           <button type="button" id="btn-teacher-to-admin" class="btn btn-outline btn-sm hidden" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="AdminApp.openAdminDashboard()">
             Pindah ke Halaman Admin
           </button>
+        </div>
+      </div>
+    </div>
+
+        <!-- PANEL BRANKAS ARSIP SEMESTER & TIME-MACHINE SWITCHER GURU -->
+    <div class="card no-print" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 2px solid #93c5fd;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div style="flex: 1; min-width: 270px;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+            <span class="badge badge-primary">🗂️ BRANKAS ARSIP & PENJELAJAH PERIODE SEMESTER</span>
+            <span id="teacher-active-period-badge" class="badge badge-success">Periode Aktif: TP 2026/2027 • Semester 1</span>
+            <span id="teacher-viewing-period-badge" class="badge badge-warning hidden">Sedang Membuka Arsip Lampau</span>
+          </div>
+          <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);">
+            Penyimpanan Hasil Semester & Riwayat Lintas Tahun Pelajaran
+          </h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">
+            Simpan hasil kerja semester Anda ke dalam Brankas Arsip, atau pilih periode pada menu di samping untuk melihat dan mencetak kembali hasil penilaian pada semester/tahun pelajaran sebelumnya.
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap;">
+          <div class="form-group" style="margin-bottom: 0; min-width: 250px;">
+            <label class="form-label" for="teacher-period-switcher-select" style="font-size: 0.78rem; color: var(--primary);">
+              Pilih Periode Semester yang Ditampilkan :
+            </label>
+            <select
+              id="teacher-period-switcher-select"
+              class="form-control allow-readonly-filter"
+              style="font-weight: 700; border-color: var(--primary-light);"
+              onchange="AcademicPeriodApp.switchViewingPeriod(this.value)"
+            >
+              <option value="ACTIVE">🟢 Periode Aktif Berjalan</option>
+            </select>
+          </div>
+
+          <button type="button" class="btn btn-success write-action-btn" onclick="AcademicPeriodApp.createTeacherSemesterSnapshot()">
+            💾 Simpan Hasil Semester Ini ke Arsip
+          </button>
+
+          <button type="button" class="btn btn-outline" onclick="AcademicPeriodApp.toggleTeacherArchiveDrawer()">
+            📂 Buka Brankas Arsip (<span id="teacher-archive-count-badge">0</span>)
+          </button>
+        </div>
+      </div>
+
+      <!-- LACI DAFTAR ARSIP SEMESTER GURU & CADANGAN FILE -->
+      <div id="teacher-archive-vault-drawer" class="hidden" style="margin-top: 1.15rem; padding-top: 1.1rem; border-top: 1px dashed #93c5fd;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.85rem;">
+          <div>
+            <h4 style="font-size: 0.96rem; color: var(--dark);">Daftar Rekaman Arsip Semester Kelas Anda</h4>
+            <p style="font-size: 0.78rem; color: var(--text-muted);">
+              Klik <strong>Buka & Lihat Hasil</strong> untuk menampilkan seluruh presensi, rekap nilai, DPL, kokurikuler, ekskul, dan rapor pada semester tersebut.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="teacher-archive-note-input"
+              class="form-control allow-readonly-filter"
+              style="width: 230px; padding: 0.35rem 0.65rem; font-size: 0.8rem;"
+              placeholder="Catatan arsip (misal: Nilai Final Rapor)..."
+            >
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="AcademicPeriodApp.createTeacherSemesterSnapshot()">
+              + Buat Snapshot Arsip Baru
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="AcademicPeriodApp.exportCurrentPeriodToFile()">
+              📥 Unduh File Arsip (.JSON)
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('teacher-import-archive-file').click()">
+              📤 Muat File Arsip
+            </button>
+            <input type="file" id="teacher-import-archive-file" class="hidden" accept=".json" onchange="AcademicPeriodApp.importArchiveFromFile(event)">
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 45px;">No</th>
+                <th>Periode Tahun Pelajaran & Semester</th>
+                <th>Kelas & Sekolah</th>
+                <th>Ringkasan Data Tersimpan</th>
+                <th>Waktu Penyimpanan & Catatan</th>
+                <th style="width: 260px;">Aksi (Lihat / Unduh / Hapus)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-teacher-archive-snapshots"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -6585,6 +6845,9 @@ const AppState = {
   activeMode: null,
   inspectedTeacherId: null,
   isReadOnlyInspection: false,
+  viewingPeriodKey: 'ACTIVE',
+  viewingPeriodLabel: '',
+  isTimeMachineReadOnly: false,
   mapelOverrideDay: 'AUTO',
   penilaianWizard: {
     activeDate: '',
@@ -6642,7 +6905,39 @@ const DB = {
   saveTimeout: null,
   lastLocalDeleteTimestamp: 0,
 
-  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat
+  // Membentuk kunci unik periode dari Tahun Pelajaran & Semester (Contoh: TP_2026_2027__SEM_1)
+  buildPeriodKey(tahunPelajaran, semester) {
+    const cleanTahun = String(tahunPelajaran || '2026/2027')
+      .trim()
+      .replace(/[^0-9a-zA-Z]/g, '_');
+    const cleanSem = String(semester || '1').trim() === '2' ? '2' : '1';
+    return `TP_${cleanTahun}__SEM_${cleanSem}`;
+  },
+
+  // Mengambil informasi lengkap Periode Tahun Pelajaran & Semester yang sedang aktif
+  getActivePeriodInfo() {
+    const cfg = (this.data && this.data.academicConfig) ? this.data.academicConfig : {
+      tahunPelajaran: '2026/2027',
+      semester: '1',
+      tanggalRapor: '',
+      lockPastPeriod: 'READONLY'
+    };
+    const tahun = String(cfg.tahunPelajaran || '2026/2027').trim();
+    const sem = String(cfg.semester || '1').trim() === '2' ? '2' : '1';
+    const semLabel = sem === '2' ? 'Semester 2 (Genap)' : 'Semester 1 (Ganjil)';
+    const periodKey = this.buildPeriodKey(tahun, sem);
+
+    return {
+      tahunPelajaran: tahun,
+      semester: sem,
+      semesterLabel: semLabel,
+      periodKey: periodKey,
+      fullLabel: `TP ${tahun} • ${semLabel}`,
+      tanggalRapor: cfg.tanggalRapor || '',
+      lockPastPeriod: cfg.lockPastPeriod || 'READONLY'
+    };
+  },
+
   getLocalBlacklist() {
     try {
       const raw = localStorage.getItem(DELETED_BLACKLIST_STORAGE_KEY);
@@ -6672,7 +6967,6 @@ const DB = {
     }
   },
 
-  // Mengunci ID log atau ID akun yang dihapus agar permanen dan tidak pernah muncul kembali
   lockPermanentDeletion({ accId = null, pendingId = null, accNip = null }) {
     const bl = this.getLocalBlacklist();
 
@@ -6713,7 +7007,6 @@ const DB = {
     }
   },
 
-  // Membuka kunci NIP apabila Admin di kemudian hari mendaftarkan ulang guru dengan NIP tersebut
   unlockNipForNewAccount(nipRaw) {
     const cleanNip = String(nipRaw || '').replace(/\s+/g, '').trim();
     if (!cleanNip) return;
@@ -6780,6 +7073,7 @@ const DB = {
 
   save() {
     this.ensureIntegrity();
+    this.syncCurrentBucketsToPeriodHistory();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
     if (supabaseClient) {
@@ -6791,13 +7085,13 @@ const DB = {
     }
   },
 
-  // Menyimpan instan ke localStorage (0 ms) lalu mengirim ke Cloud di latar belakang tanpa memblokir tampilan tabel
   saveImmediate() {
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
     this.ensureIntegrity();
+    this.syncCurrentBucketsToPeriodHistory();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
     if (supabaseClient) {
@@ -6805,6 +7099,39 @@ const DB = {
       return this.pushToSupabaseImmediate();
     }
     return Promise.resolve();
+  },
+
+  // Menyimpan otomatis rekaman semester berjalan ke dalam periodHistory masing-masing kelas
+  syncCurrentBucketsToPeriodHistory() {
+    if (!this.data || !this.data.classData) return;
+    if (AppState.viewingPeriodKey && AppState.viewingPeriodKey !== 'ACTIVE') return;
+
+    const activeInfo = this.getActivePeriodInfo();
+    const pKey = activeInfo.periodKey;
+
+    Object.values(this.data.classData).forEach(bucket => {
+      if (!bucket) return;
+      if (!bucket.periodHistory || typeof bucket.periodHistory !== 'object') {
+        bucket.periodHistory = {};
+      }
+      bucket.activePeriodKey = pKey;
+      bucket.periodHistory[pKey] = {
+        periodKey: pKey,
+        tahunPelajaran: activeInfo.tahunPelajaran,
+        semester: activeInfo.semester,
+        fullLabel: activeInfo.fullLabel,
+        updatedAt: DateTimeUtil.getCurrentDateTimeStr(),
+        studentsSnapshot: JSON.parse(JSON.stringify(bucket.students || [])),
+        scheduleSnapshot: JSON.parse(JSON.stringify(bucket.schedule || {})),
+        presensiRecords: JSON.parse(JSON.stringify(bucket.presensiRecords || {})),
+        academicAssessments: JSON.parse(JSON.stringify(bucket.academicAssessments || [])),
+        dplAssessments: JSON.parse(JSON.stringify(bucket.dplAssessments || [])),
+        kokurikuler: JSON.parse(JSON.stringify(bucket.kokurikuler || {})),
+        ekskulAssessments: JSON.parse(JSON.stringify(bucket.ekskulAssessments || [])),
+        rekapWeightPolicy: bucket.rekapWeightPolicy ? JSON.parse(JSON.stringify(bucket.rekapWeightPolicy)) : null,
+        raporWeightPolicy: bucket.raporWeightPolicy ? JSON.parse(JSON.stringify(bucket.raporWeightPolicy)) : null
+      };
+    });
   },
 
   async pushToSupabaseImmediate() {
@@ -6884,7 +7211,6 @@ const DB = {
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
-          // Abaikan pantulan realtime selama 6 detik setelah Admin melakukan penghapusan
           if (this.isSyncing) return;
           if (Date.now() - this.lastLocalDeleteTimestamp < 6000) return;
 
@@ -6902,6 +7228,11 @@ const DB = {
 
   refreshCurrentActiveView() {
     SchoolNormalizer.refreshSchoolDatalist();
+    UI.updateNavbar();
+    if (typeof AcademicPeriodApp !== 'undefined') {
+      AcademicPeriodApp.syncAllPeriodUI();
+    }
+
     if (AppState.activeMode === 'ADMIN') {
       AdminApp.renderAdminStats();
       AdminApp.renderPendingTeachersTable();
@@ -6950,7 +7281,23 @@ const DB = {
     if (!Array.isArray(this.data.deletedPendingIds)) this.data.deletedPendingIds = [];
     if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
 
-    // Gabungkan daftar hitam lokal perangkat dengan daftar hitam dari Cloud
+    // Konfigurasi Global Tahun Pelajaran & Semester
+    if (!this.data.academicConfig || typeof this.data.academicConfig !== 'object') {
+      this.data.academicConfig = {
+        tahunPelajaran: '2026/2027',
+        semester: '1',
+        tanggalRapor: '',
+        lockPastPeriod: 'READONLY'
+      };
+    }
+    if (!this.data.academicConfig.tahunPelajaran) this.data.academicConfig.tahunPelajaran = '2026/2027';
+    if (!this.data.academicConfig.semester) this.data.academicConfig.semester = '1';
+    if (!this.data.academicConfig.lockPastPeriod) this.data.academicConfig.lockPastPeriod = 'READONLY';
+
+    // Brankas Arsip Snapshot Semester & Arsip Alumni Lulusan
+    if (!Array.isArray(this.data.semesterArchives)) this.data.semesterArchives = [];
+    if (!Array.isArray(this.data.alumniArchives)) this.data.alumniArchives = [];
+
     const localBl = this.getLocalBlacklist();
     localBl.accountIds.forEach(id => {
       if (!this.data.deletedAccountIds.includes(String(id))) {
@@ -6985,11 +7332,22 @@ const DB = {
     if (!this.data.classData) this.data.classData = {};
     if (!this.data.schoolVisiMisi) this.data.schoolVisiMisi = {};
 
+    // Pastikan setiap bucket kelas memiliki wadah periodHistory untuk menyimpan arsip otomatis per semester
+    const activePeriodKey = this.getActivePeriodInfo().periodKey;
+    Object.values(this.data.classData).forEach(bucket => {
+      if (!bucket) return;
+      if (!bucket.periodHistory || typeof bucket.periodHistory !== 'object') {
+        bucket.periodHistory = {};
+      }
+      if (!bucket.activePeriodKey) {
+        bucket.activePeriodKey = activePeriodKey;
+      }
+    });
+
     const deletedAccSet = new Set(this.data.deletedAccountIds.map(String));
     const deletedPendSet = new Set(this.data.deletedPendingIds.map(String));
     const deletedNipSet = new Set(this.data.deletedAccountNips.map(String));
 
-    // Pastikan setiap item memiliki ID valid & saring semua akun yang pernah dihapus
     this.data.accounts = this.data.accounts.filter((acc, idx) => {
       if (!acc) return false;
       if (acc.isMasterAdmin === true) return true;
@@ -7000,7 +7358,6 @@ const DB = {
       return true;
     });
 
-    // Pastikan setiap log pengajuan memiliki ID valid & saring semua log yang pernah dihapus permanen
     this.data.pendingTeachers = this.data.pendingTeachers.filter((pt, idx) => {
       if (!pt) return false;
       if (!pt.id) pt.id = 'REG_LEGACY_' + idx + '_' + String(pt.nip || '').replace(/\D/g, '');
@@ -7046,6 +7403,8 @@ const DB = {
       kelasFaseLabel: 'Kelas 4 / Fase B',
       homeroomTeacherId: 'ACC_MASTER_ANDRI',
       homeroomTeacherName: 'Andri Julian Perdana, S.Pd.',
+      activePeriodKey: 'TP_2026_2027__SEM_1',
+      periodHistory: {},
       students: [
         {
           id: 'STD_001',
@@ -7168,6 +7527,14 @@ const DB = {
       deletedAccountIds: [],
       deletedPendingIds: [],
       deletedAccountNips: [],
+      academicConfig: {
+        tahunPelajaran: '2026/2027',
+        semester: '1',
+        tanggalRapor: '',
+        lockPastPeriod: 'READONLY'
+      },
+      semesterArchives: [],
+      alumniArchives: [],
       pillarLocks: {
         data_kelas: false,
         intrakurikuler: false,
@@ -7224,6 +7591,8 @@ const DB = {
         kelasFaseLabel: teacher.role === 'GURU_MAPEL' ? targetClassKey : (teacher.kelasFase || targetClassKey),
         homeroomTeacherId: teacher.id,
         homeroomTeacherName: teacher.nama,
+        activePeriodKey: this.getActivePeriodInfo().periodKey,
+        periodHistory: {},
         students: [],
         schedule: {
           Senin: ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika'],
@@ -7280,7 +7649,48 @@ const DB = {
       };
       this.save();
     }
-    return this.data.classData[bucketId];
+
+    const baseBucket = this.data.classData[bucketId];
+
+    // ROUTING PENJELAJAH ARSIP (TIME-MACHINE): Jika Guru sedang membuka Arsip Semester Lampau
+    if (AppState.viewingPeriodKey && AppState.viewingPeriodKey !== 'ACTIVE') {
+      // 1. Cek jika yang dibuka adalah Snapshot Brankas Arsip (SNAP_...)
+      if (String(AppState.viewingPeriodKey).startsWith('SNAP_')) {
+        const snapId = String(AppState.viewingPeriodKey).replace(/^SNAP_/, '');
+        const foundSnap = (this.data.semesterArchives || []).find(s => s && String(s.id) === snapId);
+        if (foundSnap && foundSnap.bucketSnapshot) {
+          return foundSnap.bucketSnapshot;
+        }
+      }
+
+      // 2. Cek jika yang dibuka adalah Riwayat Periode Otomatis pada periodHistory (HIST_...)
+      const histKey = String(AppState.viewingPeriodKey).replace(/^HIST_/, '');
+      if (baseBucket.periodHistory && baseBucket.periodHistory[histKey]) {
+        const histRecord = baseBucket.periodHistory[histKey];
+        if (!this._tempArchiveViewBucket || this._tempArchiveViewKey !== `${bucketId}__${histKey}`) {
+          this._tempArchiveViewKey = `${bucketId}__${histKey}`;
+          this._tempArchiveViewBucket = {
+            ...baseBucket,
+            students: histRecord.studentsSnapshot && histRecord.studentsSnapshot.length > 0
+              ? histRecord.studentsSnapshot
+              : baseBucket.students,
+            schedule: histRecord.scheduleSnapshot && Object.keys(histRecord.scheduleSnapshot).length > 0
+              ? histRecord.scheduleSnapshot
+              : baseBucket.schedule,
+            presensiRecords: histRecord.presensiRecords || {},
+            academicAssessments: histRecord.academicAssessments || [],
+            dplAssessments: histRecord.dplAssessments || [],
+            kokurikuler: histRecord.kokurikuler || baseBucket.kokurikuler,
+            ekskulAssessments: histRecord.ekskulAssessments || [],
+            rekapWeightPolicy: histRecord.rekapWeightPolicy || baseBucket.rekapWeightPolicy,
+            raporWeightPolicy: histRecord.raporWeightPolicy || baseBucket.raporWeightPolicy
+          };
+        }
+        return this._tempArchiveViewBucket;
+      }
+    }
+
+    return baseBucket;
   }
 };
 
@@ -7555,21 +7965,45 @@ const UI = {
   },
 
   applyReadOnlyModeState() {
-    const banner = document.getElementById('readonly-inspector-banner');
+    const inspectorBanner = document.getElementById('readonly-inspector-banner');
     const btnExitInspect = document.getElementById('btn-exit-inspection');
     const inspectedNameEl = document.getElementById('inspected-teacher-name');
 
+    const archiveBanner = document.getElementById('archive-timemachine-banner');
+    const archiveLabelEl = document.getElementById('timemachine-banner-period-label');
+
+    const isViewingArchive = Boolean(
+      AppState.viewingPeriodKey &&
+      AppState.viewingPeriodKey !== 'ACTIVE' &&
+      AppState.activeMode !== 'ADMIN'
+    );
+
+    if (archiveBanner) {
+      if (isViewingArchive) {
+        archiveBanner.classList.remove('hidden');
+        if (archiveLabelEl) {
+          archiveLabelEl.textContent = AppState.viewingPeriodLabel || 'Arsip Semester Lampau';
+        }
+      } else {
+        archiveBanner.classList.add('hidden');
+      }
+    }
+
     if (AppState.isReadOnlyInspection) {
       document.body.classList.add('readonly-mode');
-      if (banner) banner.classList.remove('hidden');
+      if (inspectorBanner) inspectorBanner.classList.remove('hidden');
       if (btnExitInspect) btnExitInspect.classList.remove('hidden');
       const teacher = DB.getActiveTeacherAccount();
       if (inspectedNameEl && teacher) {
         inspectedNameEl.textContent = `${teacher.nama} (${teacher.role === 'GURU_MAPEL' ? 'Guru Mapel ' + (teacher.mapelDiampu || '') : teacher.kelasFase})`;
       }
+    } else if (isViewingArchive && AppState.isTimeMachineReadOnly) {
+      document.body.classList.add('readonly-mode');
+      if (inspectorBanner) inspectorBanner.classList.add('hidden');
+      if (btnExitInspect) btnExitInspect.classList.add('hidden');
     } else {
       document.body.classList.remove('readonly-mode');
-      if (banner) banner.classList.add('hidden');
+      if (inspectorBanner) inspectorBanner.classList.add('hidden');
       if (btnExitInspect) btnExitInspect.classList.add('hidden');
     }
   },
@@ -7581,10 +8015,16 @@ const UI = {
     const nameEl = document.getElementById('nav-user-name');
     const roleEl = document.getElementById('nav-user-role');
     const schoolEl = document.getElementById('nav-school-badge');
+    const periodEl = document.getElementById('nav-academic-period-badge');
     const btnSwitchGateway = document.getElementById('btn-switch-role-gateway');
 
     if (nameEl) nameEl.textContent = user.nama || 'Pengguna';
     if (schoolEl) schoolEl.textContent = user.schoolDisplay || 'SEKOLAH TERPADU';
+
+    if (periodEl && typeof DB.getActivePeriodInfo === 'function') {
+      const pInfo = DB.getActivePeriodInfo();
+      periodEl.textContent = `📅 ${pInfo.fullLabel}`;
+    }
 
     if (roleEl) {
       if (user.isMasterAdmin) {
