@@ -3798,7 +3798,7 @@ body {
       </div>
 
       <form id="form-generate-rpm" onsubmit="RpmApp.handleGenerateRpm(event)">
-        <div class="grid-3">
+        <div class="grid-4">
           <div class="form-group">
             <label class="form-label" for="rpm-input-penyusun">1. Nama Penyusun :</label>
             <input type="text" id="rpm-input-penyusun" class="form-control" placeholder="Nama lengkap guru penyusun..." required>
@@ -3810,6 +3810,11 @@ body {
           <div class="form-group">
             <label class="form-label" for="rpm-input-kelas-fase">3. Kelas / Fase (Kalibrasi Bahasa & Kognitif Siswa) :</label>
             <input type="text" id="rpm-input-kelas-fase" class="form-control" placeholder="Contoh: Kelas 4 / Fase B (atau Kelas 1 / Fase A)" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="rpm-input-tanggal-susun">Tanggal Penyusunan Modul :</label>
+            <input type="date" id="rpm-input-tanggal-susun" class="form-control" required>
+            <div class="form-hint">Dikunci permanen pada dokumen & arsip</div>
           </div>
         </div>
 
@@ -7437,17 +7442,29 @@ const DateTimeUtil = {
     return this.daysIndonesian[dt.getDay()];
   },
 
-  formatIndonesianDate(isoDateStr) {
-    if (!isoDateStr) isoDateStr = this.getTodayISO();
-    const parts = isoDateStr.split('-');
-    if (parts.length !== 3) return isoDateStr;
+  formatIndonesianDate(isoDateStr, fallbackToToday = true) {
+    if (!isoDateStr) {
+      if (!fallbackToToday) return '-';
+      isoDateStr = this.getTodayISO();
+    }
+    const cleanDatePart = String(isoDateStr).trim().split(/[\sT]+/)[0];
+    const parts = cleanDatePart.split('-');
+    if (parts.length !== 3) return String(isoDateStr);
+
     const dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-    if (isNaN(dt.getTime())) return isoDateStr;
+    if (isNaN(dt.getTime())) return String(isoDateStr);
+
     const dayName = this.daysIndonesian[dt.getDay()];
     const dayNum = dt.getDate();
     const monthName = this.monthsIndonesian[dt.getMonth()];
     const yearNum = dt.getFullYear();
     return `${dayName}, ${dayNum} ${monthName} ${yearNum}`;
+  },
+
+  formatLockedTimestamp(dateIso, timeStr) {
+    const formattedDate = this.formatIndonesianDate(dateIso, false);
+    const cleanTime = timeStr ? String(timeStr).trim() : '';
+    return cleanTime ? `${formattedDate} • Pukul ${cleanTime}` : formattedDate;
   },
 
   startRealtimeClock() {
@@ -23217,6 +23234,658 @@ window.addEventListener('DOMContentLoaded', async () => {
   LandingUI.selectPortal('teacher');
   LandingUI.toggleTeacherSubPanel('none');
   UI.switchView('view-landing');
+});
+    // ============================================================================
+// PATCH TAHAP 1: PENGUNCIAN TANGGAL PENYUSUNAN & PENYIMPANAN ASLI MODUL RPM
+// ============================================================================
+Object.assign(RpmApp, {
+  initTanggalPenyusunanInput(lockedIsoDate = null) {
+    const dateInput = document.getElementById('rpm-input-tanggal-susun');
+    if (!dateInput) return;
+    if (lockedIsoDate) {
+      dateInput.value = String(lockedIsoDate).split(/[\sT]+/)[0];
+    } else if (!dateInput.value) {
+      dateInput.value = DateTimeUtil.getTodayISO();
+    }
+  },
+
+  getLockedDocDateInfo(doc) {
+    const targetDoc = doc || AppState.rpmCurrentDoc || {};
+    const dateInputEl = document.getElementById('rpm-input-tanggal-susun');
+
+    const lockedDateISO =
+      targetDoc.tanggalSusunISO ||
+      targetDoc.savedDateISO ||
+      (targetDoc.savedAt ? String(targetDoc.savedAt).split(/[\sT]+/)[0] : '') ||
+      (targetDoc.createdAt ? String(targetDoc.createdAt).split(/[\sT]+/)[0] : '') ||
+      (dateInputEl && dateInputEl.value ? dateInputEl.value : DateTimeUtil.getTodayISO());
+
+    const lockedTimeStr =
+      targetDoc.savedTimeStr ||
+      (targetDoc.savedAt && String(targetDoc.savedAt).includes(' ')
+        ? String(targetDoc.savedAt).split(' ')[1]
+        : '') ||
+      targetDoc.createdTimeStr ||
+      '';
+
+    const formattedDate = DateTimeUtil.formatIndonesianDate(lockedDateISO, false);
+    const formattedDateTime = lockedTimeStr
+      ? `${formattedDate} (Pukul ${lockedTimeStr})`
+      : formattedDate;
+
+    return {
+      lockedDateISO,
+      lockedTimeStr,
+      formattedDate,
+      formattedDateTime
+    };
+  },
+
+  saveCurrentRpmToArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) {
+      UI.showNotif('Kelas Tidak Ditemukan', 'Pastikan kelas aktif telah dipilih.', 'danger');
+      return;
+    }
+
+    if (!AppState.rpmCurrentDoc) {
+      UI.showNotif('Belum Ada Modul RPM', 'Silakan susun Modul RPM terlebih dahulu sebelum menyimpan.', 'warning');
+      return;
+    }
+
+    if (!Array.isArray(bucket.rpmModules)) {
+      bucket.rpmModules = [];
+    }
+
+    const doc = AppState.rpmCurrentDoc;
+    const dateInputEl = document.getElementById('rpm-input-tanggal-susun');
+
+    if (!doc.id) {
+      doc.id = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+    }
+
+    const exactNowDateISO = DateTimeUtil.getTodayISO();
+    const exactNowTimeStr = DateTimeUtil.getCurrentTimeStr();
+    const chosenSusunISO = (dateInputEl && dateInputEl.value)
+      ? dateInputEl.value
+      : (doc.tanggalSusunISO || exactNowDateISO);
+
+    doc.tanggalSusunISO = chosenSusunISO;
+    doc.tanggalSusunFormatted = DateTimeUtil.formatIndonesianDate(chosenSusunISO, false);
+
+    if (!doc.savedDateISO || !doc.savedAt) {
+      doc.savedDateISO = chosenSusunISO;
+      doc.savedTimeStr = exactNowTimeStr;
+      doc.savedAt = `${chosenSusunISO} ${exactNowTimeStr}`;
+      doc.savedAtFormatted = DateTimeUtil.formatLockedTimestamp(chosenSusunISO, exactNowTimeStr);
+    } else {
+      doc.lastUpdatedAt = `${exactNowDateISO} ${exactNowTimeStr}`;
+      doc.savedAtFormatted = DateTimeUtil.formatLockedTimestamp(
+        doc.savedDateISO || chosenSusunISO,
+        doc.savedTimeStr || exactNowTimeStr
+      );
+    }
+
+    const archiveCopy = JSON.parse(JSON.stringify(doc));
+
+    const existingIdx = bucket.rpmModules.findIndex(item => String(item.id) === String(doc.id));
+    if (existingIdx !== -1) {
+      bucket.rpmModules[existingIdx] = archiveCopy;
+    } else {
+      bucket.rpmModules.unshift(archiveCopy);
+    }
+
+    DB.saveImmediate();
+
+    this.syncLockedDateOnRenderedDoc(doc);
+    if (typeof this.renderSavedArchiveTable === 'function') {
+      this.renderSavedArchiveTable();
+    }
+
+    UI.showNotif(
+      'Modul RPM Berhasil Disimpan',
+      `Modul berhasil dikunci pada tanggal penyimpanan: ${doc.savedAtFormatted}.`,
+      'success'
+    );
+  },
+
+  syncLockedDateOnRenderedDoc(doc) {
+    const info = this.getLockedDocDateInfo(doc);
+    const docContainer = document.getElementById('rpm-document-content');
+    if (!docContainer) return;
+
+    const dateSpans = docContainer.querySelectorAll('[data-rpm-locked-date]');
+    dateSpans.forEach(el => {
+      el.textContent = info.formattedDate;
+    });
+  }
+});
+
+    // ============================================================================
+// PATCH LENGKAP TAHAP 1 & TAHAP 2:
+// 1. PENGUNCIAN TANGGAL PENYUSUNAN & TANGGAL SIMPAN ASLI MODUL RPM
+// 2. FITUR HAPUS PERMANEN MODUL RPM (ANTI MUNCUL KEMBALI DARI CLOUD / LOKAL)
+// Letakkan tepat sebelum tag penutup </script> di bagian paling bawah index.html
+// ============================================================================
+
+// --- A. UPDATE OBJEK DB UNTUK MENGUNCI ID MODUL RPM YANG DIHAPUS PERMANEN ---
+Object.assign(DB, {
+  getLocalBlacklist() {
+    try {
+      const raw = localStorage.getItem(DELETED_BLACKLIST_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return {
+          accountIds: Array.isArray(parsed.accountIds) ? parsed.accountIds.map(String) : [],
+          pendingIds: Array.isArray(parsed.pendingIds) ? parsed.pendingIds.map(String) : [],
+          deletedAccountNips: Array.isArray(parsed.deletedAccountNips) ? parsed.deletedAccountNips.map(String) : [],
+          rpmIds: Array.isArray(parsed.rpmIds) ? parsed.rpmIds.map(String) : []
+        };
+      }
+    } catch (e) {
+      console.warn('Gagal membaca blacklist lokal:', e);
+    }
+    return { accountIds: [], pendingIds: [], deletedAccountNips: [], rpmIds: [] };
+  },
+
+  saveLocalBlacklist(bl) {
+    try {
+      localStorage.setItem(DELETED_BLACKLIST_STORAGE_KEY, JSON.stringify({
+        accountIds: Array.from(new Set((bl.accountIds || []).map(String))),
+        pendingIds: Array.from(new Set((bl.pendingIds || []).map(String))),
+        deletedAccountNips: Array.from(new Set((bl.deletedAccountNips || []).map(String))),
+        rpmIds: Array.from(new Set((bl.rpmIds || []).map(String)))
+      }));
+    } catch (e) {
+      console.warn('Gagal menyimpan blacklist lokal:', e);
+    }
+  },
+
+  // Fungsi khusus untuk mengunci ID Modul RPM yang dihapus secara permanen
+  lockPermanentRpmDeletion(rpmId) {
+    if (!rpmId) return;
+    const idStr = String(rpmId).trim();
+    if (!idStr) return;
+
+    this.lastLocalDeleteTimestamp = Date.now();
+
+    const bl = this.getLocalBlacklist();
+    if (!bl.rpmIds.includes(idStr)) {
+      bl.rpmIds.push(idStr);
+    }
+    this.saveLocalBlacklist(bl);
+
+    if (this.data) {
+      if (!Array.isArray(this.data.deletedRpmIds)) {
+        this.data.deletedRpmIds = [];
+      }
+      if (!this.data.deletedRpmIds.includes(idStr)) {
+        this.data.deletedRpmIds.push(idStr);
+      }
+    }
+  }
+});
+
+// Simpan referensi ensureIntegrity asli lalu tambahkan pembersihan otomatis rpmModules
+const _originalEnsureIntegrity = DB.ensureIntegrity.bind(DB);
+DB.ensureIntegrity = function () {
+  _originalEnsureIntegrity();
+  if (!this.data) return;
+
+  if (!Array.isArray(this.data.deletedRpmIds)) {
+    this.data.deletedRpmIds = [];
+  }
+
+  // Gabungkan daftar hitam RPM lokal dengan data Cloud
+  const localBl = this.getLocalBlacklist();
+  (localBl.rpmIds || []).forEach(id => {
+    const idStr = String(id);
+    if (!this.data.deletedRpmIds.includes(idStr)) {
+      this.data.deletedRpmIds.push(idStr);
+    }
+  });
+
+  this.saveLocalBlacklist({
+    accountIds: this.data.deletedAccountIds || [],
+    pendingIds: this.data.deletedPendingIds || [],
+    deletedAccountNips: this.data.deletedAccountNips || [],
+    rpmIds: this.data.deletedRpmIds || []
+  });
+
+  const deletedRpmSet = new Set(this.data.deletedRpmIds.map(String));
+
+  // Bersihkan seluruh modul RPM yang sudah masuk daftar hapus permanen di semua kelas
+  if (this.data.classData && typeof this.data.classData === 'object') {
+    Object.values(this.data.classData).forEach(bucket => {
+      if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+      bucket.rpmModules = bucket.rpmModules.filter((mod, idx) => {
+        if (!mod) return false;
+        // Berikan ID deterministik jika ada modul lama yang belum memiliki ID
+        if (!mod.id) {
+          const safeMapel = String(mod.mapel || 'MAPEL').replace(/\W+/g, '_');
+          const safeMateri = String(mod.materi || 'MATERI').replace(/\W+/g, '_').slice(0, 20);
+          mod.id = `RPM_LEGACY_${idx}_${safeMapel}_${safeMateri}`;
+        }
+        return !deletedRpmSet.has(String(mod.id));
+      });
+    });
+  }
+};
+
+// --- B. UPDATE OBJEK RpmApp UNTUK TANGGAL TERKUNCI & HAPUS PERMANEN ---
+if (typeof RpmApp !== 'undefined') {
+  Object.assign(RpmApp, {
+    // 1. Inisialisasi input tanggal penyusunan pada form
+    initTanggalPenyusunanInput(lockedIsoDate = null) {
+      const dateInput = document.getElementById('rpm-input-tanggal-susun');
+      if (!dateInput) return;
+      if (lockedIsoDate) {
+        dateInput.value = String(lockedIsoDate).split(/[\sT]+/)[0];
+      } else if (!dateInput.value) {
+        dateInput.value = DateTimeUtil.getTodayISO();
+      }
+    },
+
+    // 2. Membaca tanggal asli penyusunan/penyimpanan modul (bukan tanggal hari ini)
+    getLockedDocDateInfo(doc) {
+      const targetDoc = doc || AppState.rpmCurrentDoc || {};
+      const dateInputEl = document.getElementById('rpm-input-tanggal-susun');
+
+      const lockedDateISO =
+        targetDoc.tanggalSusunISO ||
+        targetDoc.savedDateISO ||
+        (targetDoc.savedAt ? String(targetDoc.savedAt).split(/[\sT]+/)[0] : '') ||
+        (targetDoc.createdAt ? String(targetDoc.createdAt).split(/[\sT]+/)[0] : '') ||
+        (dateInputEl && dateInputEl.value ? dateInputEl.value : DateTimeUtil.getTodayISO());
+
+      const lockedTimeStr =
+        targetDoc.savedTimeStr ||
+        (targetDoc.savedAt && String(targetDoc.savedAt).includes(' ')
+          ? String(targetDoc.savedAt).split(' ')[1]
+          : '') ||
+        targetDoc.createdTimeStr ||
+        '';
+
+      const formattedDate = DateTimeUtil.formatIndonesianDate(lockedDateISO, false);
+      const formattedDateTime = lockedTimeStr
+        ? `${formattedDate} • Pukul ${lockedTimeStr}`
+        : formattedDate;
+
+      return {
+        lockedDateISO,
+        lockedTimeStr,
+        formattedDate,
+        formattedDateTime
+      };
+    },
+
+    // 3. Mengganti teks tanggal hari ini pada lembar cetak modul dengan tanggal penyusunan asli
+    syncLockedDateOnRenderedDoc(doc) {
+      const targetDoc = doc || AppState.rpmCurrentDoc;
+      if (!targetDoc) return;
+
+      const info = this.getLockedDocDateInfo(targetDoc);
+      const todayFormatted = DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO(), true);
+      const docContainer = document.getElementById('rpm-document-content');
+
+      if (!docContainer) return;
+
+      // Update atribut khusus jika ada
+      const dateSpans = docContainer.querySelectorAll('[data-rpm-locked-date]');
+      dateSpans.forEach(el => {
+        el.textContent = info.formattedDate;
+      });
+
+      // Jika render bawaan mencetak tanggal hari ini di bagian tanda tangan/identitas, ganti ke tanggal asli saat disusun
+      if (info.formattedDate && info.formattedDate !== '-' && info.formattedDate !== todayFormatted) {
+        docContainer.innerHTML = docContainer.innerHTML.split(todayFormatted).join(info.formattedDate);
+      }
+    },
+
+    // 4. Menyimpan Modul RPM ke Arsip dengan Tanggal Penyusunan & Penyimpanan yang Terkunci
+    saveCurrentRpmToArchive() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) {
+        UI.showNotif('Kelas Tidak Ditemukan', 'Pastikan kelas aktif telah dipilih.', 'danger');
+        return;
+      }
+
+      if (!AppState.rpmCurrentDoc) {
+        UI.showNotif('Belum Ada Modul RPM', 'Silakan susun Modul RPM terlebih dahulu sebelum menyimpan.', 'warning');
+        return;
+      }
+
+      if (!Array.isArray(bucket.rpmModules)) {
+        bucket.rpmModules = [];
+      }
+
+      const doc = AppState.rpmCurrentDoc;
+      const dateInputEl = document.getElementById('rpm-input-tanggal-susun');
+
+      if (!doc.id) {
+        doc.id = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      }
+
+      const exactNowDateISO = DateTimeUtil.getTodayISO();
+      const exactNowTimeStr = DateTimeUtil.getCurrentTimeStr();
+
+      // Prioritaskan tanggal penyusunan yang dipilih pada form atau yang sudah terkunci di objek
+      const chosenSusunISO = (dateInputEl && dateInputEl.value)
+        ? dateInputEl.value
+        : (doc.tanggalSusunISO || doc.savedDateISO || exactNowDateISO);
+
+      doc.tanggalSusunISO = chosenSusunISO;
+      doc.tanggalSusunFormatted = DateTimeUtil.formatIndonesianDate(chosenSusunISO, false);
+
+      // Kunci waktu penyimpanan asli saat pertama kali disimpan (jangan ditimpa hari ini saat dibuka ulang)
+      if (!doc.savedDateISO || !doc.savedAt) {
+        doc.savedDateISO = chosenSusunISO;
+        doc.savedTimeStr = exactNowTimeStr;
+        doc.savedAt = `${chosenSusunISO} ${exactNowTimeStr}`;
+        doc.savedAtFormatted = DateTimeUtil.formatLockedTimestamp(chosenSusunISO, exactNowTimeStr);
+      } else {
+        doc.lastUpdatedAt = `${exactNowDateISO} ${exactNowTimeStr}`;
+        doc.savedAtFormatted = DateTimeUtil.formatLockedTimestamp(
+          doc.savedDateISO || chosenSusunISO,
+          doc.savedTimeStr || exactNowTimeStr
+        );
+      }
+
+      const archiveCopy = JSON.parse(JSON.stringify(doc));
+      const existingIdx = bucket.rpmModules.findIndex(item => String(item.id) === String(doc.id));
+
+      if (existingIdx !== -1) {
+        bucket.rpmModules[existingIdx] = archiveCopy;
+      } else {
+        bucket.rpmModules.unshift(archiveCopy);
+      }
+
+      DB.saveImmediate();
+      this.syncLockedDateOnRenderedDoc(doc);
+      this.renderSavedArchiveTable();
+
+      UI.showNotif(
+        'Modul RPM Berhasil Disimpan',
+        `Modul "${doc.mapel || ''} - ${doc.materi || ''}" berhasil disimpan dengan tanggal penyusunan: ${doc.savedAtFormatted}.`,
+        'success'
+      );
+    },
+
+    // 5. Menampilkan Tabel Arsip Modul RPM (dengan Tanggal Asli & Tombol Hapus Permanen)
+    renderSavedArchiveTable() {
+      const tbody = document.getElementById('tbody-rpm-saved-archive');
+      const badgeCount = document.getElementById('rpm-saved-archive-badge');
+      const topCount = document.getElementById('rpm-saved-count-top');
+
+      if (!tbody) return;
+
+      const bucket = DB.getActiveClassBucket();
+      const deletedSet = new Set([
+        ...((DB.data && DB.data.deletedRpmIds) || []).map(String),
+        ...(DB.getLocalBlacklist().rpmIds || []).map(String)
+      ]);
+
+      let list = (bucket && Array.isArray(bucket.rpmModules)) ? bucket.rpmModules : [];
+
+      // Pastikan setiap item memiliki ID unik dan saring item yang sudah dihapus
+      list = list.filter((item, idx) => {
+        if (!item) return false;
+        if (!item.id) {
+          const safeMapel = String(item.mapel || 'MAPEL').replace(/\W+/g, '_');
+          item.id = `RPM_LEGACY_${idx}_${safeMapel}`;
+        }
+        return !deletedSet.has(String(item.id));
+      });
+
+      if (bucket) {
+        bucket.rpmModules = list;
+      }
+
+      if (badgeCount) badgeCount.textContent = `${list.length} Modul Tersimpan`;
+      if (topCount) topCount.textContent = String(list.length);
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+              Belum ada Modul RPM & Bank Soal yang disimpan pada kelas ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map((item, idx) => {
+        const safeId = UI.escapeHtml(String(item.id));
+        const dateInfo = this.getLockedDocDateInfo(item);
+
+        // Hitung rincian jumlah soal yang tersimpan di dalam modul
+        let totalQuestions = 0;
+        let qSummaryParts = [];
+        if (Array.isArray(item.questionGroups)) {
+          item.questionGroups.forEach(grp => {
+            const count = Array.isArray(grp.items) ? grp.items.length : (Number(grp.count) || 0);
+            totalQuestions += count;
+            if (count > 0) {
+              qSummaryParts.push(`${count} ${grp.label || grp.type || 'Soal'}`);
+            }
+          });
+        } else if (Array.isArray(item.questions)) {
+          totalQuestions = item.questions.length;
+        }
+
+        const qBadgeText = totalQuestions > 0
+          ? `${totalQuestions} Butir Soal`
+          : 'Modul Ajar RPM';
+
+        return `
+          <tr id="row-rpm-archive-${safeId}">
+            <td style="font-weight: 700;">${idx + 1}</td>
+            <td>
+              <div style="font-weight: 700; color: var(--dark); font-size: 0.84rem;">
+                ${UI.escapeHtml(dateInfo.formattedDate)}
+              </div>
+              ${dateInfo.lockedTimeStr ? `
+                <div style="font-size: 0.75rem; color: var(--primary-light); font-weight: 600;">
+                  Disimpan Pukul ${UI.escapeHtml(dateInfo.lockedTimeStr)}
+                </div>
+              ` : ''}
+            </td>
+            <td>
+              <span class="badge badge-primary">${UI.escapeHtml(item.mapel || '-')}</span>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">
+                ${UI.escapeHtml(item.solo || item.soloLevel || '')}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 700; color: var(--dark); margin-bottom: 0.2rem;">
+                ${UI.escapeHtml(item.materi || '-')}
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+                <strong>TP:</strong> ${UI.escapeHtml(item.tp || '-')}
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-info">${UI.escapeHtml(item.kelasFase || '-')}</span>
+            </td>
+            <td style="text-align: center;">
+              <span class="badge badge-success">${UI.escapeHtml(qBadgeText)}</span>
+              ${qSummaryParts.length > 0 ? `
+                <div style="font-size: 0.73rem; color: var(--text-muted); margin-top: 0.2rem;">
+                  ${UI.escapeHtml(qSummaryParts.join(', '))}
+                </div>
+              ` : ''}
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                <button
+                  type="button"
+                  class="btn btn-primary btn-sm"
+                  onclick="RpmApp.openSavedRpm('${safeId}')"
+                >
+                  📂 Buka & Gunakan
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm write-action-btn"
+                  onclick="RpmApp.deleteSavedRpm('${safeId}', ${idx})"
+                >
+                  🗑️ Hapus
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    // 6. Membuka Modul RPM dari Arsip Tanpa Mengubah Tanggal Asli ke Tanggal Hari Ini
+    openSavedRpm(rpmId) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+
+      const found = bucket.rpmModules.find(item => item && String(item.id) === String(rpmId));
+      if (!found) {
+        UI.showNotif('Data Tidak Ditemukan', 'Modul RPM yang dipilih tidak ditemukan atau telah dihapus.', 'warning');
+        this.renderSavedArchiveTable();
+        return;
+      }
+
+      // Salin ke state aktif tanpa menimpa properti tanggal penyimpanan aslinya
+      AppState.rpmCurrentDoc = JSON.parse(JSON.stringify(found));
+
+      const dateInfo = this.getLockedDocDateInfo(AppState.rpmCurrentDoc);
+      this.initTanggalPenyusunanInput(dateInfo.lockedDateISO);
+
+      // Render dokumen menggunakan fungsi render bawaan RpmApp jika tersedia
+      if (typeof this.renderFullRpmOutput === 'function') {
+        this.renderFullRpmOutput(AppState.rpmCurrentDoc);
+      } else if (typeof this.renderRpmDocument === 'function') {
+        this.renderRpmDocument(AppState.rpmCurrentDoc);
+      }
+
+      // Kunci kembali tampilan tanggal pada dokumen agar tidak berubah menjadi hari ini
+      this.syncLockedDateOnRenderedDoc(AppState.rpmCurrentDoc);
+
+      const resultWrapper = document.getElementById('rpm-result-wrapper');
+      const formCard = document.getElementById('rpm-builder-form-card');
+      if (resultWrapper) resultWrapper.classList.remove('hidden');
+      if (formCard) formCard.classList.add('hidden');
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+
+    // 7. Menghapus Modul RPM Secara Permanen dari Halaman, LocalStorage, dan Cloud Supabase
+    deleteSavedRpm(rpmId, fallbackIndex = -1) {
+      if (AppState.isReadOnlyInspection) return;
+
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !Array.isArray(bucket.rpmModules)) return;
+
+      const idStr = String(rpmId || '').trim();
+      let targetItem = bucket.rpmModules.find(item => item && String(item.id) === idStr);
+
+      if (!targetItem && fallbackIndex >= 0 && bucket.rpmModules[fallbackIndex]) {
+        targetItem = bucket.rpmModules[fallbackIndex];
+      }
+
+      if (!targetItem) {
+        this.renderSavedArchiveTable();
+        return;
+      }
+
+      const finalIdToLock = String(targetItem.id || idStr || `RPM_DEL_${Date.now()}`);
+      const labelModul = `${targetItem.mapel || 'Mata Pelajaran'} — ${targetItem.materi || 'Modul RPM'}`;
+
+      const isConfirmed = window.confirm(
+        `Apakah Anda yakin ingin menghapus permanen Modul RPM "${labelModul}"?\n\nData yang dihapus akan dikunci permanen dan tidak akan muncul kembali.`
+      );
+      if (!isConfirmed) return;
+
+      // 1. Kunci ID ke dalam Blacklist Permanen (LocalStorage & Payload Cloud)
+      DB.lockPermanentRpmDeletion(finalIdToLock);
+
+      // 2. Hapus dari bucket aktif dan seluruh bucket di classData jika ada duplikat ID
+      bucket.rpmModules = bucket.rpmModules.filter((item, idx) => {
+        if (!item) return false;
+        if (String(item.id) === finalIdToLock) return false;
+        if (fallbackIndex >= 0 && idx === fallbackIndex && !idStr) return false;
+        return true;
+      });
+
+      if (DB.data && DB.data.classData) {
+        Object.values(DB.data.classData).forEach(clsBucket => {
+          if (clsBucket && Array.isArray(clsBucket.rpmModules)) {
+            clsBucket.rpmModules = clsBucket.rpmModules.filter(
+              item => item && String(item.id) !== finalIdToLock
+            );
+          }
+        });
+      }
+
+      // 3. Jika modul yang dihapus sedang ditampilkan di layar atas (#rpm-result-wrapper), tutup otomatis!
+      if (AppState.rpmCurrentDoc && String(AppState.rpmCurrentDoc.id) === finalIdToLock) {
+        AppState.rpmCurrentDoc = null;
+        const resultWrapper = document.getElementById('rpm-result-wrapper');
+        const formCard = document.getElementById('rpm-builder-form-card');
+        const docContent = document.getElementById('rpm-document-content');
+        const dynPages = document.getElementById('rpm-dynamic-pages-container');
+
+        if (resultWrapper) resultWrapper.classList.add('hidden');
+        if (formCard) formCard.classList.remove('hidden');
+        if (docContent) docContent.innerHTML = '';
+        if (dynPages) dynPages.innerHTML = '';
+      }
+
+      // 4. Perbarui tabel arsip secara instan di DOM
+      this.renderSavedArchiveTable();
+
+      // 5. Simpan instan ke LocalStorage dan dorong langsung ke Cloud Supabase
+      DB.saveImmediate();
+
+      UI.showNotif(
+        'Modul RPM Dihapus Permanen',
+        `Modul "${labelModul}" telah dihapus secara permanen dari halaman dan server Cloud.`,
+        'success'
+      );
+    }
+  });
+
+  // Kaitkan penguncian tanggal otomatis setiap kali form generator RPM disubmit
+  const _origHandleGenerateRpm = RpmApp.handleGenerateRpm
+    ? RpmApp.handleGenerateRpm.bind(RpmApp)
+    : null;
+
+  if (_origHandleGenerateRpm) {
+    RpmApp.handleGenerateRpm = async function (event) {
+      RpmApp.initTanggalPenyusunanInput();
+      const dateInputEl = document.getElementById('rpm-input-tanggal-susun');
+      const chosenSusunISO = (dateInputEl && dateInputEl.value)
+        ? dateInputEl.value
+        : DateTimeUtil.getTodayISO();
+
+      const res = await _origHandleGenerateRpm(event);
+
+      if (AppState.rpmCurrentDoc) {
+        AppState.rpmCurrentDoc.tanggalSusunISO = chosenSusunISO;
+        AppState.rpmCurrentDoc.tanggalSusunFormatted = DateTimeUtil.formatIndonesianDate(chosenSusunISO, false);
+        RpmApp.syncLockedDateOnRenderedDoc(AppState.rpmCurrentDoc);
+      }
+      return res;
+    };
+  }
+}
+
+// Jalankan inisialisasi input tanggal & pembersihan integritas saat halaman siap
+window.addEventListener('DOMContentLoaded', () => {
+  if (typeof RpmApp !== 'undefined' && typeof RpmApp.initTanggalPenyusunanInput === 'function') {
+    RpmApp.initTanggalPenyusunanInput();
+  }
+  if (typeof DB !== 'undefined' && DB.data) {
+    DB.ensureIntegrity();
+  }
 });
 </script>
 </body>
