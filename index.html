@@ -23218,6 +23218,899 @@ window.addEventListener('DOMContentLoaded', async () => {
   LandingUI.toggleTeacherSubPanel('none');
   UI.switchView('view-landing');
 });
+
+    const AcademicPeriodApp = {
+  // Menyinkronkan tampilan Tahun Pelajaran & Semester ke seluruh halaman (Navbar, Admin, Guru, dan Form RPM)
+  syncAllPeriodUI() {
+    if (!DB.data) return;
+    const pInfo = DB.getActivePeriodInfo();
+
+    // 1. Update Lencana di Navbar Atas
+    const navBadge = document.getElementById('nav-academic-period-badge');
+    if (navBadge) {
+      navBadge.textContent = `📅 ${pInfo.fullLabel}`;
+    }
+
+    // 2. Update Panel Kendali di Dashboard Admin
+    const adminBadge = document.getElementById('admin-active-period-display');
+    if (adminBadge) {
+      adminBadge.textContent = `Aktif: ${pInfo.fullLabel}`;
+    }
+
+    const inpTahun = document.getElementById('admin-period-tahun');
+    const inpSem = document.getElementById('admin-period-semester');
+    const inpTglRapor = document.getElementById('admin-period-tanggal-rapor');
+    const inpLockPast = document.getElementById('admin-period-lock-past');
+
+    if (inpTahun && document.activeElement !== inpTahun) inpTahun.value = pInfo.tahunPelajaran;
+    if (inpSem && document.activeElement !== inpSem) inpSem.value = pInfo.semester;
+    if (inpTglRapor && document.activeElement !== inpTglRapor) inpTglRapor.value = pInfo.tanggalRapor || DateTimeUtil.getTodayISO();
+    if (inpLockPast && document.activeElement !== inpLockPast) inpLockPast.value = pInfo.lockPastPeriod || 'READONLY';
+
+    // Update pilihan sekolah untuk fitur Kenaikan Kelas Otomatis di Admin
+    const promoSchoolSelect = document.getElementById('admin-promo-school-select');
+    if (promoSchoolSelect) {
+      const currentVal = promoSchoolSelect.value || 'ALL';
+      const schoolMap = new Map();
+      (DB.data.accounts || []).forEach(acc => {
+        if (acc && acc.schoolKey && acc.schoolDisplay) {
+          schoolMap.set(acc.schoolKey, acc.schoolDisplay);
+        }
+      });
+      Object.values(DB.data.classData || {}).forEach(b => {
+        if (b && b.schoolKey && b.schoolDisplay) {
+          schoolMap.set(b.schoolKey, b.schoolDisplay);
+        }
+      });
+
+      let opts = '<option value="ALL">Seluruh Sekolah Terdaftar</option>';
+      Array.from(schoolMap.entries())
+        .sort((a, b) => String(a[1]).localeCompare(String(b[1]), 'id'))
+        .forEach(([sKey, sDisp]) => {
+          opts += `<option value="${UI.escapeHtml(sKey)}">${UI.escapeHtml(sDisp)}</option>`;
+        });
+      promoSchoolSelect.innerHTML = opts;
+      if ([...schoolMap.keys(), 'ALL'].includes(currentVal)) {
+        promoSchoolSelect.value = currentVal;
+      }
+    }
+
+    // 3. Otomatisasi Pilihan Semester pada Generator Modul RPM 8-3-3-4
+    const rpmSemSelect = document.getElementById('rpm-input-semester');
+    if (rpmSemSelect) {
+      const targetPrefix = pInfo.semester === '2' ? 'Semester 2 (Genap)' : 'Semester 1 (Ganjil)';
+      const matchingOption = Array.from(rpmSemSelect.options).find(opt => opt.value.startsWith(targetPrefix));
+      if (matchingOption) {
+        rpmSemSelect.value = matchingOption.value;
+      }
+    }
+
+    // 4. Update Panel Brankas Arsip & Time-Machine di Dashboard Guru
+    const teacherActiveBadge = document.getElementById('teacher-active-period-badge');
+    const teacherViewingBadge = document.getElementById('teacher-viewing-period-badge');
+
+    if (teacherActiveBadge) {
+      teacherActiveBadge.textContent = `Periode Aktif: ${pInfo.fullLabel}`;
+    }
+
+    if (teacherViewingBadge) {
+      if (AppState.viewingPeriodKey && AppState.viewingPeriodKey !== 'ACTIVE') {
+        teacherViewingBadge.classList.remove('hidden');
+        teacherViewingBadge.textContent = `🗂️ Mode Arsip: ${AppState.viewingPeriodLabel || 'Semester Lampau'}`;
+      } else {
+        teacherViewingBadge.classList.add('hidden');
+      }
+    }
+
+    this.populateTeacherPeriodSwitcher();
+    this.renderTeacherArchiveVaultTable();
+    UI.applyReadOnlyModeState();
+  },
+
+  // Mengisi dropdown Penjelajah Periode (Time-Machine) khusus kelas guru yang sedang aktif
+  populateTeacherPeriodSwitcher() {
+    const selectEl = document.getElementById('teacher-period-switcher-select');
+    if (!selectEl || !DB.data) return;
+
+    const teacher = DB.getActiveTeacherAccount();
+    if (!teacher) return;
+
+    const pInfo = DB.getActivePeriodInfo();
+    const schoolKey = teacher.schoolKey || 'SCH_DEFAULT';
+    let targetClassKey = teacher.classKey || DB.extractClassKey(teacher.kelasFase);
+
+    if (teacher.role === 'GURU_MAPEL') {
+      const detectedDay = AppState.mapelOverrideDay === 'AUTO'
+        ? DateTimeUtil.getCurrentDayName()
+        : AppState.mapelOverrideDay;
+      const sched = teacher.mapelSchedule || {};
+      const scheduledClassRaw = sched[detectedDay] || Object.values(sched).find(v => v && v.trim() !== '') || teacher.kelasFase || 'Kelas 4';
+      targetClassKey = DB.extractClassKey(scheduledClassRaw);
+    }
+
+    const bucketId = `${schoolKey}__${targetClassKey}`;
+    const rawBucket = DB.data.classData ? DB.data.classData[bucketId] : null;
+
+    let optionsHtml = `<option value="ACTIVE">🟢 Periode Aktif: ${UI.escapeHtml(pInfo.fullLabel)}</option>`;
+
+    // Ambil daftar riwayat periode otomatis dari periodHistory kelas ini
+    if (rawBucket && rawBucket.periodHistory && typeof rawBucket.periodHistory === 'object') {
+      const histList = Object.values(rawBucket.periodHistory).filter(
+        h => h && h.periodKey && h.periodKey !== pInfo.periodKey
+      );
+      histList.sort((a, b) => String(b.periodKey).localeCompare(String(a.periodKey)));
+
+      if (histList.length > 0) {
+        optionsHtml += `<optgroup label="Riwayat Semester Otomatis (${UI.escapeHtml(targetClassKey)})">`;
+        histList.forEach(h => {
+          const label = h.fullLabel || `${h.tahunPelajaran || ''} • Semester ${h.semester || ''}`;
+          optionsHtml += `<option value="HIST_${UI.escapeHtml(h.periodKey)}">🕒 Riwayat: ${UI.escapeHtml(label)}</option>`;
+        });
+        optionsHtml += `</optgroup>`;
+      }
+    }
+
+    // Ambil daftar Snapshot Brankas Arsip yang disimpan di sekolah ini
+    const mySnapshots = (DB.data.semesterArchives || []).filter(snap => {
+      if (!snap) return false;
+      if (snap.schoolKey !== schoolKey) return false;
+      if (teacher.role === 'GURU_KELAS' && snap.classKey !== targetClassKey) return false;
+      return true;
+    });
+
+    if (mySnapshots.length > 0) {
+      optionsHtml += `<optgroup label="Brankas Snapshot Arsip Tersimpan">`;
+      mySnapshots.forEach(snap => {
+        const noteText = snap.note ? ` (${snap.note})` : '';
+        optionsHtml += `<option value="SNAP_${UI.escapeHtml(snap.id)}">📦 Arsip: ${UI.escapeHtml(snap.fullLabel)} — ${UI.escapeHtml(snap.classKey)}${UI.escapeHtml(noteText)}</option>`;
+      });
+      optionsHtml += `</optgroup>`;
+    }
+
+    selectEl.innerHTML = optionsHtml;
+    const validValues = Array.from(selectEl.options).map(o => o.value);
+    if (validValues.includes(AppState.viewingPeriodKey)) {
+      selectEl.value = AppState.viewingPeriodKey;
+    } else {
+      AppState.viewingPeriodKey = 'ACTIVE';
+      selectEl.value = 'ACTIVE';
+    }
+  },
+
+  // Aksi Admin: Menyimpan perubahan Tahun Pelajaran & Semester Aktif serta mempartisi data semua kelas
+  saveGlobalAcademicPeriod(event) {
+    if (event) event.preventDefault();
+    if (!AppState.currentUser || !AppState.currentUser.isMasterAdmin) {
+      UI.showNotif('Akses Ditolak', 'Hanya Administrator Utama yang dapat mengubah periode akademik global.', 'danger');
+      return;
+    }
+
+    const oldInfo = DB.getActivePeriodInfo();
+    const newTahun = (document.getElementById('admin-period-tahun').value || '2026/2027').trim();
+    const newSem = document.getElementById('admin-period-semester').value === '2' ? '2' : '1';
+    const newTglRapor = document.getElementById('admin-period-tanggal-rapor').value || '';
+    const newLockPast = document.getElementById('admin-period-lock-past').value || 'READONLY';
+
+    const newPeriodKey = DB.buildPeriodKey(newTahun, newSem);
+    const newSemLabel = newSem === '2' ? 'Semester 2 (Genap)' : 'Semester 1 (Ganjil)';
+    const newFullLabel = `TP ${newTahun} • ${newSemLabel}`;
+
+    // 1. Kunci terlebih dahulu seluruh data semester yang sedang berjalan ke dalam periodHistory masing-masing kelas
+    DB.syncCurrentBucketsToPeriodHistory();
+
+    // 2. Jika periode berubah (misalnya dari Semester 1 ke Semester 2), buat snapshot otomatis & siapkan lembar kerja periode tujuan
+    if (oldInfo.periodKey !== newPeriodKey) {
+      this.createAutomaticSnapshotsForAllClasses(`Arsip Otomatis Sebelum Pindah ke ${newFullLabel}`);
+
+      Object.values(DB.data.classData || {}).forEach(bucket => {
+        if (!bucket) return;
+        if (!bucket.periodHistory) bucket.periodHistory = {};
+
+        const existingTargetHistory = bucket.periodHistory[newPeriodKey];
+        if (existingTargetHistory) {
+          // Jika periode tujuan sudah pernah diisi sebelumnya, muat kembali seluruh datanya secara utuh
+          bucket.presensiRecords = JSON.parse(JSON.stringify(existingTargetHistory.presensiRecords || {}));
+          bucket.academicAssessments = JSON.parse(JSON.stringify(existingTargetHistory.academicAssessments || []));
+          bucket.dplAssessments = JSON.parse(JSON.stringify(existingTargetHistory.dplAssessments || []));
+          if (existingTargetHistory.kokurikuler) {
+            bucket.kokurikuler = JSON.parse(JSON.stringify(existingTargetHistory.kokurikuler));
+          }
+          bucket.ekskulAssessments = JSON.parse(JSON.stringify(existingTargetHistory.ekskulAssessments || []));
+          if (existingTargetHistory.studentsSnapshot && existingTargetHistory.studentsSnapshot.length > 0) {
+            bucket.students = JSON.parse(JSON.stringify(existingTargetHistory.studentsSnapshot));
+          }
+        } else {
+          // Jika periode tujuan adalah semester baru:
+          // PERTAHANKAN: students (beserta username/password), schedule, dplMaster, ekskulMaster, rpmModules, groups kokurikuler
+          // BERSIHKAN: presensi harian, penilaian akademik, penilaian DPL, logbook & nilai kokurikuler, serta nilai ekskul
+          bucket.presensiRecords = {};
+          bucket.academicAssessments = [];
+          bucket.dplAssessments = [];
+          bucket.ekskulAssessments = [];
+          if (bucket.kokurikuler) {
+            bucket.kokurikuler.logbooks = [];
+            bucket.kokurikuler.characterAssessments = {};
+            if (bucket.kokurikuler.projectInfo) {
+              bucket.kokurikuler.projectInfo.tahapAktif = 'PENGENALAN';
+            }
+          }
+        }
+
+        bucket.activePeriodKey = newPeriodKey;
+      });
+    }
+
+    // 3. Simpan konfigurasi baru ke DB.data.academicConfig
+    DB.data.academicConfig = {
+      tahunPelajaran: newTahun,
+      semester: newSem,
+      tanggalRapor: newTglRapor,
+      lockPastPeriod: newLockPast
+    };
+
+    // Kembalikan mode tampilan ke ACTIVE
+    AppState.viewingPeriodKey = 'ACTIVE';
+    AppState.viewingPeriodLabel = '';
+    AppState.isTimeMachineReadOnly = false;
+    DB._tempArchiveViewKey = null;
+    DB._tempArchiveViewBucket = null;
+
+    DB.saveImmediate();
+    this.syncAllPeriodUI();
+
+    UI.showNotif(
+      'Periode Akademik Berhasil Diterapkan',
+      oldInfo.periodKey !== newPeriodKey
+        ? `Sistem telah beralih dari "${oldInfo.fullLabel}" ke "${newFullLabel}". Seluruh data semester sebelumnya telah diamankan ke dalam Brankas Arsip, sedangkan Daftar Siswa, Jadwal, Master DPL, dan Ekskul tetap dipertahankan untuk semester baru.`
+        : `Pengaturan periode "${newFullLabel}" berhasil diperbarui dan disinkronkan ke seluruh pengguna.`,
+      'success'
+    );
+  },
+
+  // Membuat rekaman snapshot arsip otomatis untuk semua kelas tanpa duplikasi
+  createAutomaticSnapshotsForAllClasses(defaultNote = 'Arsip Otomatis Pergantian Periode') {
+    const pInfo = DB.getActivePeriodInfo();
+    if (!Array.isArray(DB.data.semesterArchives)) DB.data.semesterArchives = [];
+
+    let archivedCount = 0;
+    Object.entries(DB.data.classData || {}).forEach(([bucketKey, bucket]) => {
+      if (!bucket) return;
+
+      const hasStudents = Array.isArray(bucket.students) && bucket.students.length > 0;
+      const hasPresensi = bucket.presensiRecords && Object.keys(bucket.presensiRecords).length > 0;
+      const hasNilai = Array.isArray(bucket.academicAssessments) && bucket.academicAssessments.length > 0;
+      if (!hasStudents && !hasPresensi && !hasNilai) return;
+
+      // Periksa apakah sudah ada snapshot otomatis untuk kelas & periode yang sama
+      const existingIdx = DB.data.semesterArchives.findIndex(
+        s => s && s.bucketKey === bucketKey && s.periodKey === pInfo.periodKey && s.isAutoArchive === true
+      );
+
+      const snapshotPayload = {
+        id: existingIdx >= 0 ? DB.data.semesterArchives[existingIdx].id : ('ARC_' + Date.now() + '_' + Math.floor(Math.random() * 10000)),
+        bucketKey: bucketKey,
+        schoolKey: bucket.schoolKey || 'SCH_DEFAULT',
+        schoolDisplay: bucket.schoolDisplay || 'SEKOLAH TERPADU',
+        classKey: bucket.classKey || 'KELAS',
+        kelasFaseLabel: bucket.kelasFaseLabel || bucket.classKey || 'Kelas',
+        teacherId: bucket.homeroomTeacherId || '',
+        teacherName: bucket.homeroomTeacherName || 'Pendidik',
+        periodKey: pInfo.periodKey,
+        tahunPelajaran: pInfo.tahunPelajaran,
+        semester: pInfo.semester,
+        fullLabel: pInfo.fullLabel,
+        note: defaultNote,
+        isAutoArchive: true,
+        createdAt: DateTimeUtil.getCurrentDateTimeStr(),
+        stats: {
+          studentsCount: (bucket.students || []).length,
+          presensiDays: Object.keys(bucket.presensiRecords || {}).length,
+          assessmentsCount: (bucket.academicAssessments || []).length,
+          dplCount: (bucket.dplAssessments || []).length,
+          ekskulCount: (bucket.ekskulAssessments || []).length
+        },
+        bucketSnapshot: JSON.parse(JSON.stringify(bucket))
+      };
+
+      if (existingIdx >= 0) {
+        DB.data.semesterArchives[existingIdx] = snapshotPayload;
+      } else {
+        DB.data.semesterArchives.unshift(snapshotPayload);
+      }
+      archivedCount++;
+    });
+
+    return archivedCount;
+  },
+
+  // Tombol Admin: Arsipkan serentak seluruh kelas pada semester berjalan
+  adminArchiveAllClassesCurrentSemester() {
+    if (!AppState.currentUser || !AppState.currentUser.isMasterAdmin) return;
+    DB.syncCurrentBucketsToPeriodHistory();
+    const pInfo = DB.getActivePeriodInfo();
+    const count = this.createAutomaticSnapshotsForAllClasses(`Arsip Serentak Admin (${pInfo.fullLabel})`);
+    DB.saveImmediate();
+    this.syncAllPeriodUI();
+
+    UI.showNotif(
+      'Arsip Serentak Seluruh Kelas Berhasil',
+      `Sebanyak ${count} ruang kelas aktif pada periode ${pInfo.fullLabel} telah dibungkus dan diamankan ke dalam Brankas Arsip.`,
+      'success'
+    );
+  },
+
+  // Fitur Kenaikan Kelas Otomatis (Smart Class Promotion: Kelas 1 -> 2 ... Kelas 5 -> 6, Kelas 6 -> Alumni)
+  executeSmartClassPromotion() {
+    if (!AppState.currentUser || !AppState.currentUser.isMasterAdmin) {
+      UI.showNotif('Akses Ditolak', 'Fitur Kenaikan Kelas Otomatis hanya dapat dijalankan oleh Admin.', 'danger');
+      return;
+    }
+
+    const schoolSelect = document.getElementById('admin-promo-school-select');
+    const targetTahunInput = document.getElementById('admin-promo-target-tahun');
+
+    const selectedSchoolKey = schoolSelect ? schoolSelect.value : 'ALL';
+    const targetTahun = (targetTahunInput && targetTahunInput.value.trim()) ? targetTahunInput.value.trim() : '2027/2028';
+    const oldInfo = DB.getActivePeriodInfo();
+
+    // 1. Kunci & arsipkan seluruh data semester berjalan sebelum menaikkan kelas siswa
+    DB.syncCurrentBucketsToPeriodHistory();
+    this.createAutomaticSnapshotsForAllClasses(`Arsip Akhir Tahun Sebelum Kenaikan Kelas ke TP ${targetTahun}`);
+
+    // 2. Kumpulkan seluruh sekolah yang akan diproses
+    const allBuckets = DB.data.classData || {};
+    const targetSchools = new Set();
+
+    Object.values(allBuckets).forEach(b => {
+      if (!b || !b.schoolKey) return;
+      if (selectedSchoolKey === 'ALL' || b.schoolKey === selectedSchoolKey) {
+        targetSchools.add(b.schoolKey);
+      }
+    });
+
+    if (targetSchools.size === 0) {
+      UI.showNotif('Belum Ada Data Kelas', 'Tidak ditemukan data kelas untuk diproses kenaikan kelasnya.', 'warning');
+      return;
+    }
+
+    const phaseMap = {
+      1: 'Kelas 1 / Fase A',
+      2: 'Kelas 2 / Fase A',
+      3: 'Kelas 3 / Fase B',
+      4: 'Kelas 4 / Fase B',
+      5: 'Kelas 5 / Fase C',
+      6: 'Kelas 6 / Fase C'
+    };
+
+    let promotedStudentsCount = 0;
+    let graduatedAlumniCount = 0;
+
+    // 3. Proses kenaikan dari tingkat tertinggi (Kelas 6 turun ke Kelas 1) agar tidak saling menimpa
+    targetSchools.forEach(sKey => {
+      const sampleBucket = Object.values(allBuckets).find(b => b && b.schoolKey === sKey);
+      const sDisplay = sampleBucket ? sampleBucket.schoolDisplay : sKey;
+
+      for (let grade = 6; grade >= 1; grade--) {
+        const currentClassKey = `KELAS ${grade}`;
+        const currentBucketId = `${sKey}__${currentClassKey}`;
+        const currentBucket = allBuckets[currentBucketId];
+
+        if (!currentBucket || !Array.isArray(currentBucket.students) || currentBucket.students.length === 0) {
+          continue;
+        }
+
+        const studentsToMove = JSON.parse(JSON.stringify(currentBucket.students));
+
+        if (grade === 6) {
+          // Siswa Kelas 6 lulus dan masuk ke Arsip Alumni Sekolah
+          if (!Array.isArray(DB.data.alumniArchives)) DB.data.alumniArchives = [];
+          DB.data.alumniArchives.unshift({
+            id: 'ALUMNI_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+            schoolKey: sKey,
+            schoolDisplay: sDisplay,
+            graduationPeriod: oldInfo.fullLabel,
+            graduatedAt: DateTimeUtil.getCurrentDateTimeStr(),
+            students: studentsToMove
+          });
+          graduatedAlumniCount += studentsToMove.length;
+          currentBucket.students = [];
+        } else {
+          // Siswa Kelas 1..5 naik ke Kelas (grade + 1)
+          const nextGrade = grade + 1;
+          const nextClassKey = `KELAS ${nextGrade}`;
+          const nextBucketId = `${sKey}__${nextClassKey}`;
+          const nextFaseLabel = phaseMap[nextGrade] || `Kelas ${nextGrade}`;
+
+          // Cari apakah sudah ada Guru Kelas yang mengampu kelas tujuan di sekolah tersebut
+          const nextHomeroomTeacher = (DB.data.accounts || []).find(
+            a => a && a.schoolKey === sKey && a.role === 'GURU_KELAS' && a.classKey === nextClassKey
+          );
+
+          if (!allBuckets[nextBucketId]) {
+            allBuckets[nextBucketId] = {
+              schoolKey: sKey,
+              schoolDisplay: sDisplay,
+              classKey: nextClassKey,
+              kelasFaseLabel: nextFaseLabel,
+              homeroomTeacherId: nextHomeroomTeacher ? nextHomeroomTeacher.id : '',
+              homeroomTeacherName: nextHomeroomTeacher ? nextHomeroomTeacher.nama : `Guru ${nextClassKey}`,
+              activePeriodKey: DB.buildPeriodKey(targetTahun, '1'),
+              periodHistory: {},
+              students: [],
+              schedule: JSON.parse(JSON.stringify(currentBucket.schedule || {})),
+              dplMaster: JSON.parse(JSON.stringify(currentBucket.dplMaster || [])),
+              ekskulMaster: JSON.parse(JSON.stringify(currentBucket.ekskulMaster || [])),
+              presensiRecords: {},
+              academicAssessments: [],
+              dplAssessments: [],
+              rpmModules: [],
+              kokurikuler: {
+                projectInfo: {
+                  tema: 'Gaya Hidup Berkelanjutan',
+                  judul: 'Projek Kolaborasi Peduli Lingkungan Sekolah',
+                  alokasi: '36 JP',
+                  tahapAktif: 'PENGENALAN',
+                  targetMingguan: 'Memahami isu lingkungan sekitar dan menyusun rencana aksi kelompok',
+                  fokusHarian: 'Diskusi kelompok dan pencatatan progres kegiatan.',
+                  persiapan: 'Alat tulis dan buku catatan projek.'
+                },
+                groups: [
+                  { id: 'GRP_1', nama: 'Kelompok 1' },
+                  { id: 'GRP_2', nama: 'Kelompok 2' }
+                ],
+                logbooks: [],
+                characterAssessments: {}
+              },
+              ekskulAssessments: []
+            };
+          }
+
+          // Perbarui label kelas pada masing-masing siswa tanpa mengubah Username & Password login siswa
+          const promotedList = studentsToMove.map(std => ({
+            ...std,
+            kelas: nextFaseLabel
+          }));
+
+          allBuckets[nextBucketId].students = promotedList;
+          promotedStudentsCount += promotedList.length;
+
+          // Kosongkan daftar siswa di kelas asal (siap menerima siswa dari tingkat di bawahnya atau siswa baru Kelas 1)
+          currentBucket.students = [];
+        }
+      }
+
+      // Bersihkan lembar transaksional seluruh kelas di sekolah tersebut untuk memulai Semester 1 Tahun Pelajaran Baru
+      Object.values(allBuckets).forEach(b => {
+        if (!b || b.schoolKey !== sKey) return;
+        b.presensiRecords = {};
+        b.academicAssessments = [];
+        b.dplAssessments = [];
+        b.ekskulAssessments = [];
+        if (b.kokurikuler) {
+          b.kokurikuler.logbooks = [];
+          b.kokurikuler.characterAssessments = {};
+        }
+        b.activePeriodKey = DB.buildPeriodKey(targetTahun, '1');
+      });
+    });
+
+    // 4. Perbarui Tahun Pelajaran Global ke Tahun Pelajaran Baru (Semester 1)
+    DB.data.academicConfig.tahunPelajaran = targetTahun;
+    DB.data.academicConfig.semester = '1';
+
+    const inpTahun = document.getElementById('admin-period-tahun');
+    const inpSem = document.getElementById('admin-period-semester');
+    if (inpTahun) inpTahun.value = targetTahun;
+    if (inpSem) inpSem.value = '1';
+
+    AppState.viewingPeriodKey = 'ACTIVE';
+    AppState.viewingPeriodLabel = '';
+    AppState.isTimeMachineReadOnly = false;
+    DB._tempArchiveViewKey = null;
+    DB._tempArchiveViewBucket = null;
+
+    DB.saveImmediate();
+    this.syncAllPeriodUI();
+
+    UI.showNotif(
+      'Kenaikan Kelas & Tahun Pelajaran Baru Berhasil',
+      `Tahun Pelajaran aktif kini: TP ${targetTahun} • Semester 1 (Ganjil). Sebanyak ${promotedStudentsCount} siswa berhasil dinaikkan ke tingkat kelas berikutnya dan ${graduatedAlumniCount} siswa Kelas 6 telah dipindahkan ke Arsip Alumni. Seluruh data tahun sebelumnya tersimpan aman di Brankas Arsip.`,
+      'success'
+    );
+  },
+
+  // =========================================================================
+  // FITUR BRANKAS ARSIP SEMESTER & TIME-MACHINE SWITCHER PADA HALAMAN GURU
+  // =========================================================================
+  toggleTeacherArchiveDrawer() {
+    const drawer = document.getElementById('teacher-archive-vault-drawer');
+    if (!drawer) return;
+    drawer.classList.toggle('hidden');
+    if (!drawer.classList.contains('hidden')) {
+      this.renderTeacherArchiveVaultTable();
+    }
+  },
+
+  // Guru menekan tombol "Simpan Hasil Semester Ini ke Arsip"
+  createTeacherSemesterSnapshot() {
+    const teacher = DB.getActiveTeacherAccount();
+    if (!teacher) return;
+
+    // Pastikan mengambil bucket asli yang sedang aktif
+    const prevViewing = AppState.viewingPeriodKey;
+    AppState.viewingPeriodKey = 'ACTIVE';
+    const liveBucket = DB.getActiveClassBucket();
+    AppState.viewingPeriodKey = prevViewing;
+
+    if (!liveBucket) return;
+
+    DB.syncCurrentBucketsToPeriodHistory();
+    const pInfo = DB.getActivePeriodInfo();
+    const noteInp = document.getElementById('teacher-archive-note-input');
+    const customNote = (noteInp && noteInp.value.trim())
+      ? noteInp.value.trim()
+      : `Arsip Mandiri Guru (${DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO())})`;
+
+    if (!Array.isArray(DB.data.semesterArchives)) DB.data.semesterArchives = [];
+
+    const bucketKey = `${liveBucket.schoolKey}__${liveBucket.classKey}`;
+    const newSnapshot = {
+      id: 'ARC_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      bucketKey: bucketKey,
+      schoolKey: liveBucket.schoolKey || teacher.schoolKey,
+      schoolDisplay: liveBucket.schoolDisplay || teacher.schoolDisplay,
+      classKey: liveBucket.classKey,
+      kelasFaseLabel: liveBucket.kelasFaseLabel || liveBucket.classKey,
+      teacherId: teacher.id,
+      teacherName: teacher.nama,
+      periodKey: pInfo.periodKey,
+      tahunPelajaran: pInfo.tahunPelajaran,
+      semester: pInfo.semester,
+      fullLabel: pInfo.fullLabel,
+      note: customNote,
+      isAutoArchive: false,
+      createdAt: DateTimeUtil.getCurrentDateTimeStr(),
+      stats: {
+        studentsCount: (liveBucket.students || []).length,
+        presensiDays: Object.keys(liveBucket.presensiRecords || {}).length,
+        assessmentsCount: (liveBucket.academicAssessments || []).length,
+        dplCount: (liveBucket.dplAssessments || []).length,
+        ekskulCount: (liveBucket.ekskulAssessments || []).length
+      },
+      bucketSnapshot: JSON.parse(JSON.stringify(liveBucket))
+    };
+
+    DB.data.semesterArchives.unshift(newSnapshot);
+    if (noteInp) noteInp.value = '';
+
+    DB.saveImmediate();
+    this.syncAllPeriodUI();
+
+    const drawer = document.getElementById('teacher-archive-vault-drawer');
+    if (drawer) drawer.classList.remove('hidden');
+
+    UI.showNotif(
+      'Hasil Semester Berhasil Disimpan ke Brankas Arsip',
+      `Seluruh data ${liveBucket.classKey} (${liveBucket.schoolDisplay}) pada periode ${pInfo.fullLabel} telah berhasil diarsipkan. Anda dapat membuka dan mencetaknya kapan saja meskipun berganti tahun pelajaran.`,
+      'success'
+    );
+  },
+
+  // Merender tabel daftar arsip semester di dalam Brankas Arsip Guru
+  renderTeacherArchiveVaultTable() {
+    const tbody = document.getElementById('tbody-teacher-archive-snapshots');
+    const countBadge = document.getElementById('teacher-archive-count-badge');
+    if (!tbody) return;
+
+    const teacher = DB.getActiveTeacherAccount();
+    if (!teacher || !DB.data) return;
+
+    const schoolKey = teacher.schoolKey || 'SCH_DEFAULT';
+    let targetClassKey = teacher.classKey || DB.extractClassKey(teacher.kelasFase);
+
+    if (teacher.role === 'GURU_MAPEL') {
+      const detectedDay = AppState.mapelOverrideDay === 'AUTO'
+        ? DateTimeUtil.getCurrentDayName()
+        : AppState.mapelOverrideDay;
+      const sched = teacher.mapelSchedule || {};
+      const scheduledClassRaw = sched[detectedDay] || Object.values(sched).find(v => v && v.trim() !== '') || teacher.kelasFase || 'Kelas 4';
+      targetClassKey = DB.extractClassKey(scheduledClassRaw);
+    }
+
+    const archives = (DB.data.semesterArchives || []).filter(item => {
+      if (!item) return false;
+      if (item.schoolKey !== schoolKey) return false;
+      if (teacher.role === 'GURU_KELAS' && !teacher.isMasterAdmin && item.classKey !== targetClassKey) return false;
+      return true;
+    });
+
+    if (countBadge) countBadge.textContent = archives.length;
+
+    if (archives.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.15rem;">
+            Belum ada rekaman arsip semester yang disimpan untuk kelas ini. Klik tombol <strong>"💾 Simpan Hasil Semester Ini ke Arsip"</strong> untuk membuat arsip.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = archives.map((arc, idx) => {
+      const safeId = String(arc.id).replace(/'/g, "\\'");
+      const isCurrentlyViewing = AppState.viewingPeriodKey === `SNAP_${arc.id}`;
+      const st = arc.stats || {
+        studentsCount: (arc.bucketSnapshot && arc.bucketSnapshot.students) ? arc.bucketSnapshot.students.length : 0,
+        presensiDays: (arc.bucketSnapshot && arc.bucketSnapshot.presensiRecords) ? Object.keys(arc.bucketSnapshot.presensiRecords).length : 0,
+        assessmentsCount: (arc.bucketSnapshot && arc.bucketSnapshot.academicAssessments) ? arc.bucketSnapshot.academicAssessments.length : 0
+      };
+
+      return `
+        <tr style="${isCurrentlyViewing ? 'background: #fef3c7;' : ''}">
+          <td>${idx + 1}</td>
+          <td>
+            <strong>${UI.escapeHtml(arc.fullLabel)}</strong>
+            ${isCurrentlyViewing ? '<div style="margin-top:0.2rem;"><span class="badge badge-warning">SEDANG DIBUKA</span></div>' : ''}
+          </td>
+          <td>
+            <strong>${UI.escapeHtml(arc.classKey)}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${UI.escapeHtml(arc.schoolDisplay)}</div>
+          </td>
+          <td>
+            <div style="font-size: 0.8rem;">
+              👥 <strong>${st.studentsCount || 0}</strong> Siswa &bull;
+              📅 <strong>${st.presensiDays || 0}</strong> Hari Presensi &bull;
+              📊 <strong>${st.assessmentsCount || 0}</strong> Sesi Nilai
+            </div>
+          </td>
+          <td>
+            <div style="font-weight: 600; font-size: 0.82rem;">${UI.escapeHtml(arc.note || '-')}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted);">Disimpan: ${UI.escapeHtml(arc.createdAt || '-')}</div>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              ${isCurrentlyViewing
+                ? `<button type="button" class="btn btn-warning btn-sm" onclick="AcademicPeriodApp.returnToActivePeriod()">⚡ Kembali ke Aktif</button>`
+                : `<button type="button" class="btn btn-primary btn-sm" onclick="AcademicPeriodApp.switchViewingPeriod('SNAP_${safeId}')">👁️ Buka & Lihat Hasil</button>`
+              }
+              <button type="button" class="btn btn-secondary btn-sm" onclick="AcademicPeriodApp.downloadSingleArchiveJson('${safeId}')">
+                📥 Unduh
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="AcademicPeriodApp.deleteArchiveSnapshot('${safeId}')">
+                🗑️ Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  // Berpindah antara Periode Aktif dan Arsip Semester Lampau (Time-Machine)
+  switchViewingPeriod(periodSelection) {
+    if (!periodSelection || periodSelection === 'ACTIVE') {
+      this.returnToActivePeriod();
+      return;
+    }
+
+    const pInfo = DB.getActivePeriodInfo();
+    AppState.viewingPeriodKey = periodSelection;
+    AppState.isTimeMachineReadOnly = (pInfo.lockPastPeriod !== 'EDITABLE');
+    DB._tempArchiveViewKey = null;
+    DB._tempArchiveViewBucket = null;
+
+    if (periodSelection.startsWith('SNAP_')) {
+      const snapId = periodSelection.replace(/^SNAP_/, '');
+      const found = (DB.data.semesterArchives || []).find(s => s && String(s.id) === snapId);
+      AppState.viewingPeriodLabel = found
+        ? `${found.fullLabel} — ${found.classKey} (${found.note || 'Arsip'})`
+        : 'Arsip Semester Tersimpan';
+    } else if (periodSelection.startsWith('HIST_')) {
+      const histKey = periodSelection.replace(/^HIST_/, '');
+      const teacher = DB.getActiveTeacherAccount();
+      const bucketId = teacher ? `${teacher.schoolKey}__${teacher.classKey || DB.extractClassKey(teacher.kelasFase)}` : '';
+      const rawBucket = (DB.data.classData && DB.data.classData[bucketId]) ? DB.data.classData[bucketId] : null;
+      const histObj = (rawBucket && rawBucket.periodHistory) ? rawBucket.periodHistory[histKey] : null;
+      AppState.viewingPeriodLabel = histObj ? histObj.fullLabel : histKey;
+    }
+
+    this.syncAllPeriodUI();
+
+    UI.showNotif(
+      'Mode Penjelajah Arsip Semester Aktif',
+      `Anda kini sedang melihat data historis: "${AppState.viewingPeriodLabel}". Silakan buka menu Data Kelas, Intrakurikuler (Rekap Presensi, Rekap Nilai, DPL, Analisis Rapor), Kokurikuler, atau Ekstrakurikuler untuk melihat dan mencetak hasil pada periode tersebut.`,
+      'primary'
+    );
+  },
+
+  // Kembali dari Mode Arsip ke Semester Aktif Berjalan
+  returnToActivePeriod() {
+    AppState.viewingPeriodKey = 'ACTIVE';
+    AppState.viewingPeriodLabel = '';
+    AppState.isTimeMachineReadOnly = false;
+    DB._tempArchiveViewKey = null;
+    DB._tempArchiveViewBucket = null;
+
+    this.syncAllPeriodUI();
+
+    if (AppState.activeMode === 'TEACHER') {
+      TeacherApp.openTeacherDashboard();
+    }
+  },
+
+  // Menghapus 1 item snapshot dari Brankas Arsip
+  deleteArchiveSnapshot(snapId) {
+    if (!DB.data || !Array.isArray(DB.data.semesterArchives)) return;
+    const target = DB.data.semesterArchives.find(s => s && String(s.id) === String(snapId));
+    if (!target) return;
+
+    if (AppState.viewingPeriodKey === `SNAP_${snapId}`) {
+      AppState.viewingPeriodKey = 'ACTIVE';
+      AppState.viewingPeriodLabel = '';
+      AppState.isTimeMachineReadOnly = false;
+    }
+
+    DB.data.semesterArchives = DB.data.semesterArchives.filter(s => s && String(s.id) !== String(snapId));
+    DB.saveImmediate();
+    this.syncAllPeriodUI();
+
+    UI.showNotif(
+      'Arsip Dihapus',
+      `Snapshot arsip "${target.fullLabel} (${target.classKey})" telah dihapus dari Brankas Arsip.`,
+      'success'
+    );
+  },
+
+  // Mengunduh 1 snapshot arsip menjadi file .json ke perangkat Guru
+  downloadSingleArchiveJson(snapId) {
+    const target = (DB.data.semesterArchives || []).find(s => s && String(s.id) === String(snapId));
+    if (!target) return;
+
+    const cleanFileName = `ARSIP_SIMAK_EDU_${target.schoolDisplay}_${target.classKey}_${target.periodKey}`
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const blob = new Blob([JSON.stringify(target, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanFileName}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+
+  // Mengunduh kondisi kelas yang sedang dibuka saat ini menjadi file cadangan .json
+  exportCurrentPeriodToFile() {
+    const teacher = DB.getActiveTeacherAccount();
+    const bucket = DB.getActiveClassBucket();
+    if (!teacher || !bucket) return;
+
+    const pInfo = DB.getActivePeriodInfo();
+    const exportPayload = {
+      id: 'ARC_EXPORT_' + Date.now(),
+      bucketKey: `${bucket.schoolKey}__${bucket.classKey}`,
+      schoolKey: bucket.schoolKey,
+      schoolDisplay: bucket.schoolDisplay,
+      classKey: bucket.classKey,
+      kelasFaseLabel: bucket.kelasFaseLabel,
+      teacherId: teacher.id,
+      teacherName: teacher.nama,
+      periodKey: pInfo.periodKey,
+      tahunPelajaran: pInfo.tahunPelajaran,
+      semester: pInfo.semester,
+      fullLabel: AppState.viewingPeriodKey !== 'ACTIVE' ? AppState.viewingPeriodLabel : pInfo.fullLabel,
+      note: 'File Backup Portofolio Guru',
+      isAutoArchive: false,
+      createdAt: DateTimeUtil.getCurrentDateTimeStr(),
+      stats: {
+        studentsCount: (bucket.students || []).length,
+        presensiDays: Object.keys(bucket.presensiRecords || {}).length,
+        assessmentsCount: (bucket.academicAssessments || []).length,
+        dplCount: (bucket.dplAssessments || []).length,
+        ekskulCount: (bucket.ekskulAssessments || []).length
+      },
+      bucketSnapshot: JSON.parse(JSON.stringify(bucket))
+    };
+
+    const cleanName = `BACKUP_KELAS_${bucket.schoolDisplay}_${bucket.classKey}_${pInfo.periodKey}`
+      .replace(/[^a-zA-Z0-9_-]/g, '_');
+
+    const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${cleanName}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    UI.showNotif(
+      'File Cadangan Arsip Berhasil Diunduh',
+      `File portofolio kelas (${cleanName}.json) telah disimpan ke perangkat Anda. File ini dapat dimuat kembali kapan saja melalui tombol "Muat File Arsip".`,
+      'success'
+    );
+  },
+
+  // Memuat kembali file arsip (.json) dari perangkat Guru ke dalam Brankas Arsip
+  importArchiveFromFile(event) {
+    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!parsed || !parsed.bucketSnapshot || !parsed.classKey) {
+          UI.showNotif('Format File Tidak Sesuai', 'File yang dipilih bukan file arsip SIMAK-EDU yang valid.', 'danger');
+          return;
+        }
+
+        parsed.id = 'ARC_IMP_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        parsed.note = (parsed.note ? parsed.note + ' (Impor File)' : 'Arsip dari File Cadangan');
+
+        if (!Array.isArray(DB.data.semesterArchives)) DB.data.semesterArchives = [];
+        DB.data.semesterArchives.unshift(parsed);
+
+        DB.saveImmediate();
+        this.syncAllPeriodUI();
+
+        UI.showNotif(
+          'File Arsip Berhasil Dimuat',
+          `Data arsip "${parsed.fullLabel || 'Semester'} — ${parsed.classKey}" berhasil ditambahkan ke Brankas Arsip Anda. Klik "Buka & Lihat Hasil" pada tabel untuk menampilkannya.`,
+          'success'
+        );
+      } catch (err) {
+        UI.showNotif('Gagal Membaca File', 'File arsip rusak atau tidak berformat JSON yang benar.', 'danger');
+      } finally {
+        event.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+};
+
+// Integrasikan otomatis AcademicPeriodApp dengan navigasi Admin, Guru, dan Modul RPM
+(function bindAcademicLifecycleHooks() {
+  const attachHooks = () => {
+    if (typeof AdminApp !== 'undefined' && AdminApp.openAdminDashboard && !AdminApp._periodHooked) {
+      const origAdminOpen = AdminApp.openAdminDashboard.bind(AdminApp);
+      AdminApp.openAdminDashboard = function (...args) {
+        origAdminOpen(...args);
+        AcademicPeriodApp.syncAllPeriodUI();
+      };
+      AdminApp._periodHooked = true;
+    }
+
+    if (typeof TeacherApp !== 'undefined' && TeacherApp.openTeacherDashboard && !TeacherApp._periodHooked) {
+      const origTeacherOpen = TeacherApp.openTeacherDashboard.bind(TeacherApp);
+      TeacherApp.openTeacherDashboard = function (...args) {
+        origTeacherOpen(...args);
+        AcademicPeriodApp.syncAllPeriodUI();
+      };
+      TeacherApp._periodHooked = true;
+    }
+
+    if (typeof RpmApp !== 'undefined' && RpmApp.initRpmBuilderView && !RpmApp._periodHooked) {
+      const origRpmInit = RpmApp.initRpmBuilderView.bind(RpmApp);
+      RpmApp.initRpmBuilderView = function (...args) {
+        origRpmInit(...args);
+        AcademicPeriodApp.syncAllPeriodUI();
+      };
+      RpmApp._periodHooked = true;
+    }
+
+    AcademicPeriodApp.syncAllPeriodUI();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(attachHooks, 200));
+  } else {
+    setTimeout(attachHooks, 200);
+  }
+})();
 </script>
 </body>
 </html>
