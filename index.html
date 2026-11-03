@@ -1526,7 +1526,7 @@ body {
       </div>
     </div>
 
-    <!-- BILAH NAVIGASI 4 TAB DATA KELAS (ANTI-SCROLL MEMANJANG) -->
+        <!-- BILAH NAVIGASI 5 TAB DATA KELAS (TERINTEGRASI PROGRAM TAHUNAN / PROTA) -->
     <div class="dk-tabs-navbar no-print">
       <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
         <button type="button" id="btn-dk-tab-siswa" class="dk-tab-btn active-dk-tab" onclick="DataKelasApp.switchTab('siswa')">
@@ -1544,6 +1544,10 @@ body {
         <button type="button" id="btn-dk-tab-ekskul" class="dk-tab-btn" onclick="DataKelasApp.switchTab('ekskul')">
           <span>🏆 4. Program Ekstrakurikuler</span>
           <span id="dk-badge-count-ekskul" class="dk-tab-badge">0</span>
+        </button>
+        <button type="button" id="btn-dk-tab-prota" class="dk-tab-btn" onclick="DataKelasApp.switchTab('prota')">
+          <span>📚 5. Program Tahunan (CP, Bab & Materi)</span>
+          <span id="dk-badge-count-prota" class="dk-tab-badge">0 Bab</span>
         </button>
       </div>
 
@@ -1960,6 +1964,195 @@ body {
             </thead>
             <tbody id="tbody-data-kelas-ekskul"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+            <!-- =================================================================== -->
+    <!-- TAB 5: PENYUSUNAN PROGRAM TAHUNAN (PROTA: CP, BAB, MATERI, & TP)    -->
+    <!-- =================================================================== -->
+    <div id="dk-panel-prota" class="dk-tab-panel hidden">
+      <style>
+        .prota-subject-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.45rem 0.95rem;
+          border-radius: 999px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          border: 1px solid #cbd5e1;
+          background: #ffffff;
+          color: var(--dark);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .prota-subject-chip:hover {
+          border-color: var(--primary-light);
+          background: #eff6ff;
+        }
+        .prota-subject-chip.active-prota-subj {
+          background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+          color: #ffffff;
+          border-color: #1d4ed8;
+          box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+        }
+        .prota-cp-card {
+          background: #ffffff;
+          border: 1px solid #93c5fd;
+          border-left: 5px solid #2563eb;
+          border-radius: var(--radius-md);
+          padding: 0.9rem 1.1rem;
+          margin-bottom: 0.75rem;
+        }
+        .prota-bab-card {
+          background: #ffffff;
+          border: 2px solid #cbd5e1;
+          border-radius: var(--radius-lg);
+          padding: 1.25rem;
+          margin-bottom: 1.15rem;
+          box-shadow: var(--shadow-sm);
+          transition: border-color 0.2s ease;
+        }
+        .prota-bab-card:hover {
+          border-color: #38bdf8;
+        }
+        .prota-bab-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 0.75rem;
+          padding-bottom: 0.85rem;
+          margin-bottom: 1rem;
+          border-bottom: 2px dashed #e2e8f0;
+        }
+        .prota-materi-item {
+          background: #f8fafc;
+          border: 1px solid #cbd5e1;
+          border-left: 4px solid #0f766e;
+          border-radius: var(--radius-sm);
+          padding: 0.85rem 1rem;
+          margin-bottom: 0.65rem;
+        }
+      </style>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+              <span class="badge badge-primary">LEMBAR 5 DARI 5 — PROGRAM TAHUNAN (PROTA) GURU KELAS & GURU MAPEL</span>
+              <span class="badge badge-success">✓ Tersinkronisasi Otomatis ke Generator Modul RPM</span>
+            </div>
+            <h3 class="card-title">5. Penyusunan Program Tahunan (Capaian Pembelajaran, Bab per Semester, Materi, & TP)</h3>
+            <p class="card-subtitle">
+              Susun <strong>Capaian Pembelajaran (CP)</strong>, daftar <strong>Bab di Semester 1 & Semester 2</strong>, serta rincian <strong>Materi Pokok & Tujuan Pembelajaran (TP)</strong> pada setiap Bab. Seluruh data di halaman ini akan muncul sebagai <strong>opsi pilihan instan</strong> saat Anda membuat Modul Ajar (RPM).
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick="DataKelasApp.switchTab('ekskul')">
+              &laquo; Kembali ke Ekstrakurikuler
+            </button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="IntraApp.openSubPillar('modul_rpm')">
+              🚀 Buka Generator Modul RPM &rarr;
+            </button>
+            <button type="button" class="btn btn-success btn-sm write-action-btn" onclick="ProtaApp.saveProtaChanges(true)">
+              💾 Simpan Program Tahunan
+            </button>
+          </div>
+        </div>
+
+        <!-- BAR PEMILIH MATA PELAJARAN & TAMBAH MAPEL PROTA -->
+        <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 2px solid #93c5fd; margin-bottom: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem;">
+            <div>
+              <span class="badge badge-primary" style="margin-bottom: 0.25rem;">PILIH MATA PELAJARAN PROGRAM TAHUNAN</span>
+              <h4 style="font-size: 1rem; color: var(--dark);">
+                Mata Pelajaran Aktif: <span id="prota-active-subject-label" style="color: var(--primary-light); font-weight: 800;">-</span>
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Klik salah satu mata pelajaran di bawah untuk mengisi CP, Bab, Materi, dan TP. Baik Guru Kelas maupun Guru Mapel dapat mengelola Prota sesuai bidangnya.
+              </p>
+            </div>
+
+            <div class="write-action-btn" style="display: flex; gap: 0.45rem; flex-wrap: wrap; align-items: center;">
+              <input
+                type="text"
+                id="prota-new-subject-input"
+                class="form-control"
+                style="width: 220px; padding: 0.4rem 0.7rem; font-size: 0.84rem;"
+                placeholder="Tambah nama mapel lain..."
+              >
+              <button type="button" class="btn btn-outline btn-sm" onclick="ProtaApp.addCustomSubject()">
+                + Tambah Mapel
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="ProtaApp.generateFullSubjectProtaWithAI()">
+                🤖 Susun Otomatis Seluruh Prota Mapel Ini (AI Akurat)
+              </button>
+            </div>
+          </div>
+
+          <!-- DAFTAR CHIP MATA PELAJARAN -->
+          <div id="prota-subject-chips-container" style="display: flex; gap: 0.5rem; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- BAGIAN A: CAPAIAN PEMBELAJARAN (CP) MATA PELAJARAN TERPILIH -->
+        <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.35rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 0.9rem; padding-bottom: 0.75rem; border-bottom: 1px dashed #14b8a6;">
+            <div>
+              <span class="badge badge-success" style="margin-bottom: 0.2rem;">BAGIAN A — CAPAIAN PEMBELAJARAN (CP)</span>
+              <h4 style="font-size: 1.02rem; color: var(--dark);">
+                Daftar Capaian Pembelajaran (CP) — <span id="prota-cp-subject-title">-</span>
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                CP yang Anda tambahkan di sini akan langsung muncul sebagai <strong>opsi siap pilih</strong> saat Anda mengklik kolom Capaian Pembelajaran di halaman <strong>Modul RPM</strong>.
+              </p>
+            </div>
+
+            <div class="write-action-btn" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="ProtaApp.generateCpWithAI()">
+                ✨ Buat & Tambahkan CP Akurat dengan AI
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="ProtaApp.addCpRow()">
+                + Tambah Kolom CP Baru
+              </button>
+            </div>
+          </div>
+
+          <div id="prota-cp-list-container"></div>
+        </div>
+
+        <!-- BAGIAN B: PENYUSUNAN BAB, MATERI POKOK, & TUJUAN PEMBELAJARAN PER SEMESTER -->
+        <div class="card" style="background: #ffffff; border: 2px solid var(--border); margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem; margin-bottom: 1.15rem; padding-bottom: 0.9rem; border-bottom: 1px solid var(--border);">
+            <div>
+              <span class="badge badge-warning" style="margin-bottom: 0.25rem;">BAGIAN B — STRUKTUR BAB, MATERI, & TUJUAN PEMBELAJARAN PER SEMESTER</span>
+              <h4 style="font-size: 1.05rem; color: var(--dark);">
+                Daftar Bab & Rincian Materi Pembelajaran (<span id="prota-bab-subject-title">-</span>)
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted);">
+                Tambahkan atau hapus <strong>Bab</strong> pada Semester 1 maupun Semester 2 secara fleksibel. Di dalam setiap Bab, tambahkan <strong>Materi Pokok</strong> beserta <strong>Tujuan Pembelajaran (TP)</strong> yang akan diajarkan.
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <select id="prota-semester-filter" class="form-control allow-readonly-filter" style="width: auto; font-weight: 700; font-size: 0.84rem;" onchange="ProtaApp.setSemesterFilter(this.value)">
+                <option value="ALL">Tampilkan Semester 1 & Semester 2</option>
+                <option value="1">Fokus Semester 1 (Ganjil)</option>
+                <option value="2">Fokus Semester 2 (Genap)</option>
+              </select>
+
+              <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="ProtaApp.addBabCard('1')">
+                + Tambah Bab Semester 1
+              </button>
+              <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="ProtaApp.addBabCard('2')">
+                + Tambah Bab Semester 2
+              </button>
+            </div>
+          </div>
+
+          <!-- KONTAINER KARTU BAB DINAMIS -->
+          <div id="prota-bab-cards-container"></div>
         </div>
       </div>
     </div>
@@ -3819,15 +4012,15 @@ body {
                 </div>
 
         <div class="grid-3">
-          <div class="form-group">
-            <label class="form-label" for="rpm-input-semester">4. Semester & Alokasi Waktu :</label>
-            <select id="rpm-input-semester" class="form-control" required>
-              <option value="Semester 1 (Ganjil) — 2 x 35 Menit (1 Pertemuan)">Semester 1 (Ganjil) — 2 x 35 Menit (1 Pertemuan)</option>
-              <option value="Semester 2 (Genap) — 2 x 35 Menit (1 Pertemuan)">Semester 2 (Genap) — 2 x 35 Menit (1 Pertemuan)</option>
-              <option value="Semester 1 (Ganjil) — 4 x 35 Menit (2 Pertemuan)">Semester 1 (Ganjil) — 4 x 35 Menit (2 Pertemuan)</option>
-              <option value="Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)">Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)</option>
-            </select>
-          </div>
+                 <div class="form-group">
+         <label class="form-label" for="rpm-input-semester">4. Semester & Alokasi Waktu :</label>
+         <select id="rpm-input-semester" class="form-control" required>
+           <option value="Semester 1 (Ganjil) — 2 x 35 Menit (1 Pertemuan)">Semester 1 (Ganjil) — 2 x 35 Menit (1 Pertemuan)</option>
+           <option value="Semester 2 (Genap) — 2 x 35 Menit (1 Pertemuan)">Semester 2 (Genap) — 2 x 35 Menit (1 Pertemuan)</option>
+           <option value="Semester 1 (Ganjil) — 4 x 35 Menit (2 Pertemuan)">Semester 1 (Ganjil) — 4 x 35 Menit (2 Pertemuan)</option>
+           <option value="Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)">Semester 2 (Genap) — 4 x 35 Menit (2 Pertemuan)</option>
+         </select>
+                 </div>
 
           <div class="form-group">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.4rem; margin-bottom: 0.35rem;">
@@ -3860,35 +4053,203 @@ body {
           </div>
         </div>
 
-        <!-- PANEL UTAMA KURIKULUM: MATERI, CP, TP, & PROMPT INSTRUKSI KHUSUS GURU -->
+                <!-- PANEL UTAMA KURIKULUM TERINTEGRASI PROGRAM TAHUNAN (CASCADING: CP -> BAB -> MATERI -> TP) -->
         <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px dashed #14b8a6;">
+          <style>
+            .rpm-prota-sync-banner {
+              background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+              color: #ffffff;
+              padding: 0.9rem 1.15rem;
+              border-radius: var(--radius-md);
+              margin-bottom: 1.1rem;
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 0.75rem;
+              box-shadow: var(--shadow-sm);
+            }
+            .rpm-prota-picker-drawer {
+              background: #ffffff;
+              border: 2px solid #2563eb;
+              border-radius: var(--radius-md);
+              padding: 0.85rem;
+              margin-top: 0.45rem;
+              margin-bottom: 0.65rem;
+              box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+              max-height: 270px;
+              overflow-y: auto;
+              animation: fadeIn 0.18s ease-in-out;
+            }
+            .rpm-prota-picker-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 0.5rem;
+              padding-bottom: 0.5rem;
+              margin-bottom: 0.6rem;
+              border-bottom: 1px dashed #cbd5e1;
+              font-size: 0.78rem;
+              font-weight: 800;
+              color: var(--primary);
+              text-transform: uppercase;
+            }
+            .rpm-prota-option-card {
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              border-left: 4px solid #2563eb;
+              border-radius: 6px;
+              padding: 0.6rem 0.85rem;
+              margin-bottom: 0.45rem;
+              cursor: pointer;
+              transition: all 0.15s ease;
+              font-size: 0.84rem;
+              color: var(--dark);
+            }
+            .rpm-prota-option-card:hover {
+              background: #eff6ff;
+              border-color: #2563eb;
+              transform: translateX(3px);
+            }
+            .rpm-prota-option-card.active-prota-opt {
+              background: #dbeafe;
+              border-color: #1d4ed8;
+              border-left-width: 6px;
+              font-weight: 700;
+            }
+            .rpm-field-action-bar {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              flex-wrap: wrap;
+              gap: 0.45rem;
+              margin-bottom: 0.35rem;
+            }
+          </style>
+
+          <!-- PITA STATUS SINKRONISASI PROTA -> MODUL RPM -->
+          <div class="rpm-prota-sync-banner">
             <div>
-              <span class="badge badge-success" style="margin-bottom: 0.25rem;">KOMPAS UTAMA GENERATIVE AI (KURIKULUM MERDEKA)</span>
-              <h4 style="font-size: 1.02rem; color: var(--dark);">7, 8, 9, & 10. Materi Ajar, CP, Tujuan Pembelajaran (TP), & Instruksi Khusus Guru ke AI</h4>
-              <p style="font-size: 0.8rem; color: var(--text-muted);">
-                AI Murni akan membaca seluruh input di bawah ini secara mendalam untuk menghasilkan Modul Ajar dan variasi soal yang luas (bukan template bank soal).
-              </p>
+              <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+                <span class="badge badge-warning">SINKRONISASI OTOMATIS PROGRAM TAHUNAN (PROTA)</span>
+                <span id="rpm-prota-status-badge" class="badge badge-success">Memeriksa Data Prota...</span>
+              </div>
+              <div id="rpm-prota-status-subtext" style="font-size: 0.81rem; color: #e0f2fe;">
+                Klik pada kolom <strong>Capaian Pembelajaran (CP)</strong>, <strong>Bab</strong>, <strong>Materi</strong>, atau <strong>Tujuan Pembelajaran (TP)</strong> di bawah untuk memilih langsung dari Program Tahunan, mengetik manual, atau menyusun akurat dengan AI.
+              </div>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="RpmApp.autoSuggestCpAndTp()">
-              ✨ Bantu Susun Draft CP & TP dengan AI
-            </button>
+            <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.16); color: #ffffff; border-color: rgba(255,255,255,0.4);" onclick="RpmApp.openProtaManagerFromRpm()">
+                📚 Kelola Program Tahunan
+              </button>
+              <button type="button" class="btn btn-warning btn-sm write-action-btn" onclick="RpmApp.autoSuggestCpAndTp()">
+                ✨ Lengkapi Semua (CP, Bab, Materi & TP) dengan AI
+              </button>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="rpm-input-materi">7. Topik / Materi Ajar Spesifik yang Diajarkan (Wajib Diisi) :</label>
-            <input
-              type="text"
-              id="rpm-input-materi"
+          <!-- 7. CAPAIAN PEMBELAJARAN (CP) — TERHUBUNG KE PROTA + AI -->
+          <div class="form-group" style="margin-bottom: 1.15rem;">
+            <div class="rpm-field-action-bar">
+              <label class="form-label" for="rpm-input-cp" style="margin-bottom: 0;">
+                7. Capaian Pembelajaran (CP) — <span style="color: var(--primary-light);">Klik Kolom untuk Memilih dari Program Tahunan</span> :
+              </label>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.22rem 0.6rem; border-color: #2563eb; color: #1d4ed8;" onclick="RpmApp.toggleProtaPicker('cp', true)">
+                  📂 Pilih CP dari Prota (<span id="rpm-count-opt-cp">0</span>)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm write-action-btn" style="font-size: 0.75rem; padding: 0.22rem 0.65rem;" onclick="RpmApp.generateAccurateFieldWithAI('cp')">
+                  ✨ Buat CP Akurat dengan AI
+                </button>
+              </div>
+            </div>
+
+            <textarea
+              id="rpm-input-cp"
               class="form-control"
-              placeholder="Ketik topik bebas apa saja (Contoh: Pembagian Bilangan Cacah / Siklus Air / Kalimat Transitif & Intransitif / Gaya & Gerak)..."
-              oninput="RpmApp.checkMathPanelVisibility()"
+              rows="3"
+              placeholder="Klik di sini untuk memilih Capaian Pembelajaran (CP) dari Program Tahunan, ketik manual, atau klik tombol '✨ Buat CP Akurat dengan AI'..."
+              onfocus="RpmApp.openProtaPickerOnFocus('cp')"
               required
-            >
+            ></textarea>
+
+            <!-- KOTAK OPSI CAPAIAN PEMBELAJARAN DARI PROTA -->
+            <div id="rpm-prota-picker-cp" class="rpm-prota-picker-drawer hidden"></div>
           </div>
 
-          <!-- PANEL KHUSUS MATEMATIKA -->
-          <div id="rpm-math-special-config-box" class="card hidden" style="background: #fffbeb; border: 2px solid #f59e0b; padding: 1rem 1.15rem; margin-bottom: 1rem;">
+          <!-- BARIS 8 & 9: BAB PEMBELAJARAN & MATERI POKOK (BERJENJANG / CASCADING) -->
+          <div class="grid-2" style="margin-bottom: 1.15rem;">
+            <!-- 8. BAB PEMBELAJARAN -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <div class="rpm-field-action-bar">
+                <label class="form-label" for="rpm-input-bab" style="margin-bottom: 0;">
+                  8. Bab Pembelajaran (Sesuai Semester / Prota) :
+                </label>
+                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 0.2rem 0.55rem; border-color: #2563eb; color: #1d4ed8;" onclick="RpmApp.toggleProtaPicker('bab', true)">
+                    📂 Pilih Bab (<span id="rpm-count-opt-bab">0</span>)
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm write-action-btn" style="font-size: 0.74rem; padding: 0.2rem 0.55rem;" onclick="RpmApp.generateAccurateFieldWithAI('bab')">
+                    ✨ Buat Bab (AI)
+                  </button>
+                </div>
+              </div>
+
+              <input type="hidden" id="rpm-selected-bab-id" value="">
+              <input
+                type="text"
+                id="rpm-input-bab"
+                class="form-control"
+                style="font-weight: 700;"
+                placeholder="Klik untuk pilih Bab dari Prota atau ketik manual (Contoh: Bab 1 - Bilangan Cacah)..."
+                onfocus="RpmApp.openProtaPickerOnFocus('bab')"
+                oninput="RpmApp.handleBabManualInput(this.value)"
+              >
+              <div class="form-hint">
+                Memilih Bab dari Prota akan otomatis menyaring opsi <strong>Materi Pokok</strong> dan <strong>TP</strong> di samping.
+              </div>
+
+              <!-- KOTAK OPSI BAB DARI PROTA -->
+              <div id="rpm-prota-picker-bab" class="rpm-prota-picker-drawer hidden"></div>
+            </div>
+
+            <!-- 9. TOPIK / MATERI POKOK YANG DIAJARKAN -->
+            <div class="form-group" style="margin-bottom: 0;">
+              <div class="rpm-field-action-bar">
+                <label class="form-label" for="rpm-input-materi" style="margin-bottom: 0;">
+                  9. Topik / Materi Pokok (Otomatis Sesuai Bab) :
+                </label>
+                <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 0.2rem 0.55rem; border-color: #0f766e; color: #0f766e;" onclick="RpmApp.toggleProtaPicker('materi', true)">
+                    📂 Pilih Materi (<span id="rpm-count-opt-materi">0</span>)
+                  </button>
+                  <button type="button" class="btn btn-secondary btn-sm write-action-btn" style="font-size: 0.74rem; padding: 0.2rem 0.55rem;" onclick="RpmApp.generateAccurateFieldWithAI('materi')">
+                    ✨ Rincikan Materi (AI)
+                  </button>
+                </div>
+              </div>
+
+              <input
+                type="text"
+                id="rpm-input-materi"
+                class="form-control"
+                style="font-weight: 700;"
+                placeholder="Klik untuk pilih Materi dari Bab terpilih atau ketik topik materi secara manual..."
+                onfocus="RpmApp.openProtaPickerOnFocus('materi')"
+                oninput="RpmApp.handleMateriManualInput(this.value)"
+                required
+              >
+              <div class="form-hint">
+                Menampilkan daftar materi yang terdaftar di dalam Bab terpilih pada Program Tahunan.
+              </div>
+
+              <!-- KOTAK OPSI MATERI DARI PROTA -->
+              <div id="rpm-prota-picker-materi" class="rpm-prota-picker-drawer hidden"></div>
+            </div>
+          </div>
+
+          <!-- PANEL KHUSUS MATEMATIKA (OTOMATIS MUNCUL SAAT MAPEL/MATERI MATEMATIKA) -->
+          <div id="rpm-math-special-config-box" class="card hidden" style="background: #fffbeb; border: 2px solid #f59e0b; padding: 1rem 1.15rem; margin-bottom: 1.15rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
               <div>
                 <span class="badge badge-warning">MODE MATEMATIKA PRESISI AKTIF</span>
@@ -3920,28 +4281,40 @@ body {
             </div>
           </div>
 
-          <div class="grid-2" style="margin-bottom: 1rem;">
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-cp">8. Capaian Pembelajaran (CP) :</label>
-              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Tuliskan Capaian Pembelajaran (CP) sesuai fase..." required></textarea>
+          <!-- 10. TUJUAN PEMBELAJARAN (TP) — TERHUBUNG KE BAB & MATERI PROTA + AI AKURAT -->
+          <div class="form-group" style="margin-bottom: 1.15rem;">
+            <div class="rpm-field-action-bar">
+              <label class="form-label" for="rpm-input-tp" style="margin-bottom: 0;">
+                10. Tujuan Pembelajaran (TP) — <span style="color: #0f766e;">Otomatis Sesuai Bab & Materi (Atau Buat Akurat dengan AI)</span> :
+              </label>
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.22rem 0.6rem; border-color: #0f766e; color: #0f766e;" onclick="RpmApp.toggleProtaPicker('tp', true)">
+                  📂 Pilih TP dari Prota (<span id="rpm-count-opt-tp">0</span>)
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm write-action-btn" style="font-size: 0.75rem; padding: 0.22rem 0.65rem;" onclick="RpmApp.generateAccurateFieldWithAI('tp')">
+                  ✨ Susun TP Akurat dengan AI (Sesuai CP, Bab & Materi)
+                </button>
+              </div>
             </div>
 
-            <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-tp">9. Tujuan Pembelajaran (TP) — Prioritas Utama Soal :</label>
-              <textarea
-                id="rpm-input-tp"
-                class="form-control"
-                rows="4"
-                placeholder="Tuliskan Tujuan Pembelajaran (1 baris per TP). Setiap butir soal yang dibuat AI akan mengukur ketercapaian TP ini secara langsung..."
-                oninput="RpmApp.checkMathPanelVisibility()"
-                required
-              ></textarea>
-            </div>
+            <textarea
+              id="rpm-input-tp"
+              class="form-control"
+              rows="4"
+              placeholder="Klik di sini untuk memilih Tujuan Pembelajaran (TP) yang sesuai dengan Bab & Materi dari Program Tahunan, ketik manual, atau klik '✨ Susun TP Akurat dengan AI'..."
+              onfocus="RpmApp.openProtaPickerOnFocus('tp')"
+              oninput="RpmApp.checkMathPanelVisibility()"
+              required
+            ></textarea>
+
+            <!-- KOTAK OPSI TUJUAN PEMBELAJARAN DARI PROTA -->
+            <div id="rpm-prota-picker-tp" class="rpm-prota-picker-drawer hidden"></div>
           </div>
 
+          <!-- 11. INSTRUKSI KHUSUS / PROMPT BEBAS GURU KE AI -->
           <div class="form-group" style="margin-bottom: 0; background: #ffffff; padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
             <label class="form-label" for="rpm-input-custom-prompt" style="color: #0f766e;">
-              10. Instruksi Khusus / Prompt Bebas Guru untuk AI (Opsional — Seperti Memberi Perintah ke Gemini) :
+              11. Instruksi Khusus / Prompt Bebas Guru untuk AI (Opsional — Seperti Memberi Perintah ke Gemini) :
             </label>
             <textarea
               id="rpm-input-custom-prompt"
@@ -7051,9 +7424,13 @@ const DB = {
       return true;
     });
 
-    // Saring semua modul RPM di seluruh kelas agar modul yang sudah dihapus permanen tidak pernah muncul lagi
+        // Saring semua modul RPM di seluruh kelas & pastikan struktur protaData tersedia di setiap kelas
     Object.values(this.data.classData || {}).forEach(bucket => {
-      if (bucket && Array.isArray(bucket.rpmModules)) {
+      if (!bucket) return;
+      if (!bucket.protaData || typeof bucket.protaData !== 'object') {
+        bucket.protaData = {};
+      }
+      if (Array.isArray(bucket.rpmModules)) {
         bucket.rpmModules = bucket.rpmModules.filter((mod, idx) => {
           if (!mod) return false;
           if (!mod.id) mod.id = 'RPM_LEGACY_' + idx + '_' + String(mod.mapel || '').replace(/\W/g, '');
@@ -9314,7 +9691,7 @@ window.addEventListener('DOMContentLoaded', () => {
     UI.switchView('view-teacher-dashboard');
   },
 
-  renderTeacherPillarsState(teacher) {
+    renderTeacherPillarsState(teacher) {
     const locks = DB.data.pillarLocks || {
       data_kelas: false,
       intrakurikuler: false,
@@ -9322,12 +9699,22 @@ window.addEventListener('DOMContentLoaded', () => {
       ekstrakurikuler: false
     };
 
+    // Buka akses kartu Data Kelas & Program Tahunan baik untuk Guru Kelas maupun Guru Mapel
     const cardDataKelas = document.getElementById('pilar-card-data_kelas');
     if (cardDataKelas) {
+      cardDataKelas.classList.remove('hidden');
+      const titleEl = cardDataKelas.querySelector('h3');
+      const descEl = cardDataKelas.querySelector('p');
       if (teacher.role === 'GURU_MAPEL') {
-        cardDataKelas.classList.add('hidden');
+        if (titleEl) titleEl.textContent = '1. Data Kelas & Program Tahunan';
+        if (descEl) {
+          descEl.textContent = `Penyusunan Program Tahunan (Prota: CP, Bab Semester 1 & 2, Materi, & TP) untuk mata pelajaran ${teacher.mapelDiampu || 'Mapel'} serta informasi kelas.`;
+        }
       } else {
-        cardDataKelas.classList.remove('hidden');
+        if (titleEl) titleEl.textContent = '1. Data Kelas & Prota';
+        if (descEl) {
+          descEl.textContent = 'Pendaftaran nama & akun siswa, jadwal pelajaran Senin–Sabtu, Master DPL, ekstrakurikuler, serta Program Tahunan (CP, Bab & Materi).';
+        }
       }
     }
 
@@ -9349,6 +9736,31 @@ window.addEventListener('DOMContentLoaded', () => {
       }
     });
   },
+
+  openPillar(pillarKey) {
+    const teacher = DB.getActiveTeacherAccount();
+    if (!teacher) return;
+
+    const locks = DB.data.pillarLocks || {};
+    if (locks[pillarKey] && !AppState.isReadOnlyInspection) {
+      UI.showNotif(
+        'Pilar Sedang Dikunci oleh Admin',
+        `Maaf, pilar "${pillarKey.replace('_', ' ').toUpperCase()}" saat ini sedang dikunci oleh Admin. Silakan hubungi Admin untuk membuka akses pilar ini.`,
+        'danger'
+      );
+      return;
+    }
+
+    if (pillarKey === 'data_kelas') {
+      DataKelasApp.openView(teacher.role === 'GURU_MAPEL' ? 'prota' : null);
+    } else if (pillarKey === 'intrakurikuler') {
+      IntraApp.openMainView();
+    } else if (pillarKey === 'kokurikuler') {
+      KokuApp.openMainView();
+    } else if (pillarKey === 'ekstrakurikuler') {
+      EkskulApp.openMainView();
+    }
+    }
 
   renderTeacherMandatesBanner(teacher) {
     const container = document.getElementById('teacher-mandate-container');
@@ -16036,6 +16448,7 @@ const RpmApp = {
   activePage: 1,
   showAllPagesMode: false,
   hideAnswerKey: false,
+  activePickerType: null,
 
   openMainView() {
     const teacher = DB.getActiveTeacherAccount();
@@ -16060,7 +16473,6 @@ const RpmApp = {
         : (teacher.kelasFase || bucket.kelasFaseLabel || 'Kelas 4 / Fase B');
     }
 
-    // Set tanggal penyusunan default ke hari ini hanya jika kolom tanggal masih kosong
     if (tglSusunInp && !tglSusunInp.value) {
       tglSusunInp.value = DateTimeUtil.getTodayISO();
     }
@@ -16070,10 +16482,10 @@ const RpmApp = {
     }
 
     this.handleDayFilterChange('TODAY');
+    this.refreshProtaCascadingState();
     this.checkMathPanelVisibility();
     this.renderSavedArchiveTable();
 
-    // Validasi apakah modul yang sedang aktif di memori sudah dihapus dari arsip
     if (AppState.rpmCurrentDoc) {
       const deletedSet = new Set((DB.data.deletedRpmIds || []).map(String));
       if (deletedSet.has(String(AppState.rpmCurrentDoc.id))) {
@@ -16094,6 +16506,15 @@ const RpmApp = {
     UI.switchView('view-intra-modul-rpm');
   },
 
+  // Membuka langsung tab Program Tahunan (Prota) untuk mata pelajaran yang sedang dipilih di RPM
+  openProtaManagerFromRpm() {
+    const currentMapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
+    if (typeof ProtaApp !== 'undefined' && currentMapel) {
+      ProtaApp.activeSubject = currentMapel;
+    }
+    DataKelasApp.openView('prota');
+  },
+
   toggleGeminiKeyConfig() {
     const panel = document.getElementById('rpm-gemini-config-panel');
     if (panel) panel.classList.toggle('hidden');
@@ -16106,7 +16527,7 @@ const RpmApp = {
       localStorage.setItem(GEMINI_API_KEY_STORAGE, keyVal);
       UI.showNotif(
         'Kunci API Gemini Tersimpan',
-        'Google Gemini API Key berhasil disimpan di perangkat ini dan siap digunakan untuk menyusun Modul RPM & Soal.',
+        'Google Gemini API Key berhasil disimpan di perangkat ini dan siap digunakan untuk menyusun Program Tahunan, Modul RPM, & Soal.',
         'success'
       );
     } else {
@@ -16144,7 +16565,9 @@ const RpmApp = {
     if (teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
       subjects = [teacher.mapelDiampu.trim()];
     } else if (targetDay === 'ALL') {
-      subjects = PenilaianApp.getAvailableSubjectsForTeacher(null);
+      subjects = typeof ProtaApp !== 'undefined'
+        ? ProtaApp.getAvailableSubjects()
+        : PenilaianApp.getAvailableSubjectsForTeacher(null);
     } else {
       const sched = bucket.schedule || {};
       subjects = Array.isArray(sched[targetDay]) && sched[targetDay].length > 0
@@ -16162,6 +16585,10 @@ const RpmApp = {
       datalist.innerHTML = subjects.map(s => `<option value="${UI.escapeHtml(s)}"></option>`).join('');
     }
 
+    if (mapelInp && (!mapelInp.value.trim() || teacher.role === 'GURU_MAPEL') && subjects.length > 0) {
+      mapelInp.value = subjects[0];
+    }
+
     if (chipsWrap) {
       chipsWrap.innerHTML = subjects.map(sub => {
         const safeSub = UI.escapeHtml(sub).replace(/'/g, "\\'");
@@ -16174,10 +16601,8 @@ const RpmApp = {
       }).join('');
     }
 
-    if (mapelInp && (!mapelInp.value.trim() || teacher.role === 'GURU_MAPEL') && subjects.length > 0) {
-      mapelInp.value = subjects[0];
-      this.checkMathPanelVisibility();
-    }
+    this.refreshProtaCascadingState();
+    this.checkMathPanelVisibility();
   },
 
   selectSubjectChip(subjectName) {
@@ -16185,23 +16610,551 @@ const RpmApp = {
     if (mapelInp) {
       mapelInp.value = subjectName;
     }
+    const selBabId = document.getElementById('rpm-selected-bab-id');
+    if (selBabId) selBabId.value = '';
+
     const daySel = document.getElementById('rpm-day-filter-select');
     this.handleDayFilterChange(daySel ? daySel.value : 'TODAY');
+    this.refreshProtaCascadingState();
     this.checkMathPanelVisibility();
   },
 
   handleMapelInputChange() {
+    const selBabId = document.getElementById('rpm-selected-bab-id');
+    if (selBabId) selBabId.value = '';
+    this.refreshProtaCascadingState();
     this.checkMathPanelVisibility();
+  },
+
+  handleSemesterChange() {
+    const selBabId = document.getElementById('rpm-selected-bab-id');
+    if (selBabId) selBabId.value = '';
+    this.refreshProtaCascadingState();
+    if (this.activePickerType === 'bab' || this.activePickerType === 'materi' || this.activePickerType === 'tp') {
+      this.renderProtaPickerContent(this.activePickerType);
+    }
+  },
+
+  handleBabManualInput() {
+    const selBabId = document.getElementById('rpm-selected-bab-id');
+    if (selBabId) selBabId.value = '';
+    this.refreshProtaCascadingState();
+  },
+
+  handleMateriManualInput() {
+    this.refreshProtaCascadingState();
+    this.checkMathPanelVisibility();
+  },
+
+  // ============================================================================
+  // SISTEM SINKRONISASI BERJENJANG (CASCADING) PROGRAM TAHUNAN -> MODUL RPM
+  // ============================================================================
+  getCurrentFormContext() {
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || 'Mata Pelajaran').trim();
+    const semester = (document.getElementById('rpm-input-semester')?.value || 'Semester 1').trim();
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || 'Kelas 4 / Fase B').trim();
+    const soloLevel = (document.getElementById('rpm-input-solo')?.value || 'Relational').trim();
+    const cpText = (document.getElementById('rpm-input-cp')?.value || '').trim();
+    const babText = (document.getElementById('rpm-input-bab')?.value || '').trim();
+    const selectedBabId = (document.getElementById('rpm-selected-bab-id')?.value || '').trim();
+    const materiText = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const tpText = (document.getElementById('rpm-input-tp')?.value || '').trim();
+
+    return {
+      mapel,
+      semester,
+      kelasFase,
+      soloLevel,
+      cpText,
+      babText,
+      selectedBabId,
+      materiText,
+      tpText
+    };
+  },
+
+  refreshProtaCascadingState() {
+    if (typeof ProtaApp === 'undefined') return;
+
+    const ctx = this.getCurrentFormContext();
+    const cpOptions = ProtaApp.getCpOptionsForSubject(ctx.mapel);
+    const babOptions = ProtaApp.getBabOptionsForSubject(ctx.mapel, ctx.semester);
+    const babKey = ctx.selectedBabId || ctx.babText;
+    const materiOptions = ProtaApp.getMateriOptionsForBab(ctx.mapel, babKey);
+    const tpOptions = ProtaApp.getTpOptionsForSelection(ctx.mapel, babKey, ctx.materiText);
+
+    const elCountCp = document.getElementById('rpm-count-opt-cp');
+    const elCountBab = document.getElementById('rpm-count-opt-bab');
+    const elCountMateri = document.getElementById('rpm-count-opt-materi');
+    const elCountTp = document.getElementById('rpm-count-opt-tp');
+
+    if (elCountCp) elCountCp.textContent = String(cpOptions.length);
+    if (elCountBab) elCountBab.textContent = String(babOptions.length);
+    if (elCountMateri) elCountMateri.textContent = String(materiOptions.length);
+    if (elCountTp) elCountTp.textContent = String(tpOptions.length);
+
+    const statusBadge = document.getElementById('rpm-prota-status-badge');
+    const statusSub = document.getElementById('rpm-prota-status-subtext');
+
+    const semNum = ctx.semester.includes('Semester 2') ? 'Semester 2' : 'Semester 1';
+
+    if (cpOptions.length > 0 || babOptions.length > 0) {
+      if (statusBadge) {
+        statusBadge.textContent = `✓ Prota ${ctx.mapel} Tersedia (${cpOptions.length} CP, ${babOptions.length} Bab ${semNum})`;
+        statusBadge.className = 'badge badge-success';
+      }
+      if (statusSub) {
+        statusSub.innerHTML = `Program Tahunan <strong>${UI.escapeHtml(ctx.mapel)}</strong> siap digunakan! Klik kolom <strong>CP</strong>, <strong>Bab</strong>, <strong>Materi</strong>, atau <strong>TP</strong> di bawah untuk memilih langsung dari daftar Prota.`;
+      }
+    } else {
+      if (statusBadge) {
+        statusBadge.textContent = `Prota ${ctx.mapel} Belum Diisi (Mode Manual & AI Aktif)`;
+        statusBadge.className = 'badge badge-warning';
+      }
+      if (statusSub) {
+        statusSub.innerHTML = `Program Tahunan untuk <strong>${UI.escapeHtml(ctx.mapel)}</strong> belum diisi. Anda dapat mengetik manual, mengklik <strong>✨ Buat Akurat dengan AI</strong> pada tiap kolom, atau mengklik <strong>📚 Kelola Program Tahunan</strong>.`;
+      }
+    }
+  },
+
+  openProtaPickerOnFocus(pickerType) {
+    this.refreshProtaCascadingState();
+    this.toggleProtaPicker(pickerType, true);
+  },
+
+  closeAllProtaPickers() {
+    ['cp', 'bab', 'materi', 'tp'].forEach(t => {
+      const box = document.getElementById(`rpm-prota-picker-${t}`);
+      if (box) box.classList.add('hidden');
+    });
+    this.activePickerType = null;
+  },
+
+  toggleProtaPicker(pickerType, forceOpen = false) {
+    const targetBox = document.getElementById(`rpm-prota-picker-${pickerType}`);
+    if (!targetBox) return;
+
+    const isCurrentlyHidden = targetBox.classList.contains('hidden');
+    this.closeAllProtaPickers();
+
+    if (forceOpen || isCurrentlyHidden) {
+      this.activePickerType = pickerType;
+      this.renderProtaPickerContent(pickerType);
+      targetBox.classList.remove('hidden');
+    }
+  },
+
+  renderProtaPickerContent(pickerType) {
+    const box = document.getElementById(`rpm-prota-picker-${pickerType}`);
+    if (!box || typeof ProtaApp === 'undefined') return;
+
+    const ctx = this.getCurrentFormContext();
+    const semNum = ctx.semester.includes('Semester 2') ? 'Semester 2 (Genap)' : 'Semester 1 (Ganjil)';
+
+    if (pickerType === 'cp') {
+      const cpList = ProtaApp.getCpOptionsForSubject(ctx.mapel);
+      if (cpList.length === 0) {
+        box.innerHTML = `
+          <div class="rpm-prota-picker-header">
+            <span>📂 Opsi Capaian Pembelajaran (CP) — ${UI.escapeHtml(ctx.mapel)}</span>
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.1rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+            Belum ada Capaian Pembelajaran (CP) yang tersimpan di Program Tahunan untuk mata pelajaran <strong>${UI.escapeHtml(ctx.mapel)}</strong>. Anda dapat mengetik manual pada kotak di atas atau gunakan tombol cepat berikut:
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="RpmApp.generateAccurateFieldWithAI('cp')">
+              ✨ Buat CP Akurat dengan AI Sekarang
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.openProtaManagerFromRpm()">
+              📚 Isi di Halaman Program Tahunan
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const itemsHtml = cpList.map((cp, idx) => `
+        <div class="rpm-prota-option-card" onclick="RpmApp.selectProtaCpOption(${idx})">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+            <strong style="color: var(--primary);">📌 CP #${idx + 1}: ${UI.escapeHtml(cp.elemen || 'Elemen Kurikulum')}</strong>
+            <span class="badge badge-primary" style="font-size: 0.68rem;">Klik untuk Pilih</span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text); line-height: 1.45;">
+            ${UI.escapeHtml(cp.deskripsi || '')}
+          </div>
+        </div>
+      `).join('');
+
+      box.innerHTML = `
+        <div class="rpm-prota-picker-header">
+          <span>📂 Pilih Capaian Pembelajaran dari Prota (${UI.escapeHtml(ctx.mapel)})</span>
+          <div style="display: flex; gap: 0.35rem;">
+            ${cpList.length > 1 ? `<button type="button" class="btn btn-primary btn-sm" style="padding: 0.12rem 0.5rem; font-size: 0.7rem;" onclick="RpmApp.selectProtaCpOption(-1)">Gabungkan Semua CP</button>` : ''}
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.12rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+        </div>
+        ${itemsHtml}
+      `;
+      return;
+    }
+
+    if (pickerType === 'bab') {
+      const babList = ProtaApp.getBabOptionsForSubject(ctx.mapel, ctx.semester);
+      if (babList.length === 0) {
+        box.innerHTML = `
+          <div class="rpm-prota-picker-header">
+            <span>📂 Opsi Bab Pembelajaran — ${UI.escapeHtml(ctx.mapel)} (${semNum})</span>
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.1rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+            Belum ada daftar Bab di Program Tahunan untuk <strong>${UI.escapeHtml(ctx.mapel)} (${semNum})</strong>. Silakan ketik manual nomor & judul Bab pada kolom di atas, atau klik tombol berikut:
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="RpmApp.generateAccurateFieldWithAI('bab')">
+              ✨ Rekomendasikan Bab Akurat dengan AI
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.openProtaManagerFromRpm()">
+              📚 Susun Bab di Program Tahunan
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const itemsHtml = babList.map(b => {
+        const matCount = Array.isArray(b.materiList) ? b.materiList.filter(m => m && m.namaMateri).length : 0;
+        const isSelected = ctx.selectedBabId === b.id;
+        return `
+          <div class="rpm-prota-option-card ${isSelected ? 'active-prota-opt' : ''}" onclick="RpmApp.selectProtaBabOption('${b.id}')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <span class="badge badge-primary" style="margin-right: 0.35rem;">Semester ${UI.escapeHtml(b.semester || '1')}</span>
+                <strong style="color: var(--dark); font-size: 0.9rem;">${UI.escapeHtml(b.babNumber || 'Bab')}: ${UI.escapeHtml(b.judulBab || 'Tanpa Judul')}</strong>
+              </div>
+              <span class="badge badge-success" style="font-size: 0.7rem;">${matCount} Materi | ${UI.escapeHtml(b.alokasiJp || '6 JP')}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      box.innerHTML = `
+        <div class="rpm-prota-picker-header">
+          <span>📂 Pilih Bab dari Program Tahunan (${UI.escapeHtml(ctx.mapel)} — ${semNum})</span>
+          <button type="button" class="btn btn-outline btn-sm" style="padding: 0.12rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+        </div>
+        ${itemsHtml}
+      `;
+      return;
+    }
+
+    if (pickerType === 'materi') {
+      const babKey = ctx.selectedBabId || ctx.babText;
+      const materiList = ProtaApp.getMateriOptionsForBab(ctx.mapel, babKey);
+
+      if (materiList.length === 0) {
+        box.innerHTML = `
+          <div class="rpm-prota-picker-header">
+            <span>📂 Opsi Materi Pokok — ${UI.escapeHtml(ctx.babText || ctx.mapel)}</span>
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.1rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+            Belum ada rincian Materi Pokok di Program Tahunan untuk <strong>${UI.escapeHtml(ctx.babText || ctx.mapel)}</strong>. Anda dapat mengetik topik materi secara manual di atas, atau klik tombol berikut:
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="RpmApp.generateAccurateFieldWithAI('materi')">
+              ✨ Rincikan Materi Pokok dengan AI
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.openProtaManagerFromRpm()">
+              📚 Tambah Materi di Program Tahunan
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const itemsHtml = materiList.map((m, idx) => `
+        <div class="rpm-prota-option-card" style="border-left-color: #0f766e;" onclick="RpmApp.selectProtaMateriOption('${m.babId}', '${m.id}')">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.2rem;">
+            <span class="badge badge-info" style="font-size: 0.7rem;">${UI.escapeHtml(m.babLabel || 'Bab')} — Materi #${idx + 1}</span>
+            <span class="badge badge-success" style="font-size: 0.68rem;">Pilih Materi & Muat TP</span>
+          </div>
+          <div style="font-weight: 800; color: var(--dark); font-size: 0.88rem;">
+            ${UI.escapeHtml(m.namaMateri)}
+          </div>
+          ${m.tpList ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">TP Tersedia: ${UI.escapeHtml(m.tpList.split('\n')[0])}</div>` : ''}
+        </div>
+      `).join('');
+
+      box.innerHTML = `
+        <div class="rpm-prota-picker-header">
+          <span>📂 Pilih Materi Pokok Sesuai Bab (${UI.escapeHtml(ctx.babText || 'Semua Bab')})</span>
+          <button type="button" class="btn btn-outline btn-sm" style="padding: 0.12rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+        </div>
+        ${itemsHtml}
+      `;
+      return;
+    }
+
+    if (pickerType === 'tp') {
+      const babKey = ctx.selectedBabId || ctx.babText;
+      const tpOptions = ProtaApp.getTpOptionsForSelection(ctx.mapel, babKey, ctx.materiText);
+
+      if (tpOptions.length === 0) {
+        box.innerHTML = `
+          <div class="rpm-prota-picker-header">
+            <span>📂 Opsi Tujuan Pembelajaran (TP) — ${UI.escapeHtml(ctx.materiText || ctx.mapel)}</span>
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.1rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.65rem;">
+            Tujuan Pembelajaran (TP) untuk materi <strong>"${UI.escapeHtml(ctx.materiText || 'terpilih')}"</strong> belum diisi di Program Tahunan. Klik tombol AI di bawah untuk menyusun TP yang akurat sesuai CP, Bab, dan Materi Anda:
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="RpmApp.generateAccurateFieldWithAI('tp')">
+              ✨ Susun TP Akurat dengan AI Sekarang
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.openProtaManagerFromRpm()">
+              📚 Kelola TP di Program Tahunan
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const itemsHtml = tpOptions.map((item, idx) => `
+        <div class="rpm-prota-option-card" style="border-left-color: #15803d;" onclick="RpmApp.selectProtaTpOption(${idx})">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+            <strong style="color: #15803d; font-size: 0.8rem;">🎯 ${UI.escapeHtml(item.sourceLabel)}</strong>
+            <span class="badge badge-success" style="font-size: 0.68rem;">Klik untuk Gunakan TP Ini</span>
+          </div>
+          <div style="font-size: 0.83rem; color: var(--dark); white-space: pre-line; line-height: 1.5;">
+            ${UI.escapeHtml(item.tpText)}
+          </div>
+        </div>
+      `).join('');
+
+      box.innerHTML = `
+        <div class="rpm-prota-picker-header">
+          <span>📂 Pilih Tujuan Pembelajaran (TP) Sesuai Materi & Bab</span>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.12rem 0.5rem; font-size: 0.7rem;" onclick="RpmApp.generateAccurateFieldWithAI('tp')">✨ Perkaya dengan AI</button>
+            <button type="button" class="btn btn-outline btn-sm" style="padding: 0.12rem 0.45rem; font-size: 0.72rem;" onclick="RpmApp.closeAllProtaPickers()">Tutup ✕</button>
+          </div>
+        </div>
+        ${itemsHtml}
+      `;
+    }
+  },
+
+  selectProtaCpOption(cpIdx) {
+    const ctx = this.getCurrentFormContext();
+    const cpList = ProtaApp.getCpOptionsForSubject(ctx.mapel);
+    const cpInput = document.getElementById('rpm-input-cp');
+    if (!cpInput || cpList.length === 0) return;
+
+    if (cpIdx === -1) {
+      cpInput.value = cpList.map(c => `[${c.elemen}] ${c.deskripsi}`).join('\n');
+    } else if (cpList[cpIdx]) {
+      const chosen = cpList[cpIdx];
+      cpInput.value = chosen.deskripsi || chosen.elemen || '';
+    }
+
+    this.closeAllProtaPickers();
+    this.refreshProtaCascadingState();
+  },
+
+  selectProtaBabOption(babId) {
+    const ctx = this.getCurrentFormContext();
+    const subjObj = ProtaApp.getSubjectProtaObject(ctx.mapel);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab) return;
+
+    const babInp = document.getElementById('rpm-input-bab');
+    const babIdInp = document.getElementById('rpm-selected-bab-id');
+
+    const formattedBab = `${bab.babNumber || 'Bab'}: ${bab.judulBab || ''}`.trim();
+    if (babInp) babInp.value = formattedBab;
+    if (babIdInp) babIdInp.value = bab.id;
+
+    this.refreshProtaCascadingState();
+
+    // Jika bab memiliki materi, otomatis buka laci pilihan materi agar alur kerja guru sangat cepat
+    if (Array.isArray(bab.materiList) && bab.materiList.some(m => m && m.namaMateri)) {
+      this.toggleProtaPicker('materi', true);
+    } else {
+      this.closeAllProtaPickers();
+    }
+  },
+
+  selectProtaMateriOption(babId, materiId) {
+    const ctx = this.getCurrentFormContext();
+    const subjObj = ProtaApp.getSubjectProtaObject(ctx.mapel);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab || !Array.isArray(bab.materiList)) return;
+
+    const mat = bab.materiList.find(m => m.id === materiId);
+    if (!mat) return;
+
+    const babInp = document.getElementById('rpm-input-bab');
+    const babIdInp = document.getElementById('rpm-selected-bab-id');
+    const matInp = document.getElementById('rpm-input-materi');
+    const tpInp = document.getElementById('rpm-input-tp');
+
+    if (babInp && !babInp.value.trim()) {
+      babInp.value = `${bab.babNumber || 'Bab'}: ${bab.judulBab || ''}`.trim();
+    }
+    if (babIdInp) babIdInp.value = bab.id;
+    if (matInp) matInp.value = mat.namaMateri || '';
+
+    // Jika materi ini sudah memiliki TP di Prota, langsung isikan ke kolom TP dan tampilkan notifikasi halus
+    if (mat.tpList && mat.tpList.trim() && tpInp) {
+      tpInp.value = mat.tpList.trim();
+    }
+
+    this.closeAllProtaPickers();
+    this.refreshProtaCascadingState();
+    this.checkMathPanelVisibility();
+  },
+
+  selectProtaTpOption(tpIdx) {
+    const ctx = this.getCurrentFormContext();
+    const babKey = ctx.selectedBabId || ctx.babText;
+    const tpOptions = ProtaApp.getTpOptionsForSelection(ctx.mapel, babKey, ctx.materiText);
+    const tpInp = document.getElementById('rpm-input-tp');
+
+    if (!tpInp || !tpOptions[tpIdx]) return;
+    tpInp.value = tpOptions[tpIdx].tpText;
+
+    this.closeAllProtaPickers();
+    this.checkMathPanelVisibility();
+  },
+
+  // ============================================================================
+  // GENERATOR AI AKURAT PER KOLOM (CP, BAB, MATERI, TP) + SINKRON BALIK KE PROTA
+  // ============================================================================
+  async generateAccurateFieldWithAI(fieldType) {
+    if (AppState.isReadOnlyInspection) return;
+
+    const ctx = this.getCurrentFormContext();
+    const soloMeta = AcademicAIEngine.getSoloVerbMeta(ctx.soloLevel);
+    const semNum = ctx.semester.includes('Semester 2') ? '2' : '1';
+    const preset = typeof ProtaApp !== 'undefined'
+      ? ProtaApp.getBuiltInCurriculumPreset(ctx.mapel, ctx.kelasFase)
+      : null;
+
+    if (fieldType === 'cp') {
+      const prompt = `Bertindaklah sebagai Pakar Kurikulum Merdeka Indonesia. Rumuskan Capaian Pembelajaran (CP) yang akurat dan komprehensif untuk Mata Pelajaran "${ctx.mapel}" pada "${ctx.kelasFase}"${ctx.materiText ? ` terkait topik "${ctx.materiText}"` : ''}. Kembalikan JSON: {"cp": "Rumusan CP lengkap"}`;
+      const aiRes = typeof ProtaApp !== 'undefined' ? await ProtaApp.callGeminiJsonIfAvailable(prompt) : null;
+
+      let generatedCp = aiRes && aiRes.cp ? aiRes.cp : '';
+      if (!generatedCp) {
+        if (preset && Array.isArray(preset.cpList) && preset.cpList.length > 0) {
+          generatedCp = preset.cpList.map(c => c.deskripsi).join(' ');
+        } else {
+          generatedCp = `Pada akhir ${ctx.kelasFase}, peserta didik memiliki kemampuan memahami konsep esensial pada mata pelajaran ${ctx.mapel}, menganalisis keterkaitan prinsip keilmuan pada topik "${ctx.materiText || ctx.babText || ctx.mapel}", serta menerapkannya untuk menyelesaikan permasalahan kontekstual dalam kehidupan sehari-hari secara bernalar kritis dan komunikatif.`;
+        }
+      }
+
+      const cpInp = document.getElementById('rpm-input-cp');
+      if (cpInp) cpInp.value = generatedCp;
+      this.closeAllProtaPickers();
+      UI.showNotif('Capaian Pembelajaran (CP) Disusun AI', `Rumusan CP akurat untuk ${ctx.mapel} (${ctx.kelasFase}) berhasil disusun.`, 'success');
+      return;
+    }
+
+    if (fieldType === 'bab') {
+      const prompt = `Berikan 1 nomor dan judul Bab pembelajaran Kurikulum Merdeka yang paling tepat untuk Mata Pelajaran "${ctx.mapel}" (${ctx.kelasFase}) pada Semester ${semNum}${ctx.materiText ? ` yang memuat materi "${ctx.materiText}"` : ''}. Kembalikan JSON: {"babLabel": "Bab 1: Judul Bab"}`;
+      const aiRes = typeof ProtaApp !== 'undefined' ? await ProtaApp.callGeminiJsonIfAvailable(prompt) : null;
+
+      let generatedBab = aiRes && aiRes.babLabel ? aiRes.babLabel : '';
+      if (!generatedBab) {
+        const semBabs = (preset && Array.isArray(preset.babList))
+          ? preset.babList.filter(b => String(b.semester) === semNum)
+          : [];
+        if (semBabs.length > 0) {
+          generatedBab = `${semBabs[0].babNumber}: ${semBabs[0].judulBab}`;
+        } else {
+          generatedBab = `Bab 1 (Semester ${semNum}): Eksplorasi Konsep & Aplikasi ${ctx.materiText || ctx.mapel}`;
+        }
+      }
+
+      const babInp = document.getElementById('rpm-input-bab');
+      if (babInp) babInp.value = generatedBab;
+      this.closeAllProtaPickers();
+      UI.showNotif('Judul Bab Disusun AI', `Rekomendasi Bab "${generatedBab}" berhasil diisikan.`, 'success');
+      return;
+    }
+
+    if (fieldType === 'materi') {
+      const babContext = ctx.babText || `Semester ${semNum}`;
+      const prompt = `Berikan 1 judul Topik / Materi Pokok spesifik yang akurat untuk diajarkan dalam 1 pertemuan pada Mata Pelajaran "${ctx.mapel}" (${ctx.kelasFase}), Bab "${babContext}". Kembalikan JSON: {"materi": "Judul Materi Spesifik"}`;
+      const aiRes = typeof ProtaApp !== 'undefined' ? await ProtaApp.callGeminiJsonIfAvailable(prompt) : null;
+
+      let generatedMateri = aiRes && aiRes.materi ? aiRes.materi : '';
+      if (!generatedMateri) {
+        if (ctx.babText && ctx.babText.includes(':')) {
+          generatedMateri = `Konsep Inti & Penerapan ${ctx.babText.split(':')[1].trim()}`;
+        } else if (preset && preset.babList && preset.babList[0] && preset.babList[0].materiList[0]) {
+          generatedMateri = preset.babList[0].materiList[0].namaMateri;
+        } else {
+          generatedMateri = `Pemahaman Konsep dan Pemecahan Masalah pada ${ctx.mapel}`;
+        }
+      }
+
+      const matInp = document.getElementById('rpm-input-materi');
+      if (matInp) matInp.value = generatedMateri;
+      this.closeAllProtaPickers();
+      this.checkMathPanelVisibility();
+      UI.showNotif('Topik Materi Disusun AI', `Topik materi spesifik "${generatedMateri}" berhasil disusun.`, 'success');
+      return;
+    }
+
+    if (fieldType === 'tp') {
+      const focusMateri = ctx.materiText || ctx.babText || `Konsep Inti ${ctx.mapel}`;
+      const focusBab = ctx.babText ? ` pada ${ctx.babText}` : '';
+      const prompt = `Bertindaklah sebagai Pakar Kurikulum Merdeka Indonesia. Susun 3 Tujuan Pembelajaran (TP) yang operasional, akurat, dan selaras dengan Capaian Pembelajaran: "${ctx.cpText || ctx.mapel}", Bab: "${ctx.babText || '-'}", Topik Materi: "${focusMateri}", Kelas/Fase: "${ctx.kelasFase}", dan Ranah Taksonomi SOLO: "${soloMeta.level}". Kembalikan JSON: {"tpList": ["1. TP pertama", "2. TP kedua", "3. TP ketiga"]}`;
+
+      const aiRes = typeof ProtaApp !== 'undefined' ? await ProtaApp.callGeminiJsonIfAvailable(prompt) : null;
+      let tpLines = (aiRes && Array.isArray(aiRes.tpList) && aiRes.tpList.length > 0) ? aiRes.tpList : null;
+
+      if (!tpLines) {
+        tpLines = [
+          `1. Melalui pengamatan stimulus dan tanya jawab terbimbing (Mindful Learning)${focusBab}, peserta didik mampu ${soloMeta.verbs} mengenai materi "${focusMateri}" pada mata pelajaran ${ctx.mapel} (${ctx.kelasFase}) dengan tepat.`,
+          `2. Melalui penyelidikan kolaboratif dan latihan terstruktur (Meaningful Learning), peserta didik mampu mengaplikasikan konsep "${focusMateri}" untuk menyelesaikan persoalan kontekstual sesuai ranah Taksonomi SOLO tingkat ${soloMeta.level} secara akurat.`,
+          `3. Melalui kegiatan presentasi dan refleksi bersama (Joyful Learning), peserta didik mampu menyimpulkan kebermaknaan materi "${focusMateri}" serta mengomunikasikan hasil kerjanya secara sistematis.`
+        ];
+      }
+
+      const tpInp = document.getElementById('rpm-input-tp');
+      if (tpInp) tpInp.value = tpLines.join('\n');
+      this.closeAllProtaPickers();
+      this.checkMathPanelVisibility();
+
+      UI.showNotif(
+        'Tujuan Pembelajaran (TP) Akurat Berhasil Disusun AI',
+        `Rumusan TP telah diselaraskan secara akurat dengan CP, Bab (${ctx.babText || 'Aktif'}), dan Materi Pokok "${focusMateri}".`,
+        'success'
+      );
+    }
+  },
+
+  async autoSuggestCpAndTp() {
+    const ctx = this.getCurrentFormContext();
+    if (!ctx.cpText) await this.generateAccurateFieldWithAI('cp');
+    if (!ctx.babText) await this.generateAccurateFieldWithAI('bab');
+    if (!ctx.materiText) await this.generateAccurateFieldWithAI('materi');
+    await this.generateAccurateFieldWithAI('tp');
   },
 
   checkMathPanelVisibility() {
     const mapelInp = document.getElementById('rpm-input-mapel');
+    const babInp = document.getElementById('rpm-input-bab');
     const materiInp = document.getElementById('rpm-input-materi');
     const tpInp = document.getElementById('rpm-input-tp');
     const mathBox = document.getElementById('rpm-math-special-config-box');
     if (!mathBox) return;
 
-    const combinedText = `${mapelInp ? mapelInp.value : ''} ${materiInp ? materiInp.value : ''} ${tpInp ? tpInp.value : ''}`.toLowerCase();
+    const combinedText = `${mapelInp ? mapelInp.value : ''} ${babInp ? babInp.value : ''} ${materiInp ? materiInp.value : ''} ${tpInp ? tpInp.value : ''}`.toLowerCase();
     const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|geometri|luas|keliling|volume|sudut|skala|debit|aljabar|angka/.test(combinedText);
 
     if (isMath) {
@@ -16209,36 +17162,6 @@ const RpmApp = {
     } else {
       mathBox.classList.add('hidden');
     }
-  },
-
-  autoSuggestCpAndTp() {
-    const mapel = (document.getElementById('rpm-input-mapel')?.value || 'Mata Pelajaran').trim();
-    const materi = (document.getElementById('rpm-input-materi')?.value || 'Konsep Inti Pembelajaran').trim();
-    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || 'Kelas 4 / Fase B').trim();
-    const solo = (document.getElementById('rpm-input-solo')?.value || 'Relational').trim();
-    const soloMeta = AcademicAIEngine.getSoloVerbMeta(solo);
-
-    const cpEl = document.getElementById('rpm-input-cp');
-    const tpEl = document.getElementById('rpm-input-tp');
-
-    if (cpEl) {
-      cpEl.value = `Pada akhir ${kelasFase}, peserta didik memiliki kemampuan memahami konsep esensial pada mata pelajaran ${mapel}, mengaitkan prinsip "${materi}" dengan permasalahan nyata di lingkungan sekitar secara bernalar kritis, serta menerapkan pemahaman tersebut secara mandiri maupun kolaboratif.`;
-    }
-
-    if (tpEl) {
-      tpEl.value = [
-        `1. Melalui pengamatan stimulus dan diskusi terbimbing, peserta didik mampu ${soloMeta.verbs} mengenai "${materi}" pada mata pelajaran ${mapel} dengan tepat.`,
-        `2. Melalui latihan terstruktur dan pemecahan masalah kontekstual, peserta didik mampu menerapkan konsep "${materi}" sesuai ranah Taksonomi SOLO tingkat ${soloMeta.level} secara akurat.`,
-        `3. Melalui kegiatan refleksi dan presentasi hasil kerja, peserta didik mampu menyimpulkan kebermaknaan materi "${materi}" dalam kehidupan sehari-hari secara komunikatif.`
-      ].join('\n');
-    }
-
-    this.checkMathPanelVisibility();
-    UI.showNotif(
-      'Draft CP & TP Berhasil Disusun',
-      `Rumusan Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) untuk materi "${materi}" telah diisi otomatis. Anda dapat menyesuaikannya bila diperlukan.`,
-      'success'
-    );
   },
 
   selectAllDplCheckboxes(selectAll = true) {
@@ -16285,9 +17208,9 @@ const RpmApp = {
   },
 
   buildDynamicQuestionSections(params, questionSpecList) {
-    const { mapel, materi, kelasFase, soloLevel, tpRaw, difficulty, mathMode } = params;
+    const { mapel, bab, materi, kelasFase, soloLevel, tpRaw, difficulty, mathMode } = params;
     const soloMeta = AcademicAIEngine.getSoloVerbMeta(soloLevel);
-    const isMathSubject = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan/i.test(`${mapel} ${materi}`);
+    const isMathSubject = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan/i.test(`${mapel} ${bab || ''} ${materi}`);
 
     const tpLines = String(tpRaw || '')
       .split(/\n+/)
@@ -16305,7 +17228,6 @@ const RpmApp = {
       for (let i = 1; i <= count; i++) {
         const focusTp = tpLines.length > 0 ? tpLines[(i - 1) % tpLines.length] : `Memahami dan menerapkan konsep ${materi}`;
 
-        // Jika Matematika & mode Operasi Hitung Langsung / Kombinasi
         if (isMathSubject && (mathMode === 'DIRECT_CALC' || (mathMode === 'MIXED_MATH' && i % 2 === 1))) {
           const b = (i % 8) + 2;
           const resultVal = (i * 12) + 14;
@@ -16344,7 +17266,6 @@ const RpmApp = {
           }
         }
 
-        // Generator standar kontekstual untuk semua jenis soal
         if (qType === 'PG') {
           const correctPool = ['A', 'B', 'C', 'D'];
           const answerKey = correctPool[(i - 1) % 4];
@@ -16362,7 +17283,7 @@ const RpmApp = {
 
           items.push({
             no: i,
-            stem: `[Tingkat ${difficulty || 'SEDANG'} — SOLO ${soloMeta.level}] Perhatikan konteks pembelajaran ${mapel} (${kelasFase}) tentang "${materi}" yang mengacu pada capaian "${focusTp}". Pernyataan atau tindakan manakah di bawah ini yang paling tepat?`,
+            stem: `[Tingkat ${difficulty || 'SEDANG'} — SOLO ${soloMeta.level}] Perhatikan konteks pembelajaran ${mapel} (${kelasFase}${bab ? ` — ${bab}` : ''}) tentang "${materi}" yang mengacu pada capaian "${focusTp}". Pernyataan atau tindakan manakah di bawah ini yang paling tepat?`,
             options: optionTexts,
             answer: `Kunci Jawaban: ${answerKey} — Sesuai dengan indikator tujuan pembelajaran dan tingkat kognitif ${soloMeta.level}.`,
             scoreWeight: Math.round(100 / count)
@@ -16370,21 +17291,21 @@ const RpmApp = {
         } else if (qType === 'ISIAN') {
           items.push({
             no: i,
-            stem: `[Isian Singkat #${i}] Berdasarkan konsep "${materi}" pada mata pelajaran ${mapel}, langkah atau unsur utama yang berfungsi untuk mencapai "${focusTp}" adalah ___________________________.`,
+            stem: `[Isian Singkat #${i}] Berdasarkan konsep "${materi}"${bab ? ` (${bab})` : ''} pada mata pelajaran ${mapel}, langkah atau unsur utama yang berfungsi untuk mencapai "${focusTp}" adalah ___________________________.`,
             answer: `Kunci Isian: Konsep/prinsip inti "${materi}" yang berkaitan langsung dengan ${focusTp}.`,
             scoreWeight: Math.round(100 / count)
           });
         } else if (qType === 'ESAI') {
           items.push({
             no: i,
-            stem: `[Esai Terstruktur #${i} — SOLO ${soloMeta.level}] Jelaskan dengan bahasamu sendiri bagaimana konsep "${materi}" diterapkan dalam konteks "${focusTp}", serta berikan contoh nyata yang dapat kamu temukan di lingkungan sekitar!`,
+            stem: `[Esai Terstruktur #${i} — SOLO ${soloMeta.level}] Jelaskan dengan bahasamu sendiri bagaimana konsep "${materi}"${bab ? ` pada ${bab}` : ''} diterapkan dalam konteks "${focusTp}", serta berikan contoh nyata yang dapat kamu temukan di lingkungan sekitar!`,
             answer: `Pedoman Penskoran Esai: Siswa menjelaskan konsep "${materi}" secara runtut, mengaitkannya dengan "${focusTp}", dan memberikan minimal 1 contoh kontekstual yang tepat.`,
             scoreWeight: Math.round(100 / count)
           });
         } else if (qType === 'URAIAN') {
           items.push({
             no: i,
-            stem: `[Uraian Pemecahan Masalah #${i} — Tingkat ${difficulty || 'SEDANG'}] Apabila di lingkungan sekolah atau rumah ditemukan kendala yang berkaitan dengan "${materi}", analisislah penyebabnya berdasarkan konsep ${mapel} dan susunlah langkah penyelesaiannya secara sistematis!`,
+            stem: `[Uraian Pemecahan Masalah #${i} — Tingkat ${difficulty || 'SEDANG'}] Apabila di lingkungan sekolah atau rumah ditemukan kendala yang berkaitan dengan "${materi}"${bab ? ` (${bab})` : ''}, analisislah penyebabnya berdasarkan konsep ${mapel} dan susunlah langkah penyelesaiannya secara sistematis!`,
             answer: `Rubrik Uraian HOTS: (1) Ketepatan analisis masalah terkait "${materi}", (2) Kesesuaian konsep ${mapel}, (3) Keruntutan solusi sesuai tingkat ${soloMeta.level}.`,
             scoreWeight: Math.round(100 / count)
           });
@@ -16449,6 +17370,7 @@ const RpmApp = {
     const semester = document.getElementById('rpm-input-semester')?.value || 'Semester 1 (Ganjil) — 2 x 35 Menit';
     const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
     const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const bab = (document.getElementById('rpm-input-bab')?.value || '').trim() || 'Bab Pembelajaran Inti';
     const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
     const cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
     const tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
@@ -16457,7 +17379,6 @@ const RpmApp = {
     const mathMode = document.getElementById('rpm-math-mode-select')?.value || 'DIRECT_CALC';
     const mathConstraint = (document.getElementById('rpm-math-constraint-input')?.value || '').trim();
 
-    // Kunci Tanggal Penyusunan & Penyimpanan secara permanen dari input tanggal (bukan berubah setiap hari)
     const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
     const chosenDateISO = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
     const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
@@ -16467,7 +17388,7 @@ const RpmApp = {
     if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
       UI.showNotif(
         'Parameter Modul Belum Lengkap',
-        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Ajar.',
+        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Pokok.',
         'warning'
       );
       return;
@@ -16513,6 +17434,7 @@ const RpmApp = {
       kelasFase,
       semester,
       mapel,
+      bab,
       materi,
       soloLevel,
       selectedDpl,
@@ -16525,8 +17447,8 @@ const RpmApp = {
     };
 
     const blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
+    blueprint.bab = bab;
 
-    // Gunakan CP dan TP yang diketik guru jika diisi
     if (cpInput) {
       blueprint.capaianPembelajaran = cpInput;
     }
@@ -16540,7 +17462,6 @@ const RpmApp = {
       }
     }
 
-    // Kunci permanen tanggal penyusunan pada blueprint
     blueprint.savedDateISO = chosenDateISO;
     blueprint.createdAt = lockedFormattedDate;
     blueprint.savedTimestamp = lockedFullTimestamp;
@@ -16553,6 +17474,7 @@ const RpmApp = {
     const newDoc = {
       id: 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
       ...blueprint,
+      bab,
       customPrompt,
       difficulty,
       mathMode,
@@ -16567,6 +17489,7 @@ const RpmApp = {
     };
 
     AppState.rpmCurrentDoc = newDoc;
+    this.closeAllProtaPickers();
 
     if (bucket) {
       if (!Array.isArray(bucket.rpmModules)) bucket.rpmModules = [];
@@ -16585,8 +17508,8 @@ const RpmApp = {
     this.renderSavedArchiveTable();
 
     UI.showNotif(
-      'Modul RPM & Soal Berhasil Disusun dan Dikunci Tanggalnya',
-      `Modul Ajar RPM mata pelajaran ${mapel} (${materi}) berhasil disimpan dengan tanggal penyusunan terkunci permanen pada: ${lockedFormattedDate}.`,
+      'Modul RPM Terintegrasi Prota Berhasil Disusun',
+      `Modul Ajar RPM mata pelajaran ${mapel} (${bab} — ${materi}) berhasil disimpan dengan tanggal penyusunan terkunci pada: ${lockedFormattedDate}.`,
       'success'
     );
   },
@@ -16602,6 +17525,7 @@ const RpmApp = {
 
     doc.questionSections = this.buildDynamicQuestionSections({
       mapel: doc.mapel,
+      bab: doc.bab || '',
       materi: doc.materi,
       kelasFase: doc.kelasFase,
       soloLevel: doc.soloLevel,
@@ -16617,12 +17541,11 @@ const RpmApp = {
 
     UI.showNotif(
       'Variasi Soal Baru Berhasil Dibuat',
-      `Butir soal untuk materi "${doc.materi}" telah diperbarui tanpa mengubah tanggal penyusunan modul (${doc.createdAt}).`,
+      `Butir soal untuk materi "${doc.materi}" (${doc.bab || doc.mapel}) telah diperbarui tanpa mengubah tanggal penyusunan modul (${doc.createdAt}).`,
       'success'
     );
   },
 
-  // Menyinkronkan perubahan pada dokumen yang sedang dibuka ke dalam arsip bucket tanpa menimpa tanggal simpan asli
   syncCurrentDocToArchiveBucket() {
     const doc = AppState.rpmCurrentDoc;
     const bucket = DB.getActiveClassBucket();
@@ -16632,7 +17555,6 @@ const RpmApp = {
     const existingIdx = bucket.rpmModules.findIndex(m => m && String(m.id) === String(doc.id));
 
     if (existingIdx >= 0) {
-      // Pertahankan tanggal simpan asli yang sudah terkunci
       const originalCreatedAt = bucket.rpmModules[existingIdx].createdAt || doc.createdAt;
       const originalSavedDateISO = bucket.rpmModules[existingIdx].savedDateISO || doc.savedDateISO;
       const originalSavedTimestamp = bucket.rpmModules[existingIdx].savedTimestamp || doc.savedTimestamp;
@@ -16658,7 +17580,6 @@ const RpmApp = {
       return;
     }
 
-    // Pastikan tanggal penyusunan tidak pernah ditimpa dengan tanggal hari ini jika sudah dikunci
     if (!doc.createdAt) {
       const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
       const iso = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
@@ -16673,7 +17594,7 @@ const RpmApp = {
 
     UI.showNotif(
       'Tersimpan Permanen di Arsip & Cloud',
-      `Modul RPM "${doc.mapel} — ${doc.materi}" telah tersimpan di Arsip Perangkat Ajar dengan tanggal terkunci: ${doc.createdAt}.`,
+      `Modul RPM "${doc.mapel} (${doc.bab || '-'}) — ${doc.materi}" telah tersimpan di Arsip Perangkat Ajar dengan tanggal terkunci: ${doc.createdAt}.`,
       'success'
     );
   },
@@ -16683,6 +17604,7 @@ const RpmApp = {
     const resultWrapper = document.getElementById('rpm-result-wrapper');
     if (formCard) formCard.classList.remove('hidden');
     if (resultWrapper) resultWrapper.classList.add('hidden');
+    this.refreshProtaCascadingState();
   },
 
   toggleAnswerKeyVisibility() {
@@ -16753,7 +17675,6 @@ const RpmApp = {
       }
     }
 
-    // Render tombol tab halaman di atas
     const tabsBar = document.getElementById('rpm-pagination-tabs-bar');
     if (tabsBar) {
       let tabsHtml = `
@@ -16777,7 +17698,6 @@ const RpmApp = {
       tabsBar.innerHTML = tabsHtml;
     }
 
-    // Render navigasi halaman di bawah
     const bottomPager = document.getElementById('rpm-bottom-pager-bar');
     if (bottomPager) {
       const prevDisabled = this.activePage <= 1 ? 'disabled' : '';
@@ -16837,7 +17757,6 @@ const RpmApp = {
     );
   },
 
-  // Menghapus langkah pengalaman belajar secara permanen dari modul aktif & arsip Cloud
   removeLearningStep(stageKey, stepIndex) {
     if (AppState.isReadOnlyInspection) return;
     if (!AppState.rpmCurrentDoc || !AppState.rpmCurrentDoc.pengalaman3 || !Array.isArray(AppState.rpmCurrentDoc.pengalaman3[stageKey])) {
@@ -16856,7 +17775,6 @@ const RpmApp = {
     );
   },
 
-  // Menghapus 1 butir soal secara permanen dari lembar soal & arsip Cloud
   removeSingleQuestionItem(sectionIdx, itemIdx) {
     if (AppState.isReadOnlyInspection) return;
     const doc = AppState.rpmCurrentDoc;
@@ -16866,13 +17784,11 @@ const RpmApp = {
     if (!Array.isArray(sec.items)) return;
 
     sec.items.splice(itemIdx, 1);
-    // Urutkan ulang nomor soal setelah dihapus
     sec.items.forEach((it, idx) => {
       it.no = idx + 1;
     });
     sec.count = sec.items.length;
 
-    // Jika seluruh soal pada bagian tersebut habis dihapus, hapus bagian soalnya
     if (sec.items.length === 0) {
       doc.questionSections.splice(sectionIdx, 1);
     }
@@ -16893,7 +17809,6 @@ const RpmApp = {
     const container = document.getElementById('rpm-document-content');
     if (!doc || !container) return;
 
-    // Gunakan tanggal yang sudah dikunci saat modul disusun/disimpan, bukan tanggal hari ini
     const lockedDateDisplay = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : 'Tanggal Terkunci');
 
     const dplBadges = (doc.dplList || []).map(d =>
@@ -16929,7 +17844,7 @@ const RpmApp = {
             ${UI.escapeHtml(doc.sekolah)}
           </h2>
           <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted);">
-            Terintegrasi Sistem 8-3-3-4 (8 Dimensi Profil Lulusan, 3 Prinsip, 3 Pengalaman Belajar, 4 Kerangka) & Taksonomi SOLO
+            Terintegrasi Program Tahunan (Prota), Sistem 8-3-3-4 & Taksonomi SOLO
           </div>
           <div style="margin-top: 0.45rem;">
             <span class="badge badge-success" style="font-size: 0.78rem;">
@@ -16959,14 +17874,18 @@ const RpmApp = {
               <tr>
                 <th>Mata Pelajaran</th>
                 <td><strong>${UI.escapeHtml(doc.mapel)}</strong></td>
-                <th>Topik / Materi Pokok</th>
-                <td><strong>${UI.escapeHtml(doc.materi)}</strong></td>
+                <th>Bab Pembelajaran (Prota)</th>
+                <td><span class="badge badge-primary">${UI.escapeHtml(doc.bab || 'Bab Pembelajaran Inti')}</span></td>
               </tr>
               <tr>
+                <th>Topik / Materi Pokok</th>
+                <td><strong>${UI.escapeHtml(doc.materi)}</strong></td>
                 <th>Ranah Taksonomi SOLO</th>
                 <td><span class="badge badge-warning">${UI.escapeHtml(doc.soloLevel)}</span></td>
+              </tr>
+              <tr>
                 <th>Tanggal Penyusunan</th>
-                <td><strong>${UI.escapeHtml(lockedDateDisplay)}</strong></td>
+                <td colspan="3"><strong>${UI.escapeHtml(lockedDateDisplay)}</strong></td>
               </tr>
             </tbody>
           </table>
@@ -16985,7 +17904,7 @@ const RpmApp = {
 
         <div style="margin-bottom: 1.15rem;">
           <strong style="display: block; margin-bottom: 0.35rem; color: var(--primary);">
-            2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP) :
+            2. Capaian Pembelajaran (CP) & Tujuan Pembelajaran (TP Terintegrasi Prota) :
           </strong>
           <div style="background: #f8fafc; padding: 0.9rem; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.65rem; font-size: 0.88rem;">
             <strong>Capaian Pembelajaran:</strong> ${UI.escapeHtml(doc.capaianPembelajaran)}
@@ -17192,7 +18111,7 @@ const RpmApp = {
                 LAMPIRAN INSTRUMEN ASESMEN (HALAMAN ${pageNum}) — ${UI.escapeHtml(sec.title)}
               </div>
               <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--dark); margin: 0.25rem 0;">
-                Mata Pelajaran: ${UI.escapeHtml(doc.mapel)} — Materi: ${UI.escapeHtml(doc.materi)}
+                ${UI.escapeHtml(doc.mapel)} (${UI.escapeHtml(doc.bab || 'Bab Pembelajaran')}) — Materi: ${UI.escapeHtml(doc.materi)}
               </h2>
               <div style="font-size: 0.84rem; color: var(--text-muted);">
                 Satuan Pendidikan: ${UI.escapeHtml(doc.sekolah)} | Kelas/Fase: ${UI.escapeHtml(doc.kelasFase)} | Tanggal Penyusunan: <strong>${UI.escapeHtml(lockedDateDisplay)}</strong>
@@ -17205,7 +18124,6 @@ const RpmApp = {
     }).join('');
   },
 
-  // Merender tabel Arsip Modul RPM dengan tanggal asli yang terkunci & tombol Hapus Permanen
   renderSavedArchiveTable() {
     const bucket = DB.getActiveClassBucket();
     const tbody = document.getElementById('tbody-rpm-saved-archive');
@@ -17217,7 +18135,6 @@ const RpmApp = {
     const deletedSet = new Set(((DB.data && DB.data.deletedRpmIds) || []).map(String));
     let modules = (bucket && Array.isArray(bucket.rpmModules)) ? bucket.rpmModules : [];
 
-    // Pastikan setiap modul di arsip memiliki ID unik dan saring yang sudah masuk daftar hitam
     modules = modules.filter((mod, idx) => {
       if (!mod) return false;
       if (!mod.id) {
@@ -17245,7 +18162,6 @@ const RpmApp = {
     }
 
     tbody.innerHTML = modules.map((mod, idx) => {
-      // Tampilkan tanggal asli saat modul disimpan (bukan tanggal hari ini)
       const lockedDateText = mod.createdAt || (mod.savedDateISO ? DateTimeUtil.formatIndonesianDate(mod.savedDateISO) : 'Tanggal Terkunci');
       const lockedTimeSub = mod.savedTimestamp && mod.savedTimestamp.includes('Pukul')
         ? mod.savedTimestamp.split('(')[1]?.replace(')', '') || ''
@@ -17272,7 +18188,10 @@ const RpmApp = {
               ${UI.escapeHtml(lockedTimeSub)}
             </div>
           </td>
-          <td><strong>${UI.escapeHtml(mod.mapel || '-')}</strong></td>
+          <td>
+            <strong>${UI.escapeHtml(mod.mapel || '-')}</strong>
+            ${mod.bab ? `<div style="margin-top: 0.2rem;"><span class="badge badge-primary" style="font-size: 0.68rem;">${UI.escapeHtml(mod.bab)}</span></div>` : ''}
+          </td>
           <td>
             <div style="font-weight: 700; color: var(--primary);">${UI.escapeHtml(mod.materi || '-')}</div>
             <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
@@ -17300,7 +18219,6 @@ const RpmApp = {
     }).join('');
   },
 
-  // Membuka kembali modul dari arsip dengan mempertahankan tanggal penyusunan asli
   openSavedRpmFromArchive(rpmId, fallbackIndex = -1) {
     const bucket = DB.getActiveClassBucket();
     if (!bucket || !Array.isArray(bucket.rpmModules)) return;
@@ -17315,7 +18233,6 @@ const RpmApp = {
       return;
     }
 
-    // Salin ke memori aktif tanpa mengubah properti tanggal penyusunan aslinya
     AppState.rpmCurrentDoc = JSON.parse(JSON.stringify(found));
 
     const formCard = document.getElementById('rpm-builder-form-card');
@@ -17330,12 +18247,11 @@ const RpmApp = {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     UI.showNotif(
       'Modul RPM Arsip Dibuka',
-      `Menampilkan Modul RPM "${found.mapel} — ${found.materi}" yang disusun pada tanggal: ${found.createdAt || found.savedDateISO || '-'}.`,
+      `Menampilkan Modul RPM "${found.mapel} (${found.bab || '-'}) — ${found.materi}" yang disusun pada tanggal: ${found.createdAt || found.savedDateISO || '-'}.`,
       'info'
     );
   },
 
-  // Menghapus modul RPM secara permanen dari arsip, memori aktif, localStorage, dan Supabase Cloud
   deleteSavedRpmFromArchive(rpmId, fallbackIndex = -1) {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
@@ -17354,10 +18270,8 @@ const RpmApp = {
     const confirmed = window.confirm(`Apakah Anda yakin ingin menghapus permanen modul "${modTitle}" dari Arsip dan Cloud?`);
     if (!confirmed) return;
 
-    // 1. Kunci ID ke daftar hitam permanen agar tidak pernah ditarik kembali dari Cloud Supabase
     DB.lockPermanentDeletion({ rpmId: targetId });
 
-    // 2. Hapus dari bucket kelas aktif & seluruh bucket kelas di database
     bucket.rpmModules = bucket.rpmModules.filter((m, idx) => {
       if (!m) return false;
       if (String(m.id) === targetId) return false;
@@ -17371,7 +18285,6 @@ const RpmApp = {
       }
     });
 
-    // 3. Jika modul yang dihapus sedang ditampilkan di halaman, bersihkan tampilan dan kembali ke form
     if (AppState.rpmCurrentDoc && String(AppState.rpmCurrentDoc.id) === targetId) {
       AppState.rpmCurrentDoc = null;
       const docContent = document.getElementById('rpm-document-content');
@@ -17381,7 +18294,6 @@ const RpmApp = {
       this.reopenBuilderForm();
     }
 
-    // 4. Simpan instan ke localStorage & dorong ke Supabase Cloud
     DB.saveImmediate();
     this.renderSavedArchiveTable();
 
@@ -17392,7 +18304,6 @@ const RpmApp = {
     );
   },
 
-  // Menghapus seluruh arsip modul RPM di kelas aktif secara permanen
   clearAllSavedRpmArchive() {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
@@ -23429,6 +24340,1349 @@ Format JSON wajib:
         </tr>
       `;
     }).join('');
+  }
+};
+
+    Object.assign(DataKelasApp, {
+  activeTab: 'siswa',
+  showAllTabs: false,
+
+  openView(initialTab = null) {
+    const bucket = DB.getActiveClassBucket();
+    const teacher = DB.getActiveTeacherAccount();
+    if (!bucket) return;
+
+    this.renderStudentsTable();
+    this.loadScheduleFields();
+    this.renderDplMasterTable();
+    this.renderEkskulMasterTable();
+
+    if (typeof ProtaApp !== 'undefined') {
+      ProtaApp.initProtaView();
+    }
+
+    this.updateDataKelasTabBadges();
+
+    const defaultTab = initialTab || (teacher && teacher.role === 'GURU_MAPEL' ? 'prota' : (this.activeTab || 'siswa'));
+    this.switchTab(defaultTab);
+    UI.switchView('view-pilar-data-kelas');
+  },
+
+  switchTab(tabName) {
+    this.activeTab = tabName || 'siswa';
+    this.showAllTabs = false;
+
+    const tabs = ['siswa', 'jadwal', 'dpl', 'ekskul', 'prota'];
+    tabs.forEach(t => {
+      const btn = document.getElementById(`btn-dk-tab-${t}`);
+      const panel = document.getElementById(`dk-panel-${t}`);
+
+      if (btn) {
+        if (t === this.activeTab) {
+          btn.classList.add('active-dk-tab');
+        } else {
+          btn.classList.remove('active-dk-tab');
+        }
+      }
+      if (panel) {
+        if (t === this.activeTab) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      }
+    });
+
+    if (this.activeTab === 'prota' && typeof ProtaApp !== 'undefined') {
+      ProtaApp.renderProtaWorkspace();
+    }
+
+    this.updateDataKelasTabBadges();
+  },
+
+  showAllTabsSimultaneously() {
+    this.showAllTabs = !this.showAllTabs;
+    const tabs = ['siswa', 'jadwal', 'dpl', 'ekskul', 'prota'];
+
+    tabs.forEach(t => {
+      const btn = document.getElementById(`btn-dk-tab-${t}`);
+      const panel = document.getElementById(`dk-panel-${t}`);
+
+      if (panel) {
+        if (this.showAllTabs || t === this.activeTab) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      }
+      if (btn) {
+        if (this.showAllTabs || t === this.activeTab) {
+          btn.classList.add('active-dk-tab');
+        } else {
+          btn.classList.remove('active-dk-tab');
+        }
+      }
+    });
+
+    if (typeof ProtaApp !== 'undefined') {
+      ProtaApp.renderProtaWorkspace();
+    }
+  },
+
+  updateDataKelasTabBadges() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const badgeSiswa = document.getElementById('dk-badge-count-siswa');
+    const badgeDpl = document.getElementById('dk-badge-count-dpl');
+    const badgeEkskul = document.getElementById('dk-badge-count-ekskul');
+    const badgeProta = document.getElementById('dk-badge-count-prota');
+
+    if (badgeSiswa) badgeSiswa.textContent = `${(bucket.students || []).length}`;
+    if (badgeDpl) badgeDpl.textContent = `${(bucket.dplMaster || []).length}`;
+    if (badgeEkskul) badgeEkskul.textContent = `${(bucket.ekskulMaster || []).length}`;
+
+    if (badgeProta && typeof ProtaApp !== 'undefined') {
+      const totalBabCount = ProtaApp.getTotalBabCountInBucket(bucket);
+      badgeProta.textContent = `${totalBabCount} Bab`;
+    }
+  },
+
+  saveAllDataKelas() {
+    this.readScheduleFieldsToBucket();
+    if (typeof ProtaApp !== 'undefined') {
+      ProtaApp.saveProtaChanges(false);
+    }
+    this.updateDataKelasTabBadges();
+    DB.saveImmediate();
+    UI.showNotif(
+      'Seluruh Master Data Kelas & Prota Tersimpan',
+      'Daftar nama & akun siswa, jadwal pelajaran Senin–Sabtu, Master DPL, ekstrakurikuler, serta Program Tahunan (CP, Bab, Materi, & TP) telah berhasil disimpan dan disinkronkan ke Cloud.',
+      'success'
+    );
+  }
+});
+
+    const ProtaApp = {
+  activeSubject: '',
+  semesterFilter: 'ALL',
+
+  ensureBucketProta(bucket) {
+    if (!bucket) return {};
+    if (!bucket.protaData || typeof bucket.protaData !== 'object') {
+      bucket.protaData = {};
+    }
+    if (!Array.isArray(bucket.protaCustomSubjects)) {
+      bucket.protaCustomSubjects = [];
+    }
+    return bucket.protaData;
+  },
+
+  getAvailableSubjects() {
+    const teacher = DB.getActiveTeacherAccount();
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS'];
+
+    this.ensureBucketProta(bucket);
+    const subjSet = new Set();
+
+    if (teacher && teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu) {
+      subjSet.add(teacher.mapelDiampu.trim());
+    } else {
+      Object.values(bucket.schedule || {}).forEach(dayArr => {
+        if (Array.isArray(dayArr)) {
+          dayArr.forEach(s => {
+            if (s && s.trim()) subjSet.add(s.trim());
+          });
+        }
+      });
+      if (subjSet.size === 0) {
+        ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS', 'Seni Budaya', 'PJOK'].forEach(s => subjSet.add(s));
+      }
+    }
+
+    (bucket.protaCustomSubjects || []).forEach(s => {
+      if (s && s.trim()) subjSet.add(s.trim());
+    });
+
+    Object.keys(bucket.protaData || {}).forEach(s => {
+      if (s && s.trim()) subjSet.add(s.trim());
+    });
+
+    return Array.from(subjSet);
+  },
+
+  findSubjectKeyCaseInsensitive(protaMap, subjectName) {
+    const target = String(subjectName || '').trim().toLowerCase();
+    return Object.keys(protaMap || {}).find(k => k.trim().toLowerCase() === target) || null;
+  },
+
+  getSubjectProtaObject(subjectName) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return { cpList: [], babList: [] };
+
+    const protaMap = this.ensureBucketProta(bucket);
+    const cleanSubj = String(subjectName || this.activeSubject || 'Mata Pelajaran').trim();
+    const existingKey = this.findSubjectKeyCaseInsensitive(protaMap, cleanSubj) || cleanSubj;
+
+    if (!protaMap[existingKey]) {
+      protaMap[existingKey] = {
+        subjectName: existingKey,
+        cpList: [],
+        babList: []
+      };
+    }
+
+    if (!Array.isArray(protaMap[existingKey].cpList)) protaMap[existingKey].cpList = [];
+    if (!Array.isArray(protaMap[existingKey].babList)) protaMap[existingKey].babList = [];
+
+    return protaMap[existingKey];
+  },
+
+  getTotalBabCountInBucket(bucket) {
+    if (!bucket || !bucket.protaData) return 0;
+    let count = 0;
+    Object.values(bucket.protaData).forEach(subjObj => {
+      if (subjObj && Array.isArray(subjObj.babList)) {
+        count += subjObj.babList.length;
+      }
+    });
+    return count;
+  },
+
+  initProtaView() {
+    const subjects = this.getAvailableSubjects();
+    if (!this.activeSubject || !subjects.includes(this.activeSubject)) {
+      this.activeSubject = subjects[0] || 'Bahasa Indonesia';
+    }
+    this.renderProtaWorkspace();
+  },
+
+  renderProtaWorkspace() {
+    const subjects = this.getAvailableSubjects();
+    if (!this.activeSubject || !subjects.some(s => s.toLowerCase() === this.activeSubject.toLowerCase())) {
+      this.activeSubject = subjects[0] || 'Bahasa Indonesia';
+    }
+
+    const activeLabel = document.getElementById('prota-active-subject-label');
+    const cpSubjTitle = document.getElementById('prota-cp-subject-title');
+    const babSubjTitle = document.getElementById('prota-bab-subject-title');
+
+    if (activeLabel) activeLabel.textContent = this.activeSubject;
+    if (cpSubjTitle) cpSubjTitle.textContent = this.activeSubject;
+    if (babSubjTitle) babSubjTitle.textContent = this.activeSubject;
+
+    this.renderSubjectChips(subjects);
+    this.renderCpList();
+    this.renderBabCards();
+
+    if (typeof DataKelasApp !== 'undefined' && typeof DataKelasApp.updateDataKelasTabBadges === 'function') {
+      DataKelasApp.updateDataKelasTabBadges();
+    }
+  },
+
+  renderSubjectChips(subjects) {
+    const container = document.getElementById('prota-subject-chips-container');
+    if (!container) return;
+
+    const bucket = DB.getActiveClassBucket();
+    const protaMap = (bucket && bucket.protaData) || {};
+
+    container.innerHTML = subjects.map(subj => {
+      const isActive = subj.toLowerCase() === this.activeSubject.toLowerCase();
+      const key = this.findSubjectKeyCaseInsensitive(protaMap, subj);
+      const dataObj = key ? protaMap[key] : null;
+      const babCount = (dataObj && Array.isArray(dataObj.babList)) ? dataObj.babList.length : 0;
+      const cpCount = (dataObj && Array.isArray(dataObj.cpList)) ? dataObj.cpList.length : 0;
+      const safeSubj = UI.escapeHtml(subj).replace(/'/g, "\\'");
+
+      return `
+        <button
+          type="button"
+          class="prota-subject-chip ${isActive ? 'active-prota-subj' : ''}"
+          onclick="ProtaApp.selectSubject('${safeSubj}')"
+        >
+          <span>📘 ${UI.escapeHtml(subj)}</span>
+          <span class="badge ${isActive ? 'badge-warning' : 'badge-info'}" style="font-size: 0.7rem; padding: 0.1rem 0.45rem;">
+            ${cpCount} CP | ${babCount} Bab
+          </span>
+        </button>
+      `;
+    }).join('');
+  },
+
+  selectSubject(subjectName) {
+    this.activeSubject = subjectName;
+    this.renderProtaWorkspace();
+  },
+
+  addCustomSubject() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    const inp = document.getElementById('prota-new-subject-input');
+    const rawName = inp ? inp.value.trim() : '';
+
+    if (!bucket || !rawName) {
+      UI.showNotif('Nama Mata Pelajaran Kosong', 'Ketikkan nama mata pelajaran yang ingin ditambahkan ke Program Tahunan.', 'warning');
+      return;
+    }
+
+    this.ensureBucketProta(bucket);
+    const exists = (bucket.protaCustomSubjects || []).some(s => s.toLowerCase() === rawName.toLowerCase());
+    if (!exists) {
+      bucket.protaCustomSubjects.push(rawName);
+    }
+
+    this.activeSubject = rawName;
+    this.getSubjectProtaObject(rawName);
+    if (inp) inp.value = '';
+
+    DB.save();
+    this.renderProtaWorkspace();
+    UI.showNotif('Mata Pelajaran Ditambahkan', `Mata pelajaran "${rawName}" siap disusun Program Tahunannya.`, 'success');
+  },
+
+  // ============================================================================
+  // MANAJEMEN CAPAIAN PEMBELAJARAN (CP)
+  // ============================================================================
+  renderCpList() {
+    const container = document.getElementById('prota-cp-list-container');
+    if (!container) return;
+
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const cpList = subjObj.cpList || [];
+
+    if (cpList.length === 0) {
+      container.innerHTML = `
+        <div class="alert-box alert-info" style="margin-top: 0;">
+          Belum ada Capaian Pembelajaran (CP) untuk mata pelajaran <strong>${UI.escapeHtml(this.activeSubject)}</strong>. Klik tombol <strong>+ Tambah Kolom CP Baru</strong> untuk mengisi manual, atau klik <strong>✨ Buat & Tambahkan CP Akurat dengan AI</strong>.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = cpList.map((cp, idx) => `
+      <div class="prota-cp-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.55rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 240px;">
+            <span class="badge badge-primary">CP #${idx + 1}</span>
+            <input
+              type="text"
+              class="form-control"
+              style="max-width: 340px; font-weight: 700; padding: 0.35rem 0.65rem; font-size: 0.85rem;"
+              placeholder="Nama Elemen CP (Contoh: Pemahaman Konsep / Menyimak / Bilangan)..."
+              value="${UI.escapeHtml(cp.elemen || '')}"
+              oninput="ProtaApp.updateCpField('${cp.id}', 'elemen', this.value)"
+            >
+          </div>
+          <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="ProtaApp.deleteCpRow('${cp.id}')">
+            🗑️ Hapus CP
+          </button>
+        </div>
+        <textarea
+          class="form-control"
+          rows="2"
+          placeholder="Tuliskan rumusan lengkap Capaian Pembelajaran (CP) untuk elemen ini..."
+          oninput="ProtaApp.updateCpField('${cp.id}', 'deskripsi', this.value)"
+        >${UI.escapeHtml(cp.deskripsi || '')}</textarea>
+      </div>
+    `).join('');
+  },
+
+  addCpRow(elemenDefault = '', deskripsiDefault = '') {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+
+    subjObj.cpList.push({
+      id: 'CP_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      elemen: elemenDefault || `Elemen ${subjObj.cpList.length + 1} (${this.activeSubject})`,
+      deskripsi: deskripsiDefault || ''
+    });
+
+    DB.save();
+    this.renderProtaWorkspace();
+  },
+
+  updateCpField(cpId, field, value) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const item = (subjObj.cpList || []).find(c => c.id === cpId);
+    if (!item) return;
+    item[field] = value;
+    DB.save();
+  },
+
+  deleteCpRow(cpId) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    subjObj.cpList = (subjObj.cpList || []).filter(c => c.id !== cpId);
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+  },
+
+  // ============================================================================
+  // MANAJEMEN KOLOM BAB, MATERI POKOK, & TUJUAN PEMBELAJARAN PER SEMESTER
+  // ============================================================================
+  setSemesterFilter(filterVal) {
+    this.semesterFilter = filterVal || 'ALL';
+    this.renderBabCards();
+  },
+
+  addBabCard(semester = '1') {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const semStr = String(semester) === '2' ? '2' : '1';
+    const countInSem = (subjObj.babList || []).filter(b => String(b.semester) === semStr).length + 1;
+    const totalBabNum = (subjObj.babList || []).length + 1;
+
+    const newBab = {
+      id: 'BAB_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      semester: semStr,
+      babNumber: `Bab ${totalBabNum}`,
+      judulBab: '',
+      alokasiJp: '6 JP',
+      materiList: [
+        {
+          id: 'MAT_' + Date.now() + '_1',
+          namaMateri: '',
+          tpList: ''
+        }
+      ]
+    };
+
+    subjObj.babList.push(newBab);
+    DB.save();
+    this.renderProtaWorkspace();
+
+    UI.showNotif(
+      `Kolom Bab Semester ${semStr} Ditambahkan`,
+      `Kolom ${newBab.babNumber} (Semester ${semStr} Ke-${countInSem}) berhasil ditambahkan. Silakan isi Judul Bab beserta rincian Materi dan Tujuan Pembelajarannya.`,
+      'success'
+    );
+  },
+
+  updateBabField(babId, field, value) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab) return;
+    bab[field] = value;
+    DB.save();
+
+    if (field === 'semester') {
+      this.renderBabCards();
+    }
+  },
+
+  deleteBabCard(babId) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const target = (subjObj.babList || []).find(b => b.id === babId);
+    if (!target) return;
+
+    if (!window.confirm(`Hapus permanen "${target.babNumber}: ${target.judulBab || 'Tanpa Judul'}" beserta seluruh materi di dalamnya?`)) {
+      return;
+    }
+
+    subjObj.babList = (subjObj.babList || []).filter(b => b.id !== babId);
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+  },
+
+  addMateriRow(babId, namaDefault = '', tpDefault = '') {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab) return;
+
+    if (!Array.isArray(bab.materiList)) bab.materiList = [];
+    bab.materiList.push({
+      id: 'MAT_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      namaMateri: namaDefault,
+      tpList: tpDefault
+    });
+
+    DB.save();
+    this.renderBabCards();
+  },
+
+  updateMateriField(babId, materiId, field, value) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab || !Array.isArray(bab.materiList)) return;
+
+    const mat = bab.materiList.find(m => m.id === materiId);
+    if (!mat) return;
+    mat[field] = value;
+    DB.save();
+  },
+
+  deleteMateriRow(babId, materiId) {
+    if (AppState.isReadOnlyInspection) return;
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab || !Array.isArray(bab.materiList)) return;
+
+    bab.materiList = bab.materiList.filter(m => m.id !== materiId);
+    DB.saveImmediate();
+    this.renderBabCards();
+  },
+
+  renderBabCards() {
+    const container = document.getElementById('prota-bab-cards-container');
+    if (!container) return;
+
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const allBabs = subjObj.babList || [];
+
+    const filteredBabs = allBabs.filter(b => {
+      if (this.semesterFilter === 'ALL') return true;
+      return String(b.semester) === String(this.semesterFilter);
+    });
+
+    if (filteredBabs.length === 0) {
+      container.innerHTML = `
+        <div class="alert-box alert-warning" style="margin-top: 0;">
+          Belum ada Bab yang disusun untuk filter semester ini pada mata pelajaran <strong>${UI.escapeHtml(this.activeSubject)}</strong>. Klik tombol <strong>+ Tambah Bab Semester 1</strong>, <strong>+ Tambah Bab Semester 2</strong>, atau <strong>🤖 Susun Otomatis Seluruh Prota Mapel Ini (AI Akurat)</strong> di atas.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filteredBabs.map((bab, idx) => {
+      const semBadgeClass = String(bab.semester) === '2' ? 'badge-info' : 'badge-primary';
+      const semLabel = String(bab.semester) === '2' ? 'SEMESTER 2 (GENAP)' : 'SEMESTER 1 (GANJIL)';
+      const materiArr = Array.isArray(bab.materiList) ? bab.materiList : [];
+
+      const materiRowsHtml = materiArr.length === 0
+        ? `
+          <div style="font-size: 0.82rem; color: var(--text-muted); font-style: italic; padding: 0.65rem;">
+            Belum ada rincian materi pada bab ini. Klik tombol <strong>+ Tambah Materi & TP</strong> di bawah.
+          </div>
+        `
+        : materiArr.map((mat, mIdx) => `
+          <div class="prota-materi-item">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
+              <span class="badge badge-success">Materi ${mIdx + 1} (${UI.escapeHtml(bab.babNumber || 'Bab')})</span>
+              <div class="write-action-btn" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 0.2rem 0.55rem; color: var(--secondary); border-color: #5eead4;" onclick="ProtaApp.generateSingleMateriTpWithAI('${bab.id}', '${mat.id}')">
+                  ✨ Buat TP Akurat dengan AI
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 0.2rem 0.55rem; color: var(--danger); border-color: #fca5a5;" onclick="ProtaApp.deleteMateriRow('${bab.id}', '${mat.id}')">
+                  🗑️ Hapus Materi
+                </button>
+              </div>
+            </div>
+
+            <div class="grid-2" style="gap: 0.85rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.78rem; color: var(--primary);">
+                  Topik / Materi Pokok Ke-${mIdx + 1} yang Diajarkan :
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  style="font-weight: 700;"
+                  placeholder="Contoh: Operasi Pembagian Bilangan Cacah / Siklus Air / Kalimat Transitif..."
+                  value="${UI.escapeHtml(mat.namaMateri || '')}"
+                  oninput="ProtaApp.updateMateriField('${bab.id}', '${mat.id}', 'namaMateri', this.value)"
+                >
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" style="font-size: 0.78rem; color: var(--secondary);">
+                  Tujuan Pembelajaran (TP) Sesuai Materi Ini (1 Baris per TP) :
+                </label>
+                <textarea
+                  class="form-control"
+                  rows="2"
+                  placeholder="Tuliskan Tujuan Pembelajaran untuk materi ini (atau klik ✨ Buat TP Akurat dengan AI)..."
+                  oninput="ProtaApp.updateMateriField('${bab.id}', '${mat.id}', 'tpList', this.value)"
+                >${UI.escapeHtml(mat.tpList || '')}</textarea>
+              </div>
+            </div>
+          </div>
+        `).join('');
+
+      return `
+        <div class="prota-bab-card">
+          <div class="prota-bab-header">
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <span class="badge ${semBadgeClass}">${semLabel}</span>
+              <span class="badge badge-warning">${materiArr.length} Materi Pokok</span>
+            </div>
+
+            <div class="write-action-btn" style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="ProtaApp.generateBabContentWithAI('${bab.id}')">
+                ✨ Isi Rincian Materi & TP Bab Ini dengan AI
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" onclick="ProtaApp.addMateriRow('${bab.id}')">
+                + Tambah Materi & TP
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="ProtaApp.deleteBabCard('${bab.id}')">
+                🗑️ Hapus Bab
+              </button>
+            </div>
+          </div>
+
+          <div class="grid-4" style="margin-bottom: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.78rem;">Semester :</label>
+              <select class="form-control" style="font-weight: 700;" onchange="ProtaApp.updateBabField('${bab.id}', 'semester', this.value)">
+                <option value="1" ${String(bab.semester) === '1' ? 'selected' : ''}>Semester 1 (Ganjil)</option>
+                <option value="2" ${String(bab.semester) === '2' ? 'selected' : ''}>Semester 2 (Genap)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.78rem;">Kode / Nomor Bab :</label>
+              <input
+                type="text"
+                class="form-control"
+                style="font-weight: 800; color: var(--primary);"
+                placeholder="Contoh: Bab 1"
+                value="${UI.escapeHtml(bab.babNumber || `Bab ${idx + 1}`)}"
+                oninput="ProtaApp.updateBabField('${bab.id}', 'babNumber', this.value)"
+              >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.78rem;">Judul / Tema Bab :</label>
+              <input
+                type="text"
+                class="form-control"
+                style="font-weight: 700;"
+                placeholder="Ketik judul bab (Contoh: Bilangan Cacah sampai 10.000 / Indonesiaku Kaya Budaya)..."
+                value="${UI.escapeHtml(bab.judulBab || '')}"
+                oninput="ProtaApp.updateBabField('${bab.id}', 'judulBab', this.value)"
+              >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" style="font-size: 0.78rem;">Alokasi Waktu Bab :</label>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Contoh: 12 JP (3 Pertemuan)"
+                value="${UI.escapeHtml(bab.alokasiJp || '6 JP')}"
+                oninput="ProtaApp.updateBabField('${bab.id}', 'alokasiJp', this.value)"
+              >
+            </div>
+          </div>
+
+          <div style="background: #f1f5f9; padding: 0.85rem; border-radius: var(--radius-md);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem;">
+              <strong style="font-size: 0.84rem; color: var(--dark);">
+                Daftar Materi Pokok & Tujuan Pembelajaran di Dalam ${UI.escapeHtml(bab.babNumber || 'Bab Ini')} :
+              </strong>
+              <button type="button" class="btn btn-outline btn-sm write-action-btn" style="background: #ffffff; font-size: 0.75rem; padding: 0.2rem 0.6rem;" onclick="ProtaApp.addMateriRow('${bab.id}')">
+                + Tambah Baris Materi di ${UI.escapeHtml(bab.babNumber || 'Bab Ini')}
+              </button>
+            </div>
+            ${materiRowsHtml}
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  // ============================================================================
+  // ENGINE AI KURIKULUM MERDEKA UNTUK PROTA (GEMINI API + BASIS KURIKULUM AKURAT)
+  // ============================================================================
+  async callGeminiJsonIfAvailable(promptText) {
+    const apiKey = localStorage.getItem('SIMAK_EDU_GEMINI_API_KEY_V1') || '';
+    if (!apiKey) return null;
+
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: promptText }] }],
+          generationConfig: {
+            temperature: 0.35,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      if (!rawText) return null;
+      return JSON.parse(rawText);
+    } catch (e) {
+      console.warn('Fallback ke Engine Kurikulum Terstruktur:', e);
+      return null;
+    }
+  },
+
+  getBuiltInCurriculumPreset(subjectName, kelasFase) {
+    const s = String(subjectName || '').toLowerCase();
+    const kf = String(kelasFase || 'Kelas 4 / Fase B');
+
+    if (s.includes('matematika')) {
+      return {
+        cpList: [
+          {
+            elemen: 'Bilangan & Operasi Hitung',
+            deskripsi: `Pada akhir ${kf}, peserta didik menunjukkan pemahaman dan intuisi bilangan (number sense) pada bilangan cacah sampai 10.000, melakukan operasi penjumlahan, pengurangan, perkalian, dan pembagian, serta mengenal pecahan senilai dan desimal.`
+          },
+          {
+            elemen: 'Aljabar, Pengukuran, Geometri & Analisis Data',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu menemukan nilai yang belum diketahui dalam kalimat matematika, mengukur luas dan volume menggunakan satuan baku, mendeskripsikan ciri bangun datar, serta menyajikan dan menafsirkan data dalam bentuk tabel dan diagram.`
+          }
+        ],
+        babList: [
+          {
+            semester: '1',
+            babNumber: 'Bab 1',
+            judulBab: 'Bilangan Cacah Sampai 10.000 & Nilai Tempat',
+            alokasiJp: '15 JP',
+            materiList: [
+              {
+                namaMateri: 'Membaca, Menulis, dan Menentukan Nilai Tempat Bilangan Cacah',
+                tpList: '1. Peserta didik mampu membaca dan menulis lambang bilangan cacah sampai 10.000 dengan tepat.\n2. Peserta didik mampu menentukan dan menguraikan nilai tempat ribuan, ratusan, puluhan, dan satuan.'
+              },
+              {
+                namaMateri: 'Membandingkan dan Mengurutkan Bilangan serta Operasi Penjumlahan & Pengurangan',
+                tpList: '1. Peserta didik mampu membandingkan dua bilangan cacah menggunakan simbol (<, >, =) dan mengurutkannya.\n2. Peserta didik mampu menyelesaikan operasi hitung penjumlahan dan pengurangan bilangan cacah.'
+              },
+              {
+                namaMateri: 'Operasi Perkalian dan Pembagian Bilangan Cacah',
+                tpList: '1. Peserta didik mampu menghitung hasil perkalian dan pembagian bilangan cacah secara bersusun.\n2. Peserta didik mampu memecahkan masalah kontekstual sehari-hari yang berkaitan dengan perkalian dan pembagian.'
+              }
+            ]
+          },
+          {
+            semester: '1',
+            babNumber: 'Bab 2',
+            judulBab: 'Pecahan Senilai, Pecahan Campuran, Desimal & Persen',
+            alokasiJp: '15 JP',
+            materiList: [
+              {
+                namaMateri: 'Konsep Pecahan, Pecahan Senilai, dan Membandingkan Pecahan',
+                tpList: '1. Peserta didik mampu mengidentifikasi pecahan senilai melalui representasi visual dan operasi perkalian/pembagian.\n2. Peserta didik mampu membandingkan dan mengurutkan antarpecahan dengan tepat.'
+              },
+              {
+                namaMateri: 'Pecahan Desimal Persepuluhan, Perseratusan, dan Hubungannya dengan Persen',
+                tpList: '1. Peserta didik mampu mengubah bentuk pecahan biasa menjadi pecahan desimal persepuluhan dan perseratusan.\n2. Peserta didik mampu menghubungkan pecahan desimal perseratusan dengan konsep persen.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 3',
+            judulBab: 'Pola Gambar, Pola Bilangan, serta Pengukuran Luas dan Volume',
+            alokasiJp: '15 JP',
+            materiList: [
+              {
+                namaMateri: 'Pola Gambar dan Pola Bilangan Membesar / Mengecil',
+                tpList: '1. Peserta didik mampu mengidentifikasi dan melanjutkan pola gambar serta pola bilangan yang melibatkan penjumlahan dan pengurangan.'
+              },
+              {
+                namaMateri: 'Pengukuran Luas dan Volume dengan Satuan Tidak Baku & Satuan Baku',
+                tpList: '1. Peserta didik mampu mengukur dan mengestimasi luas permukaan serta volume benda menggunakan satuan tidak baku dan satuan baku.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 4',
+            judulBab: 'Bangun Datar serta Penyajian Data dalam Tabel & Diagram Batang',
+            alokasiJp: '15 JP',
+            materiList: [
+              {
+                namaMateri: 'Ciri-Ciri Bangun Datar (Segi Banyak, Segitiga, dan Segiempat) serta Komposisi/Dekomposisi',
+                tpList: '1. Peserta didik mampu menganalisis karakteristik berbagai bangun datar berdasarkan sisi dan sudutnya.\n2. Peserta didik mampu menyusun (komposisi) dan mengurai (dekomposisi) bangun datar.'
+              },
+              {
+                namaMateri: 'Pengumpulan, Pengolahan, dan Penyajian Data dalam Piktogram & Diagram Batang',
+                tpList: '1. Peserta didik mampu menyajikan dan menafsirkan data dalam bentuk tabel, piktogram, dan diagram batang untuk menyelesaikan masalah.'
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (s.includes('indonesia')) {
+      return {
+        cpList: [
+          {
+            elemen: 'Menyimak & Membaca-Memirsa',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu memahami ide pokok dan ide pendukung pada teks informatif maupun teks narasi, memahami kata-kata baru dengan bantuan kamus, serta memaknai informasi dari tayangan atau ilustrasi.`
+          },
+          {
+            elemen: 'Berbicara-Mempresentasikan & Menulis',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu menyampaikan gagasan secara lisan dengan volume dan intonasi yang tepat, serta menulis teks narasi, deskripsi, prosedur, dan eksposisi dengan kalimat efektif dan kaidah kebahasaan yang benar.`
+          }
+        ],
+        babList: [
+          {
+            semester: '1',
+            babNumber: 'Bab 1',
+            judulBab: 'Sudah Besar: Kalimat Transitif, Intransitif, dan Makna Kosakata',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Mengidentifikasi Kalimat Transitif dan Kalimat Intransitif dalam Cerita',
+                tpList: '1. Peserta didik mampu membedakan kalimat transitif (berobjek) dan kalimat intransitif (tanpa objek) di dalam teks narasi.\n2. Peserta didik mampu menulis kalimat transitif dan intransitif dengan struktur SPOK yang tepat.'
+              },
+              {
+                namaMateri: 'Mencari Arti Kosakata Baru Menggunakan Kamus Besar Bahasa Indonesia (KBBI)',
+                tpList: '1. Peserta didik mampu menemukan arti kata baru dan menggunakannya dalam kalimat efektif.'
+              }
+            ]
+          },
+          {
+            semester: '1',
+            babNumber: 'Bab 2',
+            judulBab: 'Di Bawah Atap: Kata Berimbuhan me-, Kata Homonim, dan Kalimat Majemuk Setara',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Pembentukan Kata Berimbuhan Awalan me- dan Makna Kata Homonim',
+                tpList: '1. Peserta didik mampu menerapkan aturan peluluhan fonem (K, T, S, P) pada kata dasar yang diberi imbuhan me-.\n2. Peserta didik mampu mengidentifikasi makna kata homonim sesuai konteks kalimat.'
+              },
+              {
+                namaMateri: 'Menyusun Kalimat Majemuk Setara dengan Konjungsi yang Tepat',
+                tpList: '1. Peserta didik mampu menggabungkan dua kalimat tunggal menjadi kalimat majemuk setara menggunakan kata hubung (dan, atau, tetapi, sedangkan).'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 3',
+            judulBab: 'Ide Pokok, Ide Pendukung, Wawancara, dan Paragraf Deskripsi/Narasi',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Menentukan Ide Pokok dan Ide Pendukung dalam Paragraf Teks Informatif',
+                tpList: '1. Peserta didik mampu menganalisis ide pokok dan kalimat penjelas pada setiap paragraf bacaan dengan tepat.'
+              },
+              {
+                namaMateri: 'Menyusun Daftar Pertanyaan Wawancara (ADIKSIMBA) dan Menulis Laporan Hasil Wawancara',
+                tpList: '1. Peserta didik mampu merancang pertanyaan wawancara menggunakan kata tanya Apa, Di mana, Kapan, Siapa, Mengapa, dan Bagaimana serta menuliskan laporannya.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 4',
+            judulBab: 'Puisi, Majas Metafora, Teks Prosedur, dan Kalimat Efektif',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Mengapresiasi Puisi, Rima, dan Mengenal Majas Metafora',
+                tpList: '1. Peserta didik mampu menemukan makna kiasan (majas metafora) dan menulis puisi sederhana dengan pilihan kata yang indah.'
+              },
+              {
+                namaMateri: 'Menulis dan Mempraktikkan Teks Prosedur Secara Runtut',
+                tpList: '1. Peserta didik mampu menyusun teks prosedur pembuatan atau penggunaan sesuatu secara sistematis dengan kalimat perintah yang santun.'
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (s.includes('ipas') || s.includes('ipa') || s.includes('ips')) {
+      return {
+        cpList: [
+          {
+            elemen: 'Pemahaman IPAS (Ilmu Pengetahuan Alam dan Sosial)',
+            deskripsi: `Pada akhir ${kf}, peserta didik memahami bentuk dan fungsi pancaindra, siklus hidup makhluk hidup, wujud zat dan perubahannya, transformasi energi, gaya dan gerak, serta keragaman sosial, budaya, dan kearifan lokal di daerahnya.`
+          },
+          {
+            elemen: 'Keterampilan Proses (Mengamati, Menanya, Mencoba, Menganalisis & Mengomunikasikan)',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu mengamati fenomena alam dan sosial, mengajukan pertanyaan prediksi, melakukan penyelidikan sederhana, mengolah data pengamatan, serta mengomunikasikan kesimpulan secara ilmiah.`
+          }
+        ],
+        babList: [
+          {
+            semester: '1',
+            babNumber: 'Bab 1',
+            judulBab: 'Tumbuhan, Sumber Kehidupan di Bumi (Bagian Tubuh Tumbuhan & Fotosintesis)',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Bagian Tubuh Tumbuhan (Akar, Batang, Daun, Bunga, Buah) dan Fungsinya',
+                tpList: '1. Peserta didik mampu mengidentifikasi bagian-bagian tubuh tumbuhan dan menjelaskan fungsinya bagi kelangsungan hidup tumbuhan.'
+              },
+              {
+                namaMateri: 'Proses Fotosintesis dan Perkembangbiakan Tumbuhan',
+                tpList: '1. Peserta didik mampu menganalisis kebutuhan, proses, dan hasil fotosintesis serta mengaitkannya dengan pentingnya tumbuhan bagi makhluk hidup di bumi.'
+              }
+            ]
+          },
+          {
+            semester: '1',
+            babNumber: 'Bab 2',
+            judulBab: 'Wujud Zat dan Perubahannya serta Gaya di Sekitar Kita',
+            alokasiJp: '15 JP',
+            materiList: [
+              {
+                namaMateri: 'Karakteristik Wujud Zat (Padat, Cair, Gas) dan Perubahan Wujud Benda',
+                tpList: '1. Peserta didik mampu membedakan sifat benda padat, cair, dan gas serta menganalisis proses mencair, membeku, menguap, mengembun, dan menyublim.'
+              },
+              {
+                namaMateri: 'Macam-Macam Gaya (Otot, Gesek, Pegas, Magnet, Gravitasi) dan Pengaruhnya terhadap Benda',
+                tpList: '1. Peserta didik mampu mendemonstrasikan pengaruh gaya terhadap gerak, arah, dan bentuk benda dalam kehidupan sehari-hari.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 3',
+            judulBab: 'Mengubah Bentuk Energi serta Iklim dan Perubahannya',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Transformasi / Perubahan Bentuk Energi dalam Kehidupan Sehari-Hari',
+                tpList: '1. Peserta didik mampu mengidentifikasi berbagai bentuk energi dan menganalisis alur perubahan bentuk energi pada peralatan sehari-hari.'
+              },
+              {
+                namaMateri: 'Cuaca, Musim, Iklim, dan Mitigasi Dampak Perubahan Iklim',
+                tpList: '1. Peserta didik mampu menjelaskan perbedaan cuaca dan iklim serta merumuskan tindakan nyata pelestarian lingkungan.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 4',
+            judulBab: 'Daerahku Kebanggaanku: Kearifan Lokal, Keragaman Budaya, & Kegiatan Ekonomi',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Sejarah Daerah, Bentang Alam, dan Keragaman Budaya Nusantara',
+                tpList: '1. Peserta didik mampu mengidentifikasi kekayaan budaya dan kearifan lokal di daerah tempat tinggalnya serta menunjukkan sikap menghargai keberagaman.'
+              },
+              {
+                namaMateri: 'Kegiatan Ekonomi (Produksi, Distribusi, Konsumsi) dan Pemanfaatan Sumber Daya Alam',
+                tpList: '1. Peserta didik mampu menghubungkan kondisi geografis daerah dengan mata pencaharian dan alur kegiatan ekonomi masyarakat.'
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    if (s.includes('pancasila') || s.includes('ppkn')) {
+      return {
+        cpList: [
+          {
+            elemen: 'Pancasila & Undang-Undang Dasar Negara Republik Indonesia Tahun 1945',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu memahami dan menerapkan nilai-nilai sila Pancasila di lingkungan keluarga, sekolah, dan masyarakat, serta mengidentifikasi dan melaksanakan aturan maupun kesepakatan kelas disertai hak dan kewajiban.`
+          },
+          {
+            elemen: 'Bhinneka Tunggal Ika & Negara Kesatuan Republik Indonesia (NKRI)',
+            deskripsi: `Pada akhir ${kf}, peserta didik mampu menghargai identitas diri, keluarga, dan teman sesuai budaya, suku bangsa, bahasa, serta agama, dan mengenal wilayah lingkungan sekitar sebagai bagian utuh dari NKRI.`
+          }
+        ],
+        babList: [
+          {
+            semester: '1',
+            babNumber: 'Bab 1',
+            judulBab: 'Makna Simbol dan Penerapan Nilai-Nilai Sila Pancasila',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Hubungan Simbol dengan Sila-Sila Pancasila serta Pengamalannya di Sekolah & Rumah',
+                tpList: '1. Peserta didik mampu menjelaskan makna simbol sila pertama sampai sila kelima Pancasila dan memberikan contoh penerapan nyatanya.'
+              },
+              {
+                namaMateri: 'Keteladanan Sikap Para Perumus Pancasila dan Karakter Gotong Royong',
+                tpList: '1. Peserta didik mampu meneladani semangat persatuan, musyawarah, dan toleransi para pendiri bangsa dalam kegiatan sehari-hari.'
+              }
+            ]
+          },
+          {
+            semester: '1',
+            babNumber: 'Bab 2',
+            judulBab: 'Konstitusi, Norma, Aturan, serta Hak dan Kewajiban sebagai Warga Sekolah & Rumah',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Aturan di Keluarga, Tata Tertib Sekolah, dan Kesepakatan Kelas',
+                tpList: '1. Peserta didik mampu mengidentifikasi aturan yang berlaku di rumah dan sekolah serta mematuhinya dengan penuh kesadaran.'
+              },
+              {
+                namaMateri: 'Keseimbangan Pelaksanaan Hak dan Kewajiban Anak di Rumah dan di Sekolah',
+                tpList: '1. Peserta didik mampu membedakan hak dan kewajiban sebagai anggota keluarga dan warga sekolah serta melaksanakannya secara seimbang.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 3',
+            judulBab: 'Membangun Jati Diri dalam Kebinekaan Budaya Nusantara',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Keragaman Sosial, Suku Bangsa, Pakaian Adat, Rumah Adat, dan Bahasa Daerah',
+                tpList: '1. Peserta didik mampu mengidentifikasi keberagaman identitas budaya di Indonesia dan mempraktikkan sikap saling menghormati.'
+              }
+            ]
+          },
+          {
+            semester: '2',
+            babNumber: 'Bab 4',
+            judulBab: 'Negaraku Indonesia: Lingkungan Sekitar, Pemerintahan Desa/Kelurahan, dan Cinta NKRI',
+            alokasiJp: '12 JP',
+            materiList: [
+              {
+                namaMateri: 'Mengenal Wilayah Desa/Kelurahan, Kecamatan, dan Semangat Menjaga Keutuhan NKRI',
+                tpList: '1. Peserta didik mampu mengenal struktur wilayah tempat tinggalnya dan menunjukkan perilaku kerja sama menjaga persatuan di lingkungan sekitar.'
+              }
+            ]
+          }
+        ]
+      };
+    }
+
+    return {
+      cpList: [
+        {
+          elemen: `Pemahaman Konsep Esensial ${subjectName}`,
+          deskripsi: `Pada akhir ${kf}, peserta didik mampu memahami konsep dasar, prinsip, dan prosedur pada mata pelajaran ${subjectName}, serta mengaitkannya dengan pengalaman nyata dalam kehidupan sehari-hari secara bernalar kritis.`
+        },
+        {
+          elemen: `Keterampilan Praktik & Aplikasi ${subjectName}`,
+          deskripsi: `Pada akhir ${kf}, peserta didik terampil mengaplikasikan pengetahuan ${subjectName} melalui kegiatan unjuk kerja, pemecahan masalah, kolaborasi tim, dan penyajian karya secara kreatif serta bertanggung jawab.`
+        }
+      ],
+      babList: [
+        {
+          semester: '1',
+          babNumber: 'Bab 1',
+          judulBab: `Pengenalan Konsep Dasar & Ruang Lingkup ${subjectName}`,
+          alokasiJp: '10 JP',
+          materiList: [
+            {
+              namaMateri: `Konsep Inti dan Prinsip Dasar ${subjectName} dalam Kehidupan Sehari-Hari`,
+              tpList: `1. Peserta didik mampu mengidentifikasi dan menjelaskan konsep dasar ${subjectName} dengan tepat.\n2. Peserta didik mampu memberikan contoh penerapan konsep dasar ${subjectName} di lingkungan sekolah dan rumah.`
+            }
+          ]
+        },
+        {
+          semester: '1',
+          babNumber: 'Bab 2',
+          judulBab: `Eksplorasi & Penerapan Keterampilan Terstruktur ${subjectName}`,
+          alokasiJp: '12 JP',
+          materiList: [
+            {
+              namaMateri: `Prosedur Praktik dan Pemecahan Masalah Kontekstual pada ${subjectName}`,
+              tpList: `1. Peserta didik mampu mempraktikkan prosedur kerja pada mata pelajaran ${subjectName} secara runtut dan teliti.`
+            }
+          ]
+        },
+        {
+          semester: '2',
+          babNumber: 'Bab 3',
+          judulBab: `Pengembangan Analisis & Kolaborasi Proyek ${subjectName}`,
+          alokasiJp: '12 JP',
+          materiList: [
+            {
+              namaMateri: `Analisis Studi Kasus dan Karya Kolaboratif pada ${subjectName}`,
+              tpList: `1. Peserta didik mampu menganalisis permasalahan dan menghasilkan solusi/karya kolaboratif pada pembelajaran ${subjectName}.`
+            }
+          ]
+        },
+        {
+          semester: '2',
+          babNumber: 'Bab 4',
+          judulBab: `Evaluasi, Refleksi, dan Kreasi Mandiri ${subjectName}`,
+          alokasiJp: '10 JP',
+          materiList: [
+            {
+              namaMateri: `Penyajian Hasil Karya dan Refleksi Kebermaknaan ${subjectName}`,
+              tpList: `1. Peserta didik mampu mempresentasikan hasil karya dan menyimpulkan manfaat mempelajari ${subjectName} secara komunikatif.`
+            }
+          ]
+        }
+      ]
+    };
+  },
+
+  async generateCpWithAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const kelasFase = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+
+    const prompt = `Bertindaklah sebagai Pakar Kurikulum Merdeka Kemendikdasmen Indonesia. Susun daftar Capaian Pembelajaran (CP) resmi dan akurat untuk Mata Pelajaran "${this.activeSubject}" pada jenjang "${kelasFase}". Kembalikan dalam format JSON murni: {"cpList": [{"elemen": "Nama Elemen", "deskripsi": "Rumusan CP lengkap"}]}`;
+
+    const aiRes = await this.callGeminiJsonIfAvailable(prompt);
+    const preset = (aiRes && Array.isArray(aiRes.cpList) && aiRes.cpList.length > 0)
+      ? aiRes.cpList
+      : this.getBuiltInCurriculumPreset(this.activeSubject, kelasFase).cpList;
+
+    preset.forEach((item, idx) => {
+      subjObj.cpList.push({
+        id: 'CP_AI_' + Date.now() + '_' + idx,
+        elemen: item.elemen || `Elemen ${idx + 1}`,
+        deskripsi: item.deskripsi || ''
+      });
+    });
+
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+
+    UI.showNotif(
+      'Capaian Pembelajaran (CP) Berhasil Disusun AI',
+      `Sebanyak ${preset.length} elemen Capaian Pembelajaran akurat untuk mata pelajaran ${this.activeSubject} (${kelasFase}) telah ditambahkan ke Program Tahunan.`,
+      'success'
+    );
+  },
+
+  async generateBabContentWithAI(babId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab) return;
+
+    const kelasFase = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    const judul = (bab.judulBab || '').trim() || `${bab.babNumber} ${this.activeSubject}`;
+
+    if (!bab.judulBab || !bab.judulBab.trim()) {
+      bab.judulBab = `Konsep & Penerapan ${this.activeSubject} (${bab.babNumber})`;
+    }
+
+    const prompt = `Bertindaklah sebagai Pakar Kurikulum Merdeka Indonesia. Untuk Mata Pelajaran "${this.activeSubject}" (${kelasFase}) pada "${bab.babNumber}: ${judul}" (Semester ${bab.semester}), pecahlah bab ini menjadi 3 Materi Pokok yang berurutan beserta Tujuan Pembelajaran (TP) yang akurat untuk masing-masing materi. Kembalikan dalam JSON murni: {"materiList": [{"namaMateri": "Judul Materi Spesifik", "tpList": "1. TP pertama\\n2. TP kedua"}]}`;
+
+    const aiRes = await this.callGeminiJsonIfAvailable(prompt);
+    let generatedMateri = (aiRes && Array.isArray(aiRes.materiList) && aiRes.materiList.length > 0)
+      ? aiRes.materiList
+      : null;
+
+    if (!generatedMateri) {
+      generatedMateri = [
+        {
+          namaMateri: `Pengenalan & Pemahaman Konsep Inti: ${bab.judulBab}`,
+          tpList: `1. Melalui pengamatan dan diskusi terbimbing, peserta didik mampu mengidentifikasi dan menjelaskan konsep dasar pada materi "${bab.judulBab}" dengan tepat.\n2. Peserta didik mampu menguraikan unsur-unsur penting yang berkaitan dengan "${bab.judulBab}".`
+        },
+        {
+          namaMateri: `Penerapan & Analisis Kontekstual: ${bab.judulBab}`,
+          tpList: `1. Melalui latihan terstruktur dan eksplorasi kelompok, peserta didik mampu menerapkan prinsip "${bab.judulBab}" untuk menyelesaikan persoalan kontekstual pada mata pelajaran ${this.activeSubject} secara akurat.`
+        },
+        {
+          namaMateri: `Pemecahan Masalah & Evaluasi Karya: ${bab.judulBab}`,
+          tpList: `1. Melalui kegiatan unjuk kerja dan refleksi, peserta didik mampu mengevaluasi dan menyimpulkan kebermaknaan materi "${bab.judulBab}" dalam kehidupan sehari-hari secara komunikatif.`
+        }
+      ];
+    }
+
+    bab.materiList = generatedMateri.map((m, idx) => ({
+      id: 'MAT_AI_' + Date.now() + '_' + idx,
+      namaMateri: m.namaMateri || `Materi ${idx + 1} ${bab.judulBab}`,
+      tpList: m.tpList || ''
+    }));
+
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+
+    UI.showNotif(
+      'Rincian Materi & TP Bab Berhasil Disusun AI',
+      `Rincian Materi Pokok dan Tujuan Pembelajaran untuk "${bab.babNumber}: ${bab.judulBab}" telah diisi secara otomatis dan siap digunakan di Modul RPM.`,
+      'success'
+    );
+  },
+
+  async generateSingleMateriTpWithAI(babId, materiId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+    const bab = (subjObj.babList || []).find(b => b.id === babId);
+    if (!bab || !Array.isArray(bab.materiList)) return;
+
+    const mat = bab.materiList.find(m => m.id === materiId);
+    if (!mat) return;
+
+    const kelasFase = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    const judulBab = (bab.judulBab || bab.babNumber || 'Pembelajaran').trim();
+    const namaMateri = (mat.namaMateri || '').trim() || `Materi Inti ${judulBab}`;
+
+    if (!mat.namaMateri || !mat.namaMateri.trim()) {
+      mat.namaMateri = namaMateri;
+    }
+
+    const cpRef = (subjObj.cpList && subjObj.cpList[0] && subjObj.cpList[0].deskripsi) ? subjObj.cpList[0].deskripsi : '';
+
+    const prompt = `Susun 2 rumusan Tujuan Pembelajaran (TP) Kurikulum Merdeka yang operasional, terukur, dan akurat untuk Mata Pelajaran "${this.activeSubject}" (${kelasFase}), Bab "${judulBab}", Materi Pokok "${namaMateri}"${cpRef ? `, mengacu pada CP: "${cpRef}"` : ''}. Kembalikan dalam JSON: {"tpText": "1. Rumusan TP 1\\n2. Rumusan TP 2"}`;
+
+    const aiRes = await this.callGeminiJsonIfAvailable(prompt);
+    if (aiRes && aiRes.tpText) {
+      mat.tpList = aiRes.tpText;
+    } else {
+      mat.tpList = [
+        `1. Melalui pengamatan stimulus dan diskusi terbimbing pada ${bab.babNumber || 'Bab ini'} (${judulBab}), peserta didik mampu memahami dan menjelaskan konsep "${namaMateri}" pada mata pelajaran ${this.activeSubject} (${kelasFase}) dengan tepat.`,
+        `2. Melalui latihan terstruktur dan pemecahan masalah kontekstual, peserta didik mampu mengaplikasikan materi "${namaMateri}" dalam menyelesaikan tugas akademik maupun persoalan sehari-hari secara mandiri dan bernalar kritis.`
+      ].join('\n');
+    }
+
+    DB.saveImmediate();
+    this.renderBabCards();
+
+    UI.showNotif(
+      'Tujuan Pembelajaran (TP) Materi Disusun AI',
+      `Rumusan TP akurat untuk materi "${namaMateri}" berhasil disusun secara otomatis.`,
+      'success'
+    );
+  },
+
+  async generateFullSubjectProtaWithAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const kelasFase = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    const subjObj = this.getSubjectProtaObject(this.activeSubject);
+
+    if ((subjObj.cpList.length > 0 || subjObj.babList.length > 0) &&
+        !window.confirm(`Susun dan tambahkan struktur Program Tahunan lengkap (CP, Bab Semester 1 & 2, Materi, serta TP) berbasis AI Kurikulum untuk mata pelajaran "${this.activeSubject}"?`)) {
+      return;
+    }
+
+    const preset = this.getBuiltInCurriculumPreset(this.activeSubject, kelasFase);
+
+    subjObj.cpList = preset.cpList.map((c, idx) => ({
+      id: 'CP_FULL_' + Date.now() + '_' + idx,
+      elemen: c.elemen,
+      deskripsi: c.deskripsi
+    }));
+
+    subjObj.babList = preset.babList.map((b, bIdx) => ({
+      id: 'BAB_FULL_' + Date.now() + '_' + bIdx,
+      semester: String(b.semester || '1'),
+      babNumber: b.babNumber || `Bab ${bIdx + 1}`,
+      judulBab: b.judulBab || '',
+      alokasiJp: b.alokasiJp || '12 JP',
+      materiList: (b.materiList || []).map((m, mIdx) => ({
+        id: 'MAT_FULL_' + Date.now() + '_' + bIdx + '_' + mIdx,
+        namaMateri: m.namaMateri || '',
+        tpList: m.tpList || ''
+      }))
+    }));
+
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+
+    UI.showNotif(
+      'Program Tahunan Lengkap Berhasil Disusun AI',
+      `Seluruh Capaian Pembelajaran (CP), Bab Semester 1 & 2, Materi Pokok, dan Tujuan Pembelajaran (TP) untuk mata pelajaran ${this.activeSubject} (${kelasFase}) telah tersusun dan langsung terhubung ke Generator Modul RPM.`,
+      'success'
+    );
+  },
+
+  saveProtaChanges(showNotification = true) {
+    if (AppState.isReadOnlyInspection) return;
+    DB.saveImmediate();
+    this.renderProtaWorkspace();
+
+    if (showNotification) {
+      UI.showNotif(
+        'Program Tahunan (Prota) Berhasil Disimpan',
+        `Seluruh data Capaian Pembelajaran (CP), Bab Semester 1 & 2, Materi Pokok, dan Tujuan Pembelajaran untuk mata pelajaran "${this.activeSubject}" telah disimpan ke Cloud dan siap dipilih langsung pada halaman Modul RPM.`,
+        'success'
+      );
+    }
+  },
+
+  // ============================================================================
+  // API PENYEDIA OPSI BERJENJANG (CASCADING) UNTUK HALAMAN MODUL RPM
+  // ============================================================================
+  getCpOptionsForSubject(subjectName) {
+    const subjObj = this.getSubjectProtaObject(subjectName);
+    return (subjObj.cpList || []).filter(c => c && (c.deskripsi || c.elemen));
+  },
+
+  getBabOptionsForSubject(subjectName, semesterRaw = '') {
+    const subjObj = this.getSubjectProtaObject(subjectName);
+    const allBabs = (subjObj.babList || []).filter(b => b && (b.babNumber || b.judulBab));
+
+    if (!semesterRaw) return allBabs;
+    const semStr = String(semesterRaw);
+    let targetSem = '';
+    if (semStr.includes('Semester 1') || semStr === '1') targetSem = '1';
+    else if (semStr.includes('Semester 2') || semStr === '2') targetSem = '2';
+
+    if (!targetSem) return allBabs;
+    const filtered = allBabs.filter(b => String(b.semester) === targetSem);
+    return filtered.length > 0 ? filtered : allBabs;
+  },
+
+  getMateriOptionsForBab(subjectName, babIdentifier = '') {
+    const subjObj = this.getSubjectProtaObject(subjectName);
+    const allBabs = subjObj.babList || [];
+
+    if (!babIdentifier || !babIdentifier.trim()) {
+      const allMateri = [];
+      allBabs.forEach(b => {
+        (b.materiList || []).forEach(m => {
+          if (m && m.namaMateri && m.namaMateri.trim()) {
+            allMateri.push({
+              ...m,
+              babId: b.id,
+              babLabel: `${b.babNumber || 'Bab'}: ${b.judulBab || ''}`.trim()
+            });
+          }
+        });
+      });
+      return allMateri;
+    }
+
+    const cleanQuery = babIdentifier.trim().toLowerCase();
+    const matchedBab = allBabs.find(b => {
+      const fullLabel = `${b.babNumber || ''}: ${b.judulBab || ''}`.trim().toLowerCase();
+      const dashLabel = `${b.babNumber || ''} - ${b.judulBab || ''}`.trim().toLowerCase();
+      return (
+        b.id === babIdentifier ||
+        fullLabel === cleanQuery ||
+        dashLabel === cleanQuery ||
+        (b.judulBab && b.judulBab.trim().toLowerCase() === cleanQuery) ||
+        (b.babNumber && cleanQuery.startsWith(b.babNumber.trim().toLowerCase()))
+      );
+    });
+
+    if (!matchedBab) return [];
+    return (matchedBab.materiList || [])
+      .filter(m => m && m.namaMateri && m.namaMateri.trim())
+      .map(m => ({
+        ...m,
+        babId: matchedBab.id,
+        babLabel: `${matchedBab.babNumber || 'Bab'}: ${matchedBab.judulBab || ''}`.trim()
+      }));
+  },
+
+  getTpOptionsForSelection(subjectName, babIdentifier = '', materiName = '') {
+    const materiOptions = this.getMateriOptionsForBab(subjectName, babIdentifier);
+    const cleanMat = String(materiName || '').trim().toLowerCase();
+
+    if (cleanMat) {
+      const exactMat = materiOptions.find(m => m.namaMateri.trim().toLowerCase() === cleanMat);
+      if (exactMat && exactMat.tpList && exactMat.tpList.trim()) {
+        return [{
+          sourceLabel: `${exactMat.babLabel} — ${exactMat.namaMateri}`,
+          tpText: exactMat.tpList.trim()
+        }];
+      }
+    }
+
+    return materiOptions
+      .filter(m => m.tpList && m.tpList.trim())
+      .map(m => ({
+        sourceLabel: `${m.babLabel} — ${m.namaMateri}`,
+        tpText: m.tpList.trim()
+      }));
   }
 };
 
