@@ -7120,7 +7120,8 @@ const DB = {
     );
   },
 
-  save() {
+    save() {
+    this.lastLocalDeleteTimestamp = Date.now();
     this.ensureIntegrity();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
@@ -7128,12 +7129,14 @@ const DB = {
       this.updateCloudBadge('MENYIMPAN KE CLOUD...', 'warning');
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
       this.saveTimeout = setTimeout(() => {
+        this.saveTimeout = null;
         this.pushToSupabaseImmediate();
-      }, 300);
+      }, 450);
     }
   },
 
   saveImmediate() {
+    this.lastLocalDeleteTimestamp = Date.now();
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
@@ -7151,6 +7154,7 @@ const DB = {
   async pushToSupabaseImmediate() {
     if (!supabaseClient || !this.data) return;
     this.isSyncing = true;
+    this.lastLocalDeleteTimestamp = Date.now();
     try {
       const { error } = await supabaseClient
         .from('simak_edu_store')
@@ -7167,6 +7171,7 @@ const DB = {
         console.error('Gagal menyimpan ke Supabase:', error.message);
         this.updateCloudBadge('TERSIMPAN DI LOKAL', 'warning');
       } else {
+        this.lastLocalDeleteTimestamp = Date.now();
         this.updateCloudBadge('TERSIMPAN DI CLOUD', 'success');
       }
     } catch (err) {
@@ -7225,9 +7230,9 @@ const DB = {
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
-          // Abaikan pantulan realtime selama 6 detik setelah pengguna melakukan penghapusan
-          if (this.isSyncing) return;
-          if (Date.now() - this.lastLocalDeleteTimestamp < 6000) return;
+          // Cegah pantulan realtime menimpa data lokal saat guru sedang aktif menambah/mengedit/menghapus kolom
+          if (this.isSyncing || this.saveTimeout !== null) return;
+          if (Date.now() - this.lastLocalDeleteTimestamp < 8000) return;
 
           if (payload.new && payload.new.payload) {
             this.data = payload.new.payload;
@@ -16338,22 +16343,23 @@ Format JSON wajib:
   }
 };
 
-    // ============================================================================
-// TAHAP 2: ENGINE PROGRAM TAHUNAN (PROTA) & INTEGRASI DATA KELAS (GURU KELAS & MAPEL)
-// ============================================================================
-const ProtaApp = {
+    const ProtaApp = {
   activeSubject: '',
+  uidCounter: 1,
 
-  // Memastikan struktur penyimpanan protaData tersedia di dalam bucket kelas aktif
+  generateUid(prefix = 'ITEM') {
+    this.uidCounter = (this.uidCounter + 1) % 999999;
+    return `${prefix}_${Date.now()}_${this.uidCounter}`;
+  },
+
   ensureProtaStructure(bucket) {
     if (!bucket) return {};
-    if (!bucket.protaData || typeof bucket.protaData !== 'object') {
+    if (!bucket.protaData || typeof bucket.protaData !== 'object' || Array.isArray(bucket.protaData)) {
       bucket.protaData = {};
     }
     return bucket.protaData;
   },
 
-  // Mengambil daftar seluruh mata pelajaran yang relevan untuk Guru Kelas maupun Guru Mapel
   getAvailableSubjectsForProta() {
     const teacher = DB.getActiveTeacherAccount();
     const bucket = DB.getActiveClassBucket();
@@ -16362,12 +16368,10 @@ const ProtaApp = {
     const protaMap = this.ensureProtaStructure(bucket);
     const subjectSet = new Set();
 
-    // Jika Guru Mapel, prioritaskan mata pelajaran bidang ampunya di urutan pertama
     if (teacher && teacher.role === 'GURU_MAPEL' && teacher.mapelDiampu && teacher.mapelDiampu.trim()) {
       subjectSet.add(teacher.mapelDiampu.trim());
     }
 
-    // Ambil seluruh mata pelajaran dari jadwal kelas Senin-Sabtu
     Object.values(bucket.schedule || {}).forEach(dayArr => {
       if (Array.isArray(dayArr)) {
         dayArr.forEach(s => {
@@ -16376,7 +16380,6 @@ const ProtaApp = {
       }
     });
 
-    // Tambahkan mata pelajaran yang sudah ada di dalam protaData
     Object.keys(protaMap).forEach(k => {
       if (k && k.trim()) subjectSet.add(k.trim());
     });
@@ -16388,29 +16391,93 @@ const ProtaApp = {
     return Array.from(subjectSet);
   },
 
-  // Mendapatkan atau menginisialisasi objek Prota untuk satu mata pelajaran spesifik
+  // Memastikan mata pelajaran aktif selalu valid dan tidak pernah kosong
+  resolveActiveSubject() {
+    const selectEl = document.getElementById('prota-subject-select');
+    if (this.activeSubject && this.activeSubject.trim()) {
+      return this.activeSubject.trim();
+    }
+    if (selectEl && selectEl.value && selectEl.value.trim()) {
+      this.activeSubject = selectEl.value.trim();
+      return this.activeSubject;
+    }
+    const subjects = this.getAvailableSubjectsForProta();
+    this.activeSubject = subjects[0] || 'Matematika';
+    return this.activeSubject;
+  },
+
+  // Menstandarkan dan memperbaiki struktur internal CP, Bab, Materi, & TP agar tidak pernah error saat tambah/hapus
+  normalizeSubjectProta(pObj, subjectName = '') {
+    if (!pObj || typeof pObj !== 'object') return null;
+
+    if (subjectName && !pObj.subjectName) {
+      pObj.subjectName = subjectName;
+    }
+    if (!Array.isArray(pObj.cpList)) {
+      pObj.cpList = [];
+    }
+    pObj.cpList = pObj.cpList.filter(Boolean).map((cp, idx) => ({
+      id: (cp && cp.id) ? String(cp.id) : this.generateUid(`CP_${idx}`),
+      elemen: (cp && cp.elemen !== undefined) ? String(cp.elemen) : `Elemen ${idx + 1}`,
+      deskripsi: (cp && cp.deskripsi !== undefined) ? String(cp.deskripsi) : ''
+    }));
+
+    if (!Array.isArray(pObj.babs)) {
+      pObj.babs = [];
+    }
+    pObj.babs = pObj.babs.filter(Boolean).map((bab, bIdx) => {
+      const rawMateri = Array.isArray(bab.materiList) ? bab.materiList.filter(Boolean) : [];
+      const normalizedMateri = rawMateri.map((mat, mIdx) => {
+        const rawTp = Array.isArray(mat.tpList) ? mat.tpList : [''];
+        return {
+          id: (mat && mat.id) ? String(mat.id) : this.generateUid(`MAT_${bIdx}_${mIdx}`),
+          judulMateri: (mat && mat.judulMateri !== undefined) ? String(mat.judulMateri) : '',
+          tpList: rawTp.length > 0 ? rawTp.map(t => (t === null || t === undefined) ? '' : String(t)) : ['']
+        };
+      });
+
+      return {
+        id: (bab && bab.id) ? String(bab.id) : this.generateUid(`BAB_${bIdx}`),
+        semester: (bab && bab.semester === 'SEMESTER_2') ? 'SEMESTER_2' : 'SEMESTER_1',
+        kodeBab: (bab && bab.kodeBab !== undefined) ? String(bab.kodeBab) : `Bab ${bIdx + 1}`,
+        judulBab: (bab && bab.judulBab !== undefined) ? String(bab.judulBab) : '',
+        alokasiJp: (bab && bab.alokasiJp !== undefined) ? String(bab.alokasiJp) : '12 JP',
+        materiList: normalizedMateri
+      };
+    });
+
+    return pObj;
+  },
+
   getSubjectProtaObject(subjectName, autoCreate = true) {
     const bucket = DB.getActiveClassBucket();
-    if (!bucket || !subjectName) return null;
+    if (!bucket) return null;
+
+    const targetSubj = (subjectName && String(subjectName).trim()) ? String(subjectName).trim() : this.resolveActiveSubject();
+    if (!targetSubj) return null;
 
     const protaMap = this.ensureProtaStructure(bucket);
-    const cleanName = String(subjectName).trim();
+    const existingKey = Object.keys(protaMap).find(k => k.toLowerCase() === targetSubj.toLowerCase());
 
-    // Cari kecocokan nama mata pelajaran (case-insensitive)
-    const existingKey = Object.keys(protaMap).find(k => k.toLowerCase() === cleanName.toLowerCase());
     if (existingKey) {
-      return protaMap[existingKey];
+      // Samakan key jika ada perbedaan huruf besar/kecil agar selalu konsisten
+      if (existingKey !== targetSubj) {
+        protaMap[targetSubj] = protaMap[existingKey];
+        delete protaMap[existingKey];
+      }
+      return this.normalizeSubjectProta(protaMap[targetSubj], targetSubj);
     }
 
     if (!autoCreate) return null;
 
-    protaMap[cleanName] = {
-      subjectName: cleanName,
+    protaMap[targetSubj] = this.normalizeSubjectProta({
+      subjectName: targetSubj,
       updatedAt: DateTimeUtil.getCurrentDateTimeStr(),
       cpList: [],
       babs: []
-    };
-    return protaMap[cleanName];
+    }, targetSubj);
+
+    return protaMap[targetSubj];
   },
 
   initView(preferredSubject = '') {
@@ -16421,12 +16488,12 @@ const ProtaApp = {
     const subjects = this.getAvailableSubjectsForProta();
 
     if (preferredSubject && subjects.some(s => s.toLowerCase() === preferredSubject.toLowerCase())) {
-      const matched = subjects.find(s => s.toLowerCase() === preferredSubject.toLowerCase());
-      this.activeSubject = matched;
-    } else if (!this.activeSubject || !subjects.includes(this.activeSubject)) {
+      this.activeSubject = subjects.find(s => s.toLowerCase() === preferredSubject.toLowerCase());
+    } else if (!this.activeSubject || !subjects.some(s => s.toLowerCase() === this.activeSubject.toLowerCase())) {
       this.activeSubject = subjects[0] || 'Matematika';
     }
 
+    this.getSubjectProtaObject(this.activeSubject, true);
     this.renderSubjectSelectorAndPills();
     this.renderCpList();
     this.renderBabList();
@@ -16454,43 +16521,51 @@ const ProtaApp = {
     const babSubjLabel = document.getElementById('prota-bab-subject-label');
 
     if (!bucket) return;
+    const currentSubj = this.resolveActiveSubject();
     const subjects = this.getAvailableSubjectsForProta();
-    const protaMap = this.ensureProtaStructure(bucket);
 
     if (selectEl) {
       selectEl.innerHTML = subjects.map(sub => {
-        const pObj = protaMap[sub];
+        const pObj = this.getSubjectProtaObject(sub, false);
         const babCount = pObj && Array.isArray(pObj.babs) ? pObj.babs.length : 0;
         const cpCount = pObj && Array.isArray(pObj.cpList) ? pObj.cpList.length : 0;
         const statusInfo = (babCount > 0 || cpCount > 0) ? ` (✓ ${cpCount} CP, ${babCount} Bab)` : ' (Belum Diisi)';
-        return `<option value="${UI.escapeHtml(sub)}" ${sub === this.activeSubject ? 'selected' : ''}>${UI.escapeHtml(sub)}${statusInfo}</option>`;
+        return `<option value="${UI.escapeHtml(sub)}" ${sub.toLowerCase() === currentSubj.toLowerCase() ? 'selected' : ''}>${UI.escapeHtml(sub)}${statusInfo}</option>`;
       }).join('');
     }
 
     if (pillsBar) {
-      pillsBar.innerHTML = subjects.map(sub => {
-        const pObj = protaMap[sub];
+      pillsBar.innerHTML = subjects.map((sub, idx) => {
+        const pObj = this.getSubjectProtaObject(sub, false);
         const babCount = pObj && Array.isArray(pObj.babs) ? pObj.babs.length : 0;
-        const isActive = sub === this.activeSubject;
-        const safeSub = UI.escapeHtml(sub).replace(/'/g, "\\'");
+        const cpCount = pObj && Array.isArray(pObj.cpList) ? pObj.cpList.length : 0;
+        const isActive = sub.toLowerCase() === currentSubj.toLowerCase();
         return `
-          <button type="button" class="prota-subject-pill ${isActive ? 'active-prota-subj' : ''}" onclick="ProtaApp.handleSubjectChange('${safeSub}')">
+          <button type="button" class="prota-subject-pill ${isActive ? 'active-prota-subj' : ''}" onclick="ProtaApp.selectSubjectByIndex(${idx})">
             <span>📚 ${UI.escapeHtml(sub)}</span>
-            <span class="badge ${babCount > 0 ? 'badge-success' : 'badge-warning'}" style="font-size: 0.68rem; padding: 0.1rem 0.45rem;">
-              ${babCount} Bab
+            <span class="badge ${(babCount > 0 || cpCount > 0) ? 'badge-success' : 'badge-warning'}" style="font-size: 0.68rem; padding: 0.1rem 0.45rem;">
+              ${cpCount} CP | ${babCount} Bab
             </span>
           </button>
         `;
       }).join('');
     }
 
-    if (cpSubjLabel) cpSubjLabel.textContent = this.activeSubject || '-';
-    if (babSubjLabel) babSubjLabel.textContent = this.activeSubject || '-';
+    if (cpSubjLabel) cpSubjLabel.textContent = currentSubj || '-';
+    if (babSubjLabel) babSubjLabel.textContent = currentSubj || '-';
+  },
+
+  selectSubjectByIndex(subjIdx) {
+    const subjects = this.getAvailableSubjectsForProta();
+    if (subjects[subjIdx]) {
+      this.handleSubjectChange(subjects[subjIdx]);
+    }
   },
 
   handleSubjectChange(subjectName) {
     if (!subjectName) return;
-    this.activeSubject = subjectName.trim();
+    this.activeSubject = String(subjectName).trim();
+    this.getSubjectProtaObject(this.activeSubject, true);
     this.renderSubjectSelectorAndPills();
     this.renderCpList();
     this.renderBabList();
@@ -16506,8 +16581,8 @@ const ProtaApp = {
       return;
     }
 
-    this.getSubjectProtaObject(newSubj, true);
     this.activeSubject = newSubj;
+    this.getSubjectProtaObject(newSubj, true);
     if (inp) inp.value = '';
 
     DB.saveImmediate();
@@ -16516,94 +16591,121 @@ const ProtaApp = {
   },
 
   // ==========================================================================
-  // MANAJEMEN CAPAIAN PEMBELAJARAN (CP) PER MATA PELAJARAN
+  // MANAJEMEN CAPAIAN PEMBELAJARAN (CP) — PROPORSIONAL, STABIL & BEBAS BUG
   // ==========================================================================
   renderCpList() {
     const container = document.getElementById('prota-cp-list-container');
     if (!container) return;
 
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj) return;
-
-    if (!Array.isArray(pObj.cpList)) pObj.cpList = [];
 
     if (pObj.cpList.length === 0) {
       container.innerHTML = `
         <div class="alert-box alert-info" style="margin-top: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-          <span>Belum ada Capaian Pembelajaran (CP) untuk mata pelajaran <strong>${UI.escapeHtml(this.activeSubject)}</strong>. Klik tombol <strong>+ Tambah Kolom Elemen CP</strong> atau <strong>✨ Buat Rumusan CP Akurat dengan AI</strong>.</span>
+          <span>Belum ada Capaian Pembelajaran (CP) untuk mata pelajaran <strong>${UI.escapeHtml(currentSubj)}</strong>. Klik tombol <strong>+ Tambah Kolom Elemen CP</strong> atau <strong>✨ Buat Rumusan CP Akurat dengan AI</strong>.</span>
           <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="ProtaApp.addCpRow()">
-            + Tambah Kolom CP Sekarang
+            + Tambah Kolom Elemen CP Sekarang
           </button>
         </div>
       `;
       return;
     }
 
-    container.innerHTML = pObj.cpList.map((cpItem, idx) => `
-      <div style="background: #ffffff; border: 1px solid var(--border); border-left: 4px solid var(--primary-light); border-radius: var(--radius-sm); padding: 0.9rem 1rem; margin-bottom: 0.75rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem;">
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 240px;">
-            <span class="badge badge-primary">CP #${idx + 1}</span>
+    const cardsHtml = pObj.cpList.map((cpItem, idx) => `
+      <div style="background: #ffffff; border: 2px solid #cbd5e1; border-left: 5px solid var(--primary-light); border-radius: var(--radius-md); padding: 1rem 1.15rem; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; justify-content: space-between; gap: 0.65rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding-bottom: 0.55rem; border-bottom: 1px dashed #e2e8f0;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 210px;">
+            <span class="badge badge-primary" style="flex-shrink: 0;">Elemen CP #${idx + 1}</span>
             <input
               type="text"
               class="form-control"
-              style="max-width: 320px; font-weight: 700; padding: 0.35rem 0.65rem; font-size: 0.84rem;"
-              placeholder="Nama Elemen (Contoh: Pemahaman Konsep / Bilangan / Menyimak)..."
+              style="font-weight: 700; padding: 0.38rem 0.65rem; font-size: 0.85rem;"
+              placeholder="Nama Elemen (Contoh: Pemahaman Konsep / Bilangan)..."
               value="${UI.escapeHtml(cpItem.elemen || '')}"
-              oninput="ProtaApp.updateCpField('${cpItem.id}', 'elemen', this.value)"
+              oninput="ProtaApp.updateCpField(${idx}, 'elemen', this.value)"
             >
           </div>
-          <button type="button" class="btn btn-danger btn-sm write-action-btn" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="ProtaApp.deleteCpRow('${cpItem.id}')">
-            🗑️ Hapus CP
+          <button
+            type="button"
+            class="btn btn-danger btn-sm write-action-btn"
+            style="padding: 0.3rem 0.65rem; font-size: 0.75rem; flex-shrink: 0;"
+            onclick="ProtaApp.deleteCpRow(${idx}, '${cpItem.id}')"
+          >
+            🗑️ Hapus CP #${idx + 1}
           </button>
         </div>
-        <textarea
-          class="form-control"
-          rows="2"
-          placeholder="Tuliskan deskripsi lengkap Capaian Pembelajaran (CP) untuk elemen ini..."
-          oninput="ProtaApp.updateCpField('${cpItem.id}', 'deskripsi', this.value)"
-        >${UI.escapeHtml(cpItem.deskripsi || '')}</textarea>
+        <div>
+          <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.25rem;">
+            Rumusan Capaian Pembelajaran (CP) Elemen #${idx + 1} :
+          </label>
+          <textarea
+            class="form-control"
+            rows="3"
+            style="font-size: 0.86rem; line-height: 1.5;"
+            placeholder="Tuliskan deskripsi lengkap Capaian Pembelajaran (CP) untuk elemen ini..."
+            oninput="ProtaApp.updateCpField(${idx}, 'deskripsi', this.value)"
+          >${UI.escapeHtml(cpItem.deskripsi || '')}</textarea>
+        </div>
       </div>
     `).join('');
+
+    // Gunakan tata letak grid proporsional yang otomatis menyesuaikan jumlah elemen CP
+    container.innerHTML = `
+      <div style="margin-bottom: 0.65rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+        <span class="badge badge-success">Total Elemen CP Terdaftar: ${pObj.cpList.length} Kolom Elemen</span>
+        <span style="font-size: 0.76rem; color: var(--text-muted);">Perubahan tersimpan otomatis ke Cloud</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem;">
+        ${cardsHtml}
+      </div>
+    `;
   },
 
   addCpRow(elemenDefault = '', deskripsiDefault = '') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj) return;
 
-    if (!Array.isArray(pObj.cpList)) pObj.cpList = [];
+    const nextNumber = pObj.cpList.length + 1;
     pObj.cpList.push({
-      id: 'CP_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-      elemen: elemenDefault || `Elemen ${pObj.cpList.length + 1}`,
-      deskripsi: deskripsiDefault || ''
+      id: this.generateUid('CP'),
+      elemen: (typeof elemenDefault === 'string' && elemenDefault.trim()) ? elemenDefault.trim() : `Elemen ${nextNumber}`,
+      deskripsi: (typeof deskripsiDefault === 'string') ? deskripsiDefault : ''
     });
 
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
-    DB.save();
+    DB.saveImmediate();
     this.renderCpList();
     this.renderSubjectSelectorAndPills();
     this.updateProtaBadgeCount();
   },
 
-  updateCpField(cpId, field, value) {
+  updateCpField(cpIdx, field, value) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.cpList)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !Array.isArray(pObj.cpList) || !pObj.cpList[cpIdx]) return;
 
-    const item = pObj.cpList.find(c => c.id === cpId);
-    if (!item) return;
-    item[field] = value;
+    pObj.cpList[cpIdx][field] = value;
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.save();
   },
 
-  deleteCpRow(cpId) {
+  deleteCpRow(cpIdx, cpId = '') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj || !Array.isArray(pObj.cpList)) return;
 
-    pObj.cpList = pObj.cpList.filter(c => c.id !== cpId);
+    if (cpIdx >= 0 && cpIdx < pObj.cpList.length) {
+      pObj.cpList.splice(cpIdx, 1);
+    } else if (cpId) {
+      pObj.cpList = pObj.cpList.filter(c => String(c.id) !== String(cpId));
+    }
+
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.saveImmediate();
     this.renderCpList();
@@ -16619,20 +16721,21 @@ const ProtaApp = {
     const semFilterEl = document.getElementById('prota-semester-filter');
     if (!container) return;
 
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj) return;
-    if (!Array.isArray(pObj.babs)) pObj.babs = [];
 
     const semFilter = semFilterEl ? semFilterEl.value : 'ALL';
-    const filteredBabs = pObj.babs.filter(b => {
-      if (semFilter === 'ALL') return true;
-      return b.semester === semFilter;
-    });
 
-    if (filteredBabs.length === 0) {
+    // Simpan indeks asli (realBabIdx) dari pObj.babs agar aksi tambah/hapus tidak pernah salah sasaran saat difilter
+    const indexedBabs = pObj.babs
+      .map((bab, realBabIdx) => ({ bab, realBabIdx }))
+      .filter(entry => semFilter === 'ALL' || entry.bab.semester === semFilter);
+
+    if (indexedBabs.length === 0) {
       container.innerHTML = `
         <div class="alert-box alert-warning" style="margin-top: 0; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-          <span>Belum ada daftar Bab untuk mata pelajaran <strong>${UI.escapeHtml(this.activeSubject)}</strong> pada filter semester ini. Silakan klik tombol <strong>+ Tambah Bab Semester 1 / 2</strong> atau gunakan tombol <strong>✨ Susun Otomatis CP, Bab, Materi & TP (AI Akurat)</strong> di atas.</span>
+          <span>Belum ada daftar Bab untuk mata pelajaran <strong>${UI.escapeHtml(currentSubj)}</strong> pada filter semester ini. Klik tombol <strong>+ Tambah Bab Semester 1 / 2</strong> atau klik <strong>✨ Susun Otomatis CP, Bab, Materi & TP (AI Akurat)</strong> di atas.</span>
           <div style="display: flex; gap: 0.5rem;">
             <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="ProtaApp.addNewBab('SEMESTER_1')">+ Tambah Bab Sem 1</button>
             <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="ProtaApp.addNewBab('SEMESTER_2')">+ Tambah Bab Sem 2</button>
@@ -16642,64 +16745,90 @@ const ProtaApp = {
       return;
     }
 
-    container.innerHTML = filteredBabs.map((bab) => {
+    container.innerHTML = indexedBabs.map(({ bab, realBabIdx }) => {
       const semBadgeClass = bab.semester === 'SEMESTER_2' ? 'badge-info' : 'badge-primary';
       const semLabel = bab.semester === 'SEMESTER_2' ? 'SEMESTER 2 (GENAP)' : 'SEMESTER 1 (GANJIL)';
       const materiArr = Array.isArray(bab.materiList) ? bab.materiList : [];
 
       const materiHtml = materiArr.length === 0
-        ? `<div style="padding: 0.75rem; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 6px; font-size: 0.82rem; color: #92400e; margin-bottom: 0.75rem;">
-            Belum ada materi di dalam ${UI.escapeHtml(bab.kodeBab || 'Bab ini')}. Klik <strong>+ Tambah Materi Pokok</strong> atau <strong>✨ Isi Materi & TP Bab Ini dengan AI</strong>.
+        ? `<div style="padding: 0.85rem 1rem; background: #fffbeb; border: 1px dashed #f59e0b; border-radius: 8px; font-size: 0.83rem; color: #92400e; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <span>Belum ada materi pokok di dalam <strong>${UI.escapeHtml(bab.kodeBab || `Bab ${realBabIdx + 1}`)}</strong>.</span>
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="ProtaApp.addMateriToBab(${realBabIdx}, '${bab.id}')">
+              + Tambah Materi Pertama
+            </button>
           </div>`
         : materiArr.map((mat, mIdx) => {
-            const tpArr = Array.isArray(mat.tpList) ? mat.tpList : [];
+            const tpArr = Array.isArray(mat.tpList) ? mat.tpList : [''];
             const tpRowsHtml = tpArr.map((tpText, tpIdx) => `
-              <div style="display: flex; align-items: center; gap: 0.45rem; margin-bottom: 0.4rem;">
-                <span class="badge badge-success" style="font-size: 0.7rem; flex-shrink: 0;">TP ${mIdx + 1}.${tpIdx + 1}</span>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.45rem;">
+                <span class="badge badge-success" style="font-size: 0.72rem; flex-shrink: 0; min-width: 56px; justify-content: center;">
+                  TP ${mIdx + 1}.${tpIdx + 1}
+                </span>
                 <input
                   type="text"
                   class="form-control"
-                  style="padding: 0.35rem 0.65rem; font-size: 0.83rem;"
-                  placeholder="Rumusan Tujuan Pembelajaran (TP) yang spesifik untuk materi ini..."
+                  style="padding: 0.4rem 0.7rem; font-size: 0.84rem; flex: 1;"
+                  placeholder="Rumusan Tujuan Pembelajaran (TP) untuk materi ini..."
                   value="${UI.escapeHtml(tpText)}"
-                  oninput="ProtaApp.updateTpInMateri('${bab.id}', '${mat.id}', ${tpIdx}, this.value)"
+                  oninput="ProtaApp.updateTpInMateri(${realBabIdx}, ${mIdx}, ${tpIdx}, this.value)"
                 >
-                <button type="button" class="btn btn-outline btn-sm write-action-btn" style="color: var(--danger); border-color: #fca5a5; padding: 0.22rem 0.5rem; font-size: 0.72rem; flex-shrink: 0;" onclick="ProtaApp.deleteTpFromMateri('${bab.id}', '${mat.id}', ${tpIdx})">
-                  ✕
+                <button
+                  type="button"
+                  class="btn btn-danger btn-sm write-action-btn"
+                  style="padding: 0.3rem 0.6rem; font-size: 0.74rem; flex-shrink: 0;"
+                  title="Hapus Tujuan Pembelajaran ini"
+                  onclick="ProtaApp.deleteTpFromMateri(${realBabIdx}, ${mIdx}, ${tpIdx})"
+                >
+                  🗑️ Hapus TP
                 </button>
               </div>
             `).join('');
 
             return `
               <div class="prota-materi-box">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 0.75rem; padding-bottom: 0.55rem; border-bottom: 1px solid #e2e8f0;">
                   <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 240px;">
-                    <span class="badge badge-primary">Materi ${mIdx + 1}</span>
+                    <span class="badge badge-primary" style="flex-shrink: 0;">Materi ${mIdx + 1}</span>
                     <input
                       type="text"
                       class="form-control"
-                      style="font-weight: 700; padding: 0.4rem 0.75rem; font-size: 0.88rem;"
-                      placeholder="Ketik judul topik / materi pokok yang diajarkan..."
+                      style="font-weight: 700; padding: 0.42rem 0.75rem; font-size: 0.88rem;"
+                      placeholder="Ketik judul topik / materi pokok yang akan diajarkan..."
                       value="${UI.escapeHtml(mat.judulMateri || '')}"
-                      oninput="ProtaApp.updateMateriField('${bab.id}', '${mat.id}', 'judulMateri', this.value)"
+                      oninput="ProtaApp.updateMateriField(${realBabIdx}, ${mIdx}, 'judulMateri', this.value)"
                     >
                   </div>
                   <div class="write-action-btn" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                    <button type="button" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.74rem;" onclick="ProtaApp.addTpToMateri('${bab.id}', '${mat.id}')">
-                      + Tambah TP
+                    <button
+                      type="button"
+                      class="btn btn-primary btn-sm"
+                      style="padding: 0.28rem 0.65rem; font-size: 0.75rem;"
+                      onclick="ProtaApp.addTpToMateri(${realBabIdx}, ${mIdx})"
+                    >
+                      + Tambah Kolom TP
                     </button>
-                    <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.25rem 0.6rem; font-size: 0.74rem;" onclick="ProtaApp.generateTpForSingleMateriWithAI('${bab.id}', '${mat.id}')">
+                    <button
+                      type="button"
+                      class="btn btn-secondary btn-sm"
+                      style="padding: 0.28rem 0.65rem; font-size: 0.75rem;"
+                      onclick="ProtaApp.generateTpForSingleMateriWithAI(${realBabIdx}, ${mIdx})"
+                    >
                       ✨ Buat TP (AI)
                     </button>
-                    <button type="button" class="btn btn-danger btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;" onclick="ProtaApp.deleteMateriFromBab('${bab.id}', '${mat.id}')">
+                    <button
+                      type="button"
+                      class="btn btn-danger btn-sm"
+                      style="padding: 0.28rem 0.65rem; font-size: 0.75rem;"
+                      onclick="ProtaApp.deleteMateriFromBab(${realBabIdx}, ${mIdx}, '${mat.id}')"
+                    >
                       🗑️ Hapus Materi
                     </button>
                   </div>
                 </div>
 
-                <div style="padding-left: 0.5rem; border-left: 2px dashed #cbd5e1;">
-                  <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.35rem;">
-                    Daftar Tujuan Pembelajaran (TP) pada Materi "${UI.escapeHtml(mat.judulMateri || `Materi ${mIdx + 1}`)}" :
+                <div style="padding-left: 0.6rem; border-left: 3px solid #93c5fd;">
+                  <div style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-bottom: 0.4rem;">
+                    Daftar Tujuan Pembelajaran (TP) pada Materi ${mIdx + 1} :
                   </div>
                   ${tpRowsHtml}
                 </div>
@@ -16709,29 +16838,29 @@ const ProtaApp = {
 
       return `
         <div class="prota-bab-card">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 0.85rem; margin-bottom: 0.9rem; border-bottom: 2px dashed #e2e8f0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 0.9rem; margin-bottom: 0.95rem; border-bottom: 2px dashed #cbd5e1;">
             <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap; flex: 1;">
-              <span class="badge ${semBadgeClass}">${semLabel}</span>
+              <span class="badge ${semBadgeClass}" style="flex-shrink: 0;">${semLabel}</span>
               <input
                 type="text"
                 class="form-control"
-                style="width: 115px; font-weight: 800; padding: 0.4rem 0.65rem;"
+                style="width: 110px; font-weight: 800; padding: 0.42rem 0.65rem;"
                 placeholder="Bab 1"
                 value="${UI.escapeHtml(bab.kodeBab || '')}"
-                oninput="ProtaApp.updateBabField('${bab.id}', 'kodeBab', this.value)"
+                oninput="ProtaApp.updateBabField(${realBabIdx}, 'kodeBab', this.value)"
               >
               <input
                 type="text"
                 class="form-control"
-                style="flex: 1; min-width: 220px; font-weight: 800; color: var(--dark); padding: 0.4rem 0.75rem;"
-                placeholder="Judul Bab (Contoh: Bilangan Cacah dan Операsi Hitung / Ekosistem)..."
+                style="flex: 1; min-width: 220px; font-weight: 800; color: var(--dark); padding: 0.42rem 0.75rem;"
+                placeholder="Judul Bab (Contoh: Bilangan Cacah / Wujud Zat dan Perubahannya)..."
                 value="${UI.escapeHtml(bab.judulBab || '')}"
-                oninput="ProtaApp.updateBabField('${bab.id}', 'judulBab', this.value)"
+                oninput="ProtaApp.updateBabField(${realBabIdx}, 'judulBab', this.value)"
               >
               <select
                 class="form-control"
-                style="width: auto; font-size: 0.82rem; padding: 0.4rem 0.6rem;"
-                onchange="ProtaApp.updateBabField('${bab.id}', 'semester', this.value, true)"
+                style="width: auto; font-size: 0.82rem; font-weight: 700; padding: 0.42rem 0.6rem;"
+                onchange="ProtaApp.updateBabField(${realBabIdx}, 'semester', this.value, true)"
               >
                 <option value="SEMESTER_1" ${bab.semester === 'SEMESTER_1' ? 'selected' : ''}>Semester 1 (Ganjil)</option>
                 <option value="SEMESTER_2" ${bab.semester === 'SEMESTER_2' ? 'selected' : ''}>Semester 2 (Genap)</option>
@@ -16739,21 +16868,33 @@ const ProtaApp = {
               <input
                 type="text"
                 class="form-control"
-                style="width: 105px; font-size: 0.82rem; padding: 0.4rem 0.6rem;"
-                placeholder="Alokasi JP"
+                style="width: 100px; font-size: 0.82rem; font-weight: 700; padding: 0.42rem 0.6rem;"
+                placeholder="12 JP"
                 value="${UI.escapeHtml(bab.alokasiJp || '12 JP')}"
-                oninput="ProtaApp.updateBabField('${bab.id}', 'alokasiJp', this.value)"
+                oninput="ProtaApp.updateBabField(${realBabIdx}, 'alokasiJp', this.value)"
               >
             </div>
 
             <div class="write-action-btn" style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
-              <button type="button" class="btn btn-secondary btn-sm" onclick="ProtaApp.generateMateriAndTpForBabWithAI('${bab.id}')">
+              <button
+                type="button"
+                class="btn btn-secondary btn-sm"
+                onclick="ProtaApp.generateMateriAndTpForBabWithAI(${realBabIdx}, '${bab.id}')"
+              >
                 ✨ Isi Materi & TP Bab Ini (AI)
               </button>
-              <button type="button" class="btn btn-primary btn-sm" onclick="ProtaApp.addMateriToBab('${bab.id}')">
+              <button
+                type="button"
+                class="btn btn-primary btn-sm"
+                onclick="ProtaApp.addMateriToBab(${realBabIdx}, '${bab.id}')"
+              >
                 + Tambah Materi Pokok
               </button>
-              <button type="button" class="btn btn-danger btn-sm" onclick="ProtaApp.deleteBab('${bab.id}')">
+              <button
+                type="button"
+                class="btn btn-danger btn-sm"
+                onclick="ProtaApp.deleteBab(${realBabIdx}, '${bab.id}')"
+              >
                 🗑️ Hapus Bab
               </button>
             </div>
@@ -16769,24 +16910,26 @@ const ProtaApp = {
 
   addNewBab(semesterCode = 'SEMESTER_1') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj) return;
 
-    if (!Array.isArray(pObj.babs)) pObj.babs = [];
+    // Jika filter semester sedang memilih semester lain, sesuaikan otomatis agar Bab yang baru ditambahkan langsung terlihat di layar
+    const semFilterEl = document.getElementById('prota-semester-filter');
+    if (semFilterEl && semFilterEl.value !== 'ALL' && semFilterEl.value !== semesterCode) {
+      semFilterEl.value = 'ALL';
+    }
+
     const nextNum = pObj.babs.length + 1;
-
-    const newBabId = 'BAB_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-    const newMatId = 'MAT_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-
     pObj.babs.push({
-      id: newBabId,
-      semester: semesterCode,
+      id: this.generateUid('BAB'),
+      semester: semesterCode === 'SEMESTER_2' ? 'SEMESTER_2' : 'SEMESTER_1',
       kodeBab: `Bab ${nextNum}`,
       judulBab: '',
       alokasiJp: '12 JP',
       materiList: [
         {
-          id: newMatId,
+          id: this.generateUid('MAT'),
           judulMateri: '',
           tpList: ['']
         }
@@ -16794,20 +16937,19 @@ const ProtaApp = {
     });
 
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
-    DB.save();
+    DB.saveImmediate();
     this.renderBabList();
     this.renderSubjectSelectorAndPills();
     this.updateProtaBadgeCount();
   },
 
-  updateBabField(babId, field, value, shouldReRender = false) {
+  updateBabField(babIdx, field, value, shouldReRender = false) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !Array.isArray(pObj.babs) || !pObj.babs[babIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab) return;
-    bab[field] = value;
+    pObj.babs[babIdx][field] = value;
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.save();
 
@@ -16816,16 +16958,18 @@ const ProtaApp = {
     }
   },
 
-  deleteBab(babId) {
+  deleteBab(babIdx, babId = '') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj || !Array.isArray(pObj.babs)) return;
 
-    const targetBab = pObj.babs.find(b => b.id === babId);
-    const babTitle = targetBab ? `${targetBab.kodeBab} ${targetBab.judulBab || ''}`.trim() : 'Bab ini';
-    if (!window.confirm(`Hapus "${babTitle}" beserta seluruh materi dan tujuan pembelajarannya dari Program Tahunan?`)) return;
+    if (typeof babIdx === 'number' && babIdx >= 0 && babIdx < pObj.babs.length) {
+      pObj.babs.splice(babIdx, 1);
+    } else if (babId) {
+      pObj.babs = pObj.babs.filter(b => String(b.id) !== String(babId));
+    }
 
-    pObj.babs = pObj.babs.filter(b => b.id !== babId);
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.saveImmediate();
     this.renderBabList();
@@ -16833,101 +16977,104 @@ const ProtaApp = {
     this.updateProtaBadgeCount();
   },
 
-  addMateriToBab(babId) {
+  addMateriToBab(babIdx, babId = '') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj || !Array.isArray(pObj.babs)) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
+    let bab = (typeof babIdx === 'number' && pObj.babs[babIdx]) ? pObj.babs[babIdx] : null;
+    if (!bab && babId) {
+      bab = pObj.babs.find(b => String(b.id) === String(babId));
+    }
     if (!bab) return;
-    if (!Array.isArray(bab.materiList)) bab.materiList = [];
 
+    if (!Array.isArray(bab.materiList)) bab.materiList = [];
     bab.materiList.push({
-      id: 'MAT_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+      id: this.generateUid('MAT'),
       judulMateri: '',
       tpList: ['']
     });
 
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
-    DB.save();
+    DB.saveImmediate();
     this.renderBabList();
   },
 
-  updateMateriField(babId, matId, field, value) {
+  updateMateriField(babIdx, matIdx, field, value) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !pObj.babs[babIdx] || !pObj.babs[babIdx].materiList[matIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab || !Array.isArray(bab.materiList)) return;
-
-    const mat = bab.materiList.find(m => m.id === matId);
-    if (!mat) return;
-    mat[field] = value;
+    pObj.babs[babIdx].materiList[matIdx][field] = value;
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.save();
   },
 
-  deleteMateriFromBab(babId, matId) {
+  deleteMateriFromBab(babIdx, matIdx, matId = '') {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (!pObj || !Array.isArray(pObj.babs)) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
+    const bab = pObj.babs[babIdx];
     if (!bab || !Array.isArray(bab.materiList)) return;
 
-    bab.materiList = bab.materiList.filter(m => m.id !== matId);
+    if (typeof matIdx === 'number' && matIdx >= 0 && matIdx < bab.materiList.length) {
+      bab.materiList.splice(matIdx, 1);
+    } else if (matId) {
+      bab.materiList = bab.materiList.filter(m => String(m.id) !== String(matId));
+    }
+
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.saveImmediate();
     this.renderBabList();
   },
 
-  addTpToMateri(babId, matId) {
+  addTpToMateri(babIdx, matIdx) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !pObj.babs[babIdx] || !pObj.babs[babIdx].materiList[matIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab || !Array.isArray(bab.materiList)) return;
-
-    const mat = bab.materiList.find(m => m.id === matId);
-    if (!mat) return;
+    const mat = pObj.babs[babIdx].materiList[matIdx];
     if (!Array.isArray(mat.tpList)) mat.tpList = [];
-
     mat.tpList.push('');
+
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
-    DB.save();
+    DB.saveImmediate();
     this.renderBabList();
   },
 
-  updateTpInMateri(babId, matId, tpIdx, value) {
+  updateTpInMateri(babIdx, matIdx, tpIdx, value) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !pObj.babs[babIdx] || !pObj.babs[babIdx].materiList[matIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab || !Array.isArray(bab.materiList)) return;
-
-    const mat = bab.materiList.find(m => m.id === matId);
-    if (!mat || !Array.isArray(mat.tpList)) return;
-
+    const mat = pObj.babs[babIdx].materiList[matIdx];
+    if (!Array.isArray(mat.tpList)) return;
     mat.tpList[tpIdx] = value;
+
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.save();
   },
 
-  deleteTpFromMateri(babId, matId, tpIdx) {
+  deleteTpFromMateri(babIdx, matIdx, tpIdx) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !pObj.babs[babIdx] || !pObj.babs[babIdx].materiList[matIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab || !Array.isArray(bab.materiList)) return;
-
-    const mat = bab.materiList.find(m => m.id === matId);
-    if (!mat || !Array.isArray(mat.tpList)) return;
+    const mat = pObj.babs[babIdx].materiList[matIdx];
+    if (!Array.isArray(mat.tpList)) return;
 
     mat.tpList.splice(tpIdx, 1);
+    if (mat.tpList.length === 0) {
+      mat.tpList.push('');
+    }
+
     pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     DB.saveImmediate();
     this.renderBabList();
@@ -17097,7 +17244,7 @@ const ProtaApp = {
           {
             semester: 'SEMESTER_1',
             kodeBab: 'Bab 2',
-            judulBab: 'Di Bawah Atap (Awak Kata me-, Homonim, & Kalimat Majemuk)',
+            judulBab: 'Di Bawah Atap (Awalan me-, Homonim, & Kalimat Majemuk)',
             alokasiJp: '18 JP',
             materiList: [
               {
@@ -17324,7 +17471,6 @@ const ProtaApp = {
       };
     }
 
-    // Blueprint Adaptif Universal untuk Mata Pelajaran Lainnya (PJOK, PAI, Seni Budaya, B. Inggris, Mulok, dll.)
     return {
       cpList: [
         {
@@ -17404,33 +17550,26 @@ const ProtaApp = {
   generateFullSubjectProtaWithAI() {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
-    if (!bucket || !this.activeSubject) return;
+    const currentSubj = this.resolveActiveSubject();
+    if (!bucket || !currentSubj) return;
 
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    const hasExisting = (pObj.cpList && pObj.cpList.length > 0) || (pObj.babs && pObj.babs.length > 0);
-    if (hasExisting) {
-      if (!window.confirm(`Susun otomatis Program Tahunan lengkap (CP, Bab Semester 1 & 2, Materi, dan TP) untuk mata pelajaran "${this.activeSubject}" menggunakan AI Kurikulum Merdeka? Data yang baru akan ditambahkan/memperbarui struktur saat ini.`)) {
-        return;
-      }
-    }
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    const blueprint = this.getCurriculumBlueprintBySubject(currentSubj, bucket.kelasFaseLabel || bucket.classKey);
 
-    const blueprint = this.getCurriculumBlueprintBySubject(this.activeSubject, bucket.kelasFaseLabel || bucket.classKey);
-    const nowStamp = Date.now();
-
-    pObj.cpList = blueprint.cpList.map((cp, idx) => ({
-      id: `CP_AI_${nowStamp}_${idx}`,
+    pObj.cpList = blueprint.cpList.map(cp => ({
+      id: this.generateUid('CP_AI'),
       elemen: cp.elemen,
       deskripsi: cp.deskripsi
     }));
 
-    pObj.babs = blueprint.babs.map((b, bIdx) => ({
-      id: `BAB_AI_${nowStamp}_${bIdx}`,
+    pObj.babs = blueprint.babs.map(b => ({
+      id: this.generateUid('BAB_AI'),
       semester: b.semester,
       kodeBab: b.kodeBab,
       judulBab: b.judulBab,
       alokasiJp: b.alokasiJp,
-      materiList: (b.materiList || []).map((m, mIdx) => ({
-        id: `MAT_AI_${nowStamp}_${bIdx}_${mIdx}`,
+      materiList: (b.materiList || []).map(m => ({
+        id: this.generateUid('MAT_AI'),
         judulMateri: m.judulMateri,
         tpList: [...(m.tpList || [])]
       }))
@@ -17446,7 +17585,7 @@ const ProtaApp = {
 
     UI.showNotif(
       'Program Tahunan (Prota) Berhasil Disusun oleh AI',
-      `Seluruh Capaian Pembelajaran (CP), Bab Semester 1 & 2, Materi Pokok, serta Tujuan Pembelajaran (TP) untuk mata pelajaran "${this.activeSubject}" telah tersusun secara akurat dan siap digunakan di halaman Modul RPM.`,
+      `Seluruh Capaian Pembelajaran (CP), Bab Semester 1 & 2, Materi Pokok, serta Tujuan Pembelajaran (TP) untuk mata pelajaran "${currentSubj}" telah tersusun secara akurat dan siap digunakan di halaman Modul RPM.`,
       'success'
     );
   },
@@ -17454,14 +17593,14 @@ const ProtaApp = {
   generateCpOnlyWithAI() {
     if (AppState.isReadOnlyInspection) return;
     const bucket = DB.getActiveClassBucket();
-    if (!bucket || !this.activeSubject) return;
+    const currentSubj = this.resolveActiveSubject();
+    if (!bucket || !currentSubj) return;
 
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    const blueprint = this.getCurriculumBlueprintBySubject(this.activeSubject, bucket.kelasFaseLabel || bucket.classKey);
-    const nowStamp = Date.now();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    const blueprint = this.getCurriculumBlueprintBySubject(currentSubj, bucket.kelasFaseLabel || bucket.classKey);
 
-    pObj.cpList = blueprint.cpList.map((cp, idx) => ({
-      id: `CP_AI_${nowStamp}_${idx}`,
+    pObj.cpList = blueprint.cpList.map(cp => ({
+      id: this.generateUid('CP_AI'),
       elemen: cp.elemen,
       deskripsi: cp.deskripsi
     }));
@@ -17474,29 +17613,31 @@ const ProtaApp = {
 
     UI.showNotif(
       'Capaian Pembelajaran (CP) Berhasil Disusun',
-      `Rumusan Capaian Pembelajaran (CP) akurat untuk mata pelajaran "${this.activeSubject}" berhasil dimuat.`,
+      `Rumusan Capaian Pembelajaran (CP) akurat untuk mata pelajaran "${currentSubj}" berhasil dimuat.`,
       'success'
     );
   },
 
-  generateMateriAndTpForBabWithAI(babId) {
+  generateMateriAndTpForBabWithAI(babIdx, babId = '') {
     if (AppState.isReadOnlyInspection) return;
-    const bucket = DB.getActiveClassBucket();
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!bucket || !pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !Array.isArray(pObj.babs)) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
+    let bab = (typeof babIdx === 'number' && pObj.babs[babIdx]) ? pObj.babs[babIdx] : null;
+    if (!bab && babId) {
+      bab = pObj.babs.find(b => String(b.id) === String(babId));
+    }
     if (!bab) return;
 
-    const cleanTitle = (bab.judulBab || '').trim() || `Konsep Utama ${this.activeSubject} (${bab.kodeBab || 'Bab'})`;
+    const cleanTitle = (bab.judulBab || '').trim() || `Konsep Utama ${currentSubj} (${bab.kodeBab || 'Bab'})`;
     if (!bab.judulBab || !bab.judulBab.trim()) {
       bab.judulBab = cleanTitle;
     }
 
-    const nowStamp = Date.now();
     bab.materiList = [
       {
-        id: `MAT_AI_${nowStamp}_1`,
+        id: this.generateUid('MAT_AI'),
         judulMateri: `Konsep Dasar dan Identifikasi ${cleanTitle}`,
         tpList: [
           `Melalui pengamatan media dan diskusi terbimbing, peserta didik mampu mengidentifikasi konsep inti serta karakteristik pada materi "${cleanTitle}" dengan tepat.`,
@@ -17504,7 +17645,7 @@ const ProtaApp = {
         ]
       },
       {
-        id: `MAT_AI_${nowStamp}_2`,
+        id: this.generateUid('MAT_AI'),
         judulMateri: `Penerapan Kontekstual & Pemecahan Masalah ${cleanTitle}`,
         tpList: [
           `Melalui kegiatan latihan terstruktur dan kerja kelompok, peserta didik mampu menerapkan prinsip "${cleanTitle}" untuk menyelesaikan persoalan kontekstual secara akurat.`,
@@ -17524,24 +17665,22 @@ const ProtaApp = {
     );
   },
 
-  generateTpForSingleMateriWithAI(babId, matId) {
+  generateTpForSingleMateriWithAI(babIdx, matIdx) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
-    if (!pObj || !Array.isArray(pObj.babs)) return;
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
+    if (!pObj || !pObj.babs[babIdx] || !pObj.babs[babIdx].materiList[matIdx]) return;
 
-    const bab = pObj.babs.find(b => b.id === babId);
-    if (!bab || !Array.isArray(bab.materiList)) return;
+    const bab = pObj.babs[babIdx];
+    const mat = bab.materiList[matIdx];
 
-    const mat = bab.materiList.find(m => m.id === matId);
-    if (!mat) return;
-
-    const judulMateri = (mat.judulMateri || '').trim() || (bab.judulBab || `Materi ${this.activeSubject}`);
+    const judulMateri = (mat.judulMateri || '').trim() || (bab.judulBab || `Materi ${currentSubj}`);
     if (!mat.judulMateri || !mat.judulMateri.trim()) {
       mat.judulMateri = judulMateri;
     }
 
     mat.tpList = [
-      `Melalui pengamatan stimulus dan diskusi terbimbing pada mata pelajaran ${this.activeSubject}, peserta didik mampu memahami dan menguraikan konsep "${judulMateri}" dengan tepat.`,
+      `Melalui pengamatan stimulus dan diskusi terbimbing pada mata pelajaran ${currentSubj}, peserta didik mampu memahami dan menguraikan konsep "${judulMateri}" dengan tepat.`,
       `Melalui penugasan terstruktur dan pemecahan masalah kontekstual, peserta didik mampu mengaplikasikan materi "${judulMateri}" secara mandiri, bernalar kritis, dan akurat.`
     ];
 
@@ -17558,7 +17697,8 @@ const ProtaApp = {
 
   saveProtaToDatabase(showNotification = true) {
     if (AppState.isReadOnlyInspection) return;
-    const pObj = this.getSubjectProtaObject(this.activeSubject, true);
+    const currentSubj = this.resolveActiveSubject();
+    const pObj = this.getSubjectProtaObject(currentSubj, true);
     if (pObj) {
       pObj.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
     }
@@ -17569,7 +17709,7 @@ const ProtaApp = {
     if (showNotification) {
       UI.showNotif(
         'Program Tahunan (Prota) Berhasil Disimpan',
-        `Seluruh data Capaian Pembelajaran (CP), struktur Bab Semester 1 & 2, Materi Pokok, dan Tujuan Pembelajaran untuk mata pelajaran "${this.activeSubject}" telah disimpan ke Cloud dan tersinkronisasi dengan halaman Modul RPM.`,
+        `Seluruh data Capaian Pembelajaran (CP), struktur Bab Semester 1 & 2, Materi Pokok, dan Tujuan Pembelajaran untuk mata pelajaran "${currentSubj}" telah disimpan ke Cloud dan tersinkronisasi dengan halaman Modul RPM.`,
         'success'
       );
     }
