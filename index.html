@@ -6651,8 +6651,11 @@ const DB = {
   isSyncing: false,
   saveTimeout: null,
   lastLocalDeleteTimestamp: 0,
+  lastLocalWriteTimestamp: 0,
+  hasInitialCloudSyncCompleted: false,
+  realtimeChannelBound: false,
 
-  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat (Termasuk Modul RPM)
+  // Membaca daftar hitam permanen dari penyimpanan lokal perangkat
   getLocalBlacklist() {
     try {
       const raw = localStorage.getItem(DELETED_BLACKLIST_STORAGE_KEY);
@@ -6684,9 +6687,10 @@ const DB = {
     }
   },
 
-  // Mengunci ID log, ID akun, atau ID Modul RPM yang dihapus agar permanen dan tidak pernah muncul kembali
+  // Mengunci ID log, ID akun, atau ID Modul RPM yang dihapus agar permanen
   lockPermanentDeletion({ accId = null, pendingId = null, accNip = null, rpmId = null, rpmIds = null }) {
     this.lastLocalDeleteTimestamp = Date.now();
+    this.lastLocalWriteTimestamp = Date.now();
     const bl = this.getLocalBlacklist();
 
     if (accId) {
@@ -6748,22 +6752,46 @@ const DB = {
     }
   },
 
-  unlockNipForNewAccount(nipRaw) {
+  // Membuka kunci NIP & ID Akun ketika Admin mengedit atau merilis ulang akun
+  unlockNipForNewAccount(nipRaw, accId = null) {
     const cleanNip = String(nipRaw || '').replace(/\s+/g, '').trim();
-    if (!cleanNip) return;
-
     const bl = this.getLocalBlacklist();
-    bl.deletedAccountNips = (bl.deletedAccountNips || []).filter(n => n !== cleanNip);
-    this.saveLocalBlacklist(bl);
 
-    if (this.data && Array.isArray(this.data.deletedAccountNips)) {
-      this.data.deletedAccountNips = this.data.deletedAccountNips.filter(n => n !== cleanNip);
+    if (cleanNip) {
+      bl.deletedAccountNips = (bl.deletedAccountNips || []).filter(n => n !== cleanNip);
+      if (this.data && Array.isArray(this.data.deletedAccountNips)) {
+        this.data.deletedAccountNips = this.data.deletedAccountNips.filter(n => n !== cleanNip);
+      }
     }
+
+    if (accId) {
+      const idStr = String(accId);
+      bl.accountIds = (bl.accountIds || []).filter(id => id !== idStr);
+      if (this.data && Array.isArray(this.data.deletedAccountIds)) {
+        this.data.deletedAccountIds = this.data.deletedAccountIds.filter(id => id !== idStr);
+      }
+    }
+
+    this.saveLocalBlacklist(bl);
   },
 
   async init() {
     this.updateCloudBadge('MEMUAT DATA CLOUD...', 'warning');
 
+    // 1. Siapkan fallback lokal di memori TANPA memanggil save() ke Cloud agar tidak menimpa Cloud!
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      try {
+        this.data = JSON.parse(raw);
+      } catch (e) {
+        this.data = this.getDefaultData();
+      }
+    } else {
+      this.data = this.getDefaultData();
+    }
+    this.ensureIntegrity(false);
+
+    // 2. Tarik data utama dari Supabase Cloud sebagai sumber kebenaran utama (Single Source of Truth)
     if (supabaseClient) {
       try {
         const { data: row, error } = await supabaseClient
@@ -6774,46 +6802,90 @@ const DB = {
 
         if (!error && row && row.payload) {
           this.data = row.payload;
-          this.ensureIntegrity();
+          this.hasInitialCloudSyncCompleted = true;
+          this.ensureIntegrity(true);
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
           this.updateCloudBadge('CLOUD SUPABASE AKTIF', 'success');
           this.subscribeRealtimeChanges();
+          this.bindAutoFocusSync();
           return;
         } else if (!error && !row) {
-          const localRaw = localStorage.getItem(STORAGE_KEY);
-          this.data = localRaw ? JSON.parse(localRaw) : this.getDefaultData();
-          this.ensureIntegrity();
+          // Hanya jika baris di Supabase benar-benar belum pernah ada sama sekali
+          this.hasInitialCloudSyncCompleted = true;
+          this.ensureIntegrity(true);
           await this.pushToSupabaseImmediate();
           this.subscribeRealtimeChanges();
+          this.bindAutoFocusSync();
           return;
         }
       } catch (err) {
-        console.warn('Koneksi Supabase terkendala, beralih sementara ke cadangan lokal:', err);
+        console.warn('Koneksi Supabase terkendala saat init:', err);
       }
-    }
-
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      try {
-        this.data = JSON.parse(raw);
-        this.ensureIntegrity();
-      } catch (e) {
-        this.data = this.getDefaultData();
-        this.save();
-      }
-    } else {
-      this.data = this.getDefaultData();
-      this.save();
     }
 
     this.updateCloudBadge(
-      supabaseClient ? 'MODE OFFLINE (CACHE)' : 'MODE LOKAL (BELUM SET KEY)',
+      supabaseClient ? 'MODE OFFLINE (KLIK SINKRON)' : 'MODE LOKAL',
       supabaseClient ? 'danger' : 'warning'
     );
+    this.bindAutoFocusSync();
+  },
+
+  // Sinkronisasi otomatis setiap kali pengguna membuka kembali tab/layar di HP atau komputer lain
+  bindAutoFocusSync() {
+    if (this._focusSyncBound) return;
+    this._focusSyncBound = true;
+
+    window.addEventListener('focus', () => {
+      if (Date.now() - this.lastLocalWriteTimestamp > 4000 && !this.isSyncing) {
+        this.syncFromCloudSilent();
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && Date.now() - this.lastLocalWriteTimestamp > 4000 && !this.isSyncing) {
+        this.syncFromCloudSilent();
+      }
+    });
+  },
+
+  // Menarik data terbaru dari Supabase tanpa memunculkan pop-up yang mengganggu (dipakai sebelum Login & saat ganti device)
+  async syncFromCloudSilent() {
+    if (!supabaseClient || this.isSyncing) return false;
+    try {
+      const { data: row, error } = await supabaseClient
+        .from('simak_edu_store')
+        .select('payload, updated_at')
+        .eq('id', SUPABASE_DOC_ID)
+        .maybeSingle();
+
+      if (!error && row && row.payload) {
+        this.data = row.payload;
+        this.hasInitialCloudSyncCompleted = true;
+        this.ensureIntegrity(true);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+
+        // Perbarui juga referensi currentUser jika sedang login agar perubahan nama/sekolah/password ikut segar
+        if (AppState.currentUser && AppState.currentUser.role !== 'SISWA') {
+          const updatedAcc = (this.data.accounts || []).find(a => String(a.id) === String(AppState.currentUser.id));
+          if (updatedAcc) {
+            AppState.currentUser = updatedAcc;
+            UI.updateNavbar();
+          }
+        }
+
+        this.refreshCurrentActiveView();
+        this.updateCloudBadge('CLOUD TERSINKRONISASI', 'success');
+        return true;
+      }
+    } catch (e) {
+      console.warn('Gagal tarik data silent dari Cloud:', e);
+    }
+    return false;
   },
 
   save() {
-    this.ensureIntegrity();
+    this.lastLocalWriteTimestamp = Date.now();
+    this.ensureIntegrity(true);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
     if (supabaseClient) {
@@ -6821,49 +6893,62 @@ const DB = {
       if (this.saveTimeout) clearTimeout(this.saveTimeout);
       this.saveTimeout = setTimeout(() => {
         this.pushToSupabaseImmediate();
-      }, 300);
+      }, 250);
     }
   },
 
-  saveImmediate() {
+  // Menyimpan ke localStorage dan LANGSUNG mengirim ke Supabase tanpa jeda tunda (wajib di-await untuk Edit Admin & Visi Misi)
+  async saveImmediate() {
+    this.lastLocalWriteTimestamp = Date.now();
     if (this.saveTimeout) {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
-    this.ensureIntegrity();
+    this.ensureIntegrity(true);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
 
     if (supabaseClient) {
       this.updateCloudBadge('MENGUNCI PERUBAHAN DI CLOUD...', 'warning');
-      return this.pushToSupabaseImmediate();
+      return await this.pushToSupabaseImmediate();
     }
-    return Promise.resolve();
+    return true;
   },
 
   async pushToSupabaseImmediate() {
-    if (!supabaseClient || !this.data) return;
+    if (!supabaseClient || !this.data) return false;
+
+    // Jika perangkat ini belum pernah berhasil mengambil data awal dari Cloud, tarik dulu atau aktifkan izin simpan
+    this.hasInitialCloudSyncCompleted = true;
     this.isSyncing = true;
+    this.lastLocalWriteTimestamp = Date.now();
+
     try {
+      this.data._lastUpdatedAt = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+
       const { error } = await supabaseClient
         .from('simak_edu_store')
         .upsert(
           {
             id: SUPABASE_DOC_ID,
             payload: this.data,
-            updated_at: new Date().toISOString()
+            updated_at: this.data._lastUpdatedAt
           },
           { onConflict: 'id' }
         );
 
       if (error) {
         console.error('Gagal menyimpan ke Supabase:', error.message);
-        this.updateCloudBadge('TERSIMPAN DI LOKAL', 'warning');
+        this.updateCloudBadge('GAGAL SINKRON CLOUD', 'danger');
+        return false;
       } else {
         this.updateCloudBadge('TERSIMPAN DI CLOUD', 'success');
+        return true;
       }
     } catch (err) {
       console.error('Error jaringan Supabase:', err);
-      this.updateCloudBadge('TERSIMPAN DI LOKAL', 'warning');
+      this.updateCloudBadge('GANGGUAN JARINGAN', 'danger');
+      return false;
     } finally {
       this.isSyncing = false;
     }
@@ -6880,51 +6965,51 @@ const DB = {
     }
 
     this.updateCloudBadge('MENYINKRONKAN...', 'warning');
-    try {
-      const { data: row, error } = await supabaseClient
-        .from('simak_edu_store')
-        .select('payload, updated_at')
-        .eq('id', SUPABASE_DOC_ID)
-        .maybeSingle();
-
-      if (!error && row && row.payload) {
-        this.data = row.payload;
-        this.ensureIntegrity();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
-        this.refreshCurrentActiveView();
-        this.updateCloudBadge('CLOUD TERSINKRONISASI', 'success');
-        UI.showNotif(
-          'Data Cloud Berhasil Diperbarui',
-          'Seluruh data terbaru dari server Supabase telah dimuat ke perangkat ini.',
-          'success'
-        );
-      }
-    } catch (err) {
+    const ok = await this.syncFromCloudSilent();
+    if (ok) {
+      UI.showNotif(
+        'Data Cloud Berhasil Diperbarui',
+        'Seluruh data akun, Kepala Sekolah, Visi-Misi, dan kelas terbaru dari server Supabase telah dimuat ke perangkat ini.',
+        'success'
+      );
+    } else {
       this.updateCloudBadge('GAGAL SINKRON', 'danger');
     }
   },
 
   subscribeRealtimeChanges() {
-    if (!supabaseClient) return;
+    if (!supabaseClient || this.realtimeChannelBound) return;
+    this.realtimeChannelBound = true;
+
     supabaseClient
       .channel('simak_edu_realtime_channel')
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'simak_edu_store',
           filter: `id=eq.${SUPABASE_DOC_ID}`
         },
         (payload) => {
-          // Abaikan pantulan realtime selama 6 detik setelah pengguna melakukan penghapusan
           if (this.isSyncing) return;
-          if (Date.now() - this.lastLocalDeleteTimestamp < 6000) return;
+          if (Date.now() - this.lastLocalDeleteTimestamp < 5000) return;
+          if (Date.now() - this.lastLocalWriteTimestamp < 3000) return;
 
           if (payload.new && payload.new.payload) {
             this.data = payload.new.payload;
-            this.ensureIntegrity();
+            this.hasInitialCloudSyncCompleted = true;
+            this.ensureIntegrity(true);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+
+            if (AppState.currentUser && AppState.currentUser.role !== 'SISWA') {
+              const updatedAcc = (this.data.accounts || []).find(a => String(a.id) === String(AppState.currentUser.id));
+              if (updatedAcc) {
+                AppState.currentUser = updatedAcc;
+                UI.updateNavbar();
+              }
+            }
+
             this.refreshCurrentActiveView();
             this.updateCloudBadge('REALTIME SYNC AKTIF', 'success');
           }
@@ -6941,12 +7026,18 @@ const DB = {
       AdminApp.renderPillarLocksState();
       AdminApp.renderAccountsTable();
     } else if (AppState.activeMode === 'TEACHER') {
+      if (typeof TeacherApp !== 'undefined' && typeof TeacherApp.renderMandateBanner === 'function') {
+        const teacher = this.getActiveTeacherAccount();
+        if (teacher) TeacherApp.renderMandateBanner(teacher);
+      }
       if (typeof RpmApp !== 'undefined' && typeof RpmApp.renderSavedArchiveTable === 'function') {
         RpmApp.renderSavedArchiveTable();
       }
     } else if (AppState.activeMode === 'PRINCIPAL') {
       PrincipalApp.renderTeachersSyncPanel();
-      if (AppState.principalActiveTab === 'ketercapaian') {
+      if (AppState.principalActiveTab === 'visimisi') {
+        PrincipalApp.renderVisiMisiPanel();
+      } else if (AppState.principalActiveTab === 'ketercapaian') {
         PrincipalApp.renderKetercapaianDashboard();
       }
     } else if (AppState.activeMode === 'STUDENT') {
@@ -6979,7 +7070,7 @@ const DB = {
     }
   },
 
-  ensureIntegrity() {
+  ensureIntegrity(syncBlacklistFromCloud = true) {
     if (!this.data) return;
     if (!this.data.accounts) this.data.accounts = [];
     if (!this.data.pendingTeachers) this.data.pendingTeachers = [];
@@ -6988,35 +7079,15 @@ const DB = {
     if (!Array.isArray(this.data.deletedAccountNips)) this.data.deletedAccountNips = [];
     if (!Array.isArray(this.data.deletedRpmIds)) this.data.deletedRpmIds = [];
 
-    // Gabungkan daftar hitam lokal perangkat dengan daftar hitam dari Cloud
-    const localBl = this.getLocalBlacklist();
-    localBl.accountIds.forEach(id => {
-      if (!this.data.deletedAccountIds.includes(String(id))) {
-        this.data.deletedAccountIds.push(String(id));
-      }
-    });
-    localBl.pendingIds.forEach(id => {
-      if (!this.data.deletedPendingIds.includes(String(id))) {
-        this.data.deletedPendingIds.push(String(id));
-      }
-    });
-    localBl.deletedAccountNips.forEach(nip => {
-      if (!this.data.deletedAccountNips.includes(String(nip))) {
-        this.data.deletedAccountNips.push(String(nip));
-      }
-    });
-    (localBl.rpmIds || []).forEach(rId => {
-      if (!this.data.deletedRpmIds.includes(String(rId))) {
-        this.data.deletedRpmIds.push(String(rId));
-      }
-    });
-
-    this.saveLocalBlacklist({
-      accountIds: this.data.deletedAccountIds,
-      pendingIds: this.data.deletedPendingIds,
-      deletedAccountNips: this.data.deletedAccountNips,
-      rpmIds: this.data.deletedRpmIds
-    });
+    if (syncBlacklistFromCloud) {
+      // Utamakan daftar hitam dari Cloud agar akun yang sudah diedit/diaktifkan di komputer tidak terhapus oleh cache lokal device lain
+      this.saveLocalBlacklist({
+        accountIds: this.data.deletedAccountIds,
+        pendingIds: this.data.deletedPendingIds,
+        deletedAccountNips: this.data.deletedAccountNips,
+        rpmIds: this.data.deletedRpmIds
+      });
+    }
 
     if (!this.data.pillarLocks) {
       this.data.pillarLocks = {
@@ -7040,7 +7111,8 @@ const DB = {
       if (!acc.id) acc.id = 'ACC_LEGACY_' + idx + '_' + String(acc.nip || '').replace(/\D/g, '');
       const cleanNip = String(acc.nip || '').replace(/\s+/g, '').trim();
       if (deletedAccSet.has(String(acc.id))) return false;
-      if (cleanNip && deletedNipSet.has(cleanNip)) return false;
+      // Jangan hapus akun yang baru saja diedit oleh Admin (memiliki properti lastEditedByAdminAt)
+      if (cleanNip && deletedNipSet.has(cleanNip) && !acc.lastEditedByAdminAt) return false;
       return true;
     });
 
@@ -7051,7 +7123,6 @@ const DB = {
       return true;
     });
 
-    // Saring semua modul RPM di seluruh kelas agar modul yang sudah dihapus permanen tidak pernah muncul lagi
     Object.values(this.data.classData || {}).forEach(bucket => {
       if (bucket && Array.isArray(bucket.rpmModules)) {
         bucket.rpmModules = bucket.rpmModules.filter((mod, idx) => {
@@ -7730,7 +7801,7 @@ const LandingUI = {
 };
 
   const AppAuth = {
-  handleTeacherLogin(event) {
+  async handleTeacherLogin(event) {
     event.preventDefault();
     const userInp = document.getElementById('login-teacher-username');
     const passInp = document.getElementById('login-teacher-password');
@@ -7743,17 +7814,20 @@ const LandingUI = {
       return;
     }
 
+    // Tarik data terbaru dari Cloud Supabase terlebih dahulu agar perubahan password/username di device lain langsung terbaca
+    await DB.syncFromCloudSilent();
+
     const foundAccount = (DB.data.accounts || []).find(acc => {
       const isTeacherOrAdmin = acc.role === 'GURU_KELAS' || acc.role === 'GURU_MAPEL' || acc.isMasterAdmin === true;
       if (!isTeacherOrAdmin) return false;
 
       const usernameMatch =
-        String(acc.username).toLowerCase() === username.toLowerCase() ||
+        String(acc.username || '').trim().toLowerCase() === username.toLowerCase() ||
         (acc.isMasterAdmin && username.toLowerCase() === 'andri julian perdana');
 
       const passwordMatch =
-        String(acc.password) === password ||
-        (acc.altPassword && String(acc.altPassword) === password);
+        String(acc.password || '').trim() === password ||
+        (acc.altPassword && String(acc.altPassword).trim() === password);
 
       return usernameMatch && passwordMatch;
     });
@@ -7830,7 +7904,7 @@ const LandingUI = {
     UI.switchView('view-andri-gateway');
   },
 
-  handlePrincipalLogin(event) {
+  async handlePrincipalLogin(event) {
     event.preventDefault();
     const userInp = document.getElementById('login-principal-username');
     const passInp = document.getElementById('login-principal-password');
@@ -7843,16 +7917,19 @@ const LandingUI = {
       return;
     }
 
+    // WAJIB: Tarik data terbaru dari Cloud Supabase terlebih dahulu sebelum memvalidasi login Kepala Sekolah
+    await DB.syncFromCloudSilent();
+
     const foundPrincipal = (DB.data.accounts || []).find(acc =>
       acc.role === 'KEPALA_SEKOLAH' &&
-      String(acc.username).toLowerCase() === username.toLowerCase() &&
-      String(acc.password) === password
+      String(acc.username || '').trim().toLowerCase() === username.toLowerCase() &&
+      String(acc.password || '').trim() === password
     );
 
     if (!foundPrincipal) {
       UI.showNotif(
         'Gagal Login Kepala Sekolah',
-        'Username atau Password Kepala Sekolah tidak ditemukan. Pastikan akun Kepala Sekolah telah didaftarkan dan dirilis oleh Admin.',
+        'Username atau Password Kepala Sekolah tidak sesuai dengan data terbaru di Cloud. Pastikan Anda memasukkan Username dan Password terbaru yang telah diperbarui oleh Admin.',
         'danger'
       );
       return;
@@ -7867,15 +7944,15 @@ const LandingUI = {
     if (passInp) passInp.value = '';
 
     UI.updateNavbar();
-    PrincipalApp.openPrincipalDashboard();
+    await PrincipalApp.openPrincipalDashboard();
     UI.showNotif(
       'Sukses Login Kepala Sekolah',
-      `Selamat datang, ${foundPrincipal.nama}. Seluruh data guru pada ${foundPrincipal.schoolDisplay} telah disinkronkan secara otomatis.`,
+      `Selamat datang, ${foundPrincipal.nama}. Seluruh data guru dan Visi-Misi terbaru pada ${foundPrincipal.schoolDisplay} telah disinkronkan dari Cloud.`,
       'success'
     );
   },
 
-  handleStudentLogin(event) {
+  async handleStudentLogin(event) {
     event.preventDefault();
     const userInp = document.getElementById('login-student-username');
     const passInp = document.getElementById('login-student-password');
@@ -7888,6 +7965,8 @@ const LandingUI = {
       return;
     }
 
+    await DB.syncFromCloudSilent();
+
     let matchedStudent = null;
     let matchedBucketKey = null;
 
@@ -7895,8 +7974,8 @@ const LandingUI = {
     for (const [bucketKey, bucket] of classEntries) {
       const std = (bucket.students || []).find(s =>
         s.username &&
-        String(s.username).toLowerCase() === username.toLowerCase() &&
-        String(s.password) === password
+        String(s.username).trim().toLowerCase() === username.toLowerCase() &&
+        String(s.password).trim() === password
       );
       if (std) {
         matchedStudent = std;
@@ -23432,6 +23511,422 @@ Format JSON wajib:
   }
 };
 
+// ============================================================================
+// TAHAP 2: PENGUNCIAN PERMANEN CLOUD UNTUK EDIT AKUN ADMIN & VISI-MISI KEPSEK
+// ============================================================================
+
+// 1. Pastikan Cek NIP & Pendaftaran Guru selalu menarik data terbaru dari Cloud terlebih dahulu
+Object.assign(AppAuth, {
+  async handleCheckNIP(event) {
+    event.preventDefault();
+
+    const inputEl = document.getElementById('check-nip-input');
+    const resultBox = document.getElementById('check-nip-result-box');
+    const nipQuery = this.cleanNip(inputEl ? inputEl.value : '');
+
+    if (!nipQuery) {
+      UI.showNotif('Masukkan NIP', 'Silakan masukkan NIP Anda terlebih dahulu untuk melakukan pengecekan.', 'warning');
+      return;
+    }
+
+    // Tarik data terbaru dari Supabase Cloud agar NIP & Password yang baru diedit Admin di komputer langsung terbaca di HP
+    await DB.syncFromCloudSilent();
+
+    const registeredAccount = (DB.data.accounts || []).find(
+      acc => this.cleanNip(acc.nip) === nipQuery && acc.username && acc.password
+    );
+
+    if (registeredAccount) {
+      UI.showNotif('Status Cek NIP Berhasil', 'Selamat, NIP Anda terdaftar sebagai pengguna aktif.', 'success');
+
+      if (resultBox) {
+        resultBox.className = 'alert-box alert-success';
+        resultBox.classList.remove('hidden');
+        resultBox.innerHTML = `
+          <div style="font-size: 1rem; font-weight: 800; margin-bottom: 0.35rem;">
+            ✓ Selamat, NIP Anda Terdaftar Sebagai Pengguna Aktif
+          </div>
+          <div style="font-size: 0.88rem; color: var(--dark); line-height: 1.6;">
+            <div><strong>Nama Lengkap :</strong> ${UI.escapeHtml(registeredAccount.nama)}</div>
+            <div><strong>NIP :</strong> ${UI.escapeHtml(registeredAccount.nip)}</div>
+            <div><strong>Sekolah :</strong> ${UI.escapeHtml(registeredAccount.schoolDisplay)}</div>
+            <div><strong>Peran :</strong> ${UI.escapeHtml(registeredAccount.role)}</div>
+            <div style="margin-top: 0.5rem; padding: 0.65rem; background: #ffffff; border: 1px solid #86efac; border-radius: 6px;">
+              <div><strong>Username Login :</strong> <span style="font-family: monospace; font-size: 0.95rem; color: var(--primary);">${UI.escapeHtml(registeredAccount.username)}</span></div>
+              <div><strong>Password Login :</strong> <span style="font-family: monospace; font-size: 0.95rem; color: var(--danger);">${UI.escapeHtml(registeredAccount.password)}</span></div>
+            </div>
+          </div>
+        `;
+      }
+      return;
+    }
+
+    const pendingRecord = (DB.data.pendingTeachers || []).find(
+      item => this.cleanNip(item.nip) === nipQuery && item.status === 'PENDING'
+    );
+
+    if (pendingRecord) {
+      UI.showNotif(
+        'Pengajuan Masih Menunggu Persetujuan',
+        `NIP ${nipQuery} atas nama ${pendingRecord.nama} sedang menunggu verifikasi dan rilis Username/Password dari Admin.`,
+        'warning'
+      );
+      if (resultBox) {
+        resultBox.className = 'alert-box alert-warning';
+        resultBox.classList.remove('hidden');
+        resultBox.innerHTML = `
+          <div><strong>Status Pengajuan: MENUNGGU PERSETUJUAN ADMIN</strong></div>
+          <div style="font-size: 0.85rem; margin-top: 0.25rem;">
+            Permintaan akun untuk <strong>${UI.escapeHtml(pendingRecord.nama)}</strong> (${UI.escapeHtml(pendingRecord.schoolDisplay)}) sedang diproses oleh Administrator.
+          </div>
+        `;
+      }
+      return;
+    }
+
+    UI.showNotif(
+      'NIP Belum Terdaftar',
+      `NIP ${nipQuery} belum ditemukan di dalam sistem. Silakan ajukan pendaftaran melalui tombol "Daftar Sebagai Guru Baru".`,
+      'danger'
+    );
+    if (resultBox) {
+      resultBox.className = 'alert-box alert-danger';
+      resultBox.classList.remove('hidden');
+      resultBox.innerHTML = `NIP <strong>${UI.escapeHtml(nipQuery)}</strong> belum terdaftar di sistem.`;
+    }
+  }
+});
+
+// 2. Perbaikan Panel Admin: Pastikan Edit Akun Kepala Sekolah / Guru Langsung Terkunci Permanen di Supabase Cloud
+if (typeof AdminApp !== 'undefined') {
+  const _origOpenAdminDash = AdminApp.openAdminDashboard ? AdminApp.openAdminDashboard.bind(AdminApp) : null;
+
+  Object.assign(AdminApp, {
+    async openAdminDashboard() {
+      await DB.syncFromCloudSilent();
+      if (_origOpenAdminDash) {
+        _origOpenAdminDash();
+      } else {
+        AppState.activeMode = 'ADMIN';
+        UI.updateNavbar();
+        this.renderAdminStats();
+        this.renderPendingTeachersTable();
+        this.renderPillarLocksState();
+        this.renderAccountsTable();
+        UI.switchView('view-admin-dashboard');
+      }
+    },
+
+    async saveEditedAccount(event) {
+      if (event) event.preventDefault();
+
+      const accId = document.getElementById('edit-acc-id')?.value || '';
+      const nama = (document.getElementById('edit-acc-nama')?.value || '').trim();
+      const nipRaw = (document.getElementById('edit-acc-nip')?.value || '').trim();
+      const nip = AppAuth.cleanNip(nipRaw);
+      const sekolahRaw = (document.getElementById('edit-acc-sekolah')?.value || '').trim();
+      const role = document.getElementById('edit-acc-role')?.value || 'GURU_KELAS';
+      const kelasRaw = (document.getElementById('edit-acc-kelas')?.value || '').trim();
+      const mapelRaw = (document.getElementById('edit-acc-mapel')?.value || '').trim();
+      const username = (document.getElementById('edit-acc-username')?.value || '').trim();
+      const password = (document.getElementById('edit-acc-password')?.value || '').trim();
+
+      if (!accId || !nama || !nip || !sekolahRaw || !username || !password) {
+        UI.showNotif('Data Belum Lengkap', 'Harap lengkapi Nama, NIP, Sekolah, Username, dan Password.', 'warning');
+        return;
+      }
+
+      const accIndex = (DB.data.accounts || []).findIndex(a => a && String(a.id) === String(accId));
+      if (accIndex === -1) {
+        UI.showNotif('Akun Tidak Ditemukan', 'Data akun yang ingin diedit tidak ditemukan.', 'danger');
+        return;
+      }
+
+      const duplicateUser = (DB.data.accounts || []).find(
+        a => a && String(a.id) !== String(accId) && String(a.username || '').trim().toLowerCase() === username.toLowerCase()
+      );
+      if (duplicateUser) {
+        UI.showNotif(
+          'Username Sudah Digunakan',
+          `Username "${username}" sudah digunakan oleh akun ${duplicateUser.nama}. Silakan gunakan username lain.`,
+          'warning'
+        );
+        return;
+      }
+
+      const targetAcc = DB.data.accounts[accIndex];
+      const oldSchoolKey = targetAcc.schoolKey;
+      const oldNip = AppAuth.cleanNip(targetAcc.nip);
+      const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+
+      // Buka kunci blacklist untuk NIP lama, NIP baru, dan ID akun agar tidak pernah terfilter oleh ensureIntegrity
+      DB.unlockNipForNewAccount(oldNip, targetAcc.id);
+      DB.unlockNipForNewAccount(nip, targetAcc.id);
+
+      const newKelasFase = role === 'KEPALA_SEKOLAH'
+        ? 'Kepala Satuan Pendidikan'
+        : (kelasRaw || targetAcc.kelasFase || 'Kelas 4 / Fase B');
+
+      const newClassKey = role === 'KEPALA_SEKOLAH'
+        ? 'KEPALA SEKOLAH'
+        : DB.extractClassKey(newKelasFase);
+
+      const newMapel = role === 'GURU_MAPEL'
+        ? (mapelRaw || targetAcc.mapelDiampu || 'Guru Mapel')
+        : (role === 'KEPALA_SEKOLAH' ? 'Manajemen Sekolah' : 'Guru Kelas');
+
+      // Perbarui seluruh atribut akun secara presisi
+      targetAcc.nama = nama;
+      targetAcc.nip = nip;
+      targetAcc.role = role;
+      targetAcc.schoolRaw = normSchool.raw;
+      targetAcc.schoolDisplay = normSchool.display;
+      targetAcc.schoolKey = normSchool.key;
+      targetAcc.kelasFase = newKelasFase;
+      targetAcc.classKey = newClassKey;
+      targetAcc.mapelDiampu = newMapel;
+      targetAcc.username = username;
+      targetAcc.password = password;
+      targetAcc.lastEditedByAdminAt = DateTimeUtil.getCurrentDateTimeStr();
+
+      // Jika akun yang diedit adalah Kepala Sekolah dan kode sekolahnya berubah, migrasikan data Visi-Misi agar tidak hilang
+      if (oldSchoolKey && oldSchoolKey !== normSchool.key && DB.data.schoolVisiMisi && DB.data.schoolVisiMisi[oldSchoolKey]) {
+        if (!DB.data.schoolVisiMisi[normSchool.key]) {
+          DB.data.schoolVisiMisi[normSchool.key] = JSON.parse(JSON.stringify(DB.data.schoolVisiMisi[oldSchoolKey]));
+          DB.data.schoolVisiMisi[normSchool.key].schoolKey = normSchool.key;
+          DB.data.schoolVisiMisi[normSchool.key].schoolDisplay = normSchool.display;
+        }
+      }
+
+      // Sinkronkan nama wali kelas pada bucket kelas jika guru kelas diedit
+      Object.values(DB.data.classData || {}).forEach(bucket => {
+        if (bucket && String(bucket.homeroomTeacherId) === String(targetAcc.id)) {
+          bucket.homeroomTeacherName = targetAcc.nama;
+          bucket.schoolKey = normSchool.key;
+          bucket.schoolDisplay = normSchool.display;
+        }
+      });
+
+      // Jika sedang login menggunakan akun yang diedit, perbarui sesi aktif
+      if (AppState.currentUser && String(AppState.currentUser.id) === String(targetAcc.id)) {
+        AppState.currentUser = targetAcc;
+        UI.updateNavbar();
+      }
+
+      // WAJIB: Kunci dan kirim langsung ke Supabase Cloud saat ini juga (tanpa jeda tunda)
+      await DB.saveImmediate();
+
+      this.closeEditAccountModal();
+      this.renderAdminStats();
+      this.renderAccountsTable();
+      SchoolNormalizer.refreshSchoolDatalist();
+
+      UI.showNotif(
+        'Perubahan Akun Tersimpan Permanen di Cloud',
+        `Data akun ${targetAcc.nama} (Username: ${targetAcc.username} | NIP: ${targetAcc.nip} | Sekolah: ${targetAcc.schoolDisplay}) telah berhasil diperbarui dan langsung dikunci ke server Supabase Cloud untuk semua perangkat.`,
+        'success'
+      );
+    }
+  });
+}
+
+// 3. Perbaikan Portal Kepala Sekolah: Sinkronisasi Cloud Visi-Misi & Pencegahan Reset Otomatis Lintas Perangkat
+if (typeof PrincipalApp !== 'undefined') {
+  const _origRenderVisiMisiPanel = PrincipalApp.renderVisiMisiPanel ? PrincipalApp.renderVisiMisiPanel.bind(PrincipalApp) : null;
+  const _origSaveAndLockVisiMisi = PrincipalApp.saveAndLockVisiMisi ? PrincipalApp.saveAndLockVisiMisi.bind(PrincipalApp) : null;
+  const _origUnlockVisiMisiForm = PrincipalApp.unlockVisiMisiForm ? PrincipalApp.unlockVisiMisiForm.bind(PrincipalApp) : null;
+
+  Object.assign(PrincipalApp, {
+    ensureSchoolVisiMisi(schoolKey, schoolDisplay) {
+      if (!DB.data.schoolVisiMisi) {
+        DB.data.schoolVisiMisi = {};
+      }
+
+      // Jika data untuk schoolKey ini sudah ada di memori/Cloud, langsung kembalikan tanpa menimpa!
+      if (DB.data.schoolVisiMisi[schoolKey]) {
+        return DB.data.schoolVisiMisi[schoolKey];
+      }
+
+      // Cek apakah ada data Visi-Misi dengan nama tampilan sekolah yang sama (antisipasi jika sekolah pernah diedit)
+      if (schoolDisplay) {
+        const cleanDisp = String(schoolDisplay).trim().toUpperCase();
+        const matchedEntry = Object.values(DB.data.schoolVisiMisi).find(
+          vm => vm && String(vm.schoolDisplay || '').trim().toUpperCase() === cleanDisp
+        );
+        if (matchedEntry) {
+          DB.data.schoolVisiMisi[schoolKey] = matchedEntry;
+          return DB.data.schoolVisiMisi[schoolKey];
+        }
+      }
+
+      const teachers = this.getSameSchoolTeachers(schoolKey);
+      const defaultTeacherId = teachers[0] ? teachers[0].id : '';
+
+      // Buat struktur default di memori TANPA memanggil DB.save() agar tidak menimpa data Cloud saat baru membuka halaman
+      DB.data.schoolVisiMisi[schoolKey] = {
+        schoolKey: schoolKey,
+        schoolDisplay: schoolDisplay || 'SEKOLAH TERPADU',
+        visi: `Terwujudnya Peserta Didik ${schoolDisplay || 'Satuan Pendidikan'} yang Beriman, Berkarakter Profil Pelajar Pancasila, Unggul dalam Prestasi Akademik & Non-Akademik, serta Berwawasan Lingkungan.`,
+        misi: [
+          '1. Melaksanakan pembelajaran mendalam (Deep Learning) berbasis Taksonomi SOLO dan sistem 8-3-3-4 secara efektif.',
+          '2. Mengembangkan projek kokurikuler (P5) yang menumbuhkan karakter gotong royong, kemandirian, dan kreativitas siswa.',
+          '3. Mengoptimalkan bakat, minat, serta prestasi peserta didik melalui pembinaan ekstrakurikuler yang terukur.'
+        ].join('\n'),
+        isLocked: false,
+        updatedAt: DateTimeUtil.getCurrentDateTimeStr(),
+        programs: defaultTeacherId ? [
+          {
+            id: 'PRG_DEF_1',
+            namaProgram: 'Peningkatan Mutu Pembelajaran Mendalam & Asesmen Berbasis SOLO',
+            pilar: 'INTRAKURIKULER',
+            teacherId: defaultTeacherId,
+            assignedTeacherIds: [defaultTeacherId],
+            target: 'Tersusunnya Modul RPM 8-3-3-4, terlaksananya presensi harian, penilaian formatif/sumatif, serta asesmen DPL.'
+          },
+          {
+            id: 'PRG_DEF_2',
+            namaProgram: 'Implementasi Projek Penguatan Profil Pelajar Pancasila (P5)',
+            pilar: 'KOKURIKULER',
+            teacherId: defaultTeacherId,
+            assignedTeacherIds: [defaultTeacherId],
+            target: 'Terbentuknya kelompok kolaborasi siswa, keterisian jurnal Logbook harian, dan penilaian karakter.'
+          },
+          {
+            id: 'PRG_DEF_3',
+            namaProgram: 'Optimalisasi Pembinaan Bakat & Minat Ekstrakurikuler Siswa',
+            pilar: 'EKSTRAKURIKULER',
+            teacherId: defaultTeacherId,
+            assignedTeacherIds: [defaultTeacherId],
+            target: 'Terlaksananya penilaian indikator kemahiran cabang ekstrakurikuler secara berkala.'
+          }
+        ] : []
+      };
+
+      return DB.data.schoolVisiMisi[schoolKey];
+    },
+
+    async openPrincipalDashboard(initialTab = null) {
+      // WAJIB: Tarik data terbaru dari Supabase Cloud terlebih dahulu saat membuka halaman Kepala Sekolah di perangkat mana pun
+      await DB.syncFromCloudSilent();
+
+      // Segarkan objek currentUser dari DB.data.accounts terbaru
+      if (AppState.currentUser) {
+        const freshPrincipal = (DB.data.accounts || []).find(
+          a => a && (String(a.id) === String(AppState.currentUser.id) ||
+               (a.role === 'KEPALA_SEKOLAH' && String(a.username).toLowerCase() === String(AppState.currentUser.username).toLowerCase()))
+        );
+        if (freshPrincipal) {
+          AppState.currentUser = freshPrincipal;
+        }
+      }
+
+      const user = AppState.currentUser;
+      if (!user || user.role !== 'KEPALA_SEKOLAH') {
+        UI.showNotif('Akses Khusus Kepala Sekolah', 'Halaman ini hanya dapat diakses oleh Kepala Sekolah.', 'danger');
+        return;
+      }
+
+      AppState.activeMode = 'PRINCIPAL';
+      AppState.isReadOnlyInspection = false;
+      AppState.inspectedTeacherId = null;
+
+      UI.applyReadOnlyModeState();
+      UI.updateNavbar();
+
+      const schoolBadge = document.getElementById('principal-dash-school-badge');
+      const welcomeEl = document.getElementById('principal-dash-welcome');
+      const syncLabel = document.getElementById('principal-sync-school-key-label');
+      const schoolTitleEl = document.getElementById('principal-teachers-school-title');
+
+      if (schoolBadge) schoolBadge.textContent = user.schoolDisplay || 'SEKOLAH TERPADU';
+      if (welcomeEl) welcomeEl.textContent = `Selamat Bertugas, ${user.nama}`;
+      if (syncLabel) syncLabel.textContent = `ID Sinkron Sekolah: ${user.schoolKey}`;
+      if (schoolTitleEl) schoolTitleEl.textContent = user.schoolDisplay || '-';
+
+      const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+      this.tempPrograms = JSON.parse(JSON.stringify(vmData.programs || []));
+
+      const targetTab = initialTab || AppState.principalActiveTab || 'teachers';
+      this.switchTab(targetTab);
+      UI.switchView('view-principal-dashboard');
+    },
+
+    renderVisiMisiPanel() {
+      const user = AppState.currentUser;
+      if (!user) return;
+
+      const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+      this.tempPrograms = JSON.parse(JSON.stringify(vmData.programs || []));
+
+      if (_origRenderVisiMisiPanel) {
+        _origRenderVisiMisiPanel();
+      } else {
+        const visiInp = document.getElementById('principal-input-visi');
+        const misiInp = document.getElementById('principal-input-misi');
+        if (visiInp) visiInp.value = vmData.visi || '';
+        if (misiInp) misiInp.value = vmData.misi || '';
+        if (typeof this.renderProgramsTable === 'function') this.renderProgramsTable();
+        if (typeof this.applyVisiMisiLockUI === 'function') this.applyVisiMisiLockUI(Boolean(vmData.isLocked));
+      }
+    },
+
+    async handleSaveVisiMisi(event) {
+      if (event) event.preventDefault();
+      await this.saveAndLockVisiMisi();
+    },
+
+    async saveAndLockVisiMisi() {
+      const user = AppState.currentUser;
+      if (!user) return;
+
+      const visiInp = document.getElementById('principal-input-visi');
+      const visiVal = visiInp ? visiInp.value.trim() : '';
+
+      if (!visiVal) {
+        UI.showNotif('Visi Sekolah Kosong', 'Harap isi rumusan Visi Satuan Pendidikan terlebih dahulu.', 'warning');
+        return;
+      }
+
+      // Jalankan logika penyimpanan bawaan (termasuk pemrosesan kartu program Misi Hybrid AI)
+      if (_origSaveAndLockVisiMisi) {
+        _origSaveAndLockVisiMisi();
+      }
+
+      // Pastikan data di DB.data.schoolVisiMisi[user.schoolKey] benar-benar mutakhir dan terisi
+      const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+      vmData.visi = visiVal;
+      vmData.schoolKey = user.schoolKey;
+      vmData.schoolDisplay = user.schoolDisplay;
+      if (Array.isArray(this.tempPrograms)) {
+        vmData.programs = JSON.parse(JSON.stringify(this.tempPrograms));
+        vmData.misi = this.tempPrograms
+          .map((p, idx) => `${idx + 1}. ${p.namaProgram || ''}`)
+          .filter(Boolean)
+          .join('\n');
+      }
+      vmData.isLocked = true;
+      vmData.updatedAt = DateTimeUtil.getCurrentDateTimeStr();
+
+      // WAJIB: Kirim dan kunci langsung ke Supabase Cloud tanpa jeda tunda!
+      await DB.saveImmediate();
+    },
+
+    async unlockVisiMisiForm() {
+      if (_origUnlockVisiMisiForm) {
+        _origUnlockVisiMisiForm();
+      } else {
+        const user = AppState.currentUser;
+        if (!user) return;
+        const vmData = this.ensureSchoolVisiMisi(user.schoolKey, user.schoolDisplay);
+        vmData.isLocked = false;
+        if (typeof this.applyVisiMisiLockUI === 'function') this.applyVisiMisiLockUI(false);
+      }
+      await DB.saveImmediate();
+    }
+  });
+}
+
+// 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
   await DB.init();
