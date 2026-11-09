@@ -4237,15 +4237,21 @@ body {
 
     <!-- PANEL HASIL PEMBUATAN MODUL RPM & SOAL -->
     <div id="rpm-result-wrapper" class="hidden">
-      <div class="rpm-nav-toolbar no-print">
+            <div class="rpm-nav-toolbar no-print">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
           <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
             <span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">NAVIGASI HALAMAN MODUL & SOAL</span>
             <span id="rpm-total-pages-indicator" style="font-size: 0.9rem; font-weight: 700; color: #fde68a;">Halaman 1 dari 1</span>
-            <span id="rpm-verification-status-pill" class="badge badge-success" style="font-size: 0.76rem;">✓ Disusun oleh Generative AI Murni</span>
+            <span id="rpm-verification-status-pill" class="badge badge-success" style="font-size: 0.76rem;">✓ Multi-Mapel Per Hari Aktif</span>
           </div>
 
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #0d9488; border: 1px solid #5eead4; font-weight: 800;" onclick="RpmApp.startNewRpmForAnotherSubject()">
+              ➕ Buat RPM Mapel Baru
+            </button>
+            <button type="button" class="btn btn-warning btn-sm write-action-btn" style="background: #f59e0b; color: #0f172a; border: 1px solid #fde68a; font-weight: 800;" onclick="RpmApp.launchPenilaianFromCurrentRpm()">
+              📊 Lanjut Nilai Siswa dari Modul Ini &rarr;
+            </button>
             <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #7c3aed; border: 1px solid #c4b5fd; font-weight: 700;" onclick="RpmApp.regenerateQuestionsOnlyWithAI()">
               🔄 Buat Variasi Soal Baru (AI Murni)
             </button>
@@ -4258,8 +4264,8 @@ body {
             <button type="button" id="btn-show-all-pages-view" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="RpmApp.showAllPagesSimultaneously()">
               Tampilkan Semua Halaman
             </button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="RpmApp.reopenBuilderForm()">
-              &larr; Ubah Parameter CP/TP & Soal
+            <button type="button" class="btn btn-outline btn-sm" style="background: #1e293b; color: #fde68a; border-color: #475569;" onclick="RpmApp.reopenBuilderForm()">
+              &larr; Edit Parameter Modul Ini
             </button>
             <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #0f172a;" onclick="window.print()">
               🖨️ Cetak / PDF
@@ -5203,41 +5209,32 @@ body {
       </div>
 
       <div id="koku-modul-result-wrapper" class="hidden">
-              <div class="rpm-nav-toolbar no-print">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
-          <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
-            <span class="badge badge-warning" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">NAVIGASI HALAMAN MODUL & SOAL</span>
-            <span id="rpm-total-pages-indicator" style="font-size: 0.9rem; font-weight: 700; color: #fde68a;">Halaman 1 dari 1</span>
-            <span id="rpm-verification-status-pill" class="badge badge-success" style="font-size: 0.76rem;">✓ Disusun oleh Generative AI Murni</span>
-          </div>
+                      <div class="rpm-nav-toolbar no-print">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <button type="button" id="btn-koku-doc-page1" class="rpm-page-tab-btn active-tab" onclick="KokuApp.switchModulPage(1)">
+                <span class="rpm-page-tab-num">1</span>
+                <span>Halaman 1: Dokumen Perencanaan Kokurikuler (A s.d. H)</span>
+              </button>
+              <button type="button" id="btn-koku-doc-page2" class="rpm-page-tab-btn" onclick="KokuApp.switchModulPage(2)">
+                <span class="rpm-page-tab-num">2</span>
+                <span>Halaman 2: Matriks Rubrik Asesmen (SB / B / C / K) & Lembar Observasi</span>
+              </button>
+            </div>
 
-          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-warning btn-sm write-action-btn" style="background: #f59e0b; color: #0f172a; border: 1px solid #fde68a; font-weight: 800;" onclick="RpmApp.launchPenilaianFromCurrentRpm()">
-              📊 Lanjut Nilai Siswa dari Modul Ini &rarr;
-            </button>
-            <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #7c3aed; border: 1px solid #c4b5fd; font-weight: 700;" onclick="RpmApp.regenerateQuestionsOnlyWithAI()">
-              🔄 Buat Variasi Soal Baru (AI Murni)
-            </button>
-            <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #16a34a; border: 1px solid #86efac; font-weight: 800;" onclick="RpmApp.saveCurrentRpmToArchive()">
-              💾 Simpan Hasil RPM & Soal
-            </button>
-            <button type="button" id="btn-toggle-teacher-key" class="btn btn-secondary btn-sm" onclick="RpmApp.toggleAnswerKeyVisibility()">
-              Mode Cetak Lembar Siswa (Sembunyikan Kunci)
-            </button>
-            <button type="button" id="btn-show-all-pages-view" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="RpmApp.showAllPagesSimultaneously()">
-              Tampilkan Semua Halaman
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" style="background: #1e293b; color: #fde68a; border-color: #475569;" onclick="RpmApp.reopenBuilderForm()">
-              &larr; Ubah Parameter CP/TP & Soal
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #0f172a;" onclick="window.print()">
-              🖨️ Cetak / PDF
-            </button>
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="KokuApp.showAllModulPages()">
+                Tampilkan Semua Halaman
+              </button>
+              <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.reopenModulBuilder()">
+                &larr; Ubah Parameter Perencanaan
+              </button>
+              <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
+                🖨️ Cetak / Simpan PDF
+              </button>
+            </div>
           </div>
         </div>
-
-        <div id="rpm-pagination-tabs-bar" class="rpm-page-tabs-wrap"></div>
-      </div>
 
         <div id="koku-modul-page-1" class="rpm-print-page">
           <div class="no-print" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.95rem 1.15rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
@@ -6894,16 +6891,50 @@ const DB = {
     }
   },
 
+    // Membuat tanda tangan spesifik per ID dokumen agar TIDAK memblokir pembuatan RPM mapel lain di tanggal yang sama
   getRpmSignature(mod) {
     if (!mod || typeof mod !== 'object') return '';
+    const idPart = String(mod.id || '').trim();
     const mp = String(mod.mapel || '').trim().toLowerCase();
     const mt = String(mod.materi || '').trim().toLowerCase();
-    const dt = String(mod.createdAt || mod.savedDateISO || '').trim().toLowerCase();
+    const ts = String(mod.savedTimestamp || mod.createdAt || '').trim().toLowerCase();
+    if (idPart) return `SIG_ID__${idPart}`;
     if (!mp && !mt) return '';
-    return `SIG__${mp}__${mt}__${dt}`;
+    return `SIG_LEGACY__${mp}__${mt}__${ts}`;
   },
 
-  // Mengunci ID log, ID akun, atau ID & Sidik Jari Modul RPM yang dihapus secara permanen
+  // Membuka kunci daftar hitam saat guru membuat/menyimpan Modul RPM baru agar 100% pasti tampil
+  unlockRpmForNewCreation(mod) {
+    if (!mod) return;
+    const bl = this.getLocalBlacklist();
+    const targetId = String(mod.id || '');
+    const targetSig = this.getRpmSignature(mod);
+    const mp = String(mod.mapel || '').trim().toLowerCase();
+
+    // Bersihkan signature lama yang berbasis tanggal tanpa ID agar tidak memblokir mapel yang baru dibuat
+    bl.rpmIds = (bl.rpmIds || []).filter(id => id !== targetId);
+    bl.rpmSignatures = (bl.rpmSignatures || []).filter(sig => {
+      if (sig === targetSig) return false;
+      if (sig.startsWith('SIG__') && mp && sig.includes(`__${mp}__`)) return false;
+      return true;
+    });
+    this.saveLocalBlacklist(bl);
+
+    if (this.data) {
+      if (Array.isArray(this.data.deletedRpmIds)) {
+        this.data.deletedRpmIds = this.data.deletedRpmIds.filter(id => String(id) !== targetId);
+      }
+      if (Array.isArray(this.data.deletedRpmSignatures)) {
+        this.data.deletedRpmSignatures = this.data.deletedRpmSignatures.filter(sig => {
+          if (sig === targetSig) return false;
+          if (String(sig).startsWith('SIG__') && mp && String(sig).includes(`__${mp}__`)) return false;
+          return true;
+        });
+      }
+    }
+  },
+
+  // Mengunci ID log, ID akun, atau ID Modul RPM spesifik yang dihapus secara permanen
   lockPermanentDeletion({ accId = null, pendingId = null, accNip = null, rpmId = null, rpmIds = null, rpmSignature = null, rpmSignatures = null }) {
     this.lastLocalDeleteTimestamp = Date.now();
     this.lastLocalWriteTimestamp = Date.now();
@@ -6933,14 +6964,16 @@ const DB = {
         if (rIdStr && !bl.rpmIds.includes(rIdStr)) bl.rpmIds.push(rIdStr);
       });
     }
-    if (rpmSignature) {
+    if (rpmSignature && String(rpmSignature).startsWith('SIG_ID__')) {
       const sigStr = String(rpmSignature);
       if (!bl.rpmSignatures.includes(sigStr)) bl.rpmSignatures.push(sigStr);
     }
     if (Array.isArray(rpmSignatures)) {
       rpmSignatures.forEach(sig => {
         const sigStr = String(sig);
-        if (sigStr && !bl.rpmSignatures.includes(sigStr)) bl.rpmSignatures.push(sigStr);
+        if (sigStr && sigStr.startsWith('SIG_ID__') && !bl.rpmSignatures.includes(sigStr)) {
+          bl.rpmSignatures.push(sigStr);
+        }
       });
     }
 
@@ -6976,20 +7009,19 @@ const DB = {
           }
         });
       }
-      if (rpmSignature && !this.data.deletedRpmSignatures.includes(String(rpmSignature))) {
+      if (rpmSignature && String(rpmSignature).startsWith('SIG_ID__') && !this.data.deletedRpmSignatures.includes(String(rpmSignature))) {
         this.data.deletedRpmSignatures.push(String(rpmSignature));
       }
       if (Array.isArray(rpmSignatures)) {
         rpmSignatures.forEach(sig => {
           const sigStr = String(sig);
-          if (sigStr && !this.data.deletedRpmSignatures.includes(sigStr)) {
+          if (sigStr && sigStr.startsWith('SIG_ID__') && !this.data.deletedRpmSignatures.includes(sigStr)) {
             this.data.deletedRpmSignatures.push(sigStr);
           }
         });
       }
     }
   },
-
 
   // Membuka kunci NIP & ID Akun ketika Admin mengedit atau merilis ulang akun
   unlockNipForNewAccount(nipRaw, accId = null) {
@@ -28273,6 +28305,394 @@ if (typeof IntraApp !== 'undefined') {
       if (_origOpenSubPillar) {
         _origOpenSubPillar(subKey);
       }
+    }
+  });
+}
+
+// ============================================================================
+// TAHAP 2: FIX PENYIMPANAN MULTI-MAPEL PADA TANGGAL YANG SAMA (RPM & PENILAIAN)
+// ============================================================================
+
+// 1. Bersihkan otomatis signature lama tanpa ID yang berpotensi memblokir mapel di tanggal yang sama
+Object.assign(DB, {
+  purgeLegacyDateOnlySignatures() {
+    const bl = this.getLocalBlacklist();
+    if (Array.isArray(bl.rpmSignatures)) {
+      bl.rpmSignatures = bl.rpmSignatures.filter(sig => String(sig).startsWith('SIG_ID__'));
+      this.saveLocalBlacklist(bl);
+    }
+    if (this.data && Array.isArray(this.data.deletedRpmSignatures)) {
+      this.data.deletedRpmSignatures = this.data.deletedRpmSignatures.filter(sig =>
+        String(sig).startsWith('SIG_ID__')
+      );
+    }
+  }
+});
+
+// 2. Perbaikan RpmApp agar setiap Mapel & Materi di tanggal yang sama tersimpan sebagai entri mandiri
+Object.assign(RpmApp, {
+  // Membuka formulir bersih untuk membuat RPM mata pelajaran lain di hari yang sama
+  startNewRpmForAnotherSubject() {
+    if (AppState.isReadOnlyInspection) return;
+
+    // Pastikan modul yang sedang tampil sebelumnya sudah aman di dalam arsip
+    if (AppState.rpmCurrentDoc) {
+      this.syncCurrentDocToArchiveBucket();
+    }
+
+    // Lepaskan kaitan dari modul sebelumnya agar modul berikutnya menjadi dokumen baru
+    AppState.rpmCurrentDoc = null;
+    this.selectedProtaBabId = '';
+    this.selectedProtaMateriId = '';
+
+    const babInp = document.getElementById('rpm-input-bab');
+    const materiInp = document.getElementById('rpm-input-materi');
+    const cpInp = document.getElementById('rpm-input-cp');
+    const tpInp = document.getElementById('rpm-input-tp');
+    const promptInp = document.getElementById('rpm-input-custom-prompt');
+    const dayFilterSel = document.getElementById('rpm-day-filter-select');
+
+    if (babInp) babInp.value = '';
+    if (materiInp) materiInp.value = '';
+    if (cpInp) cpInp.value = '';
+    if (tpInp) tpInp.value = '';
+    if (promptInp) promptInp.value = '';
+
+    // Tampilkan semua opsi mata pelajaran agar guru bebas memilih mapel berikutnya (misal Bahasa Inggris)
+    if (dayFilterSel) {
+      dayFilterSel.value = 'ALL';
+      this.handleDayFilterChange('ALL');
+    }
+
+    const mapelInp = document.getElementById('rpm-input-mapel');
+    if (mapelInp) {
+      mapelInp.value = '';
+      mapelInp.focus();
+    }
+
+    this.reopenBuilderForm();
+    this.renderSavedArchiveTable();
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    UI.showNotif(
+      'Siap Menyusun RPM Mata Pelajaran Berikutnya',
+      'Modul sebelumnya telah tersimpan di Arsip. Silakan pilih atau ketik Mata Pelajaran berikutnya (misalnya Bahasa Inggris) untuk disusun pada tanggal ini.',
+      'info'
+    );
+  },
+
+  // Pembuatan & Penyimpanan Modul RPM Baru (Aman dari Konflik Sinkronisasi Background & Multi-Mapel)
+  async handleGenerateRpm(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
+    DB.purgeLegacyDateOnlySignatures();
+
+    const penyusun = (document.getElementById('rpm-input-penyusun')?.value || '').trim();
+    const sekolahRaw = (document.getElementById('rpm-input-sekolah')?.value || '').trim();
+    const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+    const sekolah = normSchool.display;
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim();
+    const semester = document.getElementById('rpm-input-semester')?.value || 'Semester 1 (Ganjil) — 2 x 35 Menit';
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
+    const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const bab = (document.getElementById('rpm-input-bab')?.value || '').trim() || 'Bab 1';
+    const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+    const tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+    const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+    const difficulty = document.getElementById('rpm-question-difficulty')?.value || 'SEDANG';
+    const mathMode = document.getElementById('rpm-math-mode-select')?.value || 'DIRECT_CALC';
+    const mathConstraint = (document.getElementById('rpm-math-constraint-input')?.value || '').trim();
+
+    const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+    const chosenDateISO = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+    const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
+    const lockedTimeStr = DateTimeUtil.getCurrentTimeStr();
+    const lockedFullTimestamp = `${lockedFormattedDate} (Pukul ${lockedTimeStr})`;
+
+    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
+      UI.showNotif(
+        'Parameter Modul Belum Lengkap',
+        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Pokok.',
+        'warning'
+      );
+      return;
+    }
+
+    const selectedDpl = Array.from(document.querySelectorAll('input[name="rpm_dpl_item"]:checked'))
+      .map(el => el.value);
+
+    if (selectedDpl.length === 0) {
+      UI.showNotif(
+        'Pilih Dimensi Profil Lulusan',
+        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL) untuk diintegrasikan ke dalam modul.',
+        'warning'
+      );
+      return;
+    }
+
+    const enableQuestions = Boolean(document.getElementById('rpm-enable-auto-questions')?.checked);
+    const questionSpecList = [];
+
+    if (enableQuestions) {
+      const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
+      checkedTypes.forEach(ch => {
+        const qType = ch.getAttribute('data-qtype');
+        const countEl = document.getElementById(`rpm-qcount-${qType}`);
+        const countVal = countEl ? parseInt(countEl.value, 10) : 5;
+        const customName = qType === 'LAINNYA'
+          ? (document.getElementById('rpm-custom-qtype-name')?.value || 'Instrumen Kustom').trim()
+          : '';
+        if (qType && countVal > 0) {
+          questionSpecList.push({
+            type: qType,
+            count: countVal,
+            customName
+          });
+        }
+      });
+    }
+
+    const baseParams = {
+      penyusun,
+      sekolah,
+      kelasFase,
+      semester,
+      mapel,
+      bab,
+      materi,
+      soloLevel,
+      selectedDpl,
+      cpRaw: cpInput,
+      tpRaw: tpInput,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint
+    };
+
+    // KUNCI SINKRONISASI CLOUD SELAMA AI BEKERJA AGAR DATA MEMORI TIDAK TERTIMPA OLEH BACKGROUND FETCH
+    DB.isSyncing = true;
+    DB.lastLocalWriteTimestamp = Date.now();
+
+    this.setRpmAiLoading(
+      true,
+      `Menyusun Modul RPM & Soal "${mapel} — ${materi}"...`,
+      'AI sedang merancang skenario pembelajaran dan menyusun butir soal yang simple, to the point, dan sesuai tingkat pemahaman siswa...'
+    );
+
+    let blueprint;
+    let questionSections = [];
+    try {
+      blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
+      blueprint.bab = bab;
+
+      if (cpInput) {
+        blueprint.capaianPembelajaran = cpInput;
+      }
+      if (tpInput) {
+        const parsedTp = tpInput
+          .split(/\n+/)
+          .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+          .filter(Boolean);
+        if (parsedTp.length > 0) {
+          blueprint.tujuanPembelajaran = parsedTp;
+        }
+      }
+
+      const finalTpRaw = (blueprint.tujuanPembelajaran || []).join('\n');
+      questionSections = enableQuestions && questionSpecList.length > 0
+        ? await this.buildDynamicQuestionSectionsWithAI({ ...baseParams, tpRaw: finalTpRaw }, questionSpecList)
+        : [];
+    } finally {
+      this.setRpmAiLoading(false);
+      DB.isSyncing = false;
+      DB.lastLocalWriteTimestamp = Date.now();
+    }
+
+    // Buat ID unik baru untuk setiap penyusunan RPM agar tidak menimpa RPM mapel sebelumnya di tanggal yang sama
+    const uniqueRpmId = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+
+    const newDoc = {
+      id: uniqueRpmId,
+      ...blueprint,
+      mapel,
+      bab,
+      materi,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint,
+      questionSpecList,
+      enableQuestions,
+      questionSections,
+      savedDateISO: chosenDateISO,
+      createdAt: lockedFormattedDate,
+      savedTimestamp: lockedFullTimestamp,
+      isDateLocked: true
+    };
+
+    // Pastikan modul baru ini bersih dari daftar hitam
+    if (typeof DB.unlockRpmForNewCreation === 'function') {
+      DB.unlockRpmForNewCreation(newDoc);
+    }
+
+    AppState.rpmCurrentDoc = newDoc;
+
+    // PENTING: Ambil freshBucket SETELAH proses await AI selesai agar merujuk ke DB.data aktif!
+    const freshBucket = DB.getActiveClassBucket();
+    if (freshBucket) {
+      if (!Array.isArray(freshBucket.rpmModules)) freshBucket.rpmModules = [];
+
+      // Cek apakah ada modul dengan Mapel, Materi, dan Tanggal yang persis 100% sama.
+      // Jika Mapel atau Materi berbeda (misal Matematika vs Bahasa Inggris), tambahkan sebagai baris baru!
+      const exactSameIdx = freshBucket.rpmModules.findIndex(m =>
+        m &&
+        String(m.mapel || '').trim().toLowerCase() === mapel.toLowerCase() &&
+        String(m.materi || '').trim().toLowerCase() === materi.toLowerCase() &&
+        String(m.savedDateISO || '') === chosenDateISO
+      );
+
+      if (exactSameIdx >= 0) {
+        newDoc.id = freshBucket.rpmModules[exactSameIdx].id || uniqueRpmId;
+        AppState.rpmCurrentDoc.id = newDoc.id;
+        freshBucket.rpmModules[exactSameIdx] = JSON.parse(JSON.stringify(newDoc));
+      } else {
+        freshBucket.rpmModules.unshift(JSON.parse(JSON.stringify(newDoc)));
+      }
+
+      await DB.saveImmediate();
+    }
+
+    if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.receiveRpmModuleSync === 'function') {
+      PenilaianApp.receiveRpmModuleSync(newDoc, false);
+    }
+
+    const formCard = document.getElementById('rpm-builder-form-card');
+    const resultWrapper = document.getElementById('rpm-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resultWrapper) resultWrapper.classList.remove('hidden');
+
+    if (typeof this.closeAllProtaPickers === 'function') this.closeAllProtaPickers();
+    this.activePage = 1;
+    this.showAllPagesMode = false;
+    this.renderAllRpmPages();
+    this.renderSavedArchiveTable();
+
+    const totalSavedNow = freshBucket && Array.isArray(freshBucket.rpmModules) ? freshBucket.rpmModules.length : 1;
+    UI.showNotif(
+      'Modul RPM Baru Berhasil Disimpan ke Arsip & Cloud',
+      `Modul RPM "${mapel} — ${materi}" telah ditambahkan ke Arsip Kelas tanpa menimpa mata pelajaran lain (Total di Arsip saat ini: ${totalSavedNow} Modul RPM).`,
+      'success'
+    );
+  },
+
+  // Menyinkronkan perubahan dokumen aktif ke bucket tanpa menimpa mata pelajaran lain
+  syncCurrentDocToArchiveBucket() {
+    const doc = AppState.rpmCurrentDoc;
+    const bucket = DB.getActiveClassBucket();
+    if (!doc || !bucket) return;
+
+    DB.purgeLegacyDateOnlySignatures();
+
+    const deletedIdSet = new Set(((DB.data && DB.data.deletedRpmIds) || []).map(String));
+    if (deletedIdSet.has(String(doc.id))) {
+      return;
+    }
+
+    if (!Array.isArray(bucket.rpmModules)) bucket.rpmModules = [];
+    const existingIdx = bucket.rpmModules.findIndex(m => m && String(m.id) === String(doc.id));
+
+    if (existingIdx >= 0) {
+      const existingMod = bucket.rpmModules[existingIdx];
+      const isSameSubjectAndTopic =
+        String(existingMod.mapel || '').trim().toLowerCase() === String(doc.mapel || '').trim().toLowerCase() &&
+        String(existingMod.materi || '').trim().toLowerCase() === String(doc.materi || '').trim().toLowerCase();
+
+      if (isSameSubjectAndTopic) {
+        doc.createdAt = existingMod.createdAt || doc.createdAt;
+        doc.savedDateISO = existingMod.savedDateISO || doc.savedDateISO;
+        doc.savedTimestamp = existingMod.savedTimestamp || doc.savedTimestamp;
+        doc.isDateLocked = true;
+        bucket.rpmModules[existingIdx] = JSON.parse(JSON.stringify(doc));
+      } else {
+        // Jika mata pelajaran atau materi berubah, buat ID baru agar tidak menimpa mapel sebelumnya!
+        doc.id = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+        bucket.rpmModules.unshift(JSON.parse(JSON.stringify(doc)));
+      }
+    } else {
+      bucket.rpmModules.unshift(JSON.parse(JSON.stringify(doc)));
+    }
+
+    DB.saveImmediate();
+  },
+
+  async saveCurrentRpmToArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) {
+      UI.showNotif('Belum Ada Modul Aktif', 'Silakan susun modul RPM terlebih dahulu sebelum menyimpan ke arsip.', 'warning');
+      return;
+    }
+
+    if (typeof DB.unlockRpmForNewCreation === 'function') {
+      DB.unlockRpmForNewCreation(doc);
+    }
+
+    if (!doc.createdAt) {
+      const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+      const iso = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+      doc.savedDateISO = iso;
+      doc.createdAt = DateTimeUtil.formatIndonesianDate(iso);
+      doc.savedTimestamp = `${doc.createdAt} (Pukul ${DateTimeUtil.getCurrentTimeStr()})`;
+      doc.isDateLocked = true;
+    }
+
+    this.syncCurrentDocToArchiveBucket();
+    await DB.saveImmediate();
+    this.renderSavedArchiveTable();
+
+    const bucket = DB.getActiveClassBucket();
+    const count = bucket && Array.isArray(bucket.rpmModules) ? bucket.rpmModules.length : 1;
+
+    UI.showNotif(
+      'Tersimpan Permanen di Arsip & Cloud',
+      `Modul RPM "${doc.mapel} (${doc.bab || 'Bab'} — ${doc.materi})" telah tersimpan di Arsip Perangkat Ajar (Total: ${count} Modul Tersimpan).`,
+      'success'
+    );
+  }
+});
+
+// 3. Pastikan Rekap Penilaian Akademik juga Menampilkan Semua Mata Pelajaran yang Dinilai pada Tanggal yang Sama
+if (typeof PenilaianApp !== 'undefined') {
+  const _origGetAvailableSubjects = PenilaianApp.getAvailableSubjectsForTeacher
+    ? PenilaianApp.getAvailableSubjectsForTeacher.bind(PenilaianApp)
+    : null;
+
+  Object.assign(PenilaianApp, {
+    getAvailableSubjectsForTeacher(dayName = null) {
+      const baseList = _origGetAvailableSubjects ? _origGetAvailableSubjects(dayName) : [];
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return baseList;
+
+      const set = new Set(baseList);
+
+      // Tambahkan mata pelajaran dari Modul RPM yang sudah dibuat agar selalu tersedia di Penilaian & Rekap
+      (bucket.rpmModules || []).forEach(mod => {
+        if (mod && mod.mapel && mod.mapel.trim()) {
+          set.add(mod.mapel.trim());
+        }
+      });
+
+      // Tambahkan mata pelajaran dari Penilaian Akademik yang sudah disimpan
+      (bucket.academicAssessments || []).forEach(asm => {
+        if (asm && asm.mapel && asm.mapel.trim()) {
+          set.add(asm.mapel.trim());
+        }
+      });
+
+      return Array.from(set);
     }
   });
 }
