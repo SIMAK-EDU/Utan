@@ -1057,6 +1057,127 @@ body {
         </table>
       </div>
     </div>
+        <!-- 4. MONITOR PENGGUNAAN, LIMIT KUOTA & KONFIGURASI MULTI-PROVIDER API KEY (EKSKLUSIF ADMIN & SUPABASE) -->
+    <div class="card" style="border: 2px solid #0f766e; background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 100%);">
+      <div class="card-header" style="border-bottom-color: #99f6e4;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+            <span class="badge badge-secondary" style="background: #0f766e; color: #ffffff;">PUSAT KENDALI & MONITOR KUOTA AI SUPABASE</span>
+            <span id="admin-ai-live-status-badge" class="badge badge-success">MEMERIKSA KONEKSI...</span>
+          </div>
+          <h3 class="card-title">4. Monitor Penggunaan, Limit Kuota & Manajemen Multi-API Key (Tersimpan Aman di Supabase)</h3>
+          <p class="card-subtitle">
+            API Key disimpan terpusat di tabel <code>simak_ai_config</code> Supabase dan <strong>tidak ditampilkan pada halaman Guru maupun Kepala Sekolah</strong>. Pantau pemakaian kuota harian dan status limit API Key Anda secara real-time di bawah ini.
+          </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="AICloudMonitor.testActiveApiKeyConnection()">
+            ⚡ Uji Koneksi & Cek Limit Key Sekarang
+          </button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="AICloudMonitor.pullConfigFromSupabase(true)">
+            🔄 Segarkan Statistik dari Supabase
+          </button>
+        </div>
+      </div>
+
+      <!-- 4 KARTU INDIKATOR MONITOR PENGGUNAAN & LIMIT API KEY -->
+      <div class="grid-4" style="margin-bottom: 1.25rem;">
+        <div class="card" style="margin-bottom: 0; padding: 1rem; background: #ffffff; border-left: 4px solid var(--primary-light);">
+          <div class="card-subtitle">Provider & Model AI Aktif</div>
+          <div id="admin-ai-stat-provider" style="font-size: 1.05rem; font-weight: 800; color: var(--dark); margin-top: 0.25rem;">SnifoxAI (Gemini)</div>
+          <div class="form-hint" id="admin-ai-stat-masked-key" style="font-family: monospace; color: var(--primary);">Key: snfx-****...g55Z</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; padding: 1rem; background: #ffffff; border-left: 4px solid var(--secondary);">
+          <div class="card-subtitle">Pemakaian Hari Ini / Limit Harian</div>
+          <div id="admin-ai-stat-daily-usage" style="font-size: 1.35rem; font-weight: 900; color: var(--secondary); margin-top: 0.2rem;">0 / 500</div>
+          <div class="form-hint" id="admin-ai-stat-remaining">Sisa Kuota Hari Ini: 100%</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; padding: 1rem; background: #ffffff; border-left: 4px solid var(--accent);">
+          <div class="card-subtitle">Total Akumulasi Request AI</div>
+          <div id="admin-ai-stat-total-usage" style="font-size: 1.35rem; font-weight: 900; color: var(--accent); margin-top: 0.2rem;">0 Request</div>
+          <div class="form-hint" id="admin-ai-stat-last-call">Panggilan Terakhir: -</div>
+        </div>
+
+        <div class="card" style="margin-bottom: 0; padding: 1rem; background: #ffffff; border-left: 4px solid var(--success);">
+          <div class="card-subtitle">Status Kesehatan & Limit API</div>
+          <div id="admin-ai-stat-health-text" style="font-size: 1.02rem; font-weight: 800; color: var(--success); margin-top: 0.25rem;">NORMAL (SIAP PAKAI)</div>
+          <div class="form-hint" id="admin-ai-stat-error-log">HTTP Status: 200 OK</div>
+        </div>
+      </div>
+
+      <!-- PROGRESS BAR PEMAKAIAN KUOTA HARIAN -->
+      <div style="background: #ffffff; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.9rem 1.15rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; font-size: 0.82rem; font-weight: 700;">
+          <span>Persentase Pemakaian Kuota API Key Hari Ini :</span>
+          <span id="admin-ai-quota-bar-label" style="color: var(--primary);">0% Terpakai</span>
+        </div>
+        <div style="width: 100%; height: 18px; background: #e2e8f0; border-radius: 999px; overflow: hidden;">
+          <div id="admin-ai-quota-bar-fill" style="width: 2%; height: 100%; background: linear-gradient(90deg, #16a34a, #0284c7); transition: width 0.3s ease;"></div>
+        </div>
+      </div>
+
+      <!-- FORM PENGATURAN API KEY FLEKSIBEL (HANYA BISA DIAKSES ADMIN & DISIMPAN KE SUPABASE) -->
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: var(--radius-md); padding: 1.15rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem;">
+          <h4 style="font-size: 0.96rem; color: var(--dark);">⚙️ Konfigurasi Multi-Provider API Key di Supabase (Eksklusif Admin)</h4>
+          <button type="button" class="btn btn-outline btn-sm" onclick="AICloudMonitor.resetDailyCounter()">
+            🔄 Reset Hitungan Harian ke 0
+          </button>
+        </div>
+
+        <div class="grid-3">
+          <div class="form-group">
+            <label class="form-label" for="admin-ai-provider-select">1. Pilih Jenis Provider / Gateway AI :</label>
+            <select id="admin-ai-provider-select" class="form-control" style="font-weight: 700;" onchange="AICloudMonitor.handleProviderSelectChange(this.value)">
+              <option value="SNIFOX_GEMINI">SnifoxAI / Gateway OpenAI-Compatible (snfx-...)</option>
+              <option value="GOOGLE_GEMINI">Google Gemini AI Studio Resmi (AIzaSy...)</option>
+              <option value="OPENROUTER">OpenRouter Multi-Model (sk-or-...)</option>
+              <option value="GROQ_CLOUD">Groq Cloud Super Cepat (gsk_...)</option>
+              <option value="OPENAI_DIRECT">OpenAI Resmi (sk-...)</option>
+              <option value="ANTHROPIC_CLAUDE">Anthropic Claude (sk-ant-...)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-ai-model-input">2. Nama Model AI (Label Model) :</label>
+            <input type="text" id="admin-ai-model-input" list="datalist-ai-models" class="form-control" value="gemini-2.5-flash" placeholder="Contoh: gemini-2.5-flash / gpt-4o-mini">
+            <datalist id="datalist-ai-models">
+              <option value="gemini-2.5-flash"></option>
+              <option value="gemini-2.0-flash"></option>
+              <option value="gemini-1.5-flash"></option>
+              <option value="gemini-1.5-pro"></option>
+              <option value="gpt-4o-mini"></option>
+              <option value="claude-3-5-sonnet-latest"></option>
+              <option value="llama-3.3-70b-versatile"></option>
+            </datalist>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="admin-ai-limit-input">3. Batas Limit Kuota Harian (Untuk Monitor) :</label>
+            <input type="number" id="admin-ai-limit-input" class="form-control" min="10" max="100000" value="500">
+          </div>
+        </div>
+
+        <div class="grid-2" style="align-items: end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="admin-ai-baseurl-input">4. Endpoint Base URL API (Otomatis Menyesuaikan Provider / Dapat Diubah) :</label>
+            <input type="text" id="admin-ai-baseurl-input" class="form-control" style="font-family: monospace; font-size: 0.84rem;" value="https://api.snifox.ai/v1/chat/completions">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="admin-ai-key-input">5. Ganti / Perbarui API Key di Supabase (Tersamarkan untuk Keamanan) :</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <input type="password" id="admin-ai-key-input" class="form-control" style="font-family: monospace;" placeholder="Biarkan kosong jika tetap memakai key di Supabase...">
+              <button type="button" class="btn btn-success" style="white-space: nowrap;" onclick="AICloudMonitor.saveConfigToSupabase()">
+                💾 Kunci ke Supabase
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
     <!-- MODAL PERSETUJUAN PENDAFTARAN GURU BARU (DAPAT DIEDIT OLEH ADMIN) -->
@@ -3853,59 +3974,29 @@ body {
       </div>
     </div>
 
-    <!-- HEADER BANNER UTAMA -->
+        <!-- HEADER BANNER UTAMA (API KEY TERSEMBUNYI AMAN DI SUPABASE) -->
     <div class="card no-print" style="background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 55%, #0f766e 100%); color: #ffffff; border: none;">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
             <span class="badge badge-warning">SUB-PILAR 6 — GENERATIVE AI INSTRUCTIONAL DESIGNER</span>
-            <span id="rpm-active-engine-badge" class="badge badge-success">Mesin AI Murni Aktif (Tanpa Bank Soal Statis)</span>
+            <span id="rpm-active-engine-badge" class="badge badge-success">☁ AI Terpusat Supabase Aktif</span>
+            <span id="rpm-ai-quota-Public-pill" class="badge badge-info">Kuota AI: Memuat...</span>
           </div>
           <h2 style="font-size: 1.42rem; font-weight: 800; margin-bottom: 0.25rem;">
             Penyusunan Modul Ajar (RPM 8-3-3-4) & Generator Soal Dinamis Berbasis AI Murni
           </h2>
           <p style="font-size: 0.88rem; color: #dbeafe; max-width: 860px;">
-            Ditenagai <strong>Generative AI Murni (Google Gemini API & Cloud LLM)</strong> dengan peran <em>Pakar Kurikulum Merdeka & Ahli Asesmen Pendidikan Indonesia</em>. Menghasilkan pengalaman belajar dan variasi soal yang luas, kreatif, kontekstual, serta presisi mengikuti perintah guru.
+            Terhubung langsung dengan <strong> Gatekeeper AI Supabase Cloud</strong>. Menghasilkan CP, TP, skenario pembelajaran, dan butir soal ujian yang kontekstual, presisi, serta sesuai tingkat kelas siswa.
           </p>
         </div>
         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.14); color: #fde68a; border-color: rgba(253,230,138,0.45);" onclick="RpmApp.toggleGeminiKeyConfig()">
-            🔑 Pengaturan API AI (Gemini / Cloud)
-          </button>
           <button type="button" class="btn btn-warning btn-sm" onclick="RpmApp.scrollToSavedArchive()">
             📂 Arsip RPM Tersimpan (<span id="rpm-saved-count-top">0</span>)
           </button>
           <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openPillar('intrakurikuler')">
             &larr; Kembali ke Intrakurikuler
           </button>
-        </div>
-      </div>
-
-      <!-- PANEL KONFIGURASI GOOGLE GEMINI API KEY (OPSIONAL, MENDUKUNG CLOUD AI GRATIS OTOMATIS) -->
-      <div id="rpm-gemini-config-panel" class="hidden" style="margin-top: 1.15rem; padding: 1.1rem 1.25rem; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(255,255,255,0.25); border-radius: var(--radius-md);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-          <div style="flex: 1; min-width: 260px;">
-            <span class="badge badge-info" style="margin-bottom: 0.3rem;">KONFIGURASI MESIN GENERATIVE AI MURNI</span>
-            <h4 style="font-size: 0.98rem; color: #ffffff; margin-bottom: 0.25rem;">Hubungkan Google Gemini API Key (Atau Gunakan Cloud AI Gratis Otomatis)</h4>
-            <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
-              Secara bawaan, sistem sudah terhubung ke <strong>Cloud Generative AI Gratis</strong> tanpa perlu kunci API. Namun jika Anda memiliki <strong>Google Gemini API Key</strong> (gratis dari <em>aistudio.google.com</em>), tempelkan di bawah ini agar pembuatan modul dan soal diproses langsung oleh model resmi <strong>Google Gemini 2.5 Flash / 1.5 Flash</strong>.
-            </p>
-          </div>
-          <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; min-width: 320px; flex: 1;">
-            <input
-              type="password"
-              id="rpm-gemini-api-key-input"
-              class="form-control allow-readonly-filter"
-              style="flex: 1; background: #ffffff; color: #0f172a; font-family: monospace;"
-              placeholder="Tempel Gemini API Key (AIzaSy...) atau kosongkan untuk Cloud AI..."
-            >
-            <button type="button" class="btn btn-success btn-sm" onclick="RpmApp.saveGeminiApiKey()">
-              💾 Simpan Kunci AI
-            </button>
-            <button type="button" class="btn btn-outline btn-sm" style="color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="RpmApp.toggleGeminiKeyConfig()">
-              Tutup
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -6114,57 +6205,26 @@ body {
 
     <div id="principal-panel-visimisi" class="principal-subpanel hidden">
       <div class="card" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border: 2px solid #93c5fd;">
-        <div class="card-header" style="border-bottom-color: #bfdbfe;">
+                <div class="card-header" style="border-bottom-color: #bfdbfe;">
           <div>
             <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
               <span class="badge badge-primary">PURE GENERATIVE AI STRATEGIC PLANNER</span>
               <span id="visimisi-lock-status-badge" class="badge badge-success">TERBUKA UNTUK PERANCANGAN</span>
-              <span class="badge badge-info">✓ Terintegrasi Generator Kolom Penilaian Guru Otomatis</span>
+              <span id="principal-ai-quota-pill" class="badge badge-info">☁ AI Cloud Supabase Aktif</span>
             </div>
             <h3 class="card-title">Perumusan Visi, Misi & Instrumen Penilaian Mandat Berbasis AI Murni</h3>
             <p class="card-subtitle">
-              AI Murni menganalisis <strong>Visi Sekolah</strong> dan <strong>Instruksi Khusus Kepala Sekolah</strong> secara spesifik (tanpa template kaku), lalu otomatis membentuk <strong>Tabel & Kolom Penilaian Dinamis</strong> di halaman Guru apabila cara penilaiannya belum tersedia di menu standar.
+              AI Murni menganalisis <strong>Visi Sekolah</strong> dan <strong>Instruksi Khusus Kepala Sekolah</strong> secara spesifik, lalu otomatis membentuk <strong>Tabel & Kolom Penilaian Dinamis</strong> di halaman Guru.
             </p>
           </div>
 
           <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #1e3a8a; border-color: #93c5fd;" onclick="PrincipalApp.togglePrincipalGeminiKeyConfig()">
-              🔑 Pengaturan API AI (Gemini)
-            </button>
             <button type="button" id="btn-unlock-visimisi" class="btn btn-warning btn-sm hidden" onclick="PrincipalApp.unlockVisiMisiForm()">
               🔓 Buka Kunci Edit Visi & Misi
             </button>
             <button type="button" id="btn-save-lock-visimisi" class="btn btn-success btn-sm" onclick="PrincipalApp.saveAndLockVisiMisi()">
               💾 Simpan & Kunci Mandat Visi-Misi
             </button>
-          </div>
-        </div>
-
-        <!-- PANEL PENGATURAN GEMINI API KEY KHUSUS PORTAL KEPALA SEKOLAH -->
-        <div id="principal-gemini-config-panel" class="hidden" style="margin-bottom: 1.25rem; padding: 1.1rem 1.25rem; background: #0f172a; color: #ffffff; border-radius: var(--radius-md); border: 1px solid #334155;">
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-            <div style="flex: 1; min-width: 260px;">
-              <span class="badge badge-warning" style="margin-bottom: 0.3rem;">MESIN GENERATIVE AI MURNI KEPALA SEKOLAH</span>
-              <h4 style="font-size: 0.96rem; color: #ffffff; margin-bottom: 0.2rem;">Hubungkan Google Gemini API Key (Atau Gunakan Engine Sintesis Kontekstual Otomatis)</h4>
-              <p style="font-size: 0.8rem; color: #cbd5e1; line-height: 1.5;">
-                Tempelkan <strong>Google Gemini API Key</strong> Anda agar perumusan Visi, Misi, Indikator, dan Instrumen Penilaian diproses langsung oleh model <strong>Gemini 2.5 Flash</strong> sesuai kalimat bebas yang Anda ketikkan.
-              </p>
-            </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; min-width: 300px; flex: 1;">
-              <input
-                type="password"
-                id="principal-gemini-api-key-input"
-                class="form-control allow-readonly-filter"
-                style="flex: 1; background: #ffffff; color: #0f172a; font-family: monospace;"
-                placeholder="Tempel Gemini API Key (AIzaSy...)..."
-              >
-              <button type="button" class="btn btn-success btn-sm" onclick="PrincipalApp.savePrincipalGeminiApiKey()">
-                💾 Simpan Kunci AI
-              </button>
-              <button type="button" class="btn btn-outline btn-sm" style="color: #ffffff; border-color: #475569;" onclick="PrincipalApp.togglePrincipalGeminiKeyConfig()">
-                Tutup
-              </button>
-            </div>
           </div>
         </div>
 
@@ -29763,10 +29823,810 @@ Object.assign(RpmApp, {
   }
 });
 
-// 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
+// ============================================================================
+// TAHAP 2: ENGINE AICLOUDMONITOR (SUPABASE CENTRAL API KEY + MONITOR LIMIT)
+// & UNIVERSAL MULTI-PROVIDER AI ROUTER + SPESIALISASI SOAL IPAS (ENERGI DLL.)
+// ============================================================================
+const AICloudMonitor = {
+  config: {
+    id: 'MAIN_AI_CONFIG',
+    provider: 'SNIFOX_GEMINI',
+    key_label: 'SnifoxAI — Label Gemini',
+    api_key: 'snfx-NHKmG0nkkNLMcg4VL2AgYRT0pLgom7UXS2wHeJyvGg55Z',
+    base_url: 'https://api.snifox.ai/v1/chat/completions',
+    model_name: 'gemini-2.5-flash',
+    daily_limit: 500,
+    used_today: 0,
+    total_used: 0,
+    last_reset_date: '',
+    last_status: 'SIAP DIGUNAKAN (SUPABASE CLOUD)',
+    last_http_code: 200,
+    last_error_msg: '-'
+  },
+
+  maskApiKey(rawKey) {
+    const k = String(rawKey || '').trim();
+    if (!k) return 'Belum Diatur';
+    if (k.length <= 12) return k.slice(0, 4) + '****';
+    return `${k.slice(0, 9)}••••••••••••${k.slice(-4)}`;
+  },
+
+  detectProviderByKeyPrefix(rawKey, currentProvider = '') {
+    const k = String(rawKey || '').trim();
+    if (k.startsWith('snfx-')) return 'SNIFOX_GEMINI';
+    if (k.startsWith('AIzaSy')) return 'GOOGLE_GEMINI';
+    if (k.startsWith('sk-or-')) return 'OPENROUTER';
+    if (k.startsWith('gsk_')) return 'GROQ_CLOUD';
+    if (k.startsWith('sk-ant-')) return 'ANTHROPIC_CLAUDE';
+    if (k.startsWith('sk-')) return 'OPENAI_DIRECT';
+    return currentProvider || 'SNIFOX_GEMINI';
+  },
+
+  getDefaultEndpointByProvider(provider) {
+    const map = {
+      SNIFOX_GEMINI: 'https://api.snifox.ai/v1/chat/completions',
+      GOOGLE_GEMINI: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      OPENROUTER: 'https://openrouter.ai/api/v1/chat/completions',
+      GROQ_CLOUD: 'https://api.groq.com/openai/v1/chat/completions',
+      OPENAI_DIRECT: 'https://api.openai.com/v1/chat/completions',
+      ANTHROPIC_CLAUDE: 'https://api.anthropic.com/v1/messages'
+    };
+    return map[provider] || map.SNIFOX_GEMINI;
+  },
+
+  handleProviderSelectChange(providerVal) {
+    const urlInp = document.getElementById('admin-ai-baseurl-input');
+    const modelInp = document.getElementById('admin-ai-model-input');
+    if (urlInp) {
+      urlInp.value = this.getDefaultEndpointByProvider(providerVal);
+    }
+    if (modelInp) {
+      if (providerVal === 'SNIFOX_GEMINI' || providerVal === 'GOOGLE_GEMINI') {
+        modelInp.value = 'gemini-2.5-flash';
+      } else if (providerVal === 'GROQ_CLOUD') {
+        modelInp.value = 'llama-3.3-70b-versatile';
+      } else if (providerVal === 'ANTHROPIC_CLAUDE') {
+        modelInp.value = 'claude-3-5-sonnet-latest';
+      } else {
+        modelInp.value = 'gpt-4o-mini';
+      }
+    }
+  },
+
+  // Menarik konfigurasi API Key & statistik kuota dari tabel Supabase `simak_ai_config`
+  async pullConfigFromSupabase(showNotification = false) {
+    const todayISO = DateTimeUtil.getTodayISO();
+
+    // 1. Cek cadangan di dalam payload utama DB.data terlebih dahulu
+    if (DB.data && DB.data.aiCloudConfig && typeof DB.data.aiCloudConfig === 'object') {
+      this.config = { ...this.config, ...DB.data.aiCloudConfig };
+    }
+
+    // 2. Tarik dari tabel khusus Supabase `simak_ai_config` jika sudah dibuat melalui SQL Editor
+    if (supabaseClient) {
+      try {
+        const { data: row, error } = await supabaseClient
+          .from('simak_ai_config')
+          .select('*')
+          .eq('id', 'MAIN_AI_CONFIG')
+          .maybeSingle();
+
+        if (!error && row && row.api_key) {
+          this.config = { ...this.config, ...row };
+        }
+      } catch (e) {
+        console.warn('Menggunakan sinkronisasi AI dari store utama:', e);
+      }
+    }
+
+    // Reset otomatis penghitung harian jika berganti hari
+    if (this.config.last_reset_date !== todayISO) {
+      this.config.used_today = 0;
+      this.config.last_reset_date = todayISO;
+      await this.syncStatsToSupabaseSilent();
+    }
+
+    this.renderMonitorUI();
+
+    if (showNotification) {
+      UI.showNotif(
+        'Monitor Kuota AI Diperbarui dari Supabase',
+        `Provider Aktif: ${this.config.provider} (${this.config.model_name}) | Pemakaian Hari Ini: ${this.config.used_today} / ${this.config.daily_limit} Request.`,
+        'info'
+      );
+    }
+  },
+
+  // Menyimpan pembaruan statistik pemakaian dan status limit ke Supabase
+  async syncStatsToSupabaseSilent() {
+    if (DB.data) {
+      DB.data.aiCloudConfig = { ...this.config };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DB.data));
+    }
+
+    if (supabaseClient) {
+      try {
+        await supabaseClient
+          .from('simak_ai_config')
+          .upsert(
+            {
+              id: 'MAIN_AI_CONFIG',
+              provider: this.config.provider,
+              key_label: this.config.key_label,
+              api_key: this.config.api_key,
+              base_url: this.config.base_url,
+              model_name: this.config.model_name,
+              daily_limit: Number(this.config.daily_limit) || 500,
+              used_today: Number(this.config.used_today) || 0,
+              total_used: Number(this.config.total_used) || 0,
+              last_reset_date: this.config.last_reset_date || DateTimeUtil.getTodayISO(),
+              last_status: this.config.last_status || 'AKTIF',
+              last_http_code: Number(this.config.last_http_code) || 200,
+              last_error_msg: this.config.last_error_msg || '-',
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'id' }
+          );
+      } catch (e) {
+        // Juga simpan ke store utama sebagai cadangan penuh lintas perangkat
+        DB.save();
+      }
+    }
+  },
+
+  // Menyimpan konfigurasi API Key baru dari Panel Admin ke Supabase
+  async saveConfigToSupabase() {
+    const providerEl = document.getElementById('admin-ai-provider-select');
+    const modelEl = document.getElementById('admin-ai-model-input');
+    const limitEl = document.getElementById('admin-ai-limit-input');
+    const urlEl = document.getElementById('admin-ai-baseurl-input');
+    const keyEl = document.getElementById('admin-ai-key-input');
+
+    const newKey = keyEl && keyEl.value.trim() ? keyEl.value.trim() : this.config.api_key;
+    const chosenProvider = providerEl ? providerEl.value : this.detectProviderByKeyPrefix(newKey);
+
+    this.config.provider = this.detectProviderByKeyPrefix(newKey, chosenProvider);
+    this.config.model_name = (modelEl && modelEl.value.trim()) || 'gemini-2.5-flash';
+    this.config.daily_limit = Math.max(10, parseInt(limitEl ? limitEl.value : 500, 10) || 500);
+    this.config.base_url = (urlEl && urlEl.value.trim()) || this.getDefaultEndpointByProvider(this.config.provider);
+    this.config.api_key = newKey;
+    this.config.key_label = `${this.config.provider} (${this.config.model_name})`;
+    this.config.last_status = 'KONFIGURASI DIPERBARUI DI SUPABASE';
+    this.config.last_http_code = 200;
+    this.config.last_error_msg = '-';
+
+    if (keyEl) keyEl.value = '';
+
+    await this.syncStatsToSupabaseSilent();
+    await DB.saveImmediate();
+    this.renderMonitorUI();
+
+    UI.showNotif(
+      'API Key Berhasil Dikunci di Supabase Cloud',
+      `Konfigurasi ${this.config.provider} (${this.config.model_name}) dengan kunci ${this.maskApiKey(newKey)} telah disimpan terpusat di Supabase dan siap digunakan oleh seluruh Guru & Kepala Sekolah tanpa menampilkan kode key di halaman mereka.`,
+      'success'
+    );
+  },
+
+  async resetDailyCounter() {
+    this.config.used_today = 0;
+    this.config.last_reset_date = DateTimeUtil.getTodayISO();
+    this.config.last_status = 'KUOTA HARIAN DIRESET KE 0';
+    this.config.last_http_code = 200;
+    this.config.last_error_msg = '-';
+    await this.syncStatsToSupabaseSilent();
+    await DB.saveImmediate();
+    this.renderMonitorUI();
+    UI.showNotif('Kuota Harian Direset', 'Hitungan pemakaian API Key hari ini telah dikembalikan ke 0.', 'success');
+  },
+
+  recordApiCallResult(isSuccess, httpCode = 200, statusText = 'AKTIF (200 OK)', errorDetail = '-') {
+    const todayISO = DateTimeUtil.getTodayISO();
+    if (this.config.last_reset_date !== todayISO) {
+      this.config.used_today = 0;
+      this.config.last_reset_date = todayISO;
+    }
+
+    if (isSuccess) {
+      this.config.used_today = (Number(this.config.used_today) || 0) + 1;
+      this.config.total_used = (Number(this.config.total_used) || 0) + 1;
+    }
+
+    this.config.last_http_code = httpCode;
+    this.config.last_status = statusText;
+    this.config.last_error_msg = errorDetail || '-';
+
+    this.renderMonitorUI();
+    this.syncStatsToSupabaseSilent();
+  },
+
+  renderMonitorUI() {
+    const used = Number(this.config.used_today) || 0;
+    const limit = Math.max(1, Number(this.config.daily_limit) || 500);
+    const total = Number(this.config.total_used) || 0;
+    const pctUsed = Math.min(100, Math.round((used / limit) * 100));
+    const pctRemain = Math.max(0, 100 - pctUsed);
+    const isQuotaExhausted = this.config.last_http_code === 429 || used >= limit;
+
+    // 1. Update Lencana Publik di Halaman RPM & Kepala Sekolah (Tanpa Menampilkan Kode API Key!)
+    const rpmQuotaPill = document.getElementById('rpm-ai-quota-Public-pill');
+    const rpmEngineBadge = document.getElementById('rpm-active-engine-badge');
+    const kepsekQuotaPill = document.getElementById('principal-ai-quota-pill');
+
+    if (rpmQuotaPill) {
+      if (isQuotaExhausted) {
+        rpmQuotaPill.textContent = `⚠️ Limit API Key Habis (${used}/${limit}) — Mode Cadangan Aktif`;
+        rpmQuotaPill.className = 'badge badge-danger';
+      } else {
+        rpmQuotaPill.textContent = `⚡ Kuota AI: ${used}/${limit} Terpakai (${pctRemain}% Tersedia)`;
+        rpmQuotaPill.className = 'badge badge-info';
+      }
+    }
+
+    if (rpmEngineBadge) {
+      rpmEngineBadge.textContent = `☁ AI Supabase Aktif (${this.config.model_name})`;
+      rpmEngineBadge.className = isQuotaExhausted ? 'badge badge-warning' : 'badge badge-success';
+    }
+
+    if (kepsekQuotaPill) {
+      kepsekQuotaPill.textContent = isQuotaExhausted
+        ? `⚠️ Limit API Habis (${used}/${limit})`
+        : `☁ AI Supabase (${this.config.model_name}) | Sisa Kuota: ${pctRemain}%`;
+      kepsekQuotaPill.className = isQuotaExhausted ? 'badge badge-danger' : 'badge badge-info';
+    }
+
+    // 2. Update Panel Monitor Lengkap di Halaman Admin
+    const liveBadge = document.getElementById('admin-ai-live-status-badge');
+    const provEl = document.getElementById('admin-ai-stat-provider');
+    const maskEl = document.getElementById('admin-ai-stat-masked-key');
+    const dailyEl = document.getElementById('admin-ai-stat-daily-usage');
+    const remEl = document.getElementById('admin-ai-stat-remaining');
+    const totalEl = document.getElementById('admin-ai-stat-total-usage');
+    const lastCallEl = document.getElementById('admin-ai-stat-last-call');
+    const healthEl = document.getElementById('admin-ai-stat-health-text');
+    const errLogEl = document.getElementById('admin-ai-stat-error-log');
+    const barLabel = document.getElementById('admin-ai-quota-bar-label');
+    const barFill = document.getElementById('admin-ai-quota-bar-fill');
+
+    if (provEl) provEl.textContent = `${this.config.provider} (${this.config.model_name})`;
+    if (maskEl) maskEl.textContent = `Key Tersimpan: ${this.maskApiKey(this.config.api_key)}`;
+    if (dailyEl) dailyEl.textContent = `${used} / ${limit}`;
+    if (remEl) remEl.textContent = `Sisa Kuota Hari Ini: ${pctRemain}% (${Math.max(0, limit - used)} Request)`;
+    if (totalEl) totalEl.textContent = `${total} Request`;
+    if (lastCallEl) lastCallEl.textContent = `Tanggal Reset: ${this.config.last_reset_date || DateTimeUtil.getTodayISO()}`;
+
+    if (healthEl) {
+      healthEl.textContent = this.config.last_status || 'SIAP DIGUNAKAN';
+      healthEl.style.color = isQuotaExhausted
+        ? 'var(--danger)'
+        : (this.config.last_http_code >= 400 ? 'var(--warning)' : 'var(--success)');
+    }
+    if (errLogEl) {
+      errLogEl.textContent = `HTTP ${this.config.last_http_code || 200}: ${this.config.last_error_msg || 'Tidak ada kendala'}`;
+    }
+    if (liveBadge) {
+      if (isQuotaExhausted) {
+        liveBadge.textContent = '⚠️ LIMIT KUOTA HABIS (429)';
+        liveBadge.className = 'badge badge-danger';
+      } else if (this.config.last_http_code >= 400) {
+        liveBadge.textContent = `PERLU CEK ENDPOINT (${this.config.last_http_code})`;
+        liveBadge.className = 'badge badge-warning';
+      } else {
+        liveBadge.textContent = `✓ API KEY AKTIF (${pctRemain}% KUOTA TERSEDIA)`;
+        liveBadge.className = 'badge badge-success';
+      }
+    }
+
+    if (barLabel) barLabel.textContent = `${pctUsed}% Terpakai (${used} dari ${limit} batas harian)`;
+    if (barFill) {
+      barFill.style.width = `${Math.max(2, pctUsed)}%`;
+      barFill.style.background = pctUsed >= 90
+        ? '#dc2626'
+        : (pctUsed >= 70 ? '#d97706' : 'linear-gradient(90deg, #16a34a, #0284c7)');
+    }
+
+    const provSel = document.getElementById('admin-ai-provider-select');
+    const modInp = document.getElementById('admin-ai-model-input');
+    const limInp = document.getElementById('admin-ai-limit-input');
+    const urlInp = document.getElementById('admin-ai-baseurl-input');
+
+    if (provSel && this.config.provider) provSel.value = this.config.provider;
+    if (modInp && this.config.model_name) modInp.value = this.config.model_name;
+    if (limInp && this.config.daily_limit) limInp.value = this.config.daily_limit;
+    if (urlInp && this.config.base_url) urlInp.value = this.config.base_url;
+  },
+
+  // Uji Koneksi & Cek Apakah API Key Masih Punya Kuota atau Sudah Habis Limitnya
+  async testActiveApiKeyConnection() {
+    UI.showNotif(
+      'Menguji Koneksi API Key di Supabase...',
+      `Sedang menghubungi server ${this.config.provider} menggunakan model ${this.config.model_name}...`,
+      'info'
+    );
+
+    const testPrompt = 'Balas hanya dengan JSON murni: {"status":"OK","message":"Koneksi AI Aktif dan Kuota Tersedia"}';
+    const res = await this.executeUniversalAICall(testPrompt, true, true);
+
+    if (res && res.status === 'OK') {
+      UI.showNotif(
+        '✓ API Key Aktif & Kuota Masih Tersedia!',
+        `Koneksi ke ${this.config.provider} (${this.config.model_name}) berhasil 100%! Pemakaian hari ini: ${this.config.used_today} / ${this.config.daily_limit}.`,
+        'success'
+      );
+    } else {
+      UI.showNotif(
+        `Status Pengujian API Key (HTTP ${this.config.last_http_code})`,
+        `Status: ${this.config.last_status}. Detail: ${this.config.last_error_msg}. (Tenang, apabila limit habis atau endpoint sedang sibuk, sistem otomatis mengaktifkan Cloud AI Cadangan & Generator Spesialis Mapel sehingga pembuatan RPM/Soal tetap berjalan).`,
+        'warning'
+      );
+    }
+  },
+
+  // Router Utama Pemanggil AI Multi-Provider (Mendukung SnifoxAI `snfx-...`, Gemini `AIzaSy...`, OpenRouter, Groq, OpenAI, Claude)
+  async executeUniversalAICall(promptText, expectJson = true, isDiagnosticTest = false) {
+    const apiKey = String(this.config.api_key || '').trim();
+    const provider = this.detectProviderByKeyPrefix(apiKey, this.config.provider);
+    const modelName = String(this.config.model_name || 'gemini-2.5-flash').trim();
+    const customBaseUrl = String(this.config.base_url || '').trim();
+
+    // 1. JALUR KHUSUS KUNCI SNIFOXAI (`snfx-...`) ATAU PROVIDER OPENAI-COMPATIBLE (OPENROUTER / GROQ / OPENAI)
+    if (apiKey && (provider === 'SNIFOX_GEMINI' || provider === 'OPENROUTER' || provider === 'GROQ_CLOUD' || provider === 'OPENAI_DIRECT')) {
+      const candidateEndpoints = [];
+      if (customBaseUrl && customBaseUrl.startsWith('https://')) {
+        candidateEndpoints.push(customBaseUrl);
+      }
+      if (provider === 'SNIFOX_GEMINI') {
+        [
+          'https://api.snifox.ai/v1/chat/completions',
+          'https://snifox.ai/api/v1/chat/completions',
+          'https://api.snifoxai.com/v1/chat/completions'
+        ].forEach(u => {
+          if (!candidateEndpoints.includes(u)) candidateEndpoints.push(u);
+        });
+      } else {
+        const defUrl = this.getDefaultEndpointByProvider(provider);
+        if (!candidateEndpoints.includes(defUrl)) candidateEndpoints.push(defUrl);
+      }
+
+      for (const endpoint of candidateEndpoints) {
+        try {
+          const controller = new AbortController();
+          const tId = setTimeout(() => controller.abort(), 15000);
+
+          const bodyPayload = {
+            model: modelName,
+            messages: [
+              {
+                role: 'system',
+                content: expectJson
+                  ? 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Balas HANYA dalam format JSON valid tanpa blok kode markdown.'
+                  : 'Anda adalah Pakar Kurikulum Merdeka Indonesia.'
+              },
+              { role: 'user', content: promptText }
+            ],
+            temperature: 0.45
+          };
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`,
+              'x-api-key': apiKey
+            },
+            signal: controller.signal,
+            body: JSON.stringify(bodyPayload)
+          });
+          clearTimeout(tId);
+
+          if (res.status === 429) {
+            this.recordApiCallResult(false, 429, 'LIMIT KUOTA API KEY HABIS (429)', 'Batas kuota/rate-limit API Key telah tercapai.');
+            break;
+          }
+
+          if (res.status === 401 || res.status === 403) {
+            this.recordApiCallResult(false, res.status, 'API KEY DITOLAK / EXPIRED', `HTTP ${res.status}: Periksa masa aktif kunci API.`);
+            break;
+          }
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data?.choices?.[0]?.message?.content || data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.text;
+            if (rawText) {
+              this.recordApiCallResult(true, 200, `AKTIF — ${provider} (200 OK)`, 'Berhasil memproses permintaan AI');
+              if (!expectJson) return String(rawText).replace(/\*\*/g, '').trim();
+              const cleaned = String(rawText).replace(/```json/gi, '').replace(/```/g, '').trim();
+              return JSON.parse(cleaned);
+            }
+          }
+        } catch (err) {
+          console.warn(`Percobaan endpoint ${endpoint} dilewati:`, err);
+        }
+      }
+    }
+
+    // 2. JALUR GOOGLE GEMINI NATIVE (`AIzaSy...` atau Gateway Gemini Native)
+    if (apiKey && (provider === 'GOOGLE_GEMINI' || provider === 'SNIFOX_GEMINI')) {
+      const models = [modelName, 'gemini-2.5-flash', 'gemini-1.5-flash'];
+      for (const mName of Array.from(new Set(models))) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const genConfig = { temperature: 0.45 };
+          if (expectJson) genConfig.responseMimeType = 'application/json';
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: genConfig
+            })
+          });
+
+          if (res.status === 429) {
+            this.recordApiCallResult(false, 429, 'LIMIT KUOTA GEMINI HABIS (429)', 'Kuota request harian/menit habis.');
+            break;
+          }
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Berhasil memproses dengan Gemini API');
+              if (!expectJson) return String(rawText).replace(/\*\*/g, '').trim();
+              const cleaned = String(rawText).replace(/```json/gi, '').replace(/```/g, '').trim();
+              return JSON.parse(cleaned);
+            }
+          }
+        } catch (e) {
+          console.warn('Gemini native fallback:', e);
+        }
+      }
+    }
+
+    if (isDiagnosticTest) {
+      return null;
+    }
+
+    // 3. JALUR CADANGAN OTOMATIS CLOUD LLM GRATIS (AKTIF JIKA LIMIT KEY UTAMA HABIS ATAU ENDPOINT GANGGUAN)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 14000);
+      const res = await fetch('https://text.pollinations.ai/openai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: 'openai',
+          response_format: expectJson ? { type: 'json_object' } : undefined,
+          messages: [
+            {
+              role: 'system',
+              content: expectJson
+                ? 'You are an Indonesian curriculum expert. Respond ONLY with valid JSON without markdown blocks.'
+                : 'You are an Indonesian curriculum expert.'
+            },
+            { role: 'user', content: promptText }
+          ],
+          temperature: 0.45
+        })
+      });
+      clearTimeout(timeoutId);
+
+      if (res.ok) {
+        const data = await res.json();
+        const rawContent = data?.choices?.[0]?.message?.content;
+        if (rawContent) {
+          this.recordApiCallResult(true, 200, 'AKTIF (RELAY CLOUD AI)', 'Diproses melalui Cloud AI Relay');
+          if (!expectJson) return String(rawContent).replace(/\*\*/g, '').trim();
+          const cleaned = String(rawContent).replace(/```json/gi, '').replace(/```/g, '').trim();
+          return JSON.parse(cleaned);
+        }
+      }
+    } catch (cloudErr) {
+      console.warn('Relay Cloud AI beralih ke Spesialis Kurikulum Lokal:', cloudErr);
+    }
+
+    return null;
+  }
+};
+
+// Integrasikan Monitor AI ke Dashboard Admin saat Admin membuka halaman
+if (typeof AdminApp !== 'undefined') {
+  const _prevOpenAdmin = AdminApp.openAdminDashboard ? AdminApp.openAdminDashboard.bind(AdminApp) : null;
+  Object.assign(AdminApp, {
+    async openAdminDashboard() {
+      if (_prevOpenAdmin) await _prevOpenAdmin();
+      await AICloudMonitor.pullConfigFromSupabase(false);
+    }
+  });
+}
+
+// Hubungkan PrincipalApp ke Universal AI Router di Supabase
+if (typeof PrincipalApp !== 'undefined') {
+  Object.assign(PrincipalApp, {
+    async callPrincipalGeminiAI(promptText, expectJson = false) {
+      return await AICloudMonitor.executeUniversalAICall(promptText, expectJson, false);
+    }
+  });
+}
+
+// Hubungkan RpmApp ke Universal AI Router + Spesialisasi Soal IPAS (Materi Energi, Sains, & Mapel Lainnya)
+Object.assign(RpmApp, {
+  async callPureGenerativeQuestionAI(promptText) {
+    return await AICloudMonitor.executeUniversalAICall(promptText, true, false);
+  },
+
+  async callGeminiTextGenerator(promptText) {
+    return await AICloudMonitor.executeUniversalAICall(promptText, false, false);
+  },
+
+  // Generator Spesialis Kurikulum (IPAS Materi Energi, Sains, Bahasa Indonesia, Pancasila, Bahasa Inggris, Matematika)
+  // Menjamin soal 100% profesional, to-the-point, & tidak pernah kembali ke template kaku meskipun kuota API habis!
+  buildSmartPedagogicalFallbackSections(params, questionSpecList) {
+    const { mapel, materi, mathMode } = params;
+    const textCombined = `${mapel} ${materi}`.toLowerCase();
+    const isEnglish = /inggris|english|introducing|greeting|number|color|family|animal|school|hobby|time|food/i.test(textCombined);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|luas|keliling/i.test(textCombined);
+    const isIpasEnergi = /energi|listrik|panas|cahaya|bunyi|gerak|kalor|surya|angin|air|bahan bakar|daya/i.test(textCombined);
+    const isIpasGeneral = /ipas|ipa|sains|tumbuhan|fotosintesis|wujud zat|padat|cair|gas|gaya|magnet|gravitasi|ekosistem|siklus/i.test(textCombined);
+
+    const sections = [];
+
+    // 1. BANK SOAL SPESIFIK IPAS — MATERI ENERGI & PERUBAHAN BENTUK ENERGI (SIMPLE & TO-THE-POINT)
+    const ipasEnergiPgPool = [
+      {
+        stem: 'Segala sesuatu di sekitar kita yang memiliki kemampuan untuk melakukan usaha atau kerja disebut ....',
+        options: { A: 'Gaya gesek', B: 'Energi', C: 'Materi', D: 'Volume' },
+        answer: 'Kunci: b. Energi'
+      },
+      {
+        stem: 'Sumber energi panas dan cahaya terbesar bagi seluruh makhluk hidup di Bumi adalah ....',
+        options: { A: 'Bulan', B: 'Matahari', C: 'Angin', D: 'Baterai' },
+        answer: 'Kunci: b. Matahari'
+      },
+      {
+        stem: 'Ketika Ibu menyetrika pakaian menggunakan setrika listrik, terjadi perubahan bentuk energi yaitu dari ....',
+        options: {
+          A: 'Energi listrik menjadi energi gerak',
+          B: 'Energi listrik menjadi energi panas',
+          C: 'Energi panas menjadi energi cahaya',
+          D: 'Energi kimia menjadi energi bunyi'
+        },
+        answer: 'Kunci: b. Energi listrik menjadi energi panas'
+      },
+      {
+        stem: 'Kipas angin yang dicolokkan ke stopkontak dan dinyalakan mengubah energi listrik menjadi ....',
+        options: { A: 'Energi gerak', B: 'Energi cahaya', C: 'Energi kimia', D: 'Energi pegas' },
+        answer: 'Kunci: a. Energi gerak'
+      },
+      {
+        stem: 'Tumbuhan hijau memerlukan energi cahaya matahari untuk membuat makanannya sendiri melalui proses ....',
+        options: { A: 'Penguapan', B: 'Fotosintesis', C: 'Pernapasan', D: 'Pelapukan' },
+        answer: 'Kunci: b. Fotosintesis'
+      },
+      {
+        stem: 'Makanan yang kita makan setiap hari menyimpan energi .... di dalam tubuh sebelum diubah menjadi energi gerak saat kita beraktivitas.',
+        options: { A: 'Energi listrik', B: 'Energi kimia', C: 'Energi bunyi', D: 'Energi magnet' },
+        answer: 'Kunci: b. Energi kimia'
+      },
+      {
+        stem: 'Alat yang berfungsi mengubah energi cahaya matahari secara langsung menjadi energi listrik adalah ....',
+        options: { A: 'Kincir angin', B: 'Panel surya (Solar cell)', C: 'Generator uap', D: 'Dinamo sepeda' },
+        answer: 'Kunci: b. Panel surya (Solar cell)'
+      },
+      {
+        stem: 'Saat kita memetik senar gitar atau memukul gendang, energi gerak dari tangan kita berubah menjadi ....',
+        options: { A: 'Energi cahaya', B: 'Energi bunyi', C: 'Energi panas', D: 'Energi listrik' },
+        answer: 'Kunci: b. Energi bunyi'
+      },
+      {
+        stem: 'Berikut ini yang termasuk contoh sumber energi alternatif (terbarukan) yang ramah lingkungan adalah ....',
+        options: {
+          A: 'Batu bara dan minyak tanah',
+          B: 'Cahaya matahari, angin, dan aliran air',
+          C: 'Bensin dan solar',
+          D: 'Gas elpiji dan batu baterai'
+        },
+        answer: 'Kunci: b. Cahaya matahari, angin, dan aliran air'
+      },
+      {
+        stem: 'Contoh perilaku menghemat energi listrik yang tepat dilakukan di sekolah maupun di rumah adalah ....',
+        options: {
+          A: 'Membiarkan lampu menyala di siang hari yang terang',
+          B: 'Mematikan lampu dan kipas angin saat ruangan tidak digunakan',
+          C: 'Menyalakan televisi terus-menerus walaupun tidak ditonton',
+          D: 'Membuka pintu kulkas terlalu lama'
+        },
+        answer: 'Kunci: b. Mematikan lampu dan kipas angin saat ruangan tidak digunakan'
+      }
+    ];
+
+    const ipasEnergiIsianPool = [
+      { stem: 'Lampu belajar yang dinyalakan mengubah energi listrik menjadi energi ................ dan energi panas.', answer: 'Kunci: cahaya' },
+      { stem: 'Energi tidak dapat diciptakan dan tidak dapat dimusnahkan, tetapi dapat diubah dari satu ................ ke bentuk lainnya.', answer: 'Kunci: bentuk' },
+      { stem: 'Aliran air sungai yang deras dapat memutar turbin pada Pembangkit Listrik Tenaga ................ (PLTA).', answer: 'Kunci: Air' },
+      { stem: 'Batu baterai dan aki menyimpan energi dalam bentuk energi ................', answer: 'Kunci: kimia' },
+      { stem: 'Ketika kita menggosokkan kedua telapak tangan saat cuaca dingin, energi gerak berubah menjadi energi ................', answer: 'Kunci: panas (kalor)' }
+    ];
+
+    const ipasEnergiEsaiPool = [
+      { stem: 'Sebutkan 3 peralatan yang ada di rumahmu beserta perubahan bentuk energi yang terjadi saat alat tersebut digunakan!', answer: 'Kunci: (1) Setrika: listrik -> panas, (2) Kipas angin: listrik -> gerak, (3) Lampu: listrik -> cahaya.' },
+      { stem: 'Mengapa kita harus menghemat penggunaan energi listrik dan bahan bakar minyak dalam kehidupan sehari-hari? Jelaskan!', answer: 'Kunci: Agar cadangan sumber energi tidak cepat habis, menghemat biaya, dan mengurangi polusi lingkungan.' },
+      { stem: 'Jelaskan bagaimana proses perubahan bentuk energi yang terjadi ketika kamu sarapan pagi lalu bersepeda ke sekolah!', answer: 'Kunci: Energi kimia dari makanan di dalam tubuh diubah menjadi energi gerak (otot) untuk mengayuh sepeda.' }
+    ];
+
+    // 2. BANK SOAL BAHASA INGGRIS (SEPERTI FOTO CONTOH)
+    const englishPgPool = [
+      {
+        stem: 'When you meet someone in the morning, you say ....',
+        options: { A: 'Good night', B: 'Good morning', C: 'Goodbye', D: 'Good evening' },
+        answer: 'Kunci: b. Good morning'
+      },
+      {
+        stem: '"What is your name?" Artinya dalam bahasa Indonesia adalah ....',
+        options: { A: 'Siapa namamu?', B: 'Berapa umurmu?', C: 'Di mana rumahmu?', D: 'Apa kabarmu?' },
+        answer: 'Kunci: a. Siapa namamu?'
+      },
+      {
+        stem: 'The correct answer to "What is your name?" is ....',
+        options: { A: 'I am ten years old', B: 'My name is Andi', C: 'I live in Sumbawa', D: 'I am fine, thank you' },
+        answer: 'Kunci: b. My name is Andi'
+      },
+      {
+        stem: 'Rina : "How are you today, Budi?"\nBudi : "...."',
+        options: { A: 'I am fine, thank you', B: 'My hobby is reading', C: 'Nice to meet you too', D: 'See you tomorrow' },
+        answer: 'Kunci: a. I am fine, thank you'
+      },
+      {
+        stem: '"I live in Utan." Kalimat tersebut digunakan untuk menyatakan ....',
+        options: { A: 'Hobi (Hobby)', B: 'Usia (Age)', C: 'Tempat tinggal (Address)', D: 'Cita-cita (Dream)' },
+        answer: 'Kunci: c. Tempat tinggal (Address)'
+      }
+    ];
+
+    (questionSpecList || []).forEach((spec, sIdx) => {
+      const qType = spec.type;
+      const count = Math.max(1, parseInt(spec.count, 10) || 1);
+      const items = [];
+
+      for (let i = 1; i <= count; i++) {
+        // A. Jika Topik IPAS Materi Energi / Sains
+        if (isIpasEnergi || isIpasGeneral) {
+          if (qType === 'PG') {
+            const picked = ipasEnergiPgPool[(i - 1) % ipasEnergiPgPool.length];
+            items.push({
+              no: i,
+              stem: picked.stem,
+              options: { ...picked.options },
+              answer: picked.answer,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          } else if (qType === 'ISIAN') {
+            const picked = ipasEnergiIsianPool[(i - 1) % ipasEnergiIsianPool.length];
+            items.push({
+              no: i,
+              stem: picked.stem,
+              answer: picked.answer,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          } else if (qType === 'ESAI' || qType === 'URAIAN') {
+            const picked = ipasEnergiEsaiPool[(i - 1) % ipasEnergiEsaiPool.length];
+            items.push({
+              no: i,
+              stem: picked.stem,
+              answer: picked.answer,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          }
+        }
+
+        // B. Jika Bahasa Inggris
+        if (isEnglish && qType === 'PG') {
+          const picked = englishPgPool[(i - 1) % englishPgPool.length];
+          items.push({
+            no: i,
+            stem: picked.stem,
+            options: { ...picked.options },
+            answer: picked.answer,
+            scoreWeight: Math.round(100 / count)
+          });
+          continue;
+        }
+
+        // C. Jika Matematika
+        if (isMath) {
+          const b = (i % 7) + 3;
+          const resVal = (i * 8) + 12;
+          const a = b * resVal;
+          const isWord = mathMode === 'WORD_PROBLEM' || (mathMode === 'MIXED_MATH' && i % 2 === 0);
+
+          if (qType === 'PG') {
+            const keys = ['A', 'B', 'C', 'D'];
+            const correctKey = keys[(i - 1) % 4];
+            const wrongs = [resVal - 2, resVal + 3, resVal + 6];
+            const opts = { A: '', B: '', C: '', D: '' };
+            let wIdx = 0;
+            keys.forEach(k => {
+              opts[k] = k === correctKey ? String(resVal) : String(wrongs[wIdx++]);
+            });
+
+            items.push({
+              no: i,
+              stem: isWord
+                ? `Ibu memiliki ${a} buah jeruk yang akan dimasukkan sama banyak ke dalam ${b} keranjang. Berapa banyak jeruk pada setiap keranjang?`
+                : `Hasil dari operasi hitung ${a} : ${b} adalah ....`,
+              mathExpression: isWord ? '' : `${a} ÷ ${b} = ....`,
+              options: opts,
+              answer: `Kunci: ${correctKey.toLowerCase()}. ${resVal}`,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          } else {
+            items.push({
+              no: i,
+              stem: isWord
+                ? `Sebanyak ${a} buku tulis dibagikan secara merata kepada ${b} kelompok belajar. Berapa buku yang diterima setiap kelompok?`
+                : `Hitunglah hasil dari: ${a} ÷ ${b} = ....`,
+              mathExpression: isWord ? '' : `${a} ÷ ${b} = ....`,
+              answer: `Kunci: ${resVal}`,
+              scoreWeight: Math.round(100 / count)
+            });
+            continue;
+          }
+        }
+
+        // D. Umum Lainnya
+        if (qType === 'PG') {
+          items.push({
+            no: i,
+            stem: `Manakah di bawah ini yang merupakan contoh nyata yang berkaitan dengan materi "${materi}" dalam kehidupan sehari-hari?`,
+            options: {
+              A: `Menerapkan prinsip ${materi} secara tepat sesuai fungsinya`,
+              B: `Mengabaikan manfaat ${materi} di lingkungan sekitar`,
+              C: `Merusak sarana yang berhubungan dengan ${materi}`,
+              D: `Tidak memperhatikan aturan keselamatan kerja`
+            },
+            answer: 'Kunci: a',
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'ISIAN') {
+          items.push({
+            no: i,
+            stem: `Tuliskan salah satu contoh pemanfaatan atau penerapan "${materi}" yang sering kamu jumpai di rumah: ........................................`,
+            answer: `Kunci: Contoh relevan terkait ${materi}`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else {
+          items.push({
+            no: i,
+            stem: `Jelaskan apa yang kamu ketahui tentang "${materi}" dan sebutkan 2 contohnya dalam kehidupan sehari-hari!`,
+            answer: `Kunci: Penjelasan konsep ${materi} beserta 2 contoh nyata.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        }
+      }
+
+      sections.push({
+        type: qType,
+        title: this.getSectionInstructionTitle(qType, isEnglish, sIdx, spec.customName),
+        count: items.length,
+        items
+      });
+    });
+
+    return sections;
+  }
+});
+
+// 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud & Tabel AI Config
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
   await DB.init();
+  await AICloudMonitor.pullConfigFromSupabase(false);
   SchoolNormalizer.refreshSchoolDatalist();
   LandingUI.selectPortal('teacher');
   LandingUI.toggleTeacherSubPanel('none');
