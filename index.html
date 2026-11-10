@@ -3987,31 +3987,93 @@ body {
           </div>
         </div>
 
-        <!-- PANEL UTAMA KURIKULUM: MATERI, CP, TP, & PROMPT INSTRUKSI KHUSUS GURU -->
+                <!-- PANEL UTAMA KURIKULUM: MATERI, MODEL PEDAGOGIS, CP, PENGATUR JUMLAH TP, & PROMPT AI -->
         <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.85rem; padding-bottom: 0.65rem; border-bottom: 1px dashed #14b8a6;">
-            <div>
-              <span class="badge badge-success" style="margin-bottom: 0.25rem;">KOMPAS UTAMA GENERATIVE AI (KURIKULUM MERDEKA)</span>
-              <h4 style="font-size: 1.02rem; color: var(--dark);">7, 8, 9, & 10. Materi Ajar, CP, Tujuan Pembelajaran (TP), & Instruksi Khusus Guru ke AI</h4>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed #14b8a6;">
+            <div style="flex: 1; min-width: 260px;">
+              <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                <span class="badge badge-success">GENERATOR CP & TP BERBASIS AI MURNI (KURIKULUM MERDEKA)</span>
+                <span class="badge badge-primary">✓ Jumlah & Gaya TP Fleksibel</span>
+              </div>
+              <h4 style="font-size: 1.04rem; color: var(--dark);">7, 8, 9, & 10. Materi Ajar, Model Pembelajaran, CP, Tujuan Pembelajaran (TP), & Instruksi AI</h4>
               <p style="font-size: 0.8rem; color: var(--text-muted);">
-                AI Murni akan membaca seluruh input di bawah ini secara mendalam untuk menghasilkan Modul Ajar dan variasi soal yang luas (bukan template bank soal).
+                Atur <strong>Jumlah TP (1 s.d. 6 TP)</strong> dan <strong>Gaya Rumusan TP</strong> di kanan, lalu klik tombol AI Murni untuk merumuskan CP dan TP yang kontekstual sesuai materi dan tingkat kelas (tanpa template kaku).
               </p>
             </div>
-            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="RpmApp.autoSuggestCpAndTp()">
-              ✨ Bantu Susun Draft CP & TP dengan AI
-            </button>
+
+            <!-- KONTROL PENGATUR JUMLAH TP & GAYA RUMUSAN TP UNTUK AI MURNI -->
+            <div class="write-action-btn" style="background: #ffffff; border: 1px solid #5eead4; border-radius: var(--radius-md); padding: 0.7rem 0.9rem; display: flex; align-items: flex-end; gap: 0.6rem; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+              <div>
+                <label for="rpm-tp-count-select" style="display: block; font-size: 0.74rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                  Jumlah TP yang Dibuat AI :
+                </label>
+                <select id="rpm-tp-count-select" class="form-control" style="width: auto; min-width: 140px; padding: 0.36rem 0.65rem; font-size: 0.82rem; font-weight: 800; border-color: #14b8a6; color: var(--primary);">
+                  <option value="1">1 Tujuan Pembelajaran (TP)</option>
+                  <option value="2">2 Tujuan Pembelajaran (TP)</option>
+                  <option value="3" selected>3 Tujuan Pembelajaran (Ideal)</option>
+                  <option value="4">4 Tujuan Pembelajaran (TP)</option>
+                  <option value="5">5 Tujuan Pembelajaran (TP)</option>
+                  <option value="6">6 Tujuan Pembelajaran (TP)</option>
+                </select>
+              </div>
+
+              <div>
+                <label for="rpm-tp-style-select" style="display: block; font-size: 0.74rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                  Gaya Bahasa Rumusan TP :
+                </label>
+                <select id="rpm-tp-style-select" class="form-control" style="width: auto; min-width: 215px; padding: 0.36rem 0.65rem; font-size: 0.82rem; font-weight: 700; border-color: #14b8a6;">
+                  <option value="SIMPLE_TERUKUR" selected>Simple, To-The-Point & Terukur (Rekomendasi)</option>
+                  <option value="KOGNITIF_PRAKTIK">Berjenjang: Pemahaman Konsep + Praktik Nyata</option>
+                  <option value="ABCD_KURIKULUM">Standar ABCD Lengkap (Kondisi + KKO + Materi)</option>
+                </select>
+              </div>
+
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.42rem 0.8rem; font-weight: 800;" onclick="RpmApp.autoSuggestCpAndTp('BOTH')">
+                  ✨ Susun CP & TP dengan AI Murni
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" style="padding: 0.42rem 0.75rem; background: #0284c7;" onclick="RpmApp.autoSuggestCpAndTp('TP_ONLY')">
+                  🎯 Buat Ulang TP Saja
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="rpm-input-materi">7. Topik / Materi Ajar Spesifik yang Diajarkan (Wajib Diisi) :</label>
-            <input
-              type="text"
-              id="rpm-input-materi"
-              class="form-control"
-              placeholder="Ketik topik bebas apa saja (Contoh: Pembagian Bilangan Cacah / Siklus Air / Kalimat Transitif & Intransitif / Gaya & Gerak)..."
-              oninput="RpmApp.checkMathPanelVisibility()"
-              required
-            >
+          <!-- BARIS 7: BAB, TOPIK/MATERI SPESIFIK, & MODEL PEMBELAJARAN PEDAGOGIS -->
+          <div class="grid-3" style="margin-bottom: 1rem;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="rpm-input-bab">7a. Bab / Unit Pembelajaran (Opsional) :</label>
+              <input
+                type="text"
+                id="rpm-input-bab"
+                class="form-control"
+                placeholder="Contoh: Bab 1 / Unit 2 (Atau kosongkan)"
+              >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="rpm-input-materi">7b. Topik / Materi Ajar Spesifik (Wajib Diisi) :</label>
+              <input
+                type="text"
+                id="rpm-input-materi"
+                class="form-control"
+                placeholder="Contoh: Introducing Myself / Pembagian Bilangan Cacah / Siklus Air..."
+                oninput="RpmApp.checkMathPanelVisibility()"
+                required
+              >
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="rpm-input-model-pedagogis">7c. Model Pembelajaran (Sintaks Kegiatan RPM) :</label>
+              <select id="rpm-input-model-pedagogis" class="form-control" style="font-weight: 700; border-color: #0d9488;">
+                <option value="Problem-Based Learning (PBL) & Pembelajaran Mendalam (Deep Learning)" selected>Problem-Based Learning (PBL) — Pemecahan Masalah</option>
+                <option value="Discovery & Inquiry Learning (Eksplorasi & Penemuan Terbimbing)">Discovery / Inquiry Learning — Eksplorasi & Penemuan</option>
+                <option value="Project-Based Learning (PjBL) & Kolaborasi Karya Nyata">Project-Based Learning (PjBL) — Proyek & Karya Siswa</option>
+                <option value="Game-Based & Joyful Learning (Pembelajaran Interaktif & Permainan Edukatif)">Game-Based & Joyful Learning — Permainan & Simulasi Aktif</option>
+                <option value="Direct Instruction & Praktik Demonstrasi Terbimbing">Direct Instruction & Praktik Demonstrasi Langsung</option>
+                <option value="Pembelajaran Berdiferensiasi (Visual, Auditori, Kinestetik)">Pembelajaran Berdiferensiasi (Sesuai Kebutuhan Siswa)</option>
+              </select>
+            </div>
           </div>
 
           <!-- PANEL KHUSUS MATEMATIKA -->
@@ -4047,38 +4109,61 @@ body {
             </div>
           </div>
 
+          <!-- BARIS 8 & 9: CAPAIAN PEMBELAJARAN (CP) & TUJUAN PEMBELAJARAN (TP) -->
           <div class="grid-2" style="margin-bottom: 1rem;">
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-cp">8. Capaian Pembelajaran (CP) :</label>
-              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Tuliskan Capaian Pembelajaran (CP) sesuai fase..." required></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.35rem;">
+                <label class="form-label" for="rpm-input-cp" style="margin-bottom: 0;">8. Capaian Pembelajaran (CP) Sesuai Fase :</label>
+                <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.15rem 0.55rem; font-size: 0.73rem;" onclick="RpmApp.autoSuggestCpAndTp('CP_ONLY')">
+                  ✨ Pertajam CP dengan AI
+                </button>
+              </div>
+              <textarea id="rpm-input-cp" class="form-control" rows="4" placeholder="Klik tombol '✨ Susun CP & TP dengan AI Murni' di atas atau ketik Capaian Pembelajaran (CP) sesuai fase..." required></textarea>
             </div>
 
             <div class="form-group" style="margin-bottom: 0;">
-              <label class="form-label" for="rpm-input-tp">9. Tujuan Pembelajaran (TP) — Prioritas Utama Soal :</label>
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.35rem;">
+                <label class="form-label" for="rpm-input-tp" style="margin-bottom: 0;">
+                  9. Tujuan Pembelajaran (TP) — Otomatis Mengatur Soal & Penilaian :
+                </label>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                  <span id="rpm-tp-detected-count-badge" class="badge badge-info" style="font-size: 0.7rem;">0 Butir TP</span>
+                  <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.72rem;" onclick="RpmApp.appendBlankTpRow()">
+                    + Baris TP
+                  </button>
+                </div>
+              </div>
               <textarea
                 id="rpm-input-tp"
                 class="form-control"
                 rows="4"
-                placeholder="Tuliskan Tujuan Pembelajaran (1 baris per TP). Setiap butir soal yang dibuat AI akan mengukur ketercapaian TP ini secara langsung..."
-                oninput="RpmApp.checkMathPanelVisibility()"
+                placeholder="Klik '✨ Susun CP & TP dengan AI Murni' untuk membuat sejumlah TP yang Anda pilih (1 baris = 1 TP), atau ketik manual di sini..."
+                oninput="RpmApp.handleTpTextareaInput()"
                 required
               ></textarea>
+              <div class="form-hint" style="color: #0f766e;">
+                💡 Setiap baris TP di atas otomatis menjadi dasar pembuatan <strong>Langkah Kegiatan 3M</strong>, <strong>Butir Soal Ujian</strong>, dan langsung terisi ke halaman <strong>Penilaian Akademik</strong>.
+              </div>
             </div>
           </div>
 
-          <div class="form-group" style="margin-bottom: 0; background: #ffffff; padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
-            <label class="form-label" for="rpm-input-custom-prompt" style="color: #0f766e;">
-              10. Instruksi Khusus / Prompt Bebas Guru untuk AI (Opsional — Seperti Memberi Perintah ke Gemini) :
-            </label>
+          <!-- BARIS 10: INSTRUKSI KHUSUS GURU & PENGAYAAN KOMPONEN MODUL RPM -->
+          <div style="background: #ffffff; padding: 0.95rem 1.05rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.4rem;">
+              <label class="form-label" for="rpm-input-custom-prompt" style="color: #0f766e; margin-bottom: 0;">
+                10. Instruksi Khusus / Fokus Konteks Guru untuk AI (Opsional — Bebas Sesuai Keinginan Guru) :
+              </label>
+              <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 700; color: var(--primary); cursor: pointer;">
+                <input type="checkbox" id="rpm-include-pemantik-icebreaking" checked>
+                <span>Sertakan Pertanyaan Pemantik, Ice Breaking & Aktivitas LKPD di Modul RPM</span>
+              </label>
+            </div>
             <textarea
               id="rpm-input-custom-prompt"
               class="form-control"
               rows="2"
-              placeholder="Contoh: 'Buat soal yang sangat dekat dengan kehidupan anak desa/pesisir', 'Sertakan kutipan teks pendek 2-3 kalimat pada soal Bahasa Indonesia', atau 'Fokus pada latihan konversi satuan panjang'..."
+              placeholder="Contoh: 'Fokuskan TP pada kemampuan percakapan perkenalan diri sederhana', 'Gunakan benda-benda di sekitar kelas sebagai media', atau 'Buat soal yang dekat dengan keseharian siswa'..."
             ></textarea>
-            <div class="form-hint">
-              Kosongkan jika ingin AI merancang secara otomatis, atau tuliskan permintaan spesifik Anda agar dipatuhi 100% oleh AI.
-            </div>
           </div>
         </div>
 
@@ -28696,6 +28781,987 @@ if (typeof PenilaianApp !== 'undefined') {
     }
   });
 }
+
+    // ============================================================================
+// TAHAP 2: ENGINE AI MURNI PERUMUS CP & TP FLEKSIBEL (1-6 TP) SERTA
+// GENERATOR SKENARIO MODUL RPM 8-3-3-4 KONTEKSTUAL (PEMANTIK, ICE BREAKING, LKPD)
+// ============================================================================
+Object.assign(RpmApp, {
+  // Menghitung jumlah butir Tujuan Pembelajaran (TP) secara real-time saat guru mengetik
+  handleTpTextareaInput() {
+    this.checkMathPanelVisibility();
+    this.updateTpDetectedCountBadge();
+  },
+
+  updateTpDetectedCountBadge() {
+    const tpEl = document.getElementById('rpm-input-tp');
+    const badge = document.getElementById('rpm-tp-detected-count-badge');
+    if (!tpEl || !badge) return;
+
+    const lines = tpEl.value
+      .split(/\n+/)
+      .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+      .filter(Boolean);
+
+    badge.textContent = `${lines.length} Butir TP Aktif`;
+    badge.className = lines.length > 0 ? 'badge badge-success' : 'badge badge-info';
+  },
+
+  appendBlankTpRow() {
+    const tpEl = document.getElementById('rpm-input-tp');
+    if (!tpEl) return;
+
+    const currentLines = tpEl.value
+      .split(/\n+/)
+      .map(line => line.trim())
+      .filter(Boolean);
+
+    const nextNum = currentLines.length + 1;
+    tpEl.value = currentLines.length > 0
+      ? `${currentLines.join('\n')}\n${nextNum}. `
+      : `1. `;
+
+    tpEl.focus();
+    this.updateTpDetectedCountBadge();
+  },
+
+  // Generator Kontekstual Cerdas (Lapis 3) jika koneksi internet/API sedang offline
+  buildSmartContextualCpAndTp({ mapel, materi, bab, kelasFase, soloLevel, tpCount, tpStyle, customPrompt }) {
+    const cleanMapel = String(mapel || 'Mata Pelajaran').trim();
+    const cleanMateri = String(materi || 'Materi Pokok').trim();
+    const cleanKelas = String(kelasFase || 'Kelas 4 / Fase B').trim();
+    const isEnglish = /inggris|english/i.test(`${cleanMapel} ${cleanMateri}`);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|geometri|ukur/i.test(`${cleanMapel} ${cleanMateri}`);
+
+    // Rumusan CP Kontekstual sesuai Fase & Mata Pelajaran
+    let cpText = '';
+    if (isEnglish) {
+      cpText = `Pada akhir ${cleanKelas}, peserta didik menggunakan bahasa Inggris sederhana secara lisan dan tulisan untuk berinteraksi dalam situasi keseharian di kelas dan rumah, khususnya terkait topik "${cleanMateri}"${bab ? ` (${bab})` : ''}, memahami instruksi dan kosakata kunci, serta mampu mengungkapkan gagasan pendek dengan lafal dan keberanian yang baik.`;
+    } else if (isMath) {
+      cpText = `Pada akhir ${cleanKelas}, peserta didik menunjukkan pemahaman dan intuisi bilangan serta penalaran matematis pada materi "${cleanMateri}"${bab ? ` (${bab})` : ''}, mampu melakukan operasi hitung dan pemecahan masalah kontekstual dalam kehidupan sehari-hari secara sistematis, logis, dan akurat.`;
+    } else {
+      cpText = `Pada akhir ${cleanKelas}, peserta didik memahami konsep esensial pada mata pelajaran ${cleanMapel} khususnya materi "${cleanMateri}"${bab ? ` (${bab})` : ''}, mampu mengidentifikasi, menganalisis hubungan antarkonsep pada ranah ${soloLevel || 'Relational'}, serta menerapkannya untuk menyelesaikan permasalahan nyata di lingkungan sekitar secara kolaboratif.`;
+    }
+
+    // 6 Variasi KKO Berjenjang (Mulai dari Identifikasi -> Pemahaman -> Penerapan -> Analisis -> Praktik -> Evaluasi/Karya)
+    const progressiveStages = isEnglish
+      ? [
+          {
+            simple: `Mengidentifikasi kosakata dan ungkapan kunci terkait "${cleanMateri}" dengan lafal dan arti yang tepat.`,
+            kognitif: `Mengenali dan memahami makna kosakata serta ungkapan dasar tentang "${cleanMateri}" dari teks atau audio sederhana.`,
+            abcd: `Melalui kegiatan menyimak contoh guru dan media visual, peserta didik mampu mengidentifikasi kosakata serta ungkapan tentang "${cleanMateri}" dengan tepat.`
+          },
+          {
+            simple: `Memahami makna kalimat dan merespons pertanyaan sederhana seputar "${cleanMateri}" dalam bahasa Inggris.`,
+            kognitif: `Menjelaskan arti kalimat tanya-jawab sederhana yang berkaitan dengan "${cleanMateri}" secara lisan maupun tertulis.`,
+            abcd: `Melalui latihan tanya-jawab terstruktur, peserta didik mampu merespons ungkapan sederhana terkait "${cleanMateri}" dengan lancar dan benar.`
+          },
+          {
+            simple: `Menyusun kalimat sederhana terkait "${cleanMateri}" menggunakan struktur bahasa Inggris yang benar.`,
+            kognitif: `Menyusun kalimat atau teks pendek sederhana tentang "${cleanMateri}" sesuai contoh yang dipelajari.`,
+            abcd: `Melalui penugasan lembar kerja (LKPD), peserta didik mampu menyusun kalimat sederhana tentang "${cleanMateri}" dengan ejaan yang tepat.`
+          },
+          {
+            simple: `Mempraktikkan percakapan singkat tentang "${cleanMateri}" secara berpasangan atau di depan kelas dengan percaya diri.`,
+            kognitif: `Mempraktikkan dialog pendek tentang "${cleanMateri}" bersama teman sekelas dengan intonasi dan pengucapan yang jelas.`,
+            abcd: `Melalui kegiatan bermain peran (role play) berpasangan, peserta didik mampu mempraktikkan percakapan "${cleanMateri}" dengan percaya diri.`
+          },
+          {
+            simple: `Melengkapi dialog atau teks rumpang sederhana bertema "${cleanMateri}" sesuai konteks kalimat.`,
+            kognitif: `Menganalisis konteks kalimat untuk melengkapi bagian dialog rumpang tentang "${cleanMateri}" secara tepat.`,
+            abcd: `Melalui latihan soal kontekstual, peserta didik mampu melengkapi dialog rumpang tentang "${cleanMateri}" secara akurat.`
+          },
+          {
+            simple: `Menampilkan hasil karya tulis atau kartu perkenalan/presentasi singkat bertema "${cleanMateri}" di kelas.`,
+            kognitif: `Menyajikan dan mengomunikasikan karya sederhana bertema "${cleanMateri}" di hadapan guru dan teman sekelas.`,
+            abcd: `Melalui unjuk kerja individu, peserta didik mampu mempresentasikan hasil karya sederhana tentang "${cleanMateri}" secara komunikatif.`
+          }
+        ]
+      : isMath
+      ? [
+          {
+            simple: `Memahami konsep dasar dan aturan pengerjaan "${cleanMateri}" menggunakan contoh konkret atau model gambar.`,
+            kognitif: `Mengidentifikasi konsep dan langkah dasar penyelesaian operasi pada materi "${cleanMateri}" secara tepat.`,
+            abcd: `Melalui pengamatan benda konkret dan penjelasan guru, peserta didik mampu memahami konsep dasar "${cleanMateri}" dengan benar.`
+          },
+          {
+            simple: `Menentukan hasil perhitungan pada materi "${cleanMateri}" secara teliti dan sistematis.`,
+            kognitif: `Menghitung dan menentukan hasil operasi matematika pada materi "${cleanMateri}" sesuai prosedur yang benar.`,
+            abcd: `Melalui latihan soal bertahap, peserta didik mampu menentukan hasil perhitungan "${cleanMateri}" dengan teliti dan akurat.`
+          },
+          {
+            simple: `Menyelesaikan soal cerita sehari-hari yang berkaitan dengan "${cleanMateri}" secara runtut.`,
+            kognitif: `Menerapkan konsep "${cleanMateri}" untuk memecahkan permasalahan kontekstual dalam kehidupan sehari-hari.`,
+            abcd: `Melalui diskusi kelompok pada LKPD, peserta didik mampu menyelesaikan soal cerita kontekstual tentang "${cleanMateri}" secara sistematis.`
+          },
+          {
+            simple: `Menganalisis hubungan antarbilangan dan memeriksa kebenaran hasil hitung pada materi "${cleanMateri}".`,
+            kognitif: `Menganalisis langkah penyelesaian dan membuktikan ketepatan hasil hitung pada materi "${cleanMateri}".`,
+            abcd: `Melalui kegiatan penalaran kritis, peserta didik mampu memeriksa dan membuktikan kebenaran hasil perhitungan "${cleanMateri}" dengan logis.`
+          },
+          {
+            simple: `Mempraktikkan cara penyelesaian "${cleanMateri}" di depan kelas dan menjelaskan langkahnya kepada teman.`,
+            kognitif: `Mendemonstrasikan strategi penyelesaian masalah "${cleanMateri}" secara lisan dan tertulis di depan kelas.`,
+            abcd: `Melalui kegiatan unjuk kerja, peserta didik mampu mempresentasikan langkah penyelesaian "${cleanMateri}" dengan jelas dan percaya diri.`
+          },
+          {
+            simple: `Merumuskan kesimpulan pola atau strategi cepat dalam menyelesaikan berbagai variasi soal "${cleanMateri}".`,
+            kognitif: `Mengevaluasi berbagai variasi permasalahan "${cleanMateri}" dan menyimpulkan cara penyelesaian yang paling efektif.`,
+            abcd: `Melalui kegiatan refleksi dan evaluasi, peserta didik mampu menyimpulkan strategi penyelesaian "${cleanMateri}" secara mandiri.`
+          }
+        ]
+      : [
+          {
+            simple: `Mengidentifikasi pengertian, ciri-ciri pokok, dan contoh nyata dari "${cleanMateri}" dengan tepat.`,
+            kognitif: `Mengidentifikasi dan menjelaskan konsep dasar serta ciri utama "${cleanMateri}" pada pelajaran ${cleanMapel}.`,
+            abcd: `Melalui kegiatan mengamati media pembelajaran dan tanya jawab, peserta didik mampu mengidentifikasi konsep pokok "${cleanMateri}" dengan tepat.`
+          },
+          {
+            simple: `Menjelaskan fungsi, proses, atau keterkaitan konsep dalam materi "${cleanMateri}" menggunakan bahasa sendiri.`,
+            kognitif: `Menguraikan proses dan hubungan sebab-akibat yang terdapat pada materi "${cleanMateri}" secara runtut.`,
+            abcd: `Melalui diskusi kelompok terbimbing, peserta didik mampu menjelaskan keterkaitan konsep pada materi "${cleanMateri}" secara logis.`
+          },
+          {
+            simple: `Menerapkan pemahaman tentang "${cleanMateri}" dalam contoh kegiatan atau permasalahan sehari-hari.`,
+            kognitif: `Mempraktikkan dan menerapkan konsep "${cleanMateri}" pada situasi nyata di lingkungan sekolah maupun rumah.`,
+            abcd: `Melalui penugasan lembar kerja (LKPD), peserta didik mampu menerapkan konsep "${cleanMateri}" dalam pemecahan masalah sehari-hari dengan benar.`
+          },
+          {
+            simple: `Menganalisis studi kasus atau fenomena sederhana di sekitar yang berkaitan dengan "${cleanMateri}".`,
+            kognitif: `Menganalisis permasalahan kontekstual terkait "${cleanMateri}" serta merumuskan solusinya secara kritis.`,
+            abcd: `Melalui pengamatan lingkungan sekitar, peserta didik mampu menganalisis contoh nyata "${cleanMateri}" secara kritis dan teliti.`
+          },
+          {
+            simple: `Menyajikan hasil diskusi, karya, atau praktik tentang "${cleanMateri}" di depan kelas dengan komunikatif.`,
+            kognitif: `Mendemonstrasikan dan mempresentasikan hasil kerja kelompok tentang "${cleanMateri}" secara lisan maupun tertulis.`,
+            abcd: `Melalui kegiatan presentasi kelas, peserta didik mampu menyajikan hasil eksplorasi tentang "${cleanMateri}" dengan percaya diri.`
+          },
+          {
+            simple: `Menyimpulkan manfaat mempelajari "${cleanMateri}" dan merefleksikan penerapannya dalam kehidupan sehari-hari.`,
+            kognitif: `Mengevaluasi dan menyimpulkan nilai penting materi "${cleanMateri}" bagi kehidupan sehari-hari.`,
+            abcd: `Melalui kegiatan refleksi akhir pembelajaran, peserta didik mampu menyimpulkan inti materi "${cleanMateri}" secara utuh dan bermakna.`
+          }
+        ];
+
+    const count = Math.min(6, Math.max(1, parseInt(tpCount, 10) || 3));
+    const styleKey = tpStyle === 'ABCD_KURIKULUM' ? 'abcd' : (tpStyle === 'KOGNITIF_PRAKTIK' ? 'kognitif' : 'simple');
+
+    const tpList = progressiveStages.slice(0, count).map((item, idx) => {
+      let baseText = item[styleKey];
+      if (customPrompt && idx === count - 1) {
+        baseText += ` (Fokus: ${customPrompt})`;
+      }
+      return baseText;
+    });
+
+    return {
+      cp: cpText,
+      tpList
+    };
+  },
+
+  // Fungsi Utama: Menyusun CP & TP dengan AI Murni Sesuai Jumlah TP (1-6) dan Gaya Pilihan Guru
+  async autoSuggestCpAndTp(mode = 'BOTH') {
+    if (AppState.isReadOnlyInspection) return;
+
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim() || 'Mata Pelajaran';
+    const bab = (document.getElementById('rpm-input-bab')?.value || '').trim();
+    const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim() || 'Kelas 4 / Fase B';
+    const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+
+    const tpCountEl = document.getElementById('rpm-tp-count-select');
+    const tpStyleEl = document.getElementById('rpm-tp-style-select');
+    const tpCount = tpCountEl ? Math.min(6, Math.max(1, parseInt(tpCountEl.value, 10) || 3)) : 3;
+    const tpStyle = tpStyleEl ? tpStyleEl.value : 'SIMPLE_TERUKUR';
+
+    if (!materi) {
+      UI.showNotif(
+        'Isi Topik / Materi Ajar Terlebih Dahulu',
+        'Silakan ketik Topik / Materi Ajar pada kolom nomor 7b (misalnya: "Introducing Myself", "Pembagian Bilangan Cacah", atau "Siklus Air") agar AI dapat merumuskan CP dan TP yang spesifik.',
+        'warning'
+      );
+      document.getElementById('rpm-input-materi')?.focus();
+      return;
+    }
+
+    const styleInstructionMap = {
+      SIMPLE_TERUKUR: 'Gunakan kalimat yang SIMPLE, TO THE POINT (langsung ke kata kerja operasional & inti materi), tidak bertele-tele, mudah dipahami guru dan siswa, serta langsung dapat diukur dengan soal/praktik.',
+      KOGNITIF_PRAKTIK: 'Susun secara berjenjang mulai dari penguasaan konsep/pengetahuan (Kognitif) hingga keterampilan praktik/unjuk kerja nyata siswa di kelas.',
+      ABCD_KURIKULUM: 'Gunakan format Kurikulum Merdeka lengkap yang memuat unsur Condition (Melalui kegiatan...), Audience (peserta didik), Behavior (KKO spesifik + materi), dan Degree (dengan tepat/percaya diri).'
+    };
+
+    this.setRpmAiLoading(
+      true,
+      `AI Murni Sedang Merumuskan ${mode === 'CP_ONLY' ? 'CP' : mode === 'TP_ONLY' ? `${tpCount} Tujuan Pembelajaran (TP)` : `CP & ${tpCount} Tujuan Pembelajaran (TP)`}...`,
+      `Menganalisis materi "${materi}" (${mapel} — ${kelasFase}) sesuai standar Kurikulum Merdeka...`
+    );
+
+    const aiPrompt = `Anda adalah Pakar Kurikulum Merdeka Indonesia (Standar BSKAP Kemendikdasmen).
+Susunlah Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) yang SANGAT PROFESIONAL, SPESIFIK pada materi, TIDAK KAKU, dan BUKAN TEMPLATE UMUM.
+
+PARAMETER PEMBELAJARAN:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Bab / Unit: ${bab || '-'}
+- Topik / Materi Spesifik: "${materi}"
+- Target Kedalaman Kognitif (SOLO): ${soloLevel}
+- Jumlah Tujuan Pembelajaran (TP) yang WAJIB dibuat: TEPAT ${tpCount} BUTIR TP
+- Gaya Bahasa Rumusan TP: ${styleInstructionMap[tpStyle] || styleInstructionMap.SIMPLE_TERUKUR}
+${customPrompt ? `- Instruksi / Fokus Khusus Guru: "${customPrompt}"` : ''}
+
+ATURAN WAJIB:
+1. "cp" harus berupa 1 paragraf Capaian Pembelajaran (CP) yang relevan dengan elemen mata pelajaran ${mapel} pada ${kelasFase} dan mengerucut pada topik "${materi}".
+2. "tpList" WAJIB berupa array berisi TEPAT ${tpCount} kalimat Tujuan Pembelajaran (TP) yang berbeda satu sama lain, berurutan secara logis, langsung menyebut materi "${materi}" secara konkret, dan TIDAK BOLEH menulis nomor di awal teks item array (karena nomor akan diberikan otomatis).
+
+Kembalikan HANYA JSON valid dengan format:
+{
+  "cp": "Paragraf Capaian Pembelajaran...",
+  "tpList": [
+    "Rumusan TP ke-1...",
+    "Rumusan TP ke-2..."
+  ]
+}`;
+
+    let aiResult = null;
+    try {
+      aiResult = await this.callPureGenerativeQuestionAI(aiPrompt);
+    } catch (e) {
+      console.warn('Fallback CP/TP AI:', e);
+    }
+
+    this.setRpmAiLoading(false);
+
+    const fallback = this.buildSmartContextualCpAndTp({
+      mapel,
+      materi,
+      bab,
+      kelasFase,
+      soloLevel,
+      tpCount,
+      tpStyle,
+      customPrompt
+    });
+
+    const finalCp = (aiResult && typeof aiResult.cp === 'string' && aiResult.cp.trim().length > 20)
+      ? aiResult.cp.trim()
+      : fallback.cp;
+
+    let finalTpList = [];
+    if (aiResult && Array.isArray(aiResult.tpList) && aiResult.tpList.length > 0) {
+      finalTpList = aiResult.tpList
+        .map(t => String(t || '').replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(Boolean);
+    }
+
+    // Pastikan jumlah butir TP persis sesuai dengan angka yang diminta guru (tpCount)
+    while (finalTpList.length < tpCount) {
+      const nextFallback = fallback.tpList[finalTpList.length] || fallback.tpList[0];
+      finalTpList.push(nextFallback);
+    }
+    if (finalTpList.length > tpCount) {
+      finalTpList = finalTpList.slice(0, tpCount);
+    }
+
+    const cpEl = document.getElementById('rpm-input-cp');
+    const tpEl = document.getElementById('rpm-input-tp');
+
+    if ((mode === 'BOTH' || mode === 'CP_ONLY') && cpEl) {
+      cpEl.value = finalCp;
+    }
+
+    if ((mode === 'BOTH' || mode === 'TP_ONLY') && tpEl) {
+      tpEl.value = finalTpList.map((tp, idx) => `${idx + 1}. ${tp}`).join('\n');
+    }
+
+    this.updateTpDetectedCountBadge();
+    this.checkMathPanelVisibility();
+
+    UI.showNotif(
+      mode === 'TP_ONLY'
+        ? `${tpCount} Tujuan Pembelajaran (TP) Berhasil Disusun AI`
+        : mode === 'CP_ONLY'
+        ? 'Capaian Pembelajaran (CP) Berhasil Dipertajam AI'
+        : `CP & ${tpCount} Tujuan Pembelajaran (TP) Berhasil Disusun AI`,
+      `Rumusan telah disesuaikan secara spesifik untuk materi "${materi}" (${mapel} — ${kelasFase}). Anda dapat mengedit teksnya secara bebas bila diperlukan.`,
+      'success'
+    );
+  },
+
+  // Memperkaya Dokumen Modul RPM 8-3-3-4 dengan AI Murni (Pertanyaan Pemantik, Ice Breaking, LKPD, & Langkah 3M Spesifik Materi)
+  async enrichRpmBlueprintWithPureAI(blueprint, params) {
+    const {
+      mapel,
+      bab,
+      materi,
+      kelasFase,
+      soloLevel,
+      modelPedagogis,
+      includePemantikIce,
+      customPrompt
+    } = params;
+
+    const tpList = Array.isArray(blueprint.tujuanPembelajaran) ? blueprint.tujuanPembelajaran : [];
+    const tpTextJoined = tpList.map((t, i) => `${i + 1}. ${t}`).join('\n');
+
+    blueprint.modelPedagogis = modelPedagogis || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+    blueprint.includePemantikIce = Boolean(includePemantikIce);
+
+    // Siapkan default kontekstual spesifik materi terlebih dahulu
+    blueprint.pertanyaanPemantik = [
+      `Pernahkah kalian menemukan atau mengalami hal yang berkaitan dengan "${materi}" dalam kehidupan sehari-hari?`,
+      `Mengapa penting bagi kita untuk memahami "${materi}" pada pelajaran ${mapel} hari ini?`,
+      `Bagaimana cara menerapkan "${materi}" dengan benar bersama teman di kelas?`
+    ];
+    blueprint.iceBreaking = `Permainan interaktif singkat 2 menit "Tebak Cepat & Gerak Fokus" seputar kata kunci materi "${materi}" untuk membangun semangat dan konsentrasi siswa sebelum masuk ke kegiatan inti.`;
+    blueprint.aktivitasLkpd = `Peserta didik secara berkelompok mengerjakan Lembar Kerja Peserta Didik (LKPD) bertema "${materi}" untuk menyelesaikan ${tpList.length} target Tujuan Pembelajaran, mendiskusikan temuan kelompok, lalu mempresentasikan hasilnya di depan kelas.`;
+
+    if (blueprint.kerangkaPembelajaran) {
+      blueprint.kerangkaPembelajaran.praktikPedagogis = `Menerapkan model ${blueprint.modelPedagogis} dengan pendekatan berkesadaran (Mindful), bermakna (Meaningful), dan menggembirakan (Joyful) yang berpusat pada aktivitas eksplorasi materi "${materi}" (${kelasFase}).`;
+    }
+
+    const aiPrompt = `Anda adalah Pakar Desain Instruksional Kurikulum Merdeka Indonesia.
+Susunlah skenario pelaksanaan pembelajaran Modul Ajar (RPM Sistem 8-3-3-4) yang SANGAT SPESIFIK membahas materi "${materi}", praktis dijalankan guru di kelas, dan selaras dengan Tujuan Pembelajaran berikut:
+
+- Mata Pelajaran: ${mapel} (${kelasFase})
+- Bab / Materi Pokok: ${bab ? bab + ' — ' : ''}${materi}
+- Model Pembelajaran: ${blueprint.modelPedagogis}
+- Ranah Taksonomi SOLO: ${soloLevel}
+- Daftar Tujuan Pembelajaran (TP):
+${tpTextJoined}
+${customPrompt ? `- Instruksi Khusus Guru: ${customPrompt}` : ''}
+
+Kembalikan HANYA JSON valid dengan struktur berikut:
+{
+  "pertanyaanPemantik": [
+    "Pertanyaan pemantik kontekstual 1 yang dekat dengan dunia anak...",
+    "Pertanyaan pemantik kontekstual 2...",
+    "Pertanyaan pemantik kontekstual 3..."
+  ],
+  "iceBreaking": "Deskripsi singkat 2-3 kalimat kegiatan Ice Breaking (2-3 menit) yang seru dan nyambung langsung dengan topik ${materi}...",
+  "aktivitasLkpd": "Deskripsi konkret aktivitas tugas kelompok / LKPD siswa untuk mempraktikkan materi ${materi}...",
+  "praktikPedagogis": "Narasi singkat penerapan model ${blueprint.modelPedagogis} pada materi ${materi}...",
+  "memahami": [
+    "Langkah kegiatan 1 pada tahap Memahami (Mindful Learning) yang spesifik membahas ${materi}...",
+    "Langkah kegiatan 2...",
+    "Langkah kegiatan 3..."
+  ],
+  "mengaplikasi": [
+    "Langkah kegiatan 1 pada tahap Mengaplikasi (Meaningful Learning) sesuai sintaks ${blueprint.modelPedagogis} dan TP...",
+    "Langkah kegiatan 2...",
+    "Langkah kegiatan 3..."
+  ],
+  "merefleksi": [
+    "Langkah kegiatan 1 pada tahap Merefleksi (Joyful Learning)...",
+    "Langkah kegiatan 2...",
+    "Langkah kegiatan 3..."
+  ]
+}`;
+
+    try {
+      const aiDoc = await this.callPureGenerativeQuestionAI(aiPrompt);
+      if (aiDoc && typeof aiDoc === 'object') {
+        if (Array.isArray(aiDoc.pertanyaanPemantik) && aiDoc.pertanyaanPemantik.length > 0) {
+          blueprint.pertanyaanPemantik = aiDoc.pertanyaanPemantik.map(s => String(s).trim()).filter(Boolean);
+        }
+        if (aiDoc.iceBreaking) {
+          blueprint.iceBreaking = String(aiDoc.iceBreaking).trim();
+        }
+        if (aiDoc.aktivitasLkpd) {
+          blueprint.aktivitasLkpd = String(aiDoc.aktivitasLkpd).trim();
+        }
+        if (aiDoc.praktikPedagogis && blueprint.kerangkaPembelajaran) {
+          blueprint.kerangkaPembelajaran.praktikPedagogis = String(aiDoc.praktikPedagogis).trim();
+        }
+        if (blueprint.pengalamanBelajar) {
+          if (Array.isArray(aiDoc.memahami) && aiDoc.memahami.length > 0) {
+            blueprint.pengalamanBelajar.memahami = aiDoc.memahami.map(s => String(s).trim()).filter(Boolean);
+          }
+          if (Array.isArray(aiDoc.mengaplikasi) && aiDoc.mengaplikasi.length > 0) {
+            blueprint.pengalamanBelajar.mengaplikasi = aiDoc.mengaplikasi.map(s => String(s).trim()).filter(Boolean);
+          }
+          if (Array.isArray(aiDoc.merefleksi) && aiDoc.merefleksi.length > 0) {
+            blueprint.pengalamanBelajar.merefleksi = aiDoc.merefleksi.map(s => String(s).trim()).filter(Boolean);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Menggunakan skenario 3M kontekstual lokal:', err);
+    }
+
+    return blueprint;
+  }
+});
+
+    // ============================================================================
+// TAHAP 3: DIRECT INLINE EDITOR DOKUMEN MODUL RPM, RENDER PEMANTIK/ICE BREAKING/
+// LKPD, & PENYELARASAN OTOMATIS PROPORSI SOAL TERHADAP JUMLAH TP (1-6 TP)
+// ============================================================================
+Object.assign(RpmApp, {
+  // Menyimpan hasil klik & edit langsung (Inline Edit) pada dokumen Modul RPM Halaman 1
+  updateDocInlineField(sectionKey, subKeyOrIndex, newValue) {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) return;
+
+    const cleanVal = String(newValue || '').trim();
+
+    if (sectionKey === 'capaianPembelajaran') {
+      doc.capaianPembelajaran = cleanVal;
+      const cpInp = document.getElementById('rpm-input-cp');
+      if (cpInp) cpInp.value = cleanVal;
+    } else if (sectionKey === 'tujuanPembelajaran') {
+      if (Array.isArray(doc.tujuanPembelajaran) && doc.tujuanPembelajaran[subKeyOrIndex] !== undefined) {
+        doc.tujuanPembelajaran[subKeyOrIndex] = cleanVal.replace(/^\d+[\.\)]\s*/, '').trim();
+        const tpInp = document.getElementById('rpm-input-tp');
+        if (tpInp) {
+          tpInp.value = doc.tujuanPembelajaran.map((t, i) => `${i + 1}. ${t}`).join('\n');
+          this.updateTpDetectedCountBadge();
+        }
+        // Sinkronkan juga perubahan TP ini ke Penilaian Akademik
+        if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.receiveRpmModuleSync === 'function') {
+          PenilaianApp.receiveRpmModuleSync(doc, false);
+        }
+      }
+    } else if (sectionKey === 'pertanyaanPemantik') {
+      if (Array.isArray(doc.pertanyaanPemantik) && doc.pertanyaanPemantik[subKeyOrIndex] !== undefined) {
+        doc.pertanyaanPemantik[subKeyOrIndex] = cleanVal;
+      }
+    } else if (sectionKey === 'iceBreaking') {
+      doc.iceBreaking = cleanVal;
+    } else if (sectionKey === 'aktivitasLkpd') {
+      doc.aktivitasLkpd = cleanVal;
+    } else if (sectionKey === 'kerangkaPembelajaran') {
+      if (!doc.kerangkaPembelajaran) doc.kerangkaPembelajaran = {};
+      doc.kerangkaPembelajaran[subKeyOrIndex] = cleanVal;
+    } else if (sectionKey === 'memahami' || sectionKey === 'mengaplikasi' || sectionKey === 'merefleksi') {
+      if (doc.pengalamanBelajar && Array.isArray(doc.pengalamanBelajar[sectionKey])) {
+        doc.pengalamanBelajar[sectionKey][subKeyOrIndex] = cleanVal;
+      }
+    } else if (sectionKey === 'asesmen') {
+      if (!doc.asesmen) doc.asesmen = {};
+      doc.asesmen[subKeyOrIndex] = cleanVal;
+    }
+
+    this.syncCurrentDocToArchiveBucket();
+  },
+
+  // Menghapus 1 baris langkah kegiatan pada Pengalaman Belajar 3M jika guru ingin merampingkan modul
+  removeLearningStepItem(stageKey, stepIndex) {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc || !doc.pengalamanBelajar || !Array.isArray(doc.pengalamanBelajar[stageKey])) return;
+
+    if (doc.pengalamanBelajar[stageKey].length <= 1) {
+      UI.showNotif('Minimal 1 Langkah Kegiatan', 'Setiap tahapan pengalaman belajar harus memiliki minimal 1 langkah kegiatan.', 'warning');
+      return;
+    }
+
+    doc.pengalamanBelajar[stageKey].splice(stepIndex, 1);
+    this.syncCurrentDocToArchiveBucket();
+    this.renderPage1RpmDocument();
+  },
+
+  // Merender Halaman 1 Dokumen Modul RPM lengkap dengan Pemantik, Ice Breaking, LKPD, & Direct Inline Editor
+  renderPage1RpmDocument() {
+    const doc = AppState.rpmCurrentDoc;
+    const container = document.getElementById('rpm-document-content');
+    if (!doc || !container) return;
+
+    const editableAttr = AppState.isReadOnlyInspection
+      ? ''
+      : 'contenteditable="true" style="outline: none; border-bottom: 1px dashed transparent; transition: background 0.15s;" onfocus="this.style.background=\'#fef9c3\'"';
+
+    const dplBadges = (doc.selectedDpl || [])
+      .map(d => `<span class="badge badge-primary" style="margin-right: 0.35rem; margin-bottom: 0.35rem;">${UI.escapeHtml(d)}</span>`)
+      .join('');
+
+    const tpArr = Array.isArray(doc.tujuanPembelajaran) ? doc.tujuanPembelajaran : [];
+    const tpListHtml = tpArr
+      .map((tp, idx) => `
+        <li style="margin-bottom: 0.4rem;">
+          <span ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('tujuanPembelajaran', ${idx}, this.innerText)">${UI.escapeHtml(tp)}</span>
+        </li>
+      `)
+      .join('');
+
+    const renderEditableSteps = (stageKey, arr) => (arr || [])
+      .map((s, idx) => `
+        <li style="margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+          <span style="flex: 1;" ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('${stageKey}', ${idx}, this.innerText)">${UI.escapeHtml(s)}</span>
+          <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.4rem; font-size: 0.68rem; color: var(--danger); border-color: #fca5a5; flex-shrink: 0;" title="Hapus langkah ini" onclick="RpmApp.removeLearningStepItem('${stageKey}', ${idx})">✕</button>
+        </li>
+      `)
+      .join('');
+
+    const memahamiHtml = renderEditableSteps('memahami', doc.pengalamanBelajar?.memahami);
+    const mengaplikasiHtml = renderEditableSteps('mengaplikasi', doc.pengalamanBelajar?.mengaplikasi);
+    const merefleksiHtml = renderEditableSteps('merefleksi', doc.pengalamanBelajar?.merefleksi);
+
+    const lockedDisplayDate = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO()));
+    const modelPedagogisLabel = doc.modelPedagogis || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+
+    const showEnrichmentBox = doc.includePemantikIce !== false && (
+      (Array.isArray(doc.pertanyaanPemantik) && doc.pertanyaanPemantik.length > 0) ||
+      doc.iceBreaking ||
+      doc.aktivitasLkpd
+    );
+
+    const pemantikListHtml = (doc.pertanyaanPemantik || [])
+      .map((q, idx) => `
+        <li style="margin-bottom: 0.3rem;">
+          <span ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('pertanyaanPemantik', ${idx}, this.innerText)">${UI.escapeHtml(q)}</span>
+        </li>
+      `)
+      .join('');
+
+    const enrichmentSectionHtml = showEnrichmentBox
+      ? `
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          IV. APERSEPSI, PERTANYAAN PEMANTIK, ICE BREAKING & AKTIVITAS LKPD (SPESIFIK MATERI)
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.35rem;">
+          <tbody>
+            <tr>
+              <th style="width: 240px;">1. Pertanyaan Pemantik Kontekstual</th>
+              <td>
+                <ol style="padding-left: 1.2rem; margin: 0;">${pemantikListHtml}</ol>
+              </td>
+            </tr>
+            <tr>
+              <th>2. Ice Breaking Pembuka & Fokus Siswa</th>
+              <td>
+                <div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('iceBreaking', null, this.innerText)">${UI.escapeHtml(doc.iceBreaking || '-')}</div>
+              </td>
+            </tr>
+            <tr>
+              <th>3. Aktivitas Kelompok & Penugasan LKPD</th>
+              <td>
+                <div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('aktivitasLkpd', null, this.innerText)">${UI.escapeHtml(doc.aktivitasLkpd || '-')}</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      `
+      : '';
+
+    const nextSectionRoman = showEnrichmentBox ? 'V' : 'IV';
+    const asesmenSectionRoman = showEnrichmentBox ? 'VI' : 'V';
+
+    container.innerHTML = `
+      <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.75rem; background: #ffffff;">
+        <div class="no-print" style="background: #f0fdf4; border: 1px dashed #86efac; padding: 0.55rem 0.9rem; border-radius: 6px; margin-bottom: 1.15rem; font-size: 0.79rem; color: #14532d; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <span>✏️ <strong>Fitur Klik & Edit Langsung Modul RPM:</strong> Klik pada teks CP, butir TP, Pertanyaan Pemantik, maupun langkah kegiatan di bawah ini untuk mengedit kalimatnya secara langsung sebelum dicetak.</span>
+          <span class="badge badge-success">${tpArr.length} Tujuan Pembelajaran Aktif</span>
+        </div>
+
+        <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+          <div style="font-size: 0.82rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">
+            DOKUMEN RENCANA PEMBELAJARAN MENDALAM (MODUL AJAR / RPM SISTEM 8-3-3-4)
+          </div>
+          <h2 style="font-size: 1.35rem; font-weight: 800; color: var(--dark); margin-top: 0.25rem;">
+            ${UI.escapeHtml(doc.sekolah)}
+          </h2>
+          <p style="font-size: 0.88rem; color: var(--text-muted);">
+            Mata Pelajaran: <strong>${UI.escapeHtml(doc.mapel)}</strong> ${doc.bab ? `| <strong>${UI.escapeHtml(doc.bab)}</strong>` : ''} | Topik: <strong>${UI.escapeHtml(doc.materi)}</strong> | Kelas/Fase: <strong>${UI.escapeHtml(doc.kelasFase)}</strong>
+          </p>
+        </div>
+
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          I. IDENTITAS MODUL & PEMETAAN TAKSONOMI SOLO
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.35rem;">
+          <tbody>
+            <tr>
+              <th style="width: 240px;">Nama Penyusun</th>
+              <td><strong>${UI.escapeHtml(doc.penyusun)}</strong></td>
+              <th style="width: 220px;">Satuan Pendidikan</th>
+              <td><strong>${UI.escapeHtml(doc.sekolah)}</strong></td>
+            </tr>
+            <tr>
+              <th>Kelas / Fase</th>
+              <td>${UI.escapeHtml(doc.kelasFase)}</td>
+              <th>Semester & Alokasi</th>
+              <td>${UI.escapeHtml(doc.semester)}</td>
+            </tr>
+            <tr>
+              <th>Mata Pelajaran</th>
+              <td><strong>${UI.escapeHtml(doc.mapel)}</strong></td>
+              <th>Bab & Topik Materi</th>
+              <td><strong>${doc.bab ? `${UI.escapeHtml(doc.bab)} — ` : ''}${UI.escapeHtml(doc.materi)}</strong></td>
+            </tr>
+            <tr>
+              <th>Model Pembelajaran</th>
+              <td><span class="badge badge-info">${UI.escapeHtml(modelPedagogisLabel)}</span></td>
+              <th>Target Taksonomi SOLO</th>
+              <td><span class="badge badge-warning">${UI.escapeHtml(doc.soloLevel)}</span></td>
+            </tr>
+            <tr>
+              <th>Tanggal Penyusunan (Terkunci)</th>
+              <td colspan="3"><strong>🔒 ${UI.escapeHtml(lockedDisplayDate)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          II. KOMPONEN CAPAIAN, TUJUAN PEMBELAJARAN (${tpArr.length} TP) & DIMENSI PROFIL LULUSAN (8 DIMENSI)
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.35rem;">
+          <tbody>
+            <tr>
+              <th style="width: 240px;">1. Capaian Pembelajaran (CP)</th>
+              <td>
+                <div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('capaianPembelajaran', null, this.innerText)">${UI.escapeHtml(doc.capaianPembelajaran)}</div>
+              </td>
+            </tr>
+            <tr>
+              <th>2. Tujuan Pembelajaran (${tpArr.length} Butir TP)</th>
+              <td>
+                <ol style="padding-left: 1.2rem; margin: 0;">
+                  ${tpListHtml}
+                </ol>
+              </td>
+            </tr>
+            <tr>
+              <th>3. Dimensi Profil Lulusan (DPL)</th>
+              <td>${dplBadges}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          III. EMPAT KERANGKA PEMBELAJARAN MENDALAM (4 KERANGKA)
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.35rem;">
+          <tbody>
+            <tr>
+              <th style="width: 240px;">1. Praktik Pedagogis</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('kerangkaPembelajaran', 'praktikPedagogis', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.praktikPedagogis || '')}</div></td>
+            </tr>
+            <tr>
+              <th>2. Kemitraan Pembelajaran</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('kerangkaPembelajaran', 'kemitraanPembelajaran', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.kemitraanPembelajaran || '')}</div></td>
+            </tr>
+            <tr>
+              <th>3. Lingkungan Pembelajaran</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('kerangkaPembelajaran', 'lingkunganPembelajaran', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.lingkunganPembelajaran || '')}</div></td>
+            </tr>
+            <tr>
+              <th>4. Pemanfaatan Digital</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('kerangkaPembelajaran', 'pemanfaatanDigital', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.pemanfaatanDigital || '')}</div></td>
+            </tr>
+          </tbody>
+        </table>
+
+        ${enrichmentSectionHtml}
+
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          ${nextSectionRoman}. TIGA PENGALAMAN & PRINSIP PEMBELAJARAN MENDALAM (3M: MINDFUL, MEANINGFUL, JOYFUL)
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.35rem;">
+          <thead>
+            <tr>
+              <th style="width: 240px;">Tahapan Pengalaman Belajar</th>
+              <th>Rincian Langkah Kegiatan Pembelajaran (Spesifik Materi "${UI.escapeHtml(doc.materi)}")</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <strong>1. Memahami (Mindful Learning)</strong>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Prinsip: Berkesadaran penuh, apersepsi & konstruksi konsep dasar</div>
+              </td>
+              <td><ol style="padding-left: 1.2rem; margin: 0;">${memahamiHtml}</ol></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>2. Mengaplikasi (Meaningful Learning)</strong>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Prinsip: Bermakna, kolaboratif, & pemecahan masalah nyata</div>
+              </td>
+              <td><ol style="padding-left: 1.2rem; margin: 0;">${mengaplikasiHtml}</ol></td>
+            </tr>
+            <tr>
+              <td>
+                <strong>3. Merefleksi (Joyful Learning)</strong>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Prinsip: Menggembirakan, metakognisi, & penguatan makna</div>
+              </td>
+              <td><ol style="padding-left: 1.2rem; margin: 0;">${merefleksiHtml}</ol></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 style="font-size: 1rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+          ${asesmenSectionRoman}. RENCANA ASESMEN PEMBELAJARAN (TERINTEGRASI TAKSONOMI SOLO)
+        </h3>
+        <table class="academic-table" style="margin-bottom: 1.75rem;">
+          <tbody>
+            <tr>
+              <th style="width: 240px;">Asesmen Awal (Diagnostik)</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('asesmen', 'diagnostik', this.innerText)">${UI.escapeHtml(doc.asesmen?.diagnostik || '')}</div></td>
+            </tr>
+            <tr>
+              <th>Asesmen Proses (Formatif)</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('asesmen', 'formatif', this.innerText)">${UI.escapeHtml(doc.asesmen?.formatif || '')}</div></td>
+            </tr>
+            <tr>
+              <th>Asesmen Akhir (Sumatif)</th>
+              <td><div ${editableAttr} onblur="this.style.background='transparent'; RpmApp.updateDocInlineField('asesmen', 'sumatif', this.innerText)">${UI.escapeHtml(doc.asesmen?.sumatif || '')}</div></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; padding: 0 1rem;">
+          <div style="text-align: center; min-width: 220px;">
+            <div>Mengetahui,</div>
+            <div style="font-weight: 700; margin-bottom: 3.5rem;">Kepala ${UI.escapeHtml(doc.sekolah)}</div>
+            <div style="font-weight: 800; text-decoration: underline;">( ................................................. )</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">NIP. ............................................</div>
+          </div>
+
+          <div style="text-align: center; min-width: 220px;">
+            <div>${UI.escapeHtml(lockedDisplayDate)}</div>
+            <div style="font-weight: 700; margin-bottom: 3.5rem;">Guru Penyusun Modul</div>
+            <div style="font-weight: 800; text-decoration: underline;">${UI.escapeHtml(doc.penyusun)}</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Pendidik ${UI.escapeHtml(doc.sekolah)}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  // Override handleGenerateRpm agar mengintegrasikan Jumlah TP (1-6), Skenario AI 3M Spesifik Materi, & Pemetaan Soal ke TP
+  async handleGenerateRpm(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
+    if (typeof DB.purgeLegacyDateOnlySignatures === 'function') {
+      DB.purgeLegacyDateOnlySignatures();
+    }
+
+    const penyusun = (document.getElementById('rpm-input-penyusun')?.value || '').trim();
+    const sekolahRaw = (document.getElementById('rpm-input-sekolah')?.value || '').trim();
+    const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+    const sekolah = normSchool.display;
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim();
+    const semester = document.getElementById('rpm-input-semester')?.value || 'Semester 1 (Ganjil) — 2 x 35 Menit';
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
+    const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const bab = (document.getElementById('rpm-input-bab')?.value || '').trim() || 'Bab 1';
+    const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const modelPedagogis = document.getElementById('rpm-input-model-pedagogis')?.value || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+    const includePemantikIce = Boolean(document.getElementById('rpm-include-pemantik-icebreaking')?.checked);
+    const tpCount = Math.min(6, Math.max(1, parseInt(document.getElementById('rpm-tp-count-select')?.value, 10) || 3));
+    const tpStyle = document.getElementById('rpm-tp-style-select')?.value || 'SIMPLE_TERUKUR';
+
+    let cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+    let tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+    const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+    const difficulty = document.getElementById('rpm-question-difficulty')?.value || 'SEDANG';
+    const mathMode = document.getElementById('rpm-math-mode-select')?.value || 'DIRECT_CALC';
+    const mathConstraint = (document.getElementById('rpm-math-constraint-input')?.value || '').trim();
+
+    const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+    const chosenDateISO = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+    const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
+    const lockedTimeStr = DateTimeUtil.getCurrentTimeStr();
+    const lockedFullTimestamp = `${lockedFormattedDate} (Pukul ${lockedTimeStr})`;
+
+    if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
+      UI.showNotif(
+        'Parameter Modul Belum Lengkap',
+        'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Pokok.',
+        'warning'
+      );
+      return;
+    }
+
+    const selectedDpl = Array.from(document.querySelectorAll('input[name="rpm_dpl_item"]:checked'))
+      .map(el => el.value);
+
+    if (selectedDpl.length === 0) {
+      UI.showNotif(
+        'Pilih Dimensi Profil Lulusan',
+        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL) untuk diintegrasikan ke dalam modul.',
+        'warning'
+      );
+      return;
+    }
+
+    // Jika CP atau TP belum diisi saat tombol Submit diklik, otomatis minta AI menyusunkannya sesuai jumlah TP pilihan guru
+    if (!cpInput || !tpInput) {
+      await this.autoSuggestCpAndTp(!cpInput && !tpInput ? 'BOTH' : (!cpInput ? 'CP_ONLY' : 'TP_ONLY'));
+      cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+      tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+    }
+
+    const enableQuestions = Boolean(document.getElementById('rpm-enable-auto-questions')?.checked);
+    const questionSpecList = [];
+
+    if (enableQuestions) {
+      const checkedTypes = document.querySelectorAll('.rpm-qtype-check:checked');
+      checkedTypes.forEach(ch => {
+        const qType = ch.getAttribute('data-qtype');
+        const countEl = document.getElementById(`rpm-qcount-${qType}`);
+        const countVal = countEl ? parseInt(countEl.value, 10) : 5;
+        const customName = qType === 'LAINNYA'
+          ? (document.getElementById('rpm-custom-qtype-name')?.value || 'Instrumen Kustom').trim()
+          : '';
+        if (qType && countVal > 0) {
+          questionSpecList.push({
+            type: qType,
+            count: countVal,
+            customName
+          });
+        }
+      });
+    }
+
+    const baseParams = {
+      penyusun,
+      sekolah,
+      kelasFase,
+      semester,
+      mapel,
+      bab,
+      materi,
+      soloLevel,
+      selectedDpl,
+      modelPedagogis,
+      includePemantikIce,
+      tpCount,
+      tpStyle,
+      cpRaw: cpInput,
+      tpRaw: tpInput,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint
+    };
+
+    DB.isSyncing = true;
+    DB.lastLocalWriteTimestamp = Date.now();
+
+    this.setRpmAiLoading(
+      true,
+      `Menyusun Modul RPM & Soal "${mapel} — ${materi}"...`,
+      `AI Murni sedang merancang skenario ${modelPedagogis}, Pertanyaan Pemantik, Ice Breaking, serta menyelaraskan soal dengan ${tpCount} Tujuan Pembelajaran...`
+    );
+
+    let blueprint;
+    let questionSections = [];
+    try {
+      blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
+      blueprint.bab = bab;
+      blueprint.modelPedagogis = modelPedagogis;
+      blueprint.includePemantikIce = includePemantikIce;
+
+      if (cpInput) {
+        blueprint.capaianPembelajaran = cpInput;
+      }
+      if (tpInput) {
+        const parsedTp = tpInput
+          .split(/\n+/)
+          .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+          .filter(Boolean);
+        if (parsedTp.length > 0) {
+          blueprint.tujuanPembelajaran = parsedTp;
+        }
+      }
+
+      // Perkaya isi Modul RPM (Pemantik, Ice Breaking, LKPD, & Langkah 3M) dengan AI Murni
+      blueprint = await this.enrichRpmBlueprintWithPureAI(blueprint, baseParams);
+
+      const finalTpRaw = (blueprint.tujuanPembelajaran || []).map((t, i) => `TP ${i + 1}: ${t}`).join('\n');
+      const alignedPrompt = `${customPrompt ? customPrompt + '. ' : ''}Pastikan butir-butir soal mewakili seluruh ${blueprint.tujuanPembelajaran.length} Tujuan Pembelajaran secara proporsional.`;
+
+      questionSections = enableQuestions && questionSpecList.length > 0
+        ? await this.buildDynamicQuestionSectionsWithAI(
+            { ...baseParams, tpRaw: finalTpRaw, customPrompt: alignedPrompt },
+            questionSpecList
+          )
+        : [];
+    } finally {
+      this.setRpmAiLoading(false);
+      DB.isSyncing = false;
+      DB.lastLocalWriteTimestamp = Date.now();
+    }
+
+    const uniqueRpmId = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+
+    const newDoc = {
+      id: uniqueRpmId,
+      ...blueprint,
+      mapel,
+      bab,
+      materi,
+      modelPedagogis,
+      includePemantikIce,
+      tpCount: (blueprint.tujuanPembelajaran || []).length,
+      tpStyle,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint,
+      questionSpecList,
+      enableQuestions,
+      questionSections,
+      savedDateISO: chosenDateISO,
+      createdAt: lockedFormattedDate,
+      savedTimestamp: lockedFullTimestamp,
+      isDateLocked: true
+    };
+
+    if (typeof DB.unlockRpmForNewCreation === 'function') {
+      DB.unlockRpmForNewCreation(newDoc);
+    }
+
+    AppState.rpmCurrentDoc = newDoc;
+
+    const freshBucket = DB.getActiveClassBucket();
+    if (freshBucket) {
+      if (!Array.isArray(freshBucket.rpmModules)) freshBucket.rpmModules = [];
+
+      const exactSameIdx = freshBucket.rpmModules.findIndex(m =>
+        m &&
+        String(m.mapel || '').trim().toLowerCase() === mapel.toLowerCase() &&
+        String(m.materi || '').trim().toLowerCase() === materi.toLowerCase() &&
+        String(m.savedDateISO || '') === chosenDateISO
+      );
+
+      if (exactSameIdx >= 0) {
+        newDoc.id = freshBucket.rpmModules[exactSameIdx].id || uniqueRpmId;
+        AppState.rpmCurrentDoc.id = newDoc.id;
+        freshBucket.rpmModules[exactSameIdx] = JSON.parse(JSON.stringify(newDoc));
+      } else {
+        freshBucket.rpmModules.unshift(JSON.parse(JSON.stringify(newDoc)));
+      }
+
+      await DB.saveImmediate();
+    }
+
+    if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.receiveRpmModuleSync === 'function') {
+      PenilaianApp.receiveRpmModuleSync(newDoc, false);
+    }
+
+    const formCard = document.getElementById('rpm-builder-form-card');
+    const resultWrapper = document.getElementById('rpm-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resultWrapper) resultWrapper.classList.remove('hidden');
+
+    if (typeof this.closeAllProtaPickers === 'function') this.closeAllProtaPickers();
+    this.activePage = 1;
+    this.showAllPagesMode = false;
+    this.renderAllRpmPages();
+    this.renderSavedArchiveTable();
+
+    UI.showNotif(
+      'Modul RPM 8-3-3-4 & Soal AI Murni Selesai Disusun',
+      `Modul "${mapel} — ${materi}" dengan ${(blueprint.tujuanPembelajaran || []).length} Tujuan Pembelajaran, skenario ${modelPedagogis}, serta lembar soal telah tersimpan di Arsip & Cloud.`,
+      'success'
+    );
+  }
+});
 
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
