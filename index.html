@@ -29834,7 +29834,7 @@ const AICloudMonitor = {
     key_label: 'SnifoxAI — Label Gemini',
     api_key: 'snfx-NHKmG0nkkNLMcg4VL2AgYRT0pLgom7UXS2wHeJyvGg55Z',
     base_url: 'https://api.snifox.ai/v1/chat/completions',
-    model_name: 'gemini-2.5-flash',
+    model_name: 'gemini-2.0-flash',
     daily_limit: 500,
     used_today: 0,
     total_used: 0,
@@ -29874,6 +29874,50 @@ const AICloudMonitor = {
     return map[provider] || map.SNIFOX_GEMINI;
   },
 
+  // PENYELAMAT JAWABAN AI: Mengekstrak JSON murni dari teks AI meskipun AI menambahkan kalimat pengantar/penutup
+  extractJsonFromAiText(rawText) {
+    if (!rawText) return null;
+    if (typeof rawText === 'object') return rawText;
+
+    let text = String(rawText)
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+
+    // Percobaan 1: Langsung parse jika sudah JSON bersih
+    try {
+      return JSON.parse(text);
+    } catch (_) {}
+
+    // Percobaan 2: Cari kurung kurawal objek terluar { ... }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const candidateObj = text.substring(firstBrace, lastBrace + 1);
+      try {
+        return JSON.parse(candidateObj);
+      } catch (_) {
+        // Bersihkan trailing comma sebelum } atau ] yang sering dibuat LLM
+        try {
+          const repaired = candidateObj.replace(/,\s*([}\]])/g, '$1');
+          return JSON.parse(repaired);
+        } catch (__) {}
+      }
+    }
+
+    // Percobaan 3: Cari kurung siku array terluar [ ... ]
+    const firstBracket = text.indexOf('[');
+    const lastBracket = text.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+      const candidateArr = text.substring(firstBracket, lastBracket + 1);
+      try {
+        return JSON.parse(candidateArr);
+      } catch (_) {}
+    }
+
+    return null;
+  },
+
   handleProviderSelectChange(providerVal) {
     const urlInp = document.getElementById('admin-ai-baseurl-input');
     const modelInp = document.getElementById('admin-ai-model-input');
@@ -29881,7 +29925,9 @@ const AICloudMonitor = {
       urlInp.value = this.getDefaultEndpointByProvider(providerVal);
     }
     if (modelInp) {
-      if (providerVal === 'SNIFOX_GEMINI' || providerVal === 'GOOGLE_GEMINI') {
+      if (providerVal === 'SNIFOX_GEMINI') {
+        modelInp.value = 'gemini-2.0-flash';
+      } else if (providerVal === 'GOOGLE_GEMINI') {
         modelInp.value = 'gemini-2.5-flash';
       } else if (providerVal === 'GROQ_CLOUD') {
         modelInp.value = 'llama-3.3-70b-versatile';
@@ -29893,16 +29939,13 @@ const AICloudMonitor = {
     }
   },
 
-  // Menarik konfigurasi API Key & statistik kuota dari tabel Supabase `simak_ai_config`
   async pullConfigFromSupabase(showNotification = false) {
     const todayISO = DateTimeUtil.getTodayISO();
 
-    // 1. Cek cadangan di dalam payload utama DB.data terlebih dahulu
     if (DB.data && DB.data.aiCloudConfig && typeof DB.data.aiCloudConfig === 'object') {
       this.config = { ...this.config, ...DB.data.aiCloudConfig };
     }
 
-    // 2. Tarik dari tabel khusus Supabase `simak_ai_config` jika sudah dibuat melalui SQL Editor
     if (supabaseClient) {
       try {
         const { data: row, error } = await supabaseClient
@@ -29919,7 +29962,6 @@ const AICloudMonitor = {
       }
     }
 
-    // Reset otomatis penghitung harian jika berganti hari
     if (this.config.last_reset_date !== todayISO) {
       this.config.used_today = 0;
       this.config.last_reset_date = todayISO;
@@ -29937,7 +29979,6 @@ const AICloudMonitor = {
     }
   },
 
-  // Menyimpan pembaruan statistik pemakaian dan status limit ke Supabase
   async syncStatsToSupabaseSilent() {
     if (DB.data) {
       DB.data.aiCloudConfig = { ...this.config };
@@ -29968,13 +30009,11 @@ const AICloudMonitor = {
             { onConflict: 'id' }
           );
       } catch (e) {
-        // Juga simpan ke store utama sebagai cadangan penuh lintas perangkat
         DB.save();
       }
     }
   },
 
-  // Menyimpan konfigurasi API Key baru dari Panel Admin ke Supabase
   async saveConfigToSupabase() {
     const providerEl = document.getElementById('admin-ai-provider-select');
     const modelEl = document.getElementById('admin-ai-model-input');
@@ -29986,7 +30025,7 @@ const AICloudMonitor = {
     const chosenProvider = providerEl ? providerEl.value : this.detectProviderByKeyPrefix(newKey);
 
     this.config.provider = this.detectProviderByKeyPrefix(newKey, chosenProvider);
-    this.config.model_name = (modelEl && modelEl.value.trim()) || 'gemini-2.5-flash';
+    this.config.model_name = (modelEl && modelEl.value.trim()) || 'gemini-2.0-flash';
     this.config.daily_limit = Math.max(10, parseInt(limitEl ? limitEl.value : 500, 10) || 500);
     this.config.base_url = (urlEl && urlEl.value.trim()) || this.getDefaultEndpointByProvider(this.config.provider);
     this.config.api_key = newKey;
@@ -30003,7 +30042,7 @@ const AICloudMonitor = {
 
     UI.showNotif(
       'API Key Berhasil Dikunci di Supabase Cloud',
-      `Konfigurasi ${this.config.provider} (${this.config.model_name}) dengan kunci ${this.maskApiKey(newKey)} telah disimpan terpusat di Supabase dan siap digunakan oleh seluruh Guru & Kepala Sekolah tanpa menampilkan kode key di halaman mereka.`,
+      `Konfigurasi ${this.config.provider} (${this.config.model_name}) dengan kunci ${this.maskApiKey(newKey)} telah dikunci di Supabase dan siap memproses instruksi Guru & Kepala Sekolah secara akurat.`,
       'success'
     );
   },
@@ -30048,17 +30087,16 @@ const AICloudMonitor = {
     const pctRemain = Math.max(0, 100 - pctUsed);
     const isQuotaExhausted = this.config.last_http_code === 429 || used >= limit;
 
-    // 1. Update Lencana Publik di Halaman RPM & Kepala Sekolah (Tanpa Menampilkan Kode API Key!)
     const rpmQuotaPill = document.getElementById('rpm-ai-quota-Public-pill');
     const rpmEngineBadge = document.getElementById('rpm-active-engine-badge');
     const kepsekQuotaPill = document.getElementById('principal-ai-quota-pill');
 
     if (rpmQuotaPill) {
       if (isQuotaExhausted) {
-        rpmQuotaPill.textContent = `⚠️ Limit API Key Habis (${used}/${limit}) — Mode Cadangan Aktif`;
+        rpmQuotaPill.textContent = `⚠️ Limit API Key Habis (${used}/${limit})`;
         rpmQuotaPill.className = 'badge badge-danger';
       } else {
-        rpmQuotaPill.textContent = `⚡ Kuota AI: ${used}/${limit} Terpakai (${pctRemain}% Tersedia)`;
+        rpmQuotaPill.textContent = `⚡ Pemakaian AI Hari Ini: ${used}/${limit} (${pctRemain}% Kuota Tersedia)`;
         rpmQuotaPill.className = 'badge badge-info';
       }
     }
@@ -30075,7 +30113,6 @@ const AICloudMonitor = {
       kepsekQuotaPill.className = isQuotaExhausted ? 'badge badge-danger' : 'badge badge-info';
     }
 
-    // 2. Update Panel Monitor Lengkap di Halaman Admin
     const liveBadge = document.getElementById('admin-ai-live-status-badge');
     const provEl = document.getElementById('admin-ai-stat-provider');
     const maskEl = document.getElementById('admin-ai-stat-masked-key');
@@ -30109,7 +30146,7 @@ const AICloudMonitor = {
         liveBadge.textContent = '⚠️ LIMIT KUOTA HABIS (429)';
         liveBadge.className = 'badge badge-danger';
       } else if (this.config.last_http_code >= 400) {
-        liveBadge.textContent = `PERLU CEK ENDPOINT (${this.config.last_http_code})`;
+        liveBadge.textContent = `CEK STATUS (${this.config.last_http_code})`;
         liveBadge.className = 'badge badge-warning';
       } else {
         liveBadge.textContent = `✓ API KEY AKTIF (${pctRemain}% KUOTA TERSEDIA)`;
@@ -30136,40 +30173,49 @@ const AICloudMonitor = {
     if (urlInp && this.config.base_url) urlInp.value = this.config.base_url;
   },
 
-  // Uji Koneksi & Cek Apakah API Key Masih Punya Kuota atau Sudah Habis Limitnya
   async testActiveApiKeyConnection() {
+    await this.pullConfigFromSupabase(false);
     UI.showNotif(
-      'Menguji Koneksi API Key di Supabase...',
-      `Sedang menghubungi server ${this.config.provider} menggunakan model ${this.config.model_name}...`,
+      'Menguji Koneksi & Mendeteksi Model API Key...',
+      `Sedang menghubungi server ${this.config.provider} dengan kunci ${this.maskApiKey(this.config.api_key)}...`,
       'info'
     );
 
-    const testPrompt = 'Balas hanya dengan JSON murni: {"status":"OK","message":"Koneksi AI Aktif dan Kuota Tersedia"}';
+    const testPrompt = 'Jawab hanya dengan JSON valid ini: {"status":"OK","engine":"ACTIVE"}';
     const res = await this.executeUniversalAICall(testPrompt, true, true);
 
-    if (res && res.status === 'OK') {
+    if (res && (res.status === 'OK' || res.engine)) {
       UI.showNotif(
-        '✓ API Key Aktif & Kuota Masih Tersedia!',
-        `Koneksi ke ${this.config.provider} (${this.config.model_name}) berhasil 100%! Pemakaian hari ini: ${this.config.used_today} / ${this.config.daily_limit}.`,
+        '✓ API Key Terhubung & Kuota Berfungsi Normal!',
+        `Berhasil terhubung ke ${this.config.last_status}! Pemakaian kuota hari ini tercatat: ${this.config.used_today} / ${this.config.daily_limit}.`,
         'success'
       );
     } else {
       UI.showNotif(
-        `Status Pengujian API Key (HTTP ${this.config.last_http_code})`,
-        `Status: ${this.config.last_status}. Detail: ${this.config.last_error_msg}. (Tenang, apabila limit habis atau endpoint sedang sibuk, sistem otomatis mengaktifkan Cloud AI Cadangan & Generator Spesialis Mapel sehingga pembuatan RPM/Soal tetap berjalan).`,
+        `Hasil Diagnostik API Key (HTTP ${this.config.last_http_code})`,
+        `Status: ${this.config.last_status} | Detail: ${this.config.last_error_msg}. Pastikan Endpoint Base URL di Panel Admin sesuai dengan dokumentasi tempat Anda membuat API Key.`,
         'warning'
       );
     }
   },
 
-  // Router Utama Pemanggil AI Multi-Provider (Mendukung SnifoxAI `snfx-...`, Gemini `AIzaSy...`, OpenRouter, Groq, OpenAI, Claude)
+  // ROUTER UTAMA AI (CORS-SAFE, MULTI-MODEL DISCOVERY, & SMART JSON EXTRACTOR)
   async executeUniversalAICall(promptText, expectJson = true, isDiagnosticTest = false) {
+    // Pastikan konfigurasi dari Supabase sudah ditarik jika baru pertama kali dipanggil
+    if (!this._initialPulled) {
+      this._initialPulled = true;
+      await this.pullConfigFromSupabase(false);
+    }
+
     const apiKey = String(this.config.api_key || '').trim();
     const provider = this.detectProviderByKeyPrefix(apiKey, this.config.provider);
-    const modelName = String(this.config.model_name || 'gemini-2.5-flash').trim();
+    const configuredModel = String(this.config.model_name || 'gemini-2.0-flash').trim();
     const customBaseUrl = String(this.config.base_url || '').trim();
 
-    // 1. JALUR KHUSUS KUNCI SNIFOXAI (`snfx-...`) ATAU PROVIDER OPENAI-COMPATIBLE (OPENROUTER / GROQ / OPENAI)
+    let lastHttpError = 0;
+    let lastErrorMessage = '';
+
+    // 1. JALUR UTAMA: SNIFOXAI (`snfx-...`) & GATEWAY OPENAI-COMPATIBLE (MURNI CORS-SAFE TANPA HEADER X-API-KEY)
     if (apiKey && (provider === 'SNIFOX_GEMINI' || provider === 'OPENROUTER' || provider === 'GROQ_CLOUD' || provider === 'OPENAI_DIRECT')) {
       const candidateEndpoints = [];
       if (customBaseUrl && customBaseUrl.startsWith('https://')) {
@@ -30179,7 +30225,8 @@ const AICloudMonitor = {
         [
           'https://api.snifox.ai/v1/chat/completions',
           'https://snifox.ai/api/v1/chat/completions',
-          'https://api.snifoxai.com/v1/chat/completions'
+          'https://api.snifox.com/v1/chat/completions',
+          'https://snifoxai.com/api/v1/chat/completions'
         ].forEach(u => {
           if (!candidateEndpoints.includes(u)) candidateEndpoints.push(u);
         });
@@ -30188,83 +30235,130 @@ const AICloudMonitor = {
         if (!candidateEndpoints.includes(defUrl)) candidateEndpoints.push(defUrl);
       }
 
+      // Daftar model yang dicoba berurutan jika model pertama ditolak oleh paket API Key
+      const candidateModels = Array.from(new Set([
+        configuredModel,
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash',
+        'gemini-pro',
+        'gpt-4o-mini'
+      ]));
+
       for (const endpoint of candidateEndpoints) {
-        try {
-          const controller = new AbortController();
-          const tId = setTimeout(() => controller.abort(), 15000);
+        let endpointReachable = true;
 
-          const bodyPayload = {
-            model: modelName,
-            messages: [
-              {
-                role: 'system',
-                content: expectJson
-                  ? 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Balas HANYA dalam format JSON valid tanpa blok kode markdown.'
-                  : 'Anda adalah Pakar Kurikulum Merdeka Indonesia.'
+        for (const modelToTry of candidateModels) {
+          if (!endpointReachable) break;
+
+          try {
+            const controller = new AbortController();
+            const tId = setTimeout(() => controller.abort(), 32000);
+
+            const bodyPayload = {
+              model: modelToTry,
+              messages: [
+                {
+                  role: 'system',
+                  content: expectJson
+                    ? 'Anda adalah Pakar Kurikulum Merdeka & Pembuat Soal Profesional Indonesia. Patuhi 100% seluruh instruksi dan pembagian jumlah soal yang diminta guru. Balas HANYA dengan JSON valid tanpa penjelasan di luar JSON.'
+                    : 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Patuhi 100% instruksi guru.'
+                },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.4
+            };
+
+            // PENTING: Hanya gunakan Content-Type & Authorization Bearer agar TIDAK diblokir CORS Browser!
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
               },
-              { role: 'user', content: promptText }
-            ],
-            temperature: 0.45
-          };
+              signal: controller.signal,
+              body: JSON.stringify(bodyPayload)
+            });
+            clearTimeout(tId);
 
-          const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`,
-              'x-api-key': apiKey
-            },
-            signal: controller.signal,
-            body: JSON.stringify(bodyPayload)
-          });
-          clearTimeout(tId);
-
-          if (res.status === 429) {
-            this.recordApiCallResult(false, 429, 'LIMIT KUOTA API KEY HABIS (429)', 'Batas kuota/rate-limit API Key telah tercapai.');
-            break;
-          }
-
-          if (res.status === 401 || res.status === 403) {
-            this.recordApiCallResult(false, res.status, 'API KEY DITOLAK / EXPIRED', `HTTP ${res.status}: Periksa masa aktif kunci API.`);
-            break;
-          }
-
-          if (res.ok) {
-            const data = await res.json();
-            const rawText = data?.choices?.[0]?.message?.content || data?.candidates?.[0]?.content?.parts?.[0]?.text || data?.text;
-            if (rawText) {
-              this.recordApiCallResult(true, 200, `AKTIF — ${provider} (200 OK)`, 'Berhasil memproses permintaan AI');
-              if (!expectJson) return String(rawText).replace(/\*\*/g, '').trim();
-              const cleaned = String(rawText).replace(/```json/gi, '').replace(/```/g, '').trim();
-              return JSON.parse(cleaned);
+            if (res.status === 429) {
+              this.recordApiCallResult(false, 429, 'LIMIT KUOTA API KEY HABIS (429)', 'Kuota API Key telah mencapai batas limit.');
+              endpointReachable = false;
+              break;
             }
+
+            if (res.status === 401 || res.status === 403) {
+              const errTxt = await res.text().catch(() => '');
+              lastHttpError = res.status;
+              lastErrorMessage = `Key ditolak (${res.status}): ${errTxt.slice(0, 120)}`;
+              endpointReachable = false;
+              break;
+            }
+
+            if (!res.ok) {
+              const errTxt = await res.text().catch(() => '');
+              lastHttpError = res.status;
+              lastErrorMessage = `HTTP ${res.status} (${modelToTry}): ${errTxt.slice(0, 120)}`;
+              // Jika 404/400 karena nama model belum cocok, lanjut coba model berikutnya di endpoint yang sama
+              continue;
+            }
+
+            const data = await res.json();
+            const rawText =
+              data?.choices?.[0]?.message?.content ||
+              data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+              data?.response ||
+              data?.text ||
+              '';
+
+            if (rawText) {
+              // Simpan kombinasi endpoint & model yang berhasil agar panggilan berikutnya langsung instan
+              this.config.base_url = endpoint;
+              this.config.model_name = modelToTry;
+
+              if (!expectJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — ${provider} (${modelToTry})`, 'Sukses memproses instruksi AI');
+                return String(rawText).replace(/\*\*/g, '').trim();
+              }
+
+              const parsedJson = this.extractJsonFromAiText(rawText);
+              if (parsedJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — ${provider} (${modelToTry})`, 'Sukses menghasilkan JSON AI Murni');
+                return parsedJson;
+              }
+            }
+          } catch (err) {
+            lastErrorMessage = err && err.message ? err.message : 'Koneksi ke endpoint gagal (CORS/Network)';
+            endpointReachable = false;
           }
-        } catch (err) {
-          console.warn(`Percobaan endpoint ${endpoint} dilewati:`, err);
         }
       }
     }
 
-    // 2. JALUR GOOGLE GEMINI NATIVE (`AIzaSy...` atau Gateway Gemini Native)
+    // 2. JALUR GOOGLE GEMINI NATIVE (`AIzaSy...` atau Query Key)
     if (apiKey && (provider === 'GOOGLE_GEMINI' || provider === 'SNIFOX_GEMINI')) {
-      const models = [modelName, 'gemini-2.5-flash', 'gemini-1.5-flash'];
-      for (const mName of Array.from(new Set(models))) {
+      const geminiModels = Array.from(new Set([configuredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']));
+      for (const mName of geminiModels) {
         try {
+          const controller = new AbortController();
+          const tId = setTimeout(() => controller.abort(), 30000);
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`;
-          const genConfig = { temperature: 0.45 };
+          const genConfig = { temperature: 0.4 };
           if (expectJson) genConfig.responseMimeType = 'application/json';
 
           const res = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [{ parts: [{ text: promptText }] }],
               generationConfig: genConfig
             })
           });
+          clearTimeout(tId);
 
           if (res.status === 429) {
-            this.recordApiCallResult(false, 429, 'LIMIT KUOTA GEMINI HABIS (429)', 'Kuota request harian/menit habis.');
+            this.recordApiCallResult(false, 429, 'LIMIT KUOTA GEMINI HABIS (429)', 'Batas kuota Gemini tercapai.');
             break;
           }
 
@@ -30272,61 +30366,728 @@ const AICloudMonitor = {
             const data = await res.json();
             const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
             if (rawText) {
-              this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Berhasil memproses dengan Gemini API');
-              if (!expectJson) return String(rawText).replace(/\*\*/g, '').trim();
-              const cleaned = String(rawText).replace(/```json/gi, '').replace(/```/g, '').trim();
-              return JSON.parse(cleaned);
+              if (!expectJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Sukses memproses teks AI');
+                return String(rawText).replace(/\*\*/g, '').trim();
+              }
+              const parsedJson = this.extractJsonFromAiText(rawText);
+              if (parsedJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Sukses menghasilkan JSON AI');
+                return parsedJson;
+              }
             }
           }
         } catch (e) {
-          console.warn('Gemini native fallback:', e);
+          lastErrorMessage = e.message || 'Gagal menghubungi endpoint Gemini Native';
         }
       }
     }
 
     if (isDiagnosticTest) {
+      this.recordApiCallResult(
+        false,
+        lastHttpError || 400,
+        'ENDPOINT / KEY PERLU DISESUAIKAN',
+        lastErrorMessage || 'Server tidak merespons format kunci ini.'
+      );
       return null;
     }
 
-    // 3. JALUR CADANGAN OTOMATIS CLOUD LLM GRATIS (AKTIF JIKA LIMIT KEY UTAMA HABIS ATAU ENDPOINT GANGGUAN)
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 14000);
-      const res = await fetch('https://text.pollinations.ai/openai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          model: 'openai',
-          response_format: expectJson ? { type: 'json_object' } : undefined,
-          messages: [
-            {
-              role: 'system',
-              content: expectJson
-                ? 'You are an Indonesian curriculum expert. Respond ONLY with valid JSON without markdown blocks.'
-                : 'You are an Indonesian curriculum expert.'
-            },
-            { role: 'user', content: promptText }
-          ],
-          temperature: 0.45
-        })
-      });
-      clearTimeout(timeoutId);
+    // 3. JALUR RELAY AI CLOUD CADANGAN (MEMASTIKAN 100% DIJAWAB OLEH LLM ASLI, BUKAN TEMPLATE STATIS!)
+    const relayModels = ['openai', 'Show-o', 'mistral'];
+    for (const rModel of relayModels) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 32000);
+        const res = await fetch('https://text.pollinations.ai/openai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: rModel,
+            messages: [
+              {
+                role: 'system',
+                content: expectJson
+                  ? 'Anda adalah Pakar Kurikulum Merdeka & Pembuat Soal Profesional Indonesia. Patuhi 100% instruksi dan pembagian soal dari guru. Anda WAJIB membalas HANYA dalam format JSON valid (diawali { dan diakhiri }) tanpa teks pengantar.'
+                  : 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Patuhi 100% instruksi guru.'
+              },
+              { role: 'user', content: promptText }
+            ],
+            temperature: 0.4
+          })
+        });
+        clearTimeout(timeoutId);
 
-      if (res.ok) {
-        const data = await res.json();
-        const rawContent = data?.choices?.[0]?.message?.content;
-        if (rawContent) {
-          this.recordApiCallResult(true, 200, 'AKTIF (RELAY CLOUD AI)', 'Diproses melalui Cloud AI Relay');
-          if (!expectJson) return String(rawContent).replace(/\*\*/g, '').trim();
-          const cleaned = String(rawContent).replace(/```json/gi, '').replace(/```/g, '').trim();
-          return JSON.parse(cleaned);
+        if (res.ok) {
+          const data = await res.json();
+          const rawContent = data?.choices?.[0]?.message?.content;
+          if (rawContent) {
+            if (!expectJson) {
+              this.recordApiCallResult(
+                true,
+                200,
+                `AKTIF (CLOUD AI ENGINE)`,
+                lastErrorMessage ? `Key utama: ${lastErrorMessage} -> Dijawab Cloud AI` : 'Sukses diproses Cloud AI'
+              );
+              return String(rawContent).replace(/\*\*/g, '').trim();
+            }
+
+            const parsedJson = this.extractJsonFromAiText(rawContent);
+            if (parsedJson) {
+              this.recordApiCallResult(
+                true,
+                200,
+                `AKTIF (CLOUD AI ENGINE)`,
+                lastErrorMessage ? `Key utama: ${lastErrorMessage} -> Dijawab Cloud AI` : 'Sukses menghasilkan JSON AI Murni'
+              );
+              return parsedJson;
+            }
+          }
         }
+      } catch (cloudErr) {
+        console.warn(`Relay model ${rModel} timeout/skip:`, cloudErr);
       }
-    } catch (cloudErr) {
-      console.warn('Relay Cloud AI beralih ke Spesialis Kurikulum Lokal:', cloudErr);
     }
 
+    this.recordApiCallResult(
+      false,
+      lastHttpError || 503,
+      'GANGGUAN KONEKSI AI',
+      lastErrorMessage || 'Tidak dapat terhubung ke server AI.'
+    );
+    return null;
+  }
+};
+const AICloudMonitor = {
+  config: {
+    id: 'MAIN_AI_CONFIG',
+    provider: 'SNIFOX_GEMINI',
+    key_label: 'SnifoxAI — Label Gemini',
+    api_key: 'snfx-NHKmG0nkkNLMcg4VL2AgYRT0pLgom7UXS2wHeJyvGg55Z',
+    base_url: 'https://api.snifox.ai/v1/chat/completions',
+    model_name: 'gemini-2.0-flash',
+    daily_limit: 500,
+    used_today: 0,
+    total_used: 0,
+    last_reset_date: '',
+    last_status: 'SIAP DIGUNAKAN (SUPABASE CLOUD)',
+    last_http_code: 200,
+    last_error_msg: '-'
+  },
+
+  maskApiKey(rawKey) {
+    const k = String(rawKey || '').trim();
+    if (!k) return 'Belum Diatur';
+    if (k.length <= 12) return k.slice(0, 4) + '****';
+    return `${k.slice(0, 9)}••••••••••••${k.slice(-4)}`;
+  },
+
+  detectProviderByKeyPrefix(rawKey, currentProvider = '') {
+    const k = String(rawKey || '').trim();
+    if (k.startsWith('snfx-')) return 'SNIFOX_GEMINI';
+    if (k.startsWith('AIzaSy')) return 'GOOGLE_GEMINI';
+    if (k.startsWith('sk-or-')) return 'OPENROUTER';
+    if (k.startsWith('gsk_')) return 'GROQ_CLOUD';
+    if (k.startsWith('sk-ant-')) return 'ANTHROPIC_CLAUDE';
+    if (k.startsWith('sk-')) return 'OPENAI_DIRECT';
+    return currentProvider || 'SNIFOX_GEMINI';
+  },
+
+  getDefaultEndpointByProvider(provider) {
+    const map = {
+      SNIFOX_GEMINI: 'https://api.snifox.ai/v1/chat/completions',
+      GOOGLE_GEMINI: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      OPENROUTER: 'https://openrouter.ai/api/v1/chat/completions',
+      GROQ_CLOUD: 'https://api.groq.com/openai/v1/chat/completions',
+      OPENAI_DIRECT: 'https://api.openai.com/v1/chat/completions',
+      ANTHROPIC_CLAUDE: 'https://api.anthropic.com/v1/messages'
+    };
+    return map[provider] || map.SNIFOX_GEMINI;
+  },
+
+  // PENYELAMAT JAWABAN AI: Mengekstrak JSON murni dari teks AI meskipun AI menambahkan kalimat pengantar/penutup
+  extractJsonFromAiText(rawText) {
+    if (!rawText) return null;
+    if (typeof rawText === 'object') return rawText;
+
+    let text = String(rawText)
+      .replace(/```json/gi, '')
+      .replace(/```/g, '')
+      .trim();
+
+    // Percobaan 1: Langsung parse jika sudah JSON bersih
+    try {
+      return JSON.parse(text);
+    } catch (_) {}
+
+    // Percobaan 2: Cari kurung kurawal objek terluar { ... }
+    const firstBrace = text.indexOf('{');
+    const lastBrace = text.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      const candidateObj = text.substring(firstBrace, lastBrace + 1);
+      try {
+        return JSON.parse(candidateObj);
+      } catch (_) {
+        // Bersihkan trailing comma sebelum } atau ] yang sering dibuat LLM
+        try {
+          const repaired = candidateObj.replace(/,\s*([}\]])/g, '$1');
+          return JSON.parse(repaired);
+        } catch (__) {}
+      }
+    }
+
+    // Percobaan 3: Cari kurung siku array terluar [ ... ]
+    const firstBracket = text.indexOf('[');
+    const lastBracket = text.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+      const candidateArr = text.substring(firstBracket, lastBracket + 1);
+      try {
+        return JSON.parse(candidateArr);
+      } catch (_) {}
+    }
+
+    return null;
+  },
+
+  handleProviderSelectChange(providerVal) {
+    const urlInp = document.getElementById('admin-ai-baseurl-input');
+    const modelInp = document.getElementById('admin-ai-model-input');
+    if (urlInp) {
+      urlInp.value = this.getDefaultEndpointByProvider(providerVal);
+    }
+    if (modelInp) {
+      if (providerVal === 'SNIFOX_GEMINI') {
+        modelInp.value = 'gemini-2.0-flash';
+      } else if (providerVal === 'GOOGLE_GEMINI') {
+        modelInp.value = 'gemini-2.5-flash';
+      } else if (providerVal === 'GROQ_CLOUD') {
+        modelInp.value = 'llama-3.3-70b-versatile';
+      } else if (providerVal === 'ANTHROPIC_CLAUDE') {
+        modelInp.value = 'claude-3-5-sonnet-latest';
+      } else {
+        modelInp.value = 'gpt-4o-mini';
+      }
+    }
+  },
+
+  async pullConfigFromSupabase(showNotification = false) {
+    const todayISO = DateTimeUtil.getTodayISO();
+
+    if (DB.data && DB.data.aiCloudConfig && typeof DB.data.aiCloudConfig === 'object') {
+      this.config = { ...this.config, ...DB.data.aiCloudConfig };
+    }
+
+    if (supabaseClient) {
+      try {
+        const { data: row, error } = await supabaseClient
+          .from('simak_ai_config')
+          .select('*')
+          .eq('id', 'MAIN_AI_CONFIG')
+          .maybeSingle();
+
+        if (!error && row && row.api_key) {
+          this.config = { ...this.config, ...row };
+        }
+      } catch (e) {
+        console.warn('Menggunakan sinkronisasi AI dari store utama:', e);
+      }
+    }
+
+    if (this.config.last_reset_date !== todayISO) {
+      this.config.used_today = 0;
+      this.config.last_reset_date = todayISO;
+      await this.syncStatsToSupabaseSilent();
+    }
+
+    this.renderMonitorUI();
+
+    if (showNotification) {
+      UI.showNotif(
+        'Monitor Kuota AI Diperbarui dari Supabase',
+        `Provider Aktif: ${this.config.provider} (${this.config.model_name}) | Pemakaian Hari Ini: ${this.config.used_today} / ${this.config.daily_limit} Request.`,
+        'info'
+      );
+    }
+  },
+
+  async syncStatsToSupabaseSilent() {
+    if (DB.data) {
+      DB.data.aiCloudConfig = { ...this.config };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(DB.data));
+    }
+
+    if (supabaseClient) {
+      try {
+        await supabaseClient
+          .from('simak_ai_config')
+          .upsert(
+            {
+              id: 'MAIN_AI_CONFIG',
+              provider: this.config.provider,
+              key_label: this.config.key_label,
+              api_key: this.config.api_key,
+              base_url: this.config.base_url,
+              model_name: this.config.model_name,
+              daily_limit: Number(this.config.daily_limit) || 500,
+              used_today: Number(this.config.used_today) || 0,
+              total_used: Number(this.config.total_used) || 0,
+              last_reset_date: this.config.last_reset_date || DateTimeUtil.getTodayISO(),
+              last_status: this.config.last_status || 'AKTIF',
+              last_http_code: Number(this.config.last_http_code) || 200,
+              last_error_msg: this.config.last_error_msg || '-',
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'id' }
+          );
+      } catch (e) {
+        DB.save();
+      }
+    }
+  },
+
+  async saveConfigToSupabase() {
+    const providerEl = document.getElementById('admin-ai-provider-select');
+    const modelEl = document.getElementById('admin-ai-model-input');
+    const limitEl = document.getElementById('admin-ai-limit-input');
+    const urlEl = document.getElementById('admin-ai-baseurl-input');
+    const keyEl = document.getElementById('admin-ai-key-input');
+
+    const newKey = keyEl && keyEl.value.trim() ? keyEl.value.trim() : this.config.api_key;
+    const chosenProvider = providerEl ? providerEl.value : this.detectProviderByKeyPrefix(newKey);
+
+    this.config.provider = this.detectProviderByKeyPrefix(newKey, chosenProvider);
+    this.config.model_name = (modelEl && modelEl.value.trim()) || 'gemini-2.0-flash';
+    this.config.daily_limit = Math.max(10, parseInt(limitEl ? limitEl.value : 500, 10) || 500);
+    this.config.base_url = (urlEl && urlEl.value.trim()) || this.getDefaultEndpointByProvider(this.config.provider);
+    this.config.api_key = newKey;
+    this.config.key_label = `${this.config.provider} (${this.config.model_name})`;
+    this.config.last_status = 'KONFIGURASI DIPERBARUI DI SUPABASE';
+    this.config.last_http_code = 200;
+    this.config.last_error_msg = '-';
+
+    if (keyEl) keyEl.value = '';
+
+    await this.syncStatsToSupabaseSilent();
+    await DB.saveImmediate();
+    this.renderMonitorUI();
+
+    UI.showNotif(
+      'API Key Berhasil Dikunci di Supabase Cloud',
+      `Konfigurasi ${this.config.provider} (${this.config.model_name}) dengan kunci ${this.maskApiKey(newKey)} telah dikunci di Supabase dan siap memproses instruksi Guru & Kepala Sekolah secara akurat.`,
+      'success'
+    );
+  },
+
+  async resetDailyCounter() {
+    this.config.used_today = 0;
+    this.config.last_reset_date = DateTimeUtil.getTodayISO();
+    this.config.last_status = 'KUOTA HARIAN DIRESET KE 0';
+    this.config.last_http_code = 200;
+    this.config.last_error_msg = '-';
+    await this.syncStatsToSupabaseSilent();
+    await DB.saveImmediate();
+    this.renderMonitorUI();
+    UI.showNotif('Kuota Harian Direset', 'Hitungan pemakaian API Key hari ini telah dikembalikan ke 0.', 'success');
+  },
+
+  recordApiCallResult(isSuccess, httpCode = 200, statusText = 'AKTIF (200 OK)', errorDetail = '-') {
+    const todayISO = DateTimeUtil.getTodayISO();
+    if (this.config.last_reset_date !== todayISO) {
+      this.config.used_today = 0;
+      this.config.last_reset_date = todayISO;
+    }
+
+    if (isSuccess) {
+      this.config.used_today = (Number(this.config.used_today) || 0) + 1;
+      this.config.total_used = (Number(this.config.total_used) || 0) + 1;
+    }
+
+    this.config.last_http_code = httpCode;
+    this.config.last_status = statusText;
+    this.config.last_error_msg = errorDetail || '-';
+
+    this.renderMonitorUI();
+    this.syncStatsToSupabaseSilent();
+  },
+
+  renderMonitorUI() {
+    const used = Number(this.config.used_today) || 0;
+    const limit = Math.max(1, Number(this.config.daily_limit) || 500);
+    const total = Number(this.config.total_used) || 0;
+    const pctUsed = Math.min(100, Math.round((used / limit) * 100));
+    const pctRemain = Math.max(0, 100 - pctUsed);
+    const isQuotaExhausted = this.config.last_http_code === 429 || used >= limit;
+
+    const rpmQuotaPill = document.getElementById('rpm-ai-quota-Public-pill');
+    const rpmEngineBadge = document.getElementById('rpm-active-engine-badge');
+    const kepsekQuotaPill = document.getElementById('principal-ai-quota-pill');
+
+    if (rpmQuotaPill) {
+      if (isQuotaExhausted) {
+        rpmQuotaPill.textContent = `⚠️ Limit API Key Habis (${used}/${limit})`;
+        rpmQuotaPill.className = 'badge badge-danger';
+      } else {
+        rpmQuotaPill.textContent = `⚡ Pemakaian AI Hari Ini: ${used}/${limit} (${pctRemain}% Kuota Tersedia)`;
+        rpmQuotaPill.className = 'badge badge-info';
+      }
+    }
+
+    if (rpmEngineBadge) {
+      rpmEngineBadge.textContent = `☁ AI Supabase Aktif (${this.config.model_name})`;
+      rpmEngineBadge.className = isQuotaExhausted ? 'badge badge-warning' : 'badge badge-success';
+    }
+
+    if (kepsekQuotaPill) {
+      kepsekQuotaPill.textContent = isQuotaExhausted
+        ? `⚠️ Limit API Habis (${used}/${limit})`
+        : `☁ AI Supabase (${this.config.model_name}) | Sisa Kuota: ${pctRemain}%`;
+      kepsekQuotaPill.className = isQuotaExhausted ? 'badge badge-danger' : 'badge badge-info';
+    }
+
+    const liveBadge = document.getElementById('admin-ai-live-status-badge');
+    const provEl = document.getElementById('admin-ai-stat-provider');
+    const maskEl = document.getElementById('admin-ai-stat-masked-key');
+    const dailyEl = document.getElementById('admin-ai-stat-daily-usage');
+    const remEl = document.getElementById('admin-ai-stat-remaining');
+    const totalEl = document.getElementById('admin-ai-stat-total-usage');
+    const lastCallEl = document.getElementById('admin-ai-stat-last-call');
+    const healthEl = document.getElementById('admin-ai-stat-health-text');
+    const errLogEl = document.getElementById('admin-ai-stat-error-log');
+    const barLabel = document.getElementById('admin-ai-quota-bar-label');
+    const barFill = document.getElementById('admin-ai-quota-bar-fill');
+
+    if (provEl) provEl.textContent = `${this.config.provider} (${this.config.model_name})`;
+    if (maskEl) maskEl.textContent = `Key Tersimpan: ${this.maskApiKey(this.config.api_key)}`;
+    if (dailyEl) dailyEl.textContent = `${used} / ${limit}`;
+    if (remEl) remEl.textContent = `Sisa Kuota Hari Ini: ${pctRemain}% (${Math.max(0, limit - used)} Request)`;
+    if (totalEl) totalEl.textContent = `${total} Request`;
+    if (lastCallEl) lastCallEl.textContent = `Tanggal Reset: ${this.config.last_reset_date || DateTimeUtil.getTodayISO()}`;
+
+    if (healthEl) {
+      healthEl.textContent = this.config.last_status || 'SIAP DIGUNAKAN';
+      healthEl.style.color = isQuotaExhausted
+        ? 'var(--danger)'
+        : (this.config.last_http_code >= 400 ? 'var(--warning)' : 'var(--success)');
+    }
+    if (errLogEl) {
+      errLogEl.textContent = `HTTP ${this.config.last_http_code || 200}: ${this.config.last_error_msg || 'Tidak ada kendala'}`;
+    }
+    if (liveBadge) {
+      if (isQuotaExhausted) {
+        liveBadge.textContent = '⚠️ LIMIT KUOTA HABIS (429)';
+        liveBadge.className = 'badge badge-danger';
+      } else if (this.config.last_http_code >= 400) {
+        liveBadge.textContent = `CEK STATUS (${this.config.last_http_code})`;
+        liveBadge.className = 'badge badge-warning';
+      } else {
+        liveBadge.textContent = `✓ API KEY AKTIF (${pctRemain}% KUOTA TERSEDIA)`;
+        liveBadge.className = 'badge badge-success';
+      }
+    }
+
+    if (barLabel) barLabel.textContent = `${pctUsed}% Terpakai (${used} dari ${limit} batas harian)`;
+    if (barFill) {
+      barFill.style.width = `${Math.max(2, pctUsed)}%`;
+      barFill.style.background = pctUsed >= 90
+        ? '#dc2626'
+        : (pctUsed >= 70 ? '#d97706' : 'linear-gradient(90deg, #16a34a, #0284c7)');
+    }
+
+    const provSel = document.getElementById('admin-ai-provider-select');
+    const modInp = document.getElementById('admin-ai-model-input');
+    const limInp = document.getElementById('admin-ai-limit-input');
+    const urlInp = document.getElementById('admin-ai-baseurl-input');
+
+    if (provSel && this.config.provider) provSel.value = this.config.provider;
+    if (modInp && this.config.model_name) modInp.value = this.config.model_name;
+    if (limInp && this.config.daily_limit) limInp.value = this.config.daily_limit;
+    if (urlInp && this.config.base_url) urlInp.value = this.config.base_url;
+  },
+
+  async testActiveApiKeyConnection() {
+    await this.pullConfigFromSupabase(false);
+    UI.showNotif(
+      'Menguji Koneksi & Mendeteksi Model API Key...',
+      `Sedang menghubungi server ${this.config.provider} dengan kunci ${this.maskApiKey(this.config.api_key)}...`,
+      'info'
+    );
+
+    const testPrompt = 'Jawab hanya dengan JSON valid ini: {"status":"OK","engine":"ACTIVE"}';
+    const res = await this.executeUniversalAICall(testPrompt, true, true);
+
+    if (res && (res.status === 'OK' || res.engine)) {
+      UI.showNotif(
+        '✓ API Key Terhubung & Kuota Berfungsi Normal!',
+        `Berhasil terhubung ke ${this.config.last_status}! Pemakaian kuota hari ini tercatat: ${this.config.used_today} / ${this.config.daily_limit}.`,
+        'success'
+      );
+    } else {
+      UI.showNotif(
+        `Hasil Diagnostik API Key (HTTP ${this.config.last_http_code})`,
+        `Status: ${this.config.last_status} | Detail: ${this.config.last_error_msg}. Pastikan Endpoint Base URL di Panel Admin sesuai dengan dokumentasi tempat Anda membuat API Key.`,
+        'warning'
+      );
+    }
+  },
+
+  // ROUTER UTAMA AI (CORS-SAFE, MULTI-MODEL DISCOVERY, & SMART JSON EXTRACTOR)
+  async executeUniversalAICall(promptText, expectJson = true, isDiagnosticTest = false) {
+    // Pastikan konfigurasi dari Supabase sudah ditarik jika baru pertama kali dipanggil
+    if (!this._initialPulled) {
+      this._initialPulled = true;
+      await this.pullConfigFromSupabase(false);
+    }
+
+    const apiKey = String(this.config.api_key || '').trim();
+    const provider = this.detectProviderByKeyPrefix(apiKey, this.config.provider);
+    const configuredModel = String(this.config.model_name || 'gemini-2.0-flash').trim();
+    const customBaseUrl = String(this.config.base_url || '').trim();
+
+    let lastHttpError = 0;
+    let lastErrorMessage = '';
+
+    // 1. JALUR UTAMA: SNIFOXAI (`snfx-...`) & GATEWAY OPENAI-COMPATIBLE (MURNI CORS-SAFE TANPA HEADER X-API-KEY)
+    if (apiKey && (provider === 'SNIFOX_GEMINI' || provider === 'OPENROUTER' || provider === 'GROQ_CLOUD' || provider === 'OPENAI_DIRECT')) {
+      const candidateEndpoints = [];
+      if (customBaseUrl && customBaseUrl.startsWith('https://')) {
+        candidateEndpoints.push(customBaseUrl);
+      }
+      if (provider === 'SNIFOX_GEMINI') {
+        [
+          'https://api.snifox.ai/v1/chat/completions',
+          'https://snifox.ai/api/v1/chat/completions',
+          'https://api.snifox.com/v1/chat/completions',
+          'https://snifoxai.com/api/v1/chat/completions'
+        ].forEach(u => {
+          if (!candidateEndpoints.includes(u)) candidateEndpoints.push(u);
+        });
+      } else {
+        const defUrl = this.getDefaultEndpointByProvider(provider);
+        if (!candidateEndpoints.includes(defUrl)) candidateEndpoints.push(defUrl);
+      }
+
+      // Daftar model yang dicoba berurutan jika model pertama ditolak oleh paket API Key
+      const candidateModels = Array.from(new Set([
+        configuredModel,
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-2.5-flash',
+        'gemini-pro',
+        'gpt-4o-mini'
+      ]));
+
+      for (const endpoint of candidateEndpoints) {
+        let endpointReachable = true;
+
+        for (const modelToTry of candidateModels) {
+          if (!endpointReachable) break;
+
+          try {
+            const controller = new AbortController();
+            const tId = setTimeout(() => controller.abort(), 32000);
+
+            const bodyPayload = {
+              model: modelToTry,
+              messages: [
+                {
+                  role: 'system',
+                  content: expectJson
+                    ? 'Anda adalah Pakar Kurikulum Merdeka & Pembuat Soal Profesional Indonesia. Patuhi 100% seluruh instruksi dan pembagian jumlah soal yang diminta guru. Balas HANYA dengan JSON valid tanpa penjelasan di luar JSON.'
+                    : 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Patuhi 100% instruksi guru.'
+                },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.4
+            };
+
+            // PENTING: Hanya gunakan Content-Type & Authorization Bearer agar TIDAK diblokir CORS Browser!
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+              },
+              signal: controller.signal,
+              body: JSON.stringify(bodyPayload)
+            });
+            clearTimeout(tId);
+
+            if (res.status === 429) {
+              this.recordApiCallResult(false, 429, 'LIMIT KUOTA API KEY HABIS (429)', 'Kuota API Key telah mencapai batas limit.');
+              endpointReachable = false;
+              break;
+            }
+
+            if (res.status === 401 || res.status === 403) {
+              const errTxt = await res.text().catch(() => '');
+              lastHttpError = res.status;
+              lastErrorMessage = `Key ditolak (${res.status}): ${errTxt.slice(0, 120)}`;
+              endpointReachable = false;
+              break;
+            }
+
+            if (!res.ok) {
+              const errTxt = await res.text().catch(() => '');
+              lastHttpError = res.status;
+              lastErrorMessage = `HTTP ${res.status} (${modelToTry}): ${errTxt.slice(0, 120)}`;
+              // Jika 404/400 karena nama model belum cocok, lanjut coba model berikutnya di endpoint yang sama
+              continue;
+            }
+
+            const data = await res.json();
+            const rawText =
+              data?.choices?.[0]?.message?.content ||
+              data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+              data?.response ||
+              data?.text ||
+              '';
+
+            if (rawText) {
+              // Simpan kombinasi endpoint & model yang berhasil agar panggilan berikutnya langsung instan
+              this.config.base_url = endpoint;
+              this.config.model_name = modelToTry;
+
+              if (!expectJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — ${provider} (${modelToTry})`, 'Sukses memproses instruksi AI');
+                return String(rawText).replace(/\*\*/g, '').trim();
+              }
+
+              const parsedJson = this.extractJsonFromAiText(rawText);
+              if (parsedJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — ${provider} (${modelToTry})`, 'Sukses menghasilkan JSON AI Murni');
+                return parsedJson;
+              }
+            }
+          } catch (err) {
+            lastErrorMessage = err && err.message ? err.message : 'Koneksi ke endpoint gagal (CORS/Network)';
+            endpointReachable = false;
+          }
+        }
+      }
+    }
+
+    // 2. JALUR GOOGLE GEMINI NATIVE (`AIzaSy...` atau Query Key)
+    if (apiKey && (provider === 'GOOGLE_GEMINI' || provider === 'SNIFOX_GEMINI')) {
+      const geminiModels = Array.from(new Set([configuredModel, 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']));
+      for (const mName of geminiModels) {
+        try {
+          const controller = new AbortController();
+          const tId = setTimeout(() => controller.abort(), 30000);
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${mName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+          const genConfig = { temperature: 0.4 };
+          if (expectJson) genConfig.responseMimeType = 'application/json';
+
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: promptText }] }],
+              generationConfig: genConfig
+            })
+          });
+          clearTimeout(tId);
+
+          if (res.status === 429) {
+            this.recordApiCallResult(false, 429, 'LIMIT KUOTA GEMINI HABIS (429)', 'Batas kuota Gemini tercapai.');
+            break;
+          }
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              if (!expectJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Sukses memproses teks AI');
+                return String(rawText).replace(/\*\*/g, '').trim();
+              }
+              const parsedJson = this.extractJsonFromAiText(rawText);
+              if (parsedJson) {
+                this.recordApiCallResult(true, 200, `AKTIF — GEMINI (${mName})`, 'Sukses menghasilkan JSON AI');
+                return parsedJson;
+              }
+            }
+          }
+        } catch (e) {
+          lastErrorMessage = e.message || 'Gagal menghubungi endpoint Gemini Native';
+        }
+      }
+    }
+
+    if (isDiagnosticTest) {
+      this.recordApiCallResult(
+        false,
+        lastHttpError || 400,
+        'ENDPOINT / KEY PERLU DISESUAIKAN',
+        lastErrorMessage || 'Server tidak merespons format kunci ini.'
+      );
+      return null;
+    }
+
+    // 3. JALUR RELAY AI CLOUD CADANGAN (MEMASTIKAN 100% DIJAWAB OLEH LLM ASLI, BUKAN TEMPLATE STATIS!)
+    const relayModels = ['openai', 'Show-o', 'mistral'];
+    for (const rModel of relayModels) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 32000);
+        const res = await fetch('https://text.pollinations.ai/openai', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            model: rModel,
+            messages: [
+              {
+                role: 'system',
+                content: expectJson
+                  ? 'Anda adalah Pakar Kurikulum Merdeka & Pembuat Soal Profesional Indonesia. Patuhi 100% instruksi dan pembagian soal dari guru. Anda WAJIB membalas HANYA dalam format JSON valid (diawali { dan diakhiri }) tanpa teks pengantar.'
+                  : 'Anda adalah Pakar Kurikulum Merdeka Indonesia. Patuhi 100% instruksi guru.'
+              },
+              { role: 'user', content: promptText }
+            ],
+            temperature: 0.4
+          })
+        });
+        clearTimeout(timeoutId);
+
+        if (res.ok) {
+          const data = await res.json();
+          const rawContent = data?.choices?.[0]?.message?.content;
+          if (rawContent) {
+            if (!expectJson) {
+              this.recordApiCallResult(
+                true,
+                200,
+                `AKTIF (CLOUD AI ENGINE)`,
+                lastErrorMessage ? `Key utama: ${lastErrorMessage} -> Dijawab Cloud AI` : 'Sukses diproses Cloud AI'
+              );
+              return String(rawContent).replace(/\*\*/g, '').trim();
+            }
+
+            const parsedJson = this.extractJsonFromAiText(rawContent);
+            if (parsedJson) {
+              this.recordApiCallResult(
+                true,
+                200,
+                `AKTIF (CLOUD AI ENGINE)`,
+                lastErrorMessage ? `Key utama: ${lastErrorMessage} -> Dijawab Cloud AI` : 'Sukses menghasilkan JSON AI Murni'
+              );
+              return parsedJson;
+            }
+          }
+        }
+      } catch (cloudErr) {
+        console.warn(`Relay model ${rModel} timeout/skip:`, cloudErr);
+      }
+    }
+
+    this.recordApiCallResult(
+      false,
+      lastHttpError || 503,
+      'GANGGUAN KONEKSI AI',
+      lastErrorMessage || 'Tidak dapat terhubung ke server AI.'
+    );
     return null;
   }
 };
@@ -30605,6 +31366,691 @@ Object.assign(RpmApp, {
             no: i,
             stem: `Jelaskan apa yang kamu ketahui tentang "${materi}" dan sebutkan 2 contohnya dalam kehidupan sehari-hari!`,
             answer: `Kunci: Penjelasan konsep ${materi} beserta 2 contoh nyata.`,
+            scoreWeight: Math.round(100 / count)
+          });
+        }
+      }
+
+      sections.push({
+        type: qType,
+        title: this.getSectionInstructionTitle(qType, isEnglish, sIdx, spec.customName),
+        count: items.length,
+        items
+      });
+    });
+
+    return sections;
+  }
+});
+
+    // ============================================================================
+// TAHAP 2: ENGINE FULL GENERATIVE AI UNTUK CP, TP (1-6), & SELURUH KOMPONEN
+// DOKUMEN MODUL RPM 8-3-3-4 PADA SEMUA MATA PELAJARAN (BEBAS TEMPLATE STATIS)
+// ============================================================================
+Object.assign(RpmApp, {
+  // Membedah sub-topik yang diketik guru pada kolom Materi maupun Instruksi Khusus
+  extractTeacherSubTopics(materiText, customPromptText = '') {
+    const combined = `${materiText || ''} ${customPromptText || ''}`.trim();
+    if (!combined) return [];
+
+    // Deteksi pola pembagian eksplisit seperti "5 perkalian 5 pembagian" atau "3 energi panas, 3 energi listrik"
+    const explicitQuotaMatches = [];
+    const quotaRegex = /(\d+)\s*(?:soal|butir|nomor)?\s*(?:tentang|materi|operasi|topik)?\s*([a-zA-Z0-9\s\-()\/]+?)(?=(?:,|\bdan\b|\bserta\b|\+|\d+\s*(?:soal|butir)?|$))/gi;
+    let match;
+    while ((match = quotaRegex.exec(combined)) !== null) {
+      const countNum = parseInt(match[1], 10);
+      const topicName = String(match[2] || '').replace(/^(tentang|materi|soal|untuk)\s+/i, '').trim();
+      if (countNum > 0 && topicName.length >= 2) {
+        explicitQuotaMatches.push({ count: countNum, subTopic: topicName });
+      }
+    }
+
+    // Pecah juga berdasarkan pemisah koma, "dan", "serta", "/", "&"
+    const rawParts = String(materiText || '')
+      .split(/[,;&\/]+|\bdan\b|\bserta\b|\bmaupun\b/i)
+      .map(s => s.trim())
+      .filter(s => s.length >= 2);
+
+    return {
+      explicitQuotas: explicitQuotaMatches,
+      subTopics: rawParts.length > 0 ? rawParts : [String(materiText || 'Materi Pokok').trim()]
+    };
+  },
+
+  // Generator CP & TP Kontekstual Cerdas Lintas Mapel (Memecah Sub-Topik secara Presisi)
+  buildSmartContextualCpAndTp({ mapel, materi, bab, kelasFase, soloLevel, tpCount, tpStyle, customPrompt }) {
+    const cleanMapel = String(mapel || 'Mata Pelajaran').trim();
+    const cleanMateri = String(materi || 'Materi Pokok').trim();
+    const cleanKelas = String(kelasFase || 'Kelas 4 / Fase B').trim();
+    const parsed = this.extractTeacherSubTopics(cleanMateri, customPrompt);
+    const subTopics = parsed.subTopics;
+    const count = Math.min(6, Math.max(1, parseInt(tpCount, 10) || 3));
+
+    const cpText = `Pada akhir ${cleanKelas}, peserta didik memiliki kemampuan memahami, mengidentifikasi, dan menerapkan konsep esensial pada mata pelajaran ${cleanMapel} khususnya materi "${cleanMateri}"${bab ? ` (${bab})` : ''}${subTopics.length > 1 ? ` yang mencakup ${subTopics.join(', ')}` : ''}, serta mampu menganalisis dan mengomunikasikan pemecahan masalah kontekstual dalam kehidupan sehari-hari pada tingkat kognitif ${soloLevel || 'Relational'}${customPrompt ? ` sesuai fokus pembelajaran (${customPrompt})` : ''}.`;
+
+    const actionVerbs = [
+      { kognitif: 'Mengidentifikasi dan menjelaskan konsep dasar', praktik: 'melalui pengamatan contoh nyata dengan tepat' },
+      { kognitif: 'Menentukan dan menerapkan langkah penyelesaian atau cara kerja', praktik: 'secara teliti, sistematis, dan benar' },
+      { kognitif: 'Menganalisis hubungan serta memecahkan permasalahan sehari-hari terkait', praktik: 'melalui diskusi dan latihan terstruktur' },
+      { kognitif: 'Mempraktikkan atau mendemonstrasikan keterampilan terkait', praktik: 'di depan kelas dengan percaya diri' },
+      { kognitif: 'Membandingkan dan mengevaluasi berbagai contoh penerapan', praktik: 'secara kritis dan logis' },
+      { kognitif: 'Menyimpulkan dan menyajikan hasil karya atau temuan tentang', praktik: 'secara komunikatif dan runtut' }
+    ];
+
+    const tpList = [];
+    for (let i = 0; i < count; i++) {
+      const targetSub = subTopics[i % subTopics.length] || cleanMateri;
+      const v = actionVerbs[i % actionVerbs.length];
+
+      if (tpStyle === 'ABCD_KURIKULUM') {
+        tpList.push(`Melalui kegiatan eksplorasi dan penugasan pada materi ${cleanMapel}, peserta didik mampu ${v.kognitif.toLowerCase()} "${targetSub}" ${v.praktik}.`);
+      } else if (tpStyle === 'KOGNITIF_PRAKTIK') {
+        tpList.push(`${v.kognitif} "${targetSub}" pada pelajaran ${cleanMapel} serta mempraktikkannya ${v.praktik}.`);
+      } else {
+        tpList.push(`${v.kognitif} "${targetSub}" ${v.praktik}.`);
+      }
+    }
+
+    return { cp: cpText, tpList };
+  },
+
+  // Menyusun CP & TP dengan AI Murni (Mematuhi 100% Jumlah TP, Sub-Topik, & Instruksi Guru di Semua Mapel)
+  async autoSuggestCpAndTp(mode = 'BOTH') {
+    if (AppState.isReadOnlyInspection) return;
+
+    const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim() || 'Mata Pelajaran';
+    const bab = (document.getElementById('rpm-input-bab')?.value || '').trim();
+    const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+    const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim() || 'Kelas 4 / Fase B';
+    const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+    const modelPedagogis = document.getElementById('rpm-input-model-pedagogis')?.value || 'Problem-Based Learning (PBL)';
+    const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+
+    const tpCountEl = document.getElementById('rpm-tp-count-select');
+    const tpStyleEl = document.getElementById('rpm-tp-style-select');
+    const tpCount = tpCountEl ? Math.min(6, Math.max(1, parseInt(tpCountEl.value, 10) || 3)) : 3;
+    const tpStyle = tpStyleEl ? tpStyleEl.value : 'SIMPLE_TERUKUR';
+
+    if (!materi) {
+      UI.showNotif(
+        'Isi Topik / Materi Ajar Terlebih Dahulu',
+        'Silakan ketik Topik / Materi Ajar pada kolom 7b terlebih dahulu agar AI dapat merumuskan CP dan TP yang 100% relevan.',
+        'warning'
+      );
+      document.getElementById('rpm-input-materi')?.focus();
+      return;
+    }
+
+    const parsedTopics = this.extractTeacherSubTopics(materi, customPrompt);
+    const subTopicsInfo = parsedTopics.subTopics.length > 1
+      ? `Sub-topik yang WAJIB dicakup semuanya di dalam TP: ${parsedTopics.subTopics.map((s, i) => `(${i + 1}) ${s}`).join(', ')}.`
+      : `Fokus topik utama: "${materi}".`;
+
+    const styleInstructionMap = {
+      SIMPLE_TERUKUR: 'Kalimat langsung ke inti kompetensi (Kata Kerja Operasional + Materi spesifik), lugas, operasional, dan mudah diukur dengan soal/praktik.',
+      KOGNITIF_PRAKTIK: 'Berjenjang dari penguasaan konsep pengetahuan menuju keterampilan praktik nyata siswa di kelas.',
+      ABCD_KURIKULUM: 'Format ABCD Kurikulum Merdeka (Condition, Audience, Behavior, Degree) yang menyebutkan materi secara eksplisit.'
+    };
+
+    this.setRpmAiLoading(
+      true,
+      `AI Supabase Sedang Menyusun ${mode === 'CP_ONLY' ? 'CP' : mode === 'TP_ONLY' ? `${tpCount} Tujuan Pembelajaran (TP)` : `CP & ${tpCount} Tujuan Pembelajaran (TP)`}...`,
+      `Membedah materi "${materi}" pada mata pelajaran ${mapel} (${kelasFase}) sesuai instruksi Anda...`
+    );
+
+    const aiPrompt = `Anda adalah Pakar Kurikulum Merdeka Indonesia (SK BSKAP Kemendikdasmen Terbaru).
+Tugas Anda adalah merumuskan Capaian Pembelajaran (CP) dan Tujuan Pembelajaran (TP) yang 100% SPESIFIK, PROFESIONAL, dan BUKAN TEMPLATE UMUM.
+
+DATA PEMBELAJARAN GURU:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Bab / Unit: ${bab || '-'}
+- Topik / Materi Ajar: "${materi}"
+- ${subTopicsInfo}
+- Model Pembelajaran: ${modelPedagogis}
+- Target Kognitif (Taksonomi SOLO): ${soloLevel}
+- Jumlah Butir TP yang WAJIB dibuat: TEPAT ${tpCount} BUTIR TP
+- Gaya Bahasa Rumusan TP: ${styleInstructionMap[tpStyle] || styleInstructionMap.SIMPLE_TERUKUR}
+${customPrompt ? `- INSTRUKSI KHUSUS GURU (WAJIB DIPATUHI 100%): "${customPrompt}"` : ''}
+
+ATURAN MUTLAK:
+1. "cp": Rumuskan 1 paragraf Capaian Pembelajaran (CP) resmi dan kontekstual untuk mata pelajaran ${mapel} pada ${kelasFase} yang mengerucut langsung pada penguasaan materi "${materi}".
+2. "tpList": Buat array berisi TEPAT ${tpCount} kalimat Tujuan Pembelajaran (TP). Jika materi memiliki beberapa sub-topik (misalnya perkalian dan pembagian, atau beberapa jenis energi/teks), bagi butir-butir TP tersebut agar seluruh sub-topik yang diminta guru terwakili secara proporsional.
+3. Jangan tulis angka nomor di awal kalimat dalam array "tpList".
+
+Balas HANYA dengan JSON valid berformat:
+{
+  "cp": "Paragraf Capaian Pembelajaran...",
+  "tpList": [
+    "Kalimat TP 1...",
+    "Kalimat TP 2..."
+  ]
+}`;
+
+    const aiResult = await AICloudMonitor.executeUniversalAICall(aiPrompt, true, false);
+    this.setRpmAiLoading(false);
+
+    const fallback = this.buildSmartContextualCpAndTp({
+      mapel,
+      materi,
+      bab,
+      kelasFase,
+      soloLevel,
+      tpCount,
+      tpStyle,
+      customPrompt
+    });
+
+    const finalCp = (aiResult && typeof aiResult.cp === 'string' && aiResult.cp.trim().length > 20)
+      ? aiResult.cp.trim()
+      : fallback.cp;
+
+    let finalTpList = [];
+    if (aiResult && Array.isArray(aiResult.tpList) && aiResult.tpList.length > 0) {
+      finalTpList = aiResult.tpList
+        .map(t => String(t || '').replace(/^\d+[\.\)]\s*/, '').trim())
+        .filter(Boolean);
+    }
+
+    while (finalTpList.length < tpCount) {
+      finalTpList.push(fallback.tpList[finalTpList.length] || fallback.tpList[0]);
+    }
+    if (finalTpList.length > tpCount) {
+      finalTpList = finalTpList.slice(0, tpCount);
+    }
+
+    const cpEl = document.getElementById('rpm-input-cp');
+    const tpEl = document.getElementById('rpm-input-tp');
+
+    if ((mode === 'BOTH' || mode === 'CP_ONLY') && cpEl) {
+      cpEl.value = finalCp;
+    }
+    if ((mode === 'BOTH' || mode === 'TP_ONLY') && tpEl) {
+      tpEl.value = finalTpList.map((tp, idx) => `${idx + 1}. ${tp}`).join('\n');
+    }
+
+    this.updateTpDetectedCountBadge();
+    this.checkMathPanelVisibility();
+
+    UI.showNotif(
+      mode === 'TP_ONLY'
+        ? `${tpCount} Tujuan Pembelajaran (TP) Selesai Dirumuskan AI`
+        : mode === 'CP_ONLY'
+        ? 'Capaian Pembelajaran (CP) Selesai Dipertajam AI'
+        : `CP & ${tpCount} Tujuan Pembelajaran (TP) Selesai Dirumuskan AI`,
+      `Disusun secara spesifik untuk materi "${materi}" (${mapel} — ${kelasFase}). Kuota API terpakai hari ini: ${AICloudMonitor.config.used_today}/${AICloudMonitor.config.daily_limit}.`,
+      'success'
+    );
+  },
+
+  // Merancang Seluruh Komponen Dokumen Modul RPM 8-3-3-4 (Kerangka, Pemantik, Ice Breaking, LKPD, 3M, & Asesmen) Murni dengan AI
+  async enrichRpmBlueprintWithPureAI(blueprint, params) {
+    const {
+      mapel,
+      bab,
+      materi,
+      kelasFase,
+      semester,
+      soloLevel,
+      selectedDpl,
+      modelPedagogis,
+      includePemantikIce,
+      customPrompt
+    } = params;
+
+    const tpList = Array.isArray(blueprint.tujuanPembelajaran) ? blueprint.tujuanPembelajaran : [];
+    const tpTextJoined = tpList.map((t, i) => `TP ${i + 1}: ${t}`).join('\n');
+    const dplTextJoined = (selectedDpl || []).join(', ');
+    const parsedSub = this.extractTeacherSubTopics(materi, customPrompt);
+
+    blueprint.modelPedagogis = modelPedagogis || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+    blueprint.includePemantikIce = Boolean(includePemantikIce);
+
+    const aiPrompt = `Anda adalah Pakar Kurikulum Merdeka & Penyusun Modul Ajar (RPM Sistem 8-3-3-4) Profesional Indonesia.
+Rancanglah isi lengkap Dokumen Rencana Pembelajaran Mendalam (RPM) yang 100% SPESIFIK membahas materi "${materi}" pada mata pelajaran ${mapel} untuk ${kelasFase}. DILARANG menggunakan kalimat template umum yang bisa dipakai di sembarang pelajaran.
+
+SPESIFIKASI MODUL GURU:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Alokasi Waktu: ${semester}
+- Bab & Topik Materi: ${bab ? bab + ' — ' : ''}${materi}
+- Sub-topik yang dibahas: ${parsedSub.subTopics.join(', ')}
+- Model Pembelajaran: ${blueprint.modelPedagogis}
+- Ranah Taksonomi SOLO: ${soloLevel}
+- Dimensi Profil Lulusan (DPL): ${dplTextJoined}
+- Capaian Pembelajaran (CP): ${blueprint.capaianPembelajaran}
+- Daftar Tujuan Pembelajaran (TP):
+${tpTextJoined}
+${customPrompt ? `- INSTRUKSI KHUSUS GURU (WAJIB DITERAPKAN): "${customPrompt}"` : ''}
+
+INSTRUKSI DETAIL KOMPONEN:
+1. "kerangkaPembelajaran":
+   - "praktikPedagogis": Jelaskan bagaimana guru menerapkan model ${blueprint.modelPedagogis} secara konkret untuk mengajarkan "${materi}".
+   - "kemitraanPembelajaran": Jelaskan kolaborasi antarsiswa/kelompok dan peran guru/orang tua terkait materi "${materi}".
+   - "lingkunganPembelajaran": Jelaskan pengaturan ruang kelas, alat peraga, atau benda konkret yang digunakan untuk materi "${materi}".
+   - "pemanfaatanDigital": Jelaskan media digital/visual/interaktif spesifik yang relevan dengan materi "${materi}".
+2. "pertanyaanPemantik": Array berisi 3 kalimat pertanyaan pemantik yang memancing rasa ingin tahu anak ${kelasFase} langsung tentang "${materi}".
+3. "iceBreaking": 1 paragraf singkat permainan/tepuk/aktivitas pembuka (2-3 menit) yang seru dan bertema "${materi}".
+4. "aktivitasLkpd": 1 paragraf rincian kegiatan Lembar Kerja Peserta Didik (LKPD) yang dikerjakan siswa untuk menguasai seluruh ${tpList.length} TP pada materi "${materi}".
+5. "memahami": Array berisi 3-4 langkah kegiatan tahap Memahami (Mindful Learning) yang membahas pengenalan konsep "${materi}".
+6. "mengaplikasi": Array berisi 4-5 langkah kegiatan inti tahap Mengaplikasi (Meaningful Learning) sesuai sintaks ${blueprint.modelPedagogis} yang melatih seluruh ${tpList.length} TP pada materi "${materi}".
+7. "merefleksi": Array berisi 3 langkah kegiatan penutup tahap Merefleksi (Joyful Learning) dan evaluasi pemahaman "${materi}".
+8. "asesmen":
+   - "diagnostik": Cara guru mengecek kesiapan awal siswa tentang "${materi}".
+   - "formatif": Cara guru menilai proses diskusi, LKPD, dan praktik "${materi}".
+   - "sumatif": Cara guru menguji ketercapaian ${tpList.length} TP pada materi "${materi}" (level SOLO: ${soloLevel}).
+
+Kembalikan HANYA JSON valid dengan struktur persis berikut:
+{
+  "kerangkaPembelajaran": {
+    "praktikPedagogis": "...",
+    "kemitraanPembelajaran": "...",
+    "lingkunganPembelajaran": "...",
+    "pemanfaatanDigital": "..."
+  },
+  "pertanyaanPemantik": ["...", "...", "..."],
+  "iceBreaking": "...",
+  "aktivitasLkpd": "...",
+  "memahami": ["...", "...", "..."],
+  "mengaplikasi": ["...", "...", "...", "..."],
+  "merefleksi": ["...", "...", "..."],
+  "asesmen": {
+    "diagnostik": "...",
+    "formatif": "...",
+    "sumatif": "..."
+  }
+}`;
+
+    const aiDoc = await AICloudMonitor.executeUniversalAICall(aiPrompt, true, false);
+
+    if (aiDoc && typeof aiDoc === 'object') {
+      if (aiDoc.kerangkaPembelajaran && typeof aiDoc.kerangkaPembelajaran === 'object') {
+        blueprint.kerangkaPembelajaran = {
+          praktikPedagogis: String(aiDoc.kerangkaPembelajaran.praktikPedagogis || blueprint.kerangkaPembelajaran?.praktikPedagogis || '').trim(),
+          kemitraanPembelajaran: String(aiDoc.kerangkaPembelajaran.kemitraanPembelajaran || blueprint.kerangkaPembelajaran?.kemitraanPembelajaran || '').trim(),
+          lingkunganPembelajaran: String(aiDoc.kerangkaPembelajaran.lingkunganPembelajaran || blueprint.kerangkaPembelajaran?.lingkunganPembelajaran || '').trim(),
+          pemanfaatanDigital: String(aiDoc.kerangkaPembelajaran.pemanfaatanDigital || blueprint.kerangkaPembelajaran?.pemanfaatanDigital || '').trim()
+        };
+      }
+      if (Array.isArray(aiDoc.pertanyaanPemantik) && aiDoc.pertanyaanPemantik.length > 0) {
+        blueprint.pertanyaanPemantik = aiDoc.pertanyaanPemantik.map(s => String(s).trim()).filter(Boolean);
+      }
+      if (aiDoc.iceBreaking) {
+        blueprint.iceBreaking = String(aiDoc.iceBreaking).trim();
+      }
+      if (aiDoc.aktivitasLkpd) {
+        blueprint.aktivitasLkpd = String(aiDoc.aktivitasLkpd).trim();
+      }
+      if (!blueprint.pengalamanBelajar) blueprint.pengalamanBelajar = {};
+      if (Array.isArray(aiDoc.memahami) && aiDoc.memahami.length > 0) {
+        blueprint.pengalamanBelajar.memahami = aiDoc.memahami.map(s => String(s).trim()).filter(Boolean);
+      }
+      if (Array.isArray(aiDoc.mengaplikasi) && aiDoc.mengaplikasi.length > 0) {
+        blueprint.pengalamanBelajar.mengaplikasi = aiDoc.mengaplikasi.map(s => String(s).trim()).filter(Boolean);
+      }
+      if (Array.isArray(aiDoc.merefleksi) && aiDoc.merefleksi.length > 0) {
+        blueprint.pengalamanBelajar.merefleksi = aiDoc.merefleksi.map(s => String(s).trim()).filter(Boolean);
+      }
+      if (aiDoc.asesmen && typeof aiDoc.asesmen === 'object') {
+        blueprint.asesmen = {
+          diagnostik: String(aiDoc.asesmen.diagnostik || blueprint.asesmen?.diagnostik || '').trim(),
+          formatif: String(aiDoc.asesmen.formatif || blueprint.asesmen?.formatif || '').trim(),
+          sumatif: String(aiDoc.asesmen.sumatif || blueprint.asesmen?.sumatif || '').trim()
+        };
+      }
+    }
+
+    return blueprint;
+  }
+});
+
+    // ============================================================================
+// TAHAP 3: GENERATOR SOAL AI MULTI-MAPEL DENGAN STRICT PER-NUMBER BLUEPRINTING
+// & SMART SUB-TOPIC QUOTA PARSER (100% PATUH INSTRUKSI GURU DI SEMUA PELAJARAN)
+// ============================================================================
+Object.assign(RpmApp, {
+  // Menyusun kisi-kisi alokasi sub-topik & TP untuk SETIAP NOMOR SOAL (No. 1 s.d. No. N)
+  buildPerNumberTopicAllocation(params, totalQuestions) {
+    const { materi, tpRaw, customPrompt } = params;
+    const count = Math.max(1, parseInt(totalQuestions, 10) || 5);
+    const combinedInstruction = `${materi || ''} ${customPrompt || ''}`.trim();
+
+    const tpLines = String(tpRaw || '')
+      .split(/\n+/)
+      .map(l => l.replace(/^(TP\s*\d+\s*[:.]?|\d+[\.\)])\s*/i, '').trim())
+      .filter(Boolean);
+
+    // 1. Cek apakah guru menuliskan angka pembagian soal eksplisit (Contoh: "5 perkalian 5 pembagian" atau "3 energi panas, 2 energi gerak")
+    const explicitRules = [];
+    const regexExplicit = /(\d+)\s*(?:soal|butir|nomor)?\s*(?:tentang|materi|operasi|topik|untuk)?\s*([a-zA-Z0-9\s\-()\/]+?)(?=(?:,|\bdan\b|\bserta\b|\bdengan\b|\+|\d+\s*(?:soal|butir|nomor)?|$))/gi;
+    let match;
+    while ((match = regexExplicit.exec(combinedInstruction)) !== null) {
+      const qNum = parseInt(match[1], 10);
+      const rawTopic = String(match[2] || '')
+        .replace(/^(tentang|materi|soal|butir|nomor|pilihan ganda|pg|isian|esai|uraian)\s+/i, '')
+        .trim();
+      if (qNum > 0 && rawTopic.length >= 2 && !/^(menit|jam|jp|pertemuan|kelas|fase|tp|bab)$/i.test(rawTopic)) {
+        explicitRules.push({ quota: qNum, subTopic: rawTopic });
+      }
+    }
+
+    const perNumberPlan = [];
+
+    if (explicitRules.length > 0) {
+      explicitRules.forEach(rule => {
+        for (let k = 0; k < rule.quota; k++) {
+          if (perNumberPlan.length < count) {
+            const matchedTp = tpLines.find(t => t.toLowerCase().includes(rule.subTopic.toLowerCase())) || tpLines[perNumberPlan.length % Math.max(1, tpLines.length)] || materi;
+            perNumberPlan.push({
+              no: perNumberPlan.length + 1,
+              subTopic: rule.subTopic,
+              tpTarget: matchedTp
+            });
+          }
+        }
+      });
+      // Jika total soal lebih banyak dari kuota eksplisit, isi sisanya secara proporsional
+      while (perNumberPlan.length < count) {
+        const rule = explicitRules[perNumberPlan.length % explicitRules.length];
+        perNumberPlan.push({
+          no: perNumberPlan.length + 1,
+          subTopic: rule.subTopic,
+          tpTarget: tpLines[perNumberPlan.length % Math.max(1, tpLines.length)] || materi
+        });
+      }
+      return perNumberPlan;
+    }
+
+    // 2. Jika guru menuliskan beberapa sub-topik tanpa angka (Contoh: "Perkalian dan Pembagian" atau "Energi Panas, Listrik, dan Cahaya")
+    const splitSubTopics = String(`${materi || ''} ${customPrompt || ''}`)
+      .split(/[,;&\/]+|\bdan\b|\bserta\b|\bmaupun\b/i)
+      .map(s => s.replace(/^(buatkan|buat|soal|tentang|materi|fokus|pada)\s+/gi, '').trim())
+      .filter(s => s.length >= 3);
+
+    const uniqueSubs = Array.from(new Set(splitSubTopics));
+
+    if (uniqueSubs.length > 1) {
+      const chunkSize = Math.max(1, Math.floor(count / uniqueSubs.length));
+      for (let i = 0; i < count; i++) {
+        const subIdx = Math.min(uniqueSubs.length - 1, Math.floor(i / chunkSize));
+        const sub = uniqueSubs[subIdx];
+        const matchedTp = tpLines[subIdx % Math.max(1, tpLines.length)] || tpLines[0] || sub;
+        perNumberPlan.push({
+          no: i + 1,
+          subTopic: sub,
+          tpTarget: matchedTp
+        });
+      }
+      return perNumberPlan;
+    }
+
+    // 3. Jika 1 topik utuh, bagi secara berurutan mengikuti daftar Tujuan Pembelajaran (TP 1 s.d. TP N)
+    for (let i = 0; i < count; i++) {
+      const tpTarget = tpLines.length > 0 ? tpLines[i % tpLines.length] : (materi || 'Materi Pokok');
+      perNumberPlan.push({
+        no: i + 1,
+        subTopic: materi || 'Materi Pokok',
+        tpTarget
+      });
+    }
+
+    return perNumberPlan;
+  },
+
+  // Generator Soal AI Murni Multi-Mapel yang Mematuhi Kisi-Kisi Per Nomor Soal 100%
+  async buildDynamicQuestionSectionsWithAI(params, questionSpecList) {
+    const {
+      mapel,
+      bab,
+      materi,
+      kelasFase,
+      soloLevel,
+      tpRaw,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint
+    } = params;
+
+    if (!Array.isArray(questionSpecList) || questionSpecList.length === 0) {
+      return [];
+    }
+
+    const isEnglish = /inggris|english/i.test(`${mapel} ${materi}`);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|luas|keliling| bangun /i.test(`${mapel} ${materi} ${customPrompt || ''}`);
+
+    // Bangun cetak biru (Blueprint) per bagian dan per nomor soal agar AI tidak bisa melenceng
+    const sectionBlueprintsText = questionSpecList.map((spec, sIdx) => {
+      const qCount = Math.max(1, parseInt(spec.count, 10) || 5);
+      const perNumberPlan = this.buildPerNumberTopicAllocation(params, qCount);
+      const label = spec.type === 'LAINNYA' ? (spec.customName || 'Soal Khusus') : spec.type;
+
+      const numberLines = perNumberPlan.map(p =>
+        `   - Soal Nomor ${p.no}: WAJIB menguji sub-topik "${p.subTopic}" (Indikator TP: ${p.tpTarget})`
+      ).join('\n');
+
+      return `BAGIAN ${sIdx + 1} — Jenis "${spec.type}" (${label}), Jumlah TEPAT ${qCount} Nomor Soal:\n${numberLines}`;
+    }).join('\n\n');
+
+    const aiPrompt = `Anda adalah Pakar Pembuat Soal Ujian Sekolah Dasar/Menengah di Indonesia (Standar Kurikulum Merdeka).
+Tugas Anda: Buatlah naskah soal ujian yang PROFESIONAL, MASUK AKAL sesuai tingkat kelas siswa, SIMPLE & TO THE POINT (langsung ke pertanyaan inti tanpa kalimat template bertele-tele), dan MEMATUHI 100% KISI-KISI PER NOMOR SOAL di bawah ini!
+
+IDENTITAS & PARAMETER GURU:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Bab / Unit: ${bab || '-'}
+- Topik / Materi Pokok: "${materi}"
+- Tingkat Kesulitan: ${difficulty || 'SEDANG'} (Level Kognitif SOLO: ${soloLevel || 'Relational'})
+- Tujuan Pembelajaran (TP):
+${tpRaw || materi}
+${customPrompt ? `- INSTRUKSI KHUSUS GURU (HUKUM TERTINGGI, WAJIB DIPATUHI 100%): "${customPrompt}"` : ''}
+${isMath ? `- Aturan Matematika: Model "${mathMode}" (${mathConstraint || 'Angka bulat yang pas dan sesuai kelas'})` : ''}
+
+KISI-KISI WAJIB PER NOMOR SOAL (DILARANG MELENCENG DARI PEMBAGIAN INI):
+${sectionBlueprintsText}
+
+ATURAN MUTLAK KUALITAS SOAL DI SEMUA MATA PELAJARAN:
+1. PATUHI PEMBAGIAN SUB-TOPIK PER NOMOR! Contoh: Jika Nomor 1-5 diminta Perkalian dan Nomor 6-10 diminta Pembagian, maka Nomor 1-5 WAJIB soal perkalian dan Nomor 6-10 WAJIB soal pembagian! Begitu juga untuk IPAS, Bahasa Indonesia, Pancasila, Bahasa Inggris, PAI, PJOK, dan Seni Budaya.
+2. DILARANG KERAS menulis jargon guru di dalam soal siswa seperti "[Ranah SOLO]", "Perhatikan konteks pembelajaran...", atau "Manakah pernyataan yang mencerminkan prinsip...".
+3. Buat soal yang bervariasi, nyata, dan menguji pemahaman konsep materi "${materi}" secara langsung (setiap nomor soal harus berbeda kasus/angkanya).
+4. ${isEnglish ? 'Khusus Bahasa Inggris: Gunakan kalimat soal Bahasa Inggris sederhana yang sesuai untuk siswa ' + kelasFase + ' (bisa berupa dialog singkat, arti kata/ungkapan, atau melengkapi kalimat seperti contoh ujian sekolah asli).' : 'Gunakan Bahasa Indonesia yang jelas, lugas, dan sesuai usia siswa ' + kelasFase + '.'}
+5. Untuk Pilihan Ganda (PG): Sediakan 4 opsi (A, B, C, D) yang masuk akal dan pastikan kunci jawabannya 100% akurat.
+
+Kembalikan HANYA JSON valid dengan struktur persis berikut:
+{
+  "sections": [
+    {
+      "type": "PG atau ISIAN atau ESAI atau URAIAN atau BENARSALAH atau MATCHING atau LAINNYA",
+      "title": "Judul petunjuk pengerjaan bagian soal",
+      "items": [
+        {
+          "no": 1,
+          "stem": "Teks pertanyaan nomor 1 yang spesifik, jelas, dan to the point",
+          "mathExpression": "Isi rumus/operasi angka jika soal hitung langsung, atau kosongkan string",
+          "options": { "A": "Teks opsi A", "B": "Teks opsi B", "C": "Teks opsi C", "D": "Teks opsi D" },
+          "leftPremise": "Pernyataan kiri (khusus MATCHING)",
+          "rightResponse": "Pasangan kanan (khusus MATCHING)",
+          "answer": "Kunci Jawaban yang akurat beserta penjelasan singkat"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const aiData = await AICloudMonitor.executeUniversalAICall(aiPrompt, true, false);
+
+    if (aiData && Array.isArray(aiData.sections) && aiData.sections.length > 0) {
+      return aiData.sections.map((sec, idx) => {
+        const spec = questionSpecList[idx] || questionSpecList[0];
+        const items = Array.isArray(sec.items) ? sec.items : [];
+        return {
+          type: sec.type || spec.type,
+          title: sec.title || this.getSectionInstructionTitle(sec.type || spec.type, isEnglish, idx, spec.customName),
+          count: items.length,
+          items: items.map((it, i) => ({
+            no: i + 1,
+            stem: String(it.stem || '').trim(),
+            mathExpression: String(it.mathExpression || '').trim(),
+            options: it.options || { A: '-', B: '-', C: '-', D: '-' },
+            leftPremise: String(it.leftPremise || '').trim(),
+            rightResponse: String(it.rightResponse || '').trim(),
+            answer: String(it.answer || '').trim(),
+            scoreWeight: Math.round(100 / Math.max(1, items.length))
+          }))
+        };
+      });
+    }
+
+    // Jika jaringan internet offline total, gunakan Dynamic Sub-Topic & Multi-Operation Engine (Bebas Hardcode Pembagian!)
+    return this.buildSmartPedagogicalFallbackSections(params, questionSpecList);
+  },
+
+  // Generator Dinamis Lintas Mapel & Multi-Operasi (Mematuhi Pembagian Sub-Topik Per Nomor Soal Saat Offline)
+  buildSmartPedagogicalFallbackSections(params, questionSpecList) {
+    const { mapel, materi, customPrompt, mathMode } = params;
+    const textCombined = `${mapel || ''} ${materi || ''} ${customPrompt || ''}`.toLowerCase();
+    const isEnglish = /inggris|english|introducing|greeting|number|color|family|animal|school|hobby|time|food/i.test(textCombined);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|luas|keliling/i.test(textCombined);
+
+    const sections = [];
+
+    (questionSpecList || []).forEach((spec, sIdx) => {
+      const qType = spec.type;
+      const count = Math.max(1, parseInt(spec.count, 10) || 1);
+      const perNumberPlan = this.buildPerNumberTopicAllocation(params, count);
+      const items = [];
+
+      for (let i = 1; i <= count; i++) {
+        const plan = perNumberPlan[i - 1] || { subTopic: materi || 'Materi Pokok', tpTarget: materi || '' };
+        const subLower = `${plan.subTopic} ${plan.tpTarget}`.toLowerCase();
+
+        // 1. KHUSUS MATEMATIKA: Deteksi operasi spesifik PADA NOMOR SOAL INI (Perkalian vs Pembagian vs Penjumlahan vs Pengurangan)
+        if (isMath) {
+          const isWord = mathMode === 'WORD_PROBLEM' || (mathMode === 'MIXED_MATH' && i % 2 === 0);
+          let opType = 'MULTIPLY';
+
+          if (/pembagian|bagi|÷|:/i.test(subLower) && !/perkalian|kali/i.test(subLower)) {
+            opType = 'DIVIDE';
+          } else if (/perkalian|kali|×/i.test(subLower) && !/pembagian|bagi/i.test(subLower)) {
+            opType = 'MULTIPLY';
+          } else if (/pengurangan|kurang|selisih/i.test(subLower)) {
+            opType = 'SUBTRACT';
+          } else if (/penjumlahan|tambah|jumlah/i.test(subLower)) {
+            opType = 'ADD';
+          } else {
+            // Jika sub-topik memuat keduanya, bagi paruh pertama Perkalian dan paruh kedua Pembagian
+            opType = i <= Math.ceil(count / 2) ? 'MULTIPLY' : 'DIVIDE';
+          }
+
+          let a = 0, b = 0, correctVal = 0, exprStr = '', stemStr = '';
+
+          if (opType === 'MULTIPLY') {
+            a = ((i * 3) % 12) + 6;
+            b = ((i * 2) % 8) + 4;
+            correctVal = a * b;
+            exprStr = `${a} × ${b} = ....`;
+            stemStr = isWord
+              ? `Di perpustakaan sekolah terdapat ${a} rak buku. Setiap rak berisi ${b} buku cerita. Berapakah jumlah seluruh buku cerita di perpustakaan tersebut?`
+              : `Hasil dari operasi perkalian ${a} × ${b} adalah ....`;
+          } else if (opType === 'DIVIDE') {
+            b = (i % 7) + 3;
+            correctVal = (i * 6) + 9;
+            a = b * correctVal;
+            exprStr = `${a} ÷ ${b} = ....`;
+            stemStr = isWord
+              ? `Panitia menyiapkan ${a} bibit pohon yang akan ditanam sama banyak di ${b} taman sekolah. Berapa bibit pohon yang ditanam pada setiap taman?`
+              : `Hasil dari operasi pembagian ${a} ÷ ${b} adalah ....`;
+          } else if (opType === 'SUBTRACT') {
+            b = (i * 15) + 45;
+            correctVal = (i * 12) + 38;
+            a = b + correctVal;
+            exprStr = `${a} - ${b} = ....`;
+            stemStr = isWord
+              ? `Seorang pedagang membawa ${a} butir telur ayam. Setelah terjual sebanyak ${b} butir, berapa butir telur ayam yang masih tersisa?`
+              : `Hasil dari operasi pengurangan ${a} - ${b} adalah ....`;
+          } else {
+            a = (i * 24) + 35;
+            b = (i * 18) + 27;
+            correctVal = a + b;
+            exprStr = `${a} + ${b} = ....`;
+            stemStr = isWord
+              ? `SDN 2 Sabedo mengumpulkan ${a} buku bacaan pada pekan pertama dan ${b} buku bacaan pada pekan kedua. Berapa jumlah seluruh buku bacaan yang terkumpul?`
+              : `Hasil dari operasi penjumlahan ${a} + ${b} adalah ....`;
+          }
+
+          if (qType === 'PG') {
+            const keys = ['A', 'B', 'C', 'D'];
+            const correctKey = keys[(i - 1) % 4];
+            const distractors = [correctVal + 4, Math.max(1, correctVal - 3), correctVal + 10];
+            const opts = { A: '', B: '', C: '', D: '' };
+            let dIdx = 0;
+            keys.forEach(k => {
+              opts[k] = k === correctKey ? String(correctVal) : String(distractors[dIdx++]);
+            });
+
+            items.push({
+              no: i,
+              stem: stemStr,
+              mathExpression: isWord ? '' : exprStr,
+              options: opts,
+              answer: `Kunci: ${correctKey.toLowerCase()}. ${correctVal} (${exprStr.replace('....', correctVal)})`,
+              scoreWeight: Math.round(100 / count)
+            });
+          } else {
+            items.push({
+              no: i,
+              stem: stemStr,
+              mathExpression: isWord ? '' : exprStr,
+              answer: `Kunci: ${correctVal} (${exprStr.replace('....', correctVal)})`,
+              scoreWeight: Math.round(100 / count)
+            });
+          }
+          continue;
+        }
+
+        // 2. MATA PELAJARAN UMUM & SAINS (Menguji Sub-Topik & Indikator TP Spesifik pada Nomor Ini)
+        const focusTopic = plan.subTopic || materi;
+        const focusTp = plan.tpTarget || `Memahami konsep ${focusTopic}`;
+
+        if (qType === 'PG') {
+          const keys = ['A', 'B', 'C', 'D'];
+          const correctKey = keys[(i - 1) % 4];
+          const opts = {
+            A: '',
+            B: '',
+            C: '',
+            D: ''
+          };
+          opts[correctKey] = `Menunjukkan pemahaman dan penerapan yang tepat sesuai konsep "${focusTopic}" (${focusTp})`;
+          const wrongPool = [
+            `Bertentangan dengan ciri dan prinsip utama pada "${focusTopic}"`,
+            `Hanya menyebutkan istilah tanpa memperhatikan fungsi "${focusTopic}"`,
+            `Tidak berkaitan dengan sasaran materi "${focusTopic}" pada pelajaran ${mapel}`
+          ];
+          let wIdx = 0;
+          keys.forEach(k => {
+            if (k !== correctKey) opts[k] = wrongPool[wIdx++];
+          });
+
+          items.push({
+            no: i,
+            stem: `Berdasarkan materi "${focusTopic}" pada pelajaran ${mapel}, manakah pernyataan atau contoh penerapan yang tepat di bawah ini?`,
+            options: opts,
+            answer: `Kunci: ${correctKey.toLowerCase()}`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else if (qType === 'ISIAN') {
+          items.push({
+            no: i,
+            stem: `Istilah atau contoh utama yang berkaitan langsung dengan "${focusTopic}" (${focusTp}) adalah .................................................`,
+            answer: `Kunci: Konsep/contoh tepat pada sub-materi ${focusTopic}`,
+            scoreWeight: Math.round(100 / count)
+          });
+        } else {
+          items.push({
+            no: i,
+            stem: `Jelaskan dengan bahasamu sendiri mengenai "${focusTopic}" sesuai tujuan pembelajaran (${focusTp}) beserta contohnya!`,
+            answer: `Kunci: Penjelasan akurat mengenai ${focusTopic} disertai contoh konkret.`,
             scoreWeight: Math.round(100 / count)
           });
         }
