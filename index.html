@@ -4989,23 +4989,30 @@ body {
       </div>
     </div>
 
-    <div class="koku-hero-banner no-print">
+        <div class="koku-hero-banner no-print">
       <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
         <div>
           <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.4rem;">
             <span class="badge badge-warning">PILAR 3 — KEGIATAN KOKURIKULER PEMBELAJARAN MENDALAM</span>
             <span id="koku-active-class-badge" class="badge badge-info">Kelas Aktif: -</span>
+            <span id="koku-ai-engine-badge" class="badge badge-success">☁ AI Terpusat Supabase Aktif</span>
+            <span id="koku-ai-quota-monitor-pill" class="badge badge-primary" style="background: rgba(15, 23, 42, 0.55); color: #fde68a; border: 1px solid rgba(253, 230, 138, 0.4);">
+              📊 Kuota AI Siap Digunakan
+            </span>
           </div>
           <h2 style="font-size: 1.48rem; font-weight: 800; margin-bottom: 0.25rem;">
-            Manajemen Perencanaan, Pelaksanaan & Asesmen Kokurikuler Terpadu
+            Manajemen Perencanaan, Pelaksanaan & Asesmen Kokurikuler Berbasis AI Murni
           </h2>
-          <p style="font-size: 0.88rem; color: #ccfbf1; max-width: 850px;">
-            Mendukung <strong>3 Bentuk Utama Kokurikuler SD</strong>: (1) Pembelajaran Kolaboratif Lintas Disiplin Ilmu, (2) Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH), dan (3) Cara Lainnya / Karakteristik Lokal, dilengkapi <strong>Generator Modul Perencanaan Kokurikuler (Hybrid AI)</strong> serta <strong>Generator 3 Inspirasi Deskripsi Rapor</strong>.
+          <p style="font-size: 0.88rem; color: #ccfbf1; max-width: 860px;">
+            Terhubung 100% dengan <strong>Supabase Central AI Vault</strong> untuk menganalisis Fase, Bentuk Kegiatan (<strong>Lintas Disiplin Ilmu</strong>, <strong>G7KAIH</strong>, & <strong>Kearifan Lokal</strong>), Tema, dan Perintah Khusus Guru secara mendalam menjadi Modul Kokurikuler, LKPD Proyek, Rubrik (SB/B/C/K), dan Deskripsi Rapor yang kontekstual.
           </p>
         </div>
         <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.14); color: #86efac; border-color: rgba(134,239,172,0.45);" onclick="SupabaseAIVault.syncKeysAndShowStatus(true)">
+            🔄 Cek Status & Kuota AI
+          </button>
           <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.switchTab('modul')">
-            ✨ Buat Modul Perencanaan Kokurikuler (AI)
+            ✨ Buat Modul Kokurikuler (AI Murni)
           </button>
           <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="TeacherApp.openTeacherDashboard()">
             &larr; Kembali ke Pilar Utama
@@ -5264,95 +5271,197 @@ body {
       </div>
     </div>
 
-    <!-- TAB 2: GENERATOR MODUL PERENCANAAN KOKURIKULER (HYBRID AI) -->
+        <!-- TAB 2: GENERATOR MODUL PERENCANAAN KOKURIKULER (100% GENERATIVE AI MURNI) -->
     <div id="koku-panel-modul" class="koku-subpanel hidden">
       <div id="koku-modul-form-card" class="card no-print">
         <div class="card-header">
           <div>
-            <span class="badge badge-primary" style="margin-bottom: 0.3rem;">GENERATOR MODUL PERENCANAAN KOKURIKULER — HYBRID AI</span>
-            <h3 class="card-title">Penyusunan Dokumen Perencanaan & Rubrik Asesmen Kokurikuler</h3>
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+              <span class="badge badge-primary">GENERATOR MODUL PERENCANAAN KOKURIKULER — 100% AI MURNI</span>
+              <span class="badge badge-success">✓ Terhubung Supabase AI Vault</span>
+            </div>
+            <h3 class="card-title">Penyusunan Dokumen Perencanaan, Skenario Kegiatan, LKPD & Rubrik Kokurikuler</h3>
             <p class="card-subtitle">
-              Dirancang sesuai format resmi <strong>Panduan Kokurikuler Kemendikdasmen</strong> (Identitas, A. Dimensi Profil Lulusan, B. Tujuan Pembelajaran, C. Praktik Pedagogis, D. Lingkungan Belajar, E. Kemitraan Pembelajaran, F. Pemanfaatan Digital, G. Rangkaian Kegiatan, dan H. Asesmen & Rubrik SB/B/C/K).
+              AI Murni mengidentifikasi secara spesifik <strong>Kelas/Fase, Bentuk Kegiatan, Tema, Fokus Kolaborasi/G7KAIH/Lokal, Tujuan Pembelajaran (1–6 TP), serta Perintah Khusus Anda</strong> untuk menyusun modul yang 100% kontekstual (bukan template statis).
             </p>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.fillSamplePerencanaanForm()">
-            ✨ Bantu Isi Contoh Sesuai Bentuk Terpilih
-          </button>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.scrollToSavedKokuArchive()">
+              📂 Arsip Modul Kokurikuler (<span id="koku-saved-count-top">0</span>)
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.fillSamplePerencanaanForm()">
+              ✨ Rekomendasi Tema & Fokus dengan AI
+            </button>
+          </div>
         </div>
 
         <form id="form-generate-koku-modul" onsubmit="KokuApp.handleGenerateKokuModul(event)">
-          <div class="grid-3">
+          <!-- BARIS 1: SEKOLAH, KELAS/FASE, BENTUK KEGIATAN, & TANGGAL TERKUNCI -->
+          <div class="grid-4">
             <div class="form-group">
               <label class="form-label" for="koku-mod-sekolah">1. Nama Satuan Pendidikan :</label>
               <input type="text" id="koku-mod-sekolah" class="form-control" placeholder="Contoh: SDN 2 Sabedo" required>
             </div>
             <div class="form-group">
-              <label class="form-label" for="koku-mod-kelas">2. Kelas / Fase :</label>
+              <label class="form-label" for="koku-mod-kelas">2. Kelas / Fase (Kalibrasi Kognitif AI) :</label>
               <input type="text" id="koku-mod-kelas" class="form-control" placeholder="Contoh: Kelas 4 / Fase B" required>
             </div>
             <div class="form-group">
               <label class="form-label" for="koku-mod-bentuk">3. Pilih Bentuk Kegiatan Kokurikuler :</label>
-              <select id="koku-mod-bentuk" class="form-control" onchange="KokuApp.handleModBentukChange(this.value)" required>
+              <select id="koku-mod-bentuk" class="form-control" style="font-weight: 700; border-color: #0f766e;" onchange="KokuApp.handleModBentukChange(this.value)" required>
                 <option value="LINTAS_DISIPLIN">1. Pembelajaran Kolaboratif Lintas Disiplin Ilmu</option>
                 <option value="G7KAIH">2. Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</option>
                 <option value="CARA_LAIN">3. Cara Lainnya / Karakteristik & Kearifan Lokal</option>
               </select>
             </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-tanggal-susun">Tanggal Penyusunan (Terkunci Saat Disimpan) :</label>
+              <input type="date" id="koku-mod-tanggal-susun" class="form-control" required>
+            </div>
           </div>
 
+          <!-- BARIS 2: TEMA SPESIFIK, ALOKASI WAKTU, & LOKASI KEGIATAN -->
           <div class="grid-3">
             <div class="form-group">
-              <label class="form-label" for="koku-mod-tema">4. Tema & Topik Spesifik Kegiatan :</label>
-              <input type="text" id="koku-mod-tema" class="form-control" placeholder="Contoh: Peduli Lingkungan / Menjelajah Alam Sekitar" required>
+              <label class="form-label" for="koku-mod-tema">4. Tema & Topik Spesifik Kegiatan Kokurikuler (Wajib Diisi) :</label>
+              <input
+                type="text"
+                id="koku-mod-tema"
+                list="datalist-koku-tema"
+                class="form-control"
+                placeholder="Ketik bebas (Contoh: Konservasi Air & Energi / Kebun Gizi Sekolah / Permainan Tradisional)..."
+                required
+              >
             </div>
             <div class="form-group">
-              <label class="form-label" for="koku-mod-alokasi">5. Alokasi Waktu :</label>
-              <input type="text" id="koku-mod-alokasi" class="form-control" placeholder="Contoh: 36 JP (atau 114 JP)" value="36 JP" required>
+              <label class="form-label" for="koku-mod-alokasi">5. Alokasi Waktu & Jumlah Pertemuan :</label>
+              <input type="text" id="koku-mod-alokasi" class="form-control" placeholder="Contoh: 36 JP (6 Pertemuan Efektif)" value="36 JP (6 Pertemuan)" required>
             </div>
             <div class="form-group">
-              <label class="form-label" for="koku-mod-lokasi">6. Lokasi Kegiatan :</label>
-              <input type="text" id="koku-mod-lokasi" class="form-control" placeholder="Contoh: Lingkungan satuan pendidikan & sekitarnya" value="Lingkungan satuan pendidikan" required>
+              <label class="form-label" for="koku-mod-lokasi">6. Lokasi / Lingkungan Pelaksanaan :</label>
+              <input type="text" id="koku-mod-lokasi" class="form-control" placeholder="Contoh: Lingkungan satuan pendidikan & masyarakat sekitar" value="Lingkungan satuan pendidikan" required>
             </div>
           </div>
 
+          <!-- PANEL KOMPAS AI KOKURIKULER: FOKUS DETAIL, PENGATUR JUMLAH TP (1-6), & INSTRUKSI KHUSUS GURU -->
           <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
-            <div id="koku-mod-fokus-label-title" style="font-weight: 800; font-size: 0.94rem; color: #0f766e; margin-bottom: 0.4rem;">
-              7. Detail Kolaborasi Mata Pelajaran / Fokus Pembiasaan G7KAIH / Kekhasan Lokal :
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed #14b8a6;">
+              <div style="flex: 1; min-width: 260px;">
+                <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                  <span class="badge badge-success">KOMPAS ANALISIS AI MURNI KOKURIKULER</span>
+                  <span class="badge badge-primary">✓ Pengatur Jumlah TP (1–6 TP)</span>
+                </div>
+                <div id="koku-mod-fokus-label-title" style="font-weight: 800; font-size: 1rem; color: var(--dark);">
+                  7, 8, & 9. Detail Kolaborasi Mapel / G7KAIH / Kearifan Lokal, Tujuan Pembelajaran, & Perintah Khusus AI
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+                  Pilih jumlah TP di kanan lalu klik <strong>"✨ Susun Fokus & TP dengan AI Murni"</strong> agar AI menganalisis Tema dan Bentuk Kegiatan secara akurat.
+                </p>
+              </div>
+
+              <!-- KONTROL PENGATUR JUMLAH TP KOKURIKULER (1-6 TP) -->
+              <div class="write-action-btn" style="background: #ffffff; border: 1px solid #5eead4; border-radius: var(--radius-md); padding: 0.65rem 0.85rem; display: flex; align-items: flex-end; gap: 0.55rem; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+                <div>
+                  <label for="koku-mod-tp-count" style="display: block; font-size: 0.73rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                    Jumlah TP Kokurikuler :
+                  </label>
+                  <select id="koku-mod-tp-count" class="form-control" style="width: auto; min-width: 135px; padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 800; border-color: #14b8a6; color: var(--primary);">
+                    <option value="1">1 Tujuan Pembelajaran</option>
+                    <option value="2">2 Tujuan Pembelajaran</option>
+                    <option value="3" selected>3 Tujuan Pembelajaran (Ideal)</option>
+                    <option value="4">4 Tujuan Pembelajaran</option>
+                    <option value="5">5 Tujuan Pembelajaran</option>
+                    <option value="6">6 Tujuan Pembelajaran</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="koku-mod-tp-style" style="display: block; font-size: 0.73rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                    Fokus Rumusan TP :
+                  </label>
+                  <select id="koku-mod-tp-style" class="form-control" style="width: auto; min-width: 195px; padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 700; border-color: #14b8a6;">
+                    <option value="TERPADU_AKSI" selected>Terpadu: Analisis Konsep + Aksi Nyata/Karya</option>
+                    <option value="SIMPLE_TO_THE_POINT">Simple, Lugas & Langsung Terukur</option>
+                    <option value="KARAKTER_DPL">Berbasis Penguatan Karakter & Pembiasaan</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.75rem; font-weight: 800;" onclick="KokuApp.autoSuggestKokuFokusAndTp('BOTH')">
+                    ✨ Susun Fokus & TP dengan AI Murni
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.7rem; background: #0284c7;" onclick="KokuApp.autoSuggestKokuFokusAndTp('TP_ONLY')">
+                    🎯 Buat Ulang TP Saja
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="grid-2">
+
+            <div class="grid-2" style="margin-bottom: 1rem;">
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="koku-mod-fokus-detail">Mata Pelajaran yang Berkolaborasi / Fokus Kebiasaan / Program Lokal :</label>
-                <input
-                  type="text"
+                <label class="form-label" for="koku-mod-fokus-detail">
+                  7. Mata Pelajaran yang Berkolaborasi / Fokus Kebiasaan G7KAIH / Kekhasan Lokal :
+                </label>
+                <textarea
                   id="koku-mod-fokus-detail"
                   class="form-control"
-                  placeholder="Contoh: IPAS, Bahasa Indonesia, dan Matematika (atau Beribadah, Berolahraga, Makan Sehat & Bergizi)"
+                  rows="3"
+                  placeholder="Contoh: Kolaborasi IPAS (Ekosistem & Energi), Bahasa Indonesia (Laporan Pengamatan), dan Matematika (Data Tabel)..."
                   required
-                >
+                ></textarea>
                 <div class="form-hint" id="koku-mod-fokus-hint">
-                  Tuliskan mata pelajaran yang diintegrasikan, kebiasaan G7KAIH yang dipilih, atau kearifan lokal yang dikembangkan.
+                  Tuliskan mata pelajaran yang diintegrasikan, kebiasaan G7KAIH yang dipilih, atau kearifan lokal yang dikembangkan (atau klik tombol AI di atas).
                 </div>
               </div>
 
               <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" for="koku-mod-tp">8. Tujuan Pembelajaran Kokurikuler (Pisahkan per baris jika lebih dari satu) :</label>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <label class="form-label" for="koku-mod-tp" style="margin-bottom: 0;">
+                    8. Tujuan Pembelajaran Kokurikuler (1 Baris = 1 TP) :
+                  </label>
+                  <span id="koku-mod-tp-count-badge" class="badge badge-info" style="font-size: 0.7rem;">0 Butir TP</span>
+                </div>
                 <textarea
                   id="koku-mod-tp"
                   class="form-control"
                   rows="3"
-                  placeholder="1. Menganalisis interaksi antar komponen ekosistem dan pengaruhnya terhadap keseimbangan lingkungan (IPAS).&#10;2. Mempresentasikan gagasan sebagai solusi pemecahan masalah secara kritis dan kreatif (Bahasa Indonesia)."
+                  oninput="KokuApp.updateKokuTpCountBadge()"
+                  placeholder="Klik '✨ Susun Fokus & TP dengan AI Murni' atau ketik Tujuan Pembelajaran Kokurikuler di sini..."
                   required
                 ></textarea>
+                <div class="form-hint" style="color: #0f766e;">
+                  Setiap butir TP di atas akan diterjemahkan oleh AI menjadi langkah kegiatan proyek dan indikator Rubrik Asesmen (SB/B/C/K).
+                </div>
               </div>
+            </div>
+
+            <!-- KOLOM BARU: PERINTAH / INSTRUKSI KHUSUS GURU UNTUK AI MURNI -->
+            <div style="background: #ffffff; padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <label class="form-label" for="koku-mod-custom-prompt" style="color: #0f766e; margin-bottom: 0;">
+                  9. Perintah / Instruksi Khusus Guru untuk AI Murni (Opsional — Bebas Sesuai Kebutuhan Kelas) :
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 700; color: var(--primary); cursor: pointer;">
+                  <input type="checkbox" id="koku-mod-include-lkpd" checked>
+                  <span>Sertakan Pertanyaan Pemantik & Panduan LKPD Proyek Murid</span>
+                </label>
+              </div>
+              <textarea
+                id="koku-mod-custom-prompt"
+                class="form-control"
+                rows="2"
+                placeholder="Contoh: 'Susun kegiatan proyek pembuatan produk daur ulang dari bahan bekas di sekitar sekolah, libatkan orang tua pada tahap pameran karya, dan buat rubrik yang mudah diamati guru'..."
+              ></textarea>
             </div>
           </div>
 
+          <!-- BARIS 10: PILIHAN DIMENSI PROFIL LULUSAN -->
           <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
               <div>
-                <strong style="font-size: 0.92rem; color: var(--dark);">9. Pilih Dimensi Profil Lulusan yang Dikuatkan & Dinilai :</strong>
+                <strong style="font-size: 0.92rem; color: var(--dark);">10. Pilih Dimensi Profil Lulusan yang Dikuatkan & Dinilai :</strong>
                 <p style="font-size: 0.8rem; color: var(--text-muted);">
-                  Pilih minimal 2 Dimensi Profil Lulusan. Hybrid AI akan menyusun <strong>Aspek yang Dinilai</strong> serta <strong>Rubrik Sangat Baik, Baik, Cukup, dan Kurang</strong> untuk setiap dimensi yang dicentang.
+                  Pilih minimal 2 Dimensi Profil Lulusan. AI Murni akan menyusun <strong>Aspek Spesifik yang Dinilai</strong> beserta <strong>Kriteria Rubrik Sangat Baik (SB), Baik (B), Cukup (C), dan Kurang (K)</strong> yang kontekstual terhadap tema.
                 </p>
               </div>
             </div>
@@ -5394,36 +5503,49 @@ body {
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
-            <button type="submit" class="btn btn-success write-action-btn" style="padding: 0.85rem 1.85rem; font-size: 0.96rem; box-shadow: var(--shadow-md);">
-              🚀 Analisis dengan Hybrid AI & Susun Modul Perencanaan Kokurikuler &rarr;
+            <button type="submit" class="btn btn-success write-action-btn" style="padding: 0.85rem 1.9rem; font-size: 0.96rem; box-shadow: var(--shadow-md);">
+              🚀 Analisis Mendalam dengan AI Murni & Susun Modul Kokurikuler &rarr;
             </button>
           </div>
         </form>
       </div>
 
+      <!-- PANEL HASIL DOKUMEN MODUL KOKURIKULER & RUBRIK ASESMEN -->
       <div id="koku-modul-result-wrapper" class="hidden">
-                      <div class="rpm-nav-toolbar no-print">
+        <div class="rpm-nav-toolbar no-print">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
             <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
               <button type="button" id="btn-koku-doc-page1" class="rpm-page-tab-btn active-tab" onclick="KokuApp.switchModulPage(1)">
                 <span class="rpm-page-tab-num">1</span>
-                <span>Halaman 1: Dokumen Perencanaan Kokurikuler (A s.d. H)</span>
+                <span>Halaman 1: Dokumen Perencanaan (A s.d. H) & LKPD</span>
               </button>
               <button type="button" id="btn-koku-doc-page2" class="rpm-page-tab-btn" onclick="KokuApp.switchModulPage(2)">
                 <span class="rpm-page-tab-num">2</span>
-                <span>Halaman 2: Matriks Rubrik Asesmen (SB / B / C / K) & Lembar Observasi</span>
+                <span>Halaman 2: Matriks Rubrik Asesmen (SB / B / C / K) & Observasi</span>
               </button>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #0d9488; border: 1px solid #5eead4; font-weight: 800;" onclick="KokuApp.startNewKokuModul()">
+                ➕ Buat Modul Kokurikuler Baru
+              </button>
+              <button type="button" class="btn btn-warning btn-sm write-action-btn" style="background: #f59e0b; color: #0f172a; border: 1px solid #fde68a; font-weight: 800;" onclick="KokuApp.applyCurrentModulToBoardAndAssessment()">
+                📌 Terapkan ke Papan Orientasi & Asesmen Kelas &rarr;
+              </button>
+              <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #7c3aed; border: 1px solid #c4b5fd; font-weight: 700;" onclick="KokuApp.regenerateKokuActivitiesAndRubricWithAI()">
+                🔄 Variasi Kegiatan & Rubrik Baru (AI)
+              </button>
+              <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #16a34a; border: 1px solid #86efac; font-weight: 800;" onclick="KokuApp.saveCurrentKokuToArchive()">
+                💾 Simpan ke Arsip
+              </button>
               <button type="button" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="KokuApp.showAllModulPages()">
                 Tampilkan Semua Halaman
               </button>
-              <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.reopenModulBuilder()">
-                &larr; Ubah Parameter Perencanaan
+              <button type="button" class="btn btn-outline btn-sm" style="background: #1e293b; color: #fde68a; border-color: #475569;" onclick="KokuApp.reopenModulBuilder()">
+                &larr; Edit Parameter
               </button>
-              <button type="button" class="btn btn-success btn-sm" onclick="window.print()">
-                🖨️ Cetak / Simpan PDF
+              <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #0f172a;" onclick="window.print()">
+                🖨️ Cetak / PDF
               </button>
             </div>
           </div>
@@ -5436,7 +5558,7 @@ body {
               id="koku-custom-activity-input"
               class="form-control"
               style="flex: 1; min-width: 260px;"
-              placeholder="Tambah langkah aktivitas kegiatan baru secara manual ke Bagian G (Kegiatan)..."
+              placeholder="Tambah langkah aktivitas kegiatan baru secara manual ke Bagian G (Rangkaian Kegiatan)..."
             >
             <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="KokuApp.addCustomActivityStep()">
               + Tambah Langkah Kegiatan
@@ -5447,6 +5569,379 @@ body {
 
         <div id="koku-modul-page-2" class="rpm-print-page hidden">
           <div id="koku-modul-doc-page2-content"></div>
+        </div>
+      </div>
+
+      <!-- PANEL ARSIP MODUL PERENCANAAN KOKURIKULER TERSIMPAN -->
+      <div id="koku-saved-archive-card" class="card no-print" style="margin-top: 1.5rem; border: 2px solid #5eead4;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-success" style="margin-bottom: 0.25rem;">ARSIP MODUL PERENCANAAN & RUBRIK KOKURIKULER</span>
+            <h3 class="card-title">📂 Daftar Modul Kokurikuler yang Tersimpan (Tanggal Terkunci Permanen)</h3>
+            <p class="card-subtitle">
+              Setiap modul kokurikuler (Lintas Disiplin, G7KAIH, maupun Kearifan Lokal) tersimpan mandiri di Cloud. Klik <strong>Buka Modul</strong> untuk melihat/mencetak, <strong>Terapkan ke Kelas</strong> untuk menyinkronkan ke Papan Orientasi & Asesmen Rapor, atau <strong>Hapus Permanen</strong>.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span id="koku-saved-archive-badge" class="badge badge-primary">0 Modul Tersimpan</span>
+            <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.clearAllSavedKokuArchive()">
+              🗑️ Hapus Semua Arsip Kokurikuler
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">No</th>
+                <th style="width: 170px;">Tanggal Simpan (Terkunci)</th>
+                <th style="width: 185px;">Bentuk Kokurikuler</th>
+                <th>Tema, Fokus & Tujuan Pembelajaran</th>
+                <th style="width: 140px;">Kelas / Fase</th>
+                <th style="width: 175px;">Dimensi Dinilai (DPL)</th>
+                <th style="width: 255px;">Aksi (Buka / Terapkan / Hapus)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-koku-saved-archive"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <!-- TAB 2: GENERATOR MODUL PERENCANAAN KOKURIKULER (100% GENERATIVE AI MURNI) -->
+    <div id="koku-panel-modul" class="koku-subpanel hidden">
+      <div id="koku-modul-form-card" class="card no-print">
+        <div class="card-header">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+              <span class="badge badge-primary">GENERATOR MODUL PERENCANAAN KOKURIKULER — 100% AI MURNI</span>
+              <span class="badge badge-success">✓ Terhubung Supabase AI Vault</span>
+            </div>
+            <h3 class="card-title">Penyusunan Dokumen Perencanaan, Skenario Kegiatan, LKPD & Rubrik Kokurikuler</h3>
+            <p class="card-subtitle">
+              AI Murni mengidentifikasi secara spesifik <strong>Kelas/Fase, Bentuk Kegiatan, Tema, Fokus Kolaborasi/G7KAIH/Lokal, Tujuan Pembelajaran (1–6 TP), serta Perintah Khusus Anda</strong> untuk menyusun modul yang 100% kontekstual (bukan template statis).
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-warning btn-sm" onclick="KokuApp.scrollToSavedKokuArchive()">
+              📂 Arsip Modul Kokurikuler (<span id="koku-saved-count-top">0</span>)
+            </button>
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.fillSamplePerencanaanForm()">
+              ✨ Rekomendasi Tema & Fokus dengan AI
+            </button>
+          </div>
+        </div>
+
+        <form id="form-generate-koku-modul" onsubmit="KokuApp.handleGenerateKokuModul(event)">
+          <!-- BARIS 1: SEKOLAH, KELAS/FASE, BENTUK KEGIATAN, & TANGGAL TERKUNCI -->
+          <div class="grid-4">
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-sekolah">1. Nama Satuan Pendidikan :</label>
+              <input type="text" id="koku-mod-sekolah" class="form-control" placeholder="Contoh: SDN 2 Sabedo" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-kelas">2. Kelas / Fase (Kalibrasi Kognitif AI) :</label>
+              <input type="text" id="koku-mod-kelas" class="form-control" placeholder="Contoh: Kelas 4 / Fase B" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-bentuk">3. Pilih Bentuk Kegiatan Kokurikuler :</label>
+              <select id="koku-mod-bentuk" class="form-control" style="font-weight: 700; border-color: #0f766e;" onchange="KokuApp.handleModBentukChange(this.value)" required>
+                <option value="LINTAS_DISIPLIN">1. Pembelajaran Kolaboratif Lintas Disiplin Ilmu</option>
+                <option value="G7KAIH">2. Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)</option>
+                <option value="CARA_LAIN">3. Cara Lainnya / Karakteristik & Kearifan Lokal</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-tanggal-susun">Tanggal Penyusunan (Terkunci Saat Disimpan) :</label>
+              <input type="date" id="koku-mod-tanggal-susun" class="form-control" required>
+            </div>
+          </div>
+
+          <!-- BARIS 2: TEMA SPESIFIK, ALOKASI WAKTU, & LOKASI KEGIATAN -->
+          <div class="grid-3">
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-tema">4. Tema & Topik Spesifik Kegiatan Kokurikuler (Wajib Diisi) :</label>
+              <input
+                type="text"
+                id="koku-mod-tema"
+                list="datalist-koku-tema"
+                class="form-control"
+                placeholder="Ketik bebas (Contoh: Konservasi Air & Energi / Kebun Gizi Sekolah / Permainan Tradisional)..."
+                required
+              >
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-alokasi">5. Alokasi Waktu & Jumlah Pertemuan :</label>
+              <input type="text" id="koku-mod-alokasi" class="form-control" placeholder="Contoh: 36 JP (6 Pertemuan Efektif)" value="36 JP (6 Pertemuan)" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="koku-mod-lokasi">6. Lokasi / Lingkungan Pelaksanaan :</label>
+              <input type="text" id="koku-mod-lokasi" class="form-control" placeholder="Contoh: Lingkungan satuan pendidikan & masyarakat sekitar" value="Lingkungan satuan pendidikan" required>
+            </div>
+          </div>
+
+          <!-- PANEL KOMPAS AI KOKURIKULER: FOKUS DETAIL, PENGATUR JUMLAH TP (1-6), & INSTRUKSI KHUSUS GURU -->
+          <div class="card" style="background: #f0fdfa; border: 2px solid #14b8a6; margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px dashed #14b8a6;">
+              <div style="flex: 1; min-width: 260px;">
+                <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                  <span class="badge badge-success">KOMPAS ANALISIS AI MURNI KOKURIKULER</span>
+                  <span class="badge badge-primary">✓ Pengatur Jumlah TP (1–6 TP)</span>
+                </div>
+                <div id="koku-mod-fokus-label-title" style="font-weight: 800; font-size: 1rem; color: var(--dark);">
+                  7, 8, & 9. Detail Kolaborasi Mapel / G7KAIH / Kearifan Lokal, Tujuan Pembelajaran, & Perintah Khusus AI
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+                  Pilih jumlah TP di kanan lalu klik <strong>"✨ Susun Fokus & TP dengan AI Murni"</strong> agar AI menganalisis Tema dan Bentuk Kegiatan secara akurat.
+                </p>
+              </div>
+
+              <!-- KONTROL PENGATUR JUMLAH TP KOKURIKULER (1-6 TP) -->
+              <div class="write-action-btn" style="background: #ffffff; border: 1px solid #5eead4; border-radius: var(--radius-md); padding: 0.65rem 0.85rem; display: flex; align-items: flex-end; gap: 0.55rem; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+                <div>
+                  <label for="koku-mod-tp-count" style="display: block; font-size: 0.73rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                    Jumlah TP Kokurikuler :
+                  </label>
+                  <select id="koku-mod-tp-count" class="form-control" style="width: auto; min-width: 135px; padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 800; border-color: #14b8a6; color: var(--primary);">
+                    <option value="1">1 Tujuan Pembelajaran</option>
+                    <option value="2">2 Tujuan Pembelajaran</option>
+                    <option value="3" selected>3 Tujuan Pembelajaran (Ideal)</option>
+                    <option value="4">4 Tujuan Pembelajaran</option>
+                    <option value="5">5 Tujuan Pembelajaran</option>
+                    <option value="6">6 Tujuan Pembelajaran</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="koku-mod-tp-style" style="display: block; font-size: 0.73rem; font-weight: 800; color: #0f766e; margin-bottom: 0.2rem;">
+                    Fokus Rumusan TP :
+                  </label>
+                  <select id="koku-mod-tp-style" class="form-control" style="width: auto; min-width: 195px; padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 700; border-color: #14b8a6;">
+                    <option value="TERPADU_AKSI" selected>Terpadu: Analisis Konsep + Aksi Nyata/Karya</option>
+                    <option value="SIMPLE_TO_THE_POINT">Simple, Lugas & Langsung Terukur</option>
+                    <option value="KARAKTER_DPL">Berbasis Penguatan Karakter & Pembiasaan</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.75rem; font-weight: 800;" onclick="KokuApp.autoSuggestKokuFokusAndTp('BOTH')">
+                    ✨ Susun Fokus & TP dengan AI Murni
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.7rem; background: #0284c7;" onclick="KokuApp.autoSuggestKokuFokusAndTp('TP_ONLY')">
+                    🎯 Buat Ulang TP Saja
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid-2" style="margin-bottom: 1rem;">
+              <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label" for="koku-mod-fokus-detail">
+                  7. Mata Pelajaran yang Berkolaborasi / Fokus Kebiasaan G7KAIH / Kekhasan Lokal :
+                </label>
+                <textarea
+                  id="koku-mod-fokus-detail"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Contoh: Kolaborasi IPAS (Ekosistem & Energi), Bahasa Indonesia (Laporan Pengamatan), dan Matematika (Data Tabel)..."
+                  required
+                ></textarea>
+                <div class="form-hint" id="koku-mod-fokus-hint">
+                  Tuliskan mata pelajaran yang diintegrasikan, kebiasaan G7KAIH yang dipilih, atau kearifan lokal yang dikembangkan (atau klik tombol AI di atas).
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                  <label class="form-label" for="koku-mod-tp" style="margin-bottom: 0;">
+                    8. Tujuan Pembelajaran Kokurikuler (1 Baris = 1 TP) :
+                  </label>
+                  <span id="koku-mod-tp-count-badge" class="badge badge-info" style="font-size: 0.7rem;">0 Butir TP</span>
+                </div>
+                <textarea
+                  id="koku-mod-tp"
+                  class="form-control"
+                  rows="3"
+                  oninput="KokuApp.updateKokuTpCountBadge()"
+                  placeholder="Klik '✨ Susun Fokus & TP dengan AI Murni' atau ketik Tujuan Pembelajaran Kokurikuler di sini..."
+                  required
+                ></textarea>
+                <div class="form-hint" style="color: #0f766e;">
+                  Setiap butir TP di atas akan diterjemahkan oleh AI menjadi langkah kegiatan proyek dan indikator Rubrik Asesmen (SB/B/C/K).
+                </div>
+              </div>
+            </div>
+
+            <!-- KOLOM BARU: PERINTAH / INSTRUKSI KHUSUS GURU UNTUK AI MURNI -->
+            <div style="background: #ffffff; padding: 0.9rem 1rem; border-radius: var(--radius-sm); border: 1px solid #5eead4;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.35rem;">
+                <label class="form-label" for="koku-mod-custom-prompt" style="color: #0f766e; margin-bottom: 0;">
+                  9. Perintah / Instruksi Khusus Guru untuk AI Murni (Opsional — Bebas Sesuai Kebutuhan Kelas) :
+                </label>
+                <label style="display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; font-weight: 700; color: var(--primary); cursor: pointer;">
+                  <input type="checkbox" id="koku-mod-include-lkpd" checked>
+                  <span>Sertakan Pertanyaan Pemantik & Panduan LKPD Proyek Murid</span>
+                </label>
+              </div>
+              <textarea
+                id="koku-mod-custom-prompt"
+                class="form-control"
+                rows="2"
+                placeholder="Contoh: 'Susun kegiatan proyek pembuatan produk daur ulang dari bahan bekas di sekitar sekolah, libatkan orang tua pada tahap pameran karya, dan buat rubrik yang mudah diamati guru'..."
+              ></textarea>
+            </div>
+          </div>
+
+          <!-- BARIS 10: PILIHAN DIMENSI PROFIL LULUSAN -->
+          <div class="card" style="background: #f8fafc; border: 1px solid var(--border); margin-bottom: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+              <div>
+                <strong style="font-size: 0.92rem; color: var(--dark);">10. Pilih Dimensi Profil Lulusan yang Dikuatkan & Dinilai :</strong>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">
+                  Pilih minimal 2 Dimensi Profil Lulusan. AI Murni akan menyusun <strong>Aspek Spesifik yang Dinilai</strong> beserta <strong>Kriteria Rubrik Sangat Baik (SB), Baik (B), Cukup (C), dan Kurang (K)</strong> yang kontekstual terhadap tema.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid-4" id="koku-mod-dpl-checks">
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Keimanan dan Ketakwaan terhadap Tuhan YME">
+                Keimanan & Ketakwaan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kewargaan">
+                Kewargaan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Penalaran Kritis" checked>
+                Penalaran Kritis
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kreativitas">
+                Kreativitas
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kolaborasi">
+                Kolaborasi
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kemandirian">
+                Kemandirian
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Kesehatan">
+                Kesehatan
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: pointer;">
+                <input type="checkbox" name="koku_mod_dpl" value="Komunikasi" checked>
+                Komunikasi
+              </label>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+            <button type="submit" class="btn btn-success write-action-btn" style="padding: 0.85rem 1.9rem; font-size: 0.96rem; box-shadow: var(--shadow-md);">
+              🚀 Analisis Mendalam dengan AI Murni & Susun Modul Kokurikuler &rarr;
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- PANEL HASIL DOKUMEN MODUL KOKURIKULER & RUBRIK ASESMEN -->
+      <div id="koku-modul-result-wrapper" class="hidden">
+        <div class="rpm-nav-toolbar no-print">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+              <button type="button" id="btn-koku-doc-page1" class="rpm-page-tab-btn active-tab" onclick="KokuApp.switchModulPage(1)">
+                <span class="rpm-page-tab-num">1</span>
+                <span>Halaman 1: Dokumen Perencanaan (A s.d. H) & LKPD</span>
+              </button>
+              <button type="button" id="btn-koku-doc-page2" class="rpm-page-tab-btn" onclick="KokuApp.switchModulPage(2)">
+                <span class="rpm-page-tab-num">2</span>
+                <span>Halaman 2: Matriks Rubrik Asesmen (SB / B / C / K) & Observasi</span>
+              </button>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #0d9488; border: 1px solid #5eead4; font-weight: 800;" onclick="KokuApp.startNewKokuModul()">
+                ➕ Buat Modul Kokurikuler Baru
+              </button>
+              <button type="button" class="btn btn-warning btn-sm write-action-btn" style="background: #f59e0b; color: #0f172a; border: 1px solid #fde68a; font-weight: 800;" onclick="KokuApp.applyCurrentModulToBoardAndAssessment()">
+                📌 Terapkan ke Papan Orientasi & Asesmen Kelas &rarr;
+              </button>
+              <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #7c3aed; border: 1px solid #c4b5fd; font-weight: 700;" onclick="KokuApp.regenerateKokuActivitiesAndRubricWithAI()">
+                🔄 Variasi Kegiatan & Rubrik Baru (AI)
+              </button>
+              <button type="button" class="btn btn-success btn-sm write-action-btn" style="background: #16a34a; border: 1px solid #86efac; font-weight: 800;" onclick="KokuApp.saveCurrentKokuToArchive()">
+                💾 Simpan ke Arsip
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" style="background: #0284c7;" onclick="KokuApp.showAllModulPages()">
+                Tampilkan Semua Halaman
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="background: #1e293b; color: #fde68a; border-color: #475569;" onclick="KokuApp.reopenModulBuilder()">
+                &larr; Edit Parameter
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" style="background: #ffffff; color: #0f172a;" onclick="window.print()">
+                🖨️ Cetak / PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="koku-modul-page-1" class="rpm-print-page">
+          <div class="no-print" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius-md); padding: 0.95rem 1.15rem; margin-bottom: 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem;">
+            <input
+              type="text"
+              id="koku-custom-activity-input"
+              class="form-control"
+              style="flex: 1; min-width: 260px;"
+              placeholder="Tambah langkah aktivitas kegiatan baru secara manual ke Bagian G (Rangkaian Kegiatan)..."
+            >
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" onclick="KokuApp.addCustomActivityStep()">
+              + Tambah Langkah Kegiatan
+            </button>
+          </div>
+          <div id="koku-modul-doc-page1-content"></div>
+        </div>
+
+        <div id="koku-modul-page-2" class="rpm-print-page hidden">
+          <div id="koku-modul-doc-page2-content"></div>
+        </div>
+      </div>
+
+      <!-- PANEL ARSIP MODUL PERENCANAAN KOKURIKULER TERSIMPAN -->
+      <div id="koku-saved-archive-card" class="card no-print" style="margin-top: 1.5rem; border: 2px solid #5eead4;">
+        <div class="card-header">
+          <div>
+            <span class="badge badge-success" style="margin-bottom: 0.25rem;">ARSIP MODUL PERENCANAAN & RUBRIK KOKURIKULER</span>
+            <h3 class="card-title">📂 Daftar Modul Kokurikuler yang Tersimpan (Tanggal Terkunci Permanen)</h3>
+            <p class="card-subtitle">
+              Setiap modul kokurikuler (Lintas Disiplin, G7KAIH, maupun Kearifan Lokal) tersimpan mandiri di Cloud. Klik <strong>Buka Modul</strong> untuk melihat/mencetak, <strong>Terapkan ke Kelas</strong> untuk menyinkronkan ke Papan Orientasi & Asesmen Rapor, atau <strong>Hapus Permanen</strong>.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span id="koku-saved-archive-badge" class="badge badge-primary">0 Modul Tersimpan</span>
+            <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.clearAllSavedKokuArchive()">
+              🗑️ Hapus Semua Arsip Kokurikuler
+            </button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="academic-table">
+            <thead>
+              <tr>
+                <th style="width: 48px;">No</th>
+                <th style="width: 170px;">Tanggal Simpan (Terkunci)</th>
+                <th style="width: 185px;">Bentuk Kokurikuler</th>
+                <th>Tema, Fokus & Tujuan Pembelajaran</th>
+                <th style="width: 140px;">Kelas / Fase</th>
+                <th style="width: 175px;">Dimensi Dinilai (DPL)</th>
+                <th style="width: 255px;">Aksi (Buka / Terapkan / Hapus)</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-koku-saved-archive"></tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -31025,6 +31520,1526 @@ window.addEventListener('DOMContentLoaded', () => {
     SupabaseAIVault.syncFromSupabaseTable(false);
   }, 600);
 });
+
+    // ============================================================================
+// TAHAP 2 (KOKURIKULER): ENGINE AI MURNI KOKURIKULER TERINTEGRASI SUPABASE VAULT
+// (ANALISIS FASE, 3 BENTUK KEGIATAN, TEMA, 1-6 TP, LKPD, & RUBRIK SB/B/C/K)
+// ============================================================================
+
+// 1. Hubungkan Indikator Kuota Header Kokurikuler ke SupabaseAIVault
+if (typeof SupabaseAIVault !== 'undefined') {
+  const _origRenderQuota = SupabaseAIVault.renderAllQuotaIndicators
+    ? SupabaseAIVault.renderAllQuotaIndicators.bind(SupabaseAIVault)
+    : null;
+
+  Object.assign(SupabaseAIVault, {
+    renderAllQuotaIndicators() {
+      if (_origRenderQuota) _origRenderQuota();
+
+      const activeKeys = (this.keys || []).filter(k => k.is_active !== false);
+      const totalLimit = activeKeys.reduce((acc, k) => acc + (parseInt(k.daily_limit, 10) || 1500), 0) || 1500;
+      const totalUsed = activeKeys.reduce((acc, k) => acc + (parseInt(k.used_today, 10) || 0), 0);
+      const remainingPct = Math.max(0, Math.min(100, Math.round(((totalLimit - totalUsed) / totalLimit) * 100)));
+      const primaryKey = activeKeys[0] || (this.keys && this.keys[0]);
+
+      const kokuQuotaPill = document.getElementById('koku-ai-quota-monitor-pill');
+      const kokuEngineBadge = document.getElementById('koku-ai-engine-badge');
+
+      if (kokuQuotaPill) {
+        kokuQuotaPill.textContent = `📊 Kuota AI Hari Ini: ${totalUsed} / ${totalLimit} Terpakai (Sisa ${remainingPct}%)`;
+        kokuQuotaPill.style.color = remainingPct < 15 ? '#fca5a5' : '#fde68a';
+      }
+      if (kokuEngineBadge && primaryKey) {
+        kokuEngineBadge.textContent = `☁ AI Aktif: ${primaryKey.label || 'gemini'} (${primaryKey.model_name || 'gemini-2.5-flash'})`;
+      }
+    }
+  });
+}
+
+// 2. Upgrade KokuApp agar 100% Menggunakan Generative AI Murni (SupabaseAIVault)
+Object.assign(KokuApp, {
+  setKokuAiLoading(isVisible, titleText = '', statusText = '') {
+    const modal = document.getElementById('koku-ai-loading-modal');
+    const titleEl = modal ? modal.querySelector('h3') : null;
+    const statusEl = document.getElementById('koku-ai-loading-status');
+    if (!modal) return;
+
+    if (isVisible) {
+      if (titleEl && titleText) titleEl.textContent = titleText;
+      if (statusEl && statusText) statusEl.textContent = statusText;
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  },
+
+  getBentukMeta(bentukCode) {
+    if (bentukCode === 'G7KAIH') {
+      return {
+        code: 'G7KAIH',
+        name: 'Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)',
+        shortName: 'G7KAIH (7 Kebiasaan Hebat)',
+        fokusLabel: '7. Fokus Kebiasaan G7KAIH yang Dikuatkan & Strategi Pembiasaan :'
+      };
+    }
+    if (bentukCode === 'CARA_LAIN') {
+      return {
+        code: 'CARA_LAIN',
+        name: 'Cara Lainnya / Karakteristik & Kearifan Lokal Satuan Pendidikan',
+        shortName: 'Kearifan Lokal & Kekhasan Sekolah',
+        fokusLabel: '7. Fokus Kekhasan Sekolah / Budaya & Kearifan Lokal yang Dikembangkan :'
+      };
+    }
+    return {
+      code: 'LINTAS_DISIPLIN',
+      name: 'Pembelajaran Kolaboratif Lintas Disiplin Ilmu',
+      shortName: 'Kolaborasi Lintas Disiplin Ilmu',
+      fokusLabel: '7. Mata Pelajaran yang Berkolaborasi & Keterkaitan Materi :'
+    };
+  },
+
+  handleModBentukChange(bentukVal) {
+    const meta = this.getBentukMeta(bentukVal);
+    const labelEl = document.getElementById('koku-mod-fokus-label-title');
+    const fokusInp = document.getElementById('koku-mod-fokus-detail');
+
+    if (labelEl) {
+      labelEl.textContent = `7, 8, & 9. ${meta.fokusLabel.replace(/^7\.\s*/, '')}, Tujuan Pembelajaran, & Perintah Khusus AI`;
+    }
+    if (fokusInp) {
+      if (bentukVal === 'G7KAIH') {
+        fokusInp.placeholder = 'Contoh: Pembiasaan Bangun Pagi, Beribadah Tepat Waktu, Berolahraga, dan Makan Sehat Bergizi melalui jurnal pemantauan harian...';
+      } else if (bentukVal === 'CARA_LAIN') {
+        fokusInp.placeholder = 'Contoh: Pelestarian budaya lokal daerah, kerajinan tangan tradisional, atau program sekolah hijau bebas sampah plastik...';
+      } else {
+        fokusInp.placeholder = 'Contoh: Kolaborasi IPAS (Konsep Ekosistem/Energi), Bahasa Indonesia (Teks Laporan Pengamatan), dan Matematika (Pengolahan Data)...';
+      }
+    }
+  },
+
+  updateKokuTpCountBadge() {
+    const tpEl = document.getElementById('koku-mod-tp');
+    const badge = document.getElementById('koku-mod-tp-count-badge');
+    if (!tpEl || !badge) return;
+
+    const lines = tpEl.value
+      .split(/\n+/)
+      .map(l => l.replace(/^\d+[\.\)]\s*/, '').trim())
+      .filter(Boolean);
+
+    badge.textContent = `${lines.length} Butir TP Aktif`;
+    badge.className = lines.length > 0 ? 'badge badge-success' : 'badge badge-info';
+  },
+
+  // AI Murni untuk mengisi Papan Orientasi Kelas di Tab 1
+  async autoFillProjectBoardByAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    const kelasFase = (bucket && bucket.kelasFaseLabel) || 'Kelas 4 / Fase B';
+    const bentuk = document.getElementById('koku-input-bentuk')?.value || 'LINTAS_DISIPLIN';
+    const tema = (document.getElementById('koku-input-tema')?.value || '').trim() || 'Peduli Lingkungan & Energi Berkelanjutan';
+    const bentukMeta = this.getBentukMeta(bentuk);
+
+    this.setKokuAiLoading(
+      true,
+      `AI Murni Menganalisis Papan Orientasi "${tema}"...`,
+      `Menyusun judul kegiatan, target mingguan, fokus harian, dan persiapan murid untuk ${bentukMeta.name} (${kelasFase})...`
+    );
+
+    const prompt = `Anda adalah Pakar Kurikulum Merdeka & Koordinator Kokurikuler SD Indonesia.
+Susun rencana Papan Orientasi Kegiatan Kokurikuler Kelas yang spesifik, kontekstual, dan aplikatif berdasarkan data berikut:
+- Kelas / Fase: ${kelasFase}
+- Bentuk Kokurikuler: ${bentukMeta.name}
+- Tema Kegiatan: "${tema}"
+
+Kembalikan HANYA JSON valid dengan struktur:
+{
+  "judul": "Judul kegiatan kokurikuler yang menarik dan spesifik sesuai tema",
+  "alokasi": "Contoh: 36 JP (6 Pertemuan Efektif)",
+  "targetMingguan": "Target penguatan kompetensi dan Dimensi Profil Lulusan terkait tema ini",
+  "fokusHarian": "2-3 kalimat rincian aktivitas nyata yang dilakukan murid hari ini di kelas/lapangan",
+  "persiapan": "Daftar alat, bahan, dan persiapan konkret murid untuk kegiatan ini"
+}`;
+
+    const aiRes = await SupabaseAIVault.executePromptWithMultiProvider(prompt);
+    this.setKokuAiLoading(false);
+
+    if (aiRes && typeof aiRes === 'object') {
+      const judulEl = document.getElementById('koku-input-judul');
+      const alokasiEl = document.getElementById('koku-input-alokasi');
+      const targetEl = document.getElementById('koku-input-target-mingguan');
+      const fokusEl = document.getElementById('koku-input-fokus-harian');
+      const persEl = document.getElementById('koku-input-persiapan');
+
+      if (judulEl && aiRes.judul) judulEl.value = String(aiRes.judul).trim();
+      if (alokasiEl && aiRes.alokasi) alokasiEl.value = String(aiRes.alokasi).trim();
+      if (targetEl && aiRes.targetMingguan) targetEl.value = String(aiRes.targetMingguan).trim();
+      if (fokusEl && aiRes.fokusHarian) fokusEl.value = String(aiRes.fokusHarian).trim();
+      if (persEl && aiRes.persiapan) persEl.value = String(aiRes.persiapan).trim();
+
+      UI.showNotif(
+        'Rekomendasi Papan Orientasi Selesai Disusun AI',
+        `Papan orientasi untuk tema "${tema}" telah diisi oleh AI Murni. Klik tombol Simpan untuk menampilkannya di kelas dan Portal Siswa.`,
+        'success'
+      );
+    }
+  },
+
+  // AI Murni untuk memberi rekomendasi Tema, Fokus, & TP awal jika guru mengklik "Rekomendasi Tema & Fokus dengan AI"
+  async fillSamplePerencanaanForm() {
+    if (AppState.isReadOnlyInspection) return;
+    const temaEl = document.getElementById('koku-mod-tema');
+    const bentuk = document.getElementById('koku-mod-bentuk')?.value || 'LINTAS_DISIPLIN';
+
+    if (temaEl && !temaEl.value.trim()) {
+      if (bentuk === 'G7KAIH') {
+        temaEl.value = 'Generasi Sehat, Disiplin & Berkarakter Melalui 7 Kebiasaan Anak Indonesia Hebat';
+      } else if (bentuk === 'CARA_LAIN') {
+        temaEl.value = 'Pelestarian Kearifan Lokal & Budaya Bersih Lingkungan Sekolah';
+      } else {
+        temaEl.value = 'Eksplorasi Energi & Pengelolaan Lingkungan Hijau di Sekolah';
+      }
+    }
+
+    await this.autoSuggestKokuFokusAndTp('BOTH');
+  },
+
+  // AI Murni Perumus Fokus Kolaborasi/G7KAIH/Lokal (#7) & Tujuan Pembelajaran 1-6 TP (#8)
+  async autoSuggestKokuFokusAndTp(mode = 'BOTH') {
+    if (AppState.isReadOnlyInspection) return;
+
+    const sekolah = (document.getElementById('koku-mod-sekolah')?.value || '').trim() || 'Satuan Pendidikan';
+    const kelasFase = (document.getElementById('koku-mod-kelas')?.value || '').trim() || 'Kelas 4 / Fase B';
+    const bentuk = document.getElementById('koku-mod-bentuk')?.value || 'LINTAS_DISIPLIN';
+    const bentukMeta = this.getBentukMeta(bentuk);
+    const tema = (document.getElementById('koku-mod-tema')?.value || '').trim();
+    const lokasi = (document.getElementById('koku-mod-lokasi')?.value || '').trim() || 'Lingkungan satuan pendidikan';
+    const customPrompt = (document.getElementById('koku-mod-custom-prompt')?.value || '').trim();
+
+    const tpCount = Math.min(6, Math.max(1, parseInt(document.getElementById('koku-mod-tp-count')?.value, 10) || 3));
+    const tpStyle = document.getElementById('koku-mod-tp-style')?.value || 'TERPADU_AKSI';
+
+    if (!tema) {
+      UI.showNotif(
+        'Ketik Tema / Topik Kegiatan Terlebih Dahulu',
+        'Silakan isi kolom nomor 4 (Tema & Topik Spesifik Kegiatan Kokurikuler) agar AI Murni dapat menganalisis dan menyusun Fokus serta Tujuan Pembelajaran yang akurat.',
+        'warning'
+      );
+      document.getElementById('koku-mod-tema')?.focus();
+      return;
+    }
+
+    const selectedDpl = Array.from(document.querySelectorAll('input[name="koku_mod_dpl"]:checked'))
+      .map(el => el.value);
+    const dplText = selectedDpl.length > 0 ? selectedDpl.join(', ') : 'Penalaran Kritis, Komunikasi, Kolaborasi';
+
+    const styleDesc = tpStyle === 'SIMPLE_TO_THE_POINT'
+      ? 'Kalimat yang lugas, simple, to the point, dan langsung dapat diamati/diukur oleh guru.'
+      : tpStyle === 'KARAKTER_DPL'
+      ? 'Menekankan internalisasi karakter Dimensi Profil Lulusan, sikap positif, dan pembiasaan nyata sehari-hari.'
+      : 'Mengintegrasikan penguasaan konsep lintas ilmu dengan aksi nyata, karya produk, dan komunikasi/presentasi murid.';
+
+    this.setKokuAiLoading(
+      true,
+      `AI Murni Menganalisis Tema "${tema}" (${kelasFase})...`,
+      `Merumuskan detail ${bentukMeta.shortName} dan menyusun tepat ${tpCount} Tujuan Pembelajaran Kokurikuler...`
+    );
+
+    const aiPrompt = `Anda adalah Pakar Kurikulum Merdeka & Ahli Perencanaan Kokurikuler Kemendikdasmen.
+Analisis secara mendalam data kegiatan kokurikuler berikut dan rumuskan Fokus Kegiatan beserta TEPAT ${tpCount} Tujuan Pembelajaran (TP) yang 100% KONTEKSTUAL (bukan kalimat template umum):
+
+PARAMETER KEGIATAN:
+- Satuan Pendidikan: ${sekolah}
+- Kelas / Fase: ${kelasFase}
+- Bentuk Kegiatan Kokurikuler: ${bentukMeta.name}
+- Tema / Topik Spesifik: "${tema}"
+- Lokasi Pelaksanaan: ${lokasi}
+- Dimensi Profil Lulusan (DPL) yang Dikuatkan: ${dplText}
+- Jumlah TP yang WAJIB dibuat: TEPAT ${tpCount} BUTIR TP
+- Gaya Rumusan TP: ${styleDesc}
+${customPrompt ? `- Perintah / Instruksi Khusus Guru: "${customPrompt}"` : ''}
+
+ATURAN KHUSUS SESUAI BENTUK KOKURIKULER:
+${bentuk === 'LINTAS_DISIPLIN'
+  ? '- Pada "fokusDetail", sebutkan secara spesifik 2 atau 3 mata pelajaran yang berkolaborasi (misalnya IPAS, Bahasa Indonesia, Matematika/Seni) beserta rincian konsep apa yang diambil dari masing-masing mapel tersebut untuk membedah tema "' + tema + '".'
+  : bentuk === 'G7KAIH'
+  ? '- Pada "fokusDetail", sebutkan secara spesifik kebiasaan mana saja dari 7 Kebiasaan Anak Indonesia Hebat (Bangun Pagi, Beribadah, Berolahraga, Makan Sehat & Bergizi, Gemar Belajar, Bermasyarakat, Tidur Cepat) yang difokuskan pada tema "' + tema + '" beserta cara pemantauannya.'
+  : '- Pada "fokusDetail", uraikan secara spesifik nilai kearifan lokal, budaya daerah, atau program khas sekolah terkait "' + tema + '" yang dipraktikkan oleh murid.'}
+- Pada "tpList", buat array berisi TEPAT ${tpCount} kalimat Tujuan Pembelajaran yang spesifik membahas "${tema}", sesuai tingkat perkembangan murid ${kelasFase}, tanpa menuliskan angka nomor di depan kalimat.
+
+Kembalikan HANYA JSON valid dengan struktur:
+{
+  "fokusDetail": "Uraian spesifik kolaborasi mata pelajaran / fokus kebiasaan G7KAIH / kekhasan lokal...",
+  "tpList": [
+    "Rumusan TP ke-1...",
+    "Rumusan TP ke-2..."
+  ]
+}`;
+
+    const aiRes = await SupabaseAIVault.executePromptWithMultiProvider(aiPrompt);
+    this.setKokuAiLoading(false);
+
+    const fokusEl = document.getElementById('koku-mod-fokus-detail');
+    const tpEl = document.getElementById('koku-mod-tp');
+
+    let finalFokus = '';
+    let finalTpList = [];
+
+    if (aiRes && typeof aiRes === 'object') {
+      if (aiRes.fokusDetail) finalFokus = String(aiRes.fokusDetail).trim();
+      if (Array.isArray(aiRes.tpList)) {
+        finalTpList = aiRes.tpList
+          .map(t => String(t || '').replace(/^\d+[\.\)]\s*/, '').trim())
+          .filter(Boolean);
+      }
+    }
+
+    // Sintesis Kontekstual Spesifik Tema jika jumlah TP kurang dari tpCount
+    if (!finalFokus) {
+      if (bentuk === 'G7KAIH') {
+        finalFokus = `Penguatan Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH) pada tema "${tema}" melalui pembiasaan terstruktur (Bangun Pagi, Beribadah, Berolahraga, Makan Sehat & Bergizi, Gemar Belajar, dan Bermasyarakat) di ${lokasi}.`;
+      } else if (bentuk === 'CARA_LAIN') {
+        finalFokus = `Pengembangan karakteristik satuan pendidikan dan kearifan lokal melalui praktik nyata "${tema}" di ${lokasi} untuk menumbuhkan dimensi ${dplText}.`;
+      } else {
+        finalFokus = `Kolaborasi Lintas Disiplin Ilmu pada tema "${tema}" yang mengintegrasikan pengamatan ilmiah & lingkungan (IPAS), penyusunan laporan/presentasi gagasan (Bahasa Indonesia), serta pengolahan data pengamatan sederhana (Matematika) pada tingkat ${kelasFase}.`;
+      }
+    }
+
+    const contextualTpCandidates = [
+      `Mengidentifikasi permasalahan, potensi, dan konsep pokok terkait "${tema}" melalui pengamatan langsung di ${lokasi} secara teliti (${dplText.split(',')[0] || 'Penalaran Kritis'}).`,
+      `Menganalisis keterkaitan informasi dan merancang rencana aksi/karya kolaboratif bertema "${tema}" bersama kelompok belajar.`,
+      `Mempraktikkan kegiatan nyata dan menghasilkan karya/pembiasaan positif pada program "${tema}" sesuai panduan kerja secara mandiri dan bertanggung jawab.`,
+      `Mengolah data hasil pengamatan atau rekaman jurnal kegiatan "${tema}" menjadi laporan sederhana yang runtut dan akurat.`,
+      `Mempresentasikan dan mengomunikasikan hasil karya/aksi "${tema}" di depan kelas dengan bahasa yang santun, logis, dan percaya diri (${dplText.split(',')[1]?.trim() || 'Komunikasi'}).`,
+      `Merefleksikan manfaat kegiatan "${tema}" serta menerapkan tindak lanjut pembiasaan positif dalam kehidupan sehari-hari di sekolah dan rumah.`
+    ];
+
+    while (finalTpList.length < tpCount) {
+      finalTpList.push(contextualTpCandidates[finalTpList.length % contextualTpCandidates.length]);
+    }
+    if (finalTpList.length > tpCount) {
+      finalTpList = finalTpList.slice(0, tpCount);
+    }
+
+    if (mode === 'BOTH' && fokusEl) {
+      fokusEl.value = finalFokus;
+    }
+    if (tpEl) {
+      tpEl.value = finalTpList.map((t, i) => `${i + 1}. ${t}`).join('\n');
+    }
+
+    this.updateKokuTpCountBadge();
+
+    UI.showNotif(
+      mode === 'TP_ONLY'
+        ? `${tpCount} Tujuan Pembelajaran Kokurikuler Selesai Disusun AI`
+        : `Fokus & ${tpCount} Tujuan Pembelajaran Kokurikuler Selesai Disusun AI`,
+      `AI Murni telah menyusun rincian fokus dan ${tpCount} TP yang spesifik untuk tema "${tema}" (${kelasFase}).`,
+      'success'
+    );
+  },
+
+  // Mesin Utama AI Murni Penyusun Dokumen Modul Kokurikuler (A s.d. H), Pemantik, LKPD, & Matriks Rubrik SB/B/C/K
+  async buildPureAIKokuModulBlueprint(params) {
+    const {
+      sekolah,
+      kelasFase,
+      bentuk,
+      tema,
+      alokasi,
+      lokasi,
+      fokusDetail,
+      tpList,
+      selectedDpl,
+      customPrompt,
+      includeLkpd
+    } = params;
+
+    const bentukMeta = this.getBentukMeta(bentuk);
+    const tpJoined = tpList.map((t, i) => `${i + 1}. ${t}`).join('\n');
+    const dplJoined = selectedDpl.join(', ');
+
+    const aiPrompt = `Anda adalah Pakar Kurikulum Merdeka & Penyusun Modul Perencanaan Kokurikuler Resmi Kemendikdasmen.
+Tugas Anda: Analisis seluruh data berikut secara mendalam dan susun Dokumen Perencanaan Kokurikuler (Bagian A s.d. H), Pertanyaan Pemantik, Panduan LKPD Proyek Murid, serta Matriks Rubrik Asesmen (SB/B/C/K) yang 100% SPESIFIK, KONTEKSTUAL, dan MEMATUHI PERINTAH GURU (DILARANG menggunakan kalimat template umum).
+
+DATA PERENCANAAN GURU:
+- Satuan Pendidikan: ${sekolah}
+- Kelas / Fase: ${kelasFase}
+- Bentuk Kokurikuler: ${bentukMeta.name}
+- Tema / Topik Spesifik: "${tema}"
+- Alokasi Waktu: ${alokasi}
+- Lokasi Kegiatan: ${lokasi}
+- Fokus Kolaborasi Mapel / G7KAIH / Kearifan Lokal: "${fokusDetail}"
+- Dimensi Profil Lulusan (DPL) yang Dinilai: ${dplJoined}
+- Daftar Tujuan Pembelajaran (TP):
+${tpJoined}
+${customPrompt ? `- PERINTAH / INSTRUKSI KHUSUS GURU (WAJIB DIPATUHI 100%): "${customPrompt}"` : ''}
+
+INSTRUKSI PENYUSUNAN:
+1. "praktikPedagogis", "lingkunganBelajar", "kemitraanPembelajaran", dan "pemanfaatanDigital" harus spesifik menjelaskan bagaimana kegiatan "${tema}" dijalankan pada ${kelasFase} di ${lokasi}.
+2. "pertanyaanPemantik" berisi 3 pertanyaan kontekstual yang memancing rasa ingin tahu murid tentang "${tema}".
+3. "panduanLkpd" berisi instruksi konkret Lembar Kerja Proyek / Jurnal Aksi Murid yang dikerjakan berkelompok/individu pada kegiatan "${tema}".
+4. "activities" berisi 6 sampai 8 langkah kegiatan berurutan (mulai dari Pengenalan/Temukan, Kontekstualisasi/Bayangkan, Pelaksanaan Aksi Nyata/Lakukan, hingga Pameran/Evaluasi/Refleksi) yang secara nyata mempraktikkan "${tema}"${customPrompt ? ` dan melaksanakan instruksi "${customPrompt}"` : ''}.
+5. "rubrikRows" WAJIB dibuat untuk setiap Dimensi Profil Lulusan berikut: [${dplJoined}]. Setiap dimensi memiliki "aspek" spesifik terkait "${tema}" serta kriteria terukur untuk predikat "SB" (Sangat Baik), "B" (Baik), "C" (Cukup), dan "K" (Kurang).
+
+Kembalikan HANYA JSON valid dengan struktur persis berikut:
+{
+  "praktikPedagogis": "Uraian spesifik praktik pedagogis...",
+  "lingkunganBelajar": "Uraian spesifik lingkungan belajar...",
+  "kemitraanPembelajaran": "Uraian spesifik kemitraan pembelajaran...",
+  "pemanfaatanDigital": "Uraian spesifik pemanfaatan teknologi/digital...",
+  "pertanyaanPemantik": [
+    "Pertanyaan pemantik 1...",
+    "Pertanyaan pemantik 2...",
+    "Pertanyaan pemantik 3..."
+  ],
+  "panduanLkpd": "Uraian konkret panduan LKPD Proyek / Jurnal Kegiatan Murid...",
+  "activities": [
+    "Langkah 1 (Tahap Pengenalan & Eksplorasi): ...",
+    "Langkah 2 (Tahap Kontekstualisasi & Perencanaan): ...",
+    "Langkah 3 (Tahap Aksi Nyata & Kolaborasi): ...",
+    "Langkah 4 (Tahap Pembuatan Karya / Pembiasaan): ...",
+    "Langkah 5 (Tahap Penyajian / Presentasi Karya): ...",
+    "Langkah 6 (Tahap Evaluasi, Refleksi & Tindak Lanjut): ..."
+  ],
+  "asesmenFormatif": "Teknik observasi formatif dan umpan balik selama kegiatan ${tema}...",
+  "asesmenSumatif": "Teknik penilaian karya/unjuk kerja/jurnal pada akhir kegiatan ${tema}...",
+  "rubrikRows": [
+    {
+      "dimensi": "Nama Dimensi DPL",
+      "aspek": "Aspek spesifik yang dinilai terkait ${tema}",
+      "SB": "Deskripsi kriteria Sangat Baik (SB) yang terukur...",
+      "B": "Deskripsi kriteria Baik (B) yang terukur...",
+      "C": "Deskripsi kriteria Cukup (C) yang terukur...",
+      "K": "Deskripsi kriteria Kurang (K) yang memerlukan bimbingan..."
+    }
+  ]
+}`;
+
+    const aiDoc = await SupabaseAIVault.executePromptWithMultiProvider(aiPrompt);
+
+    // Sintesis Kontekstual Spesifik Tema (Fallback Cerdas jika koneksi terputus)
+    const defaultRubrikRows = selectedDpl.map(dim => ({
+      dimensi: dim,
+      aspek: `Penguasaan dan aktualisasi dimensi ${dim} dalam kegiatan "${tema}" (${fokusDetail})`,
+      SB: `Murid secara konsisten, mandiri, dan sangat terampil menunjukkan ${dim} saat melaksanakan kegiatan "${tema}", mampu menjelaskan lebih dari 4 temuan/gagasan secara runtut serta menjadi teladan bagi teman.`,
+      B: `Murid mampu menunjukkan ${dim} dengan baik sesuai target kegiatan "${tema}", serta menyelesaikan tugas eksplorasi dan menyajikan 3–4 temuan dengan tepat.`,
+      C: `Murid mulai menunjukkan ${dim} pada kegiatan "${tema}" dengan arahan guru, namun baru mampu menyelesaikan sebagian tugas (1–2 temuan) dan masih kurang runtut.`,
+      K: `Murid masih memerlukan bimbingan dan pendampingan intensif dari guru untuk terlibat aktif serta memahami tugas pada kegiatan "${tema}".`
+    }));
+
+    const resultBlueprint = {
+      id: 'KOKU_MOD_' + Date.now() + '_' + Math.floor(Math.random() * 10000),
+      sekolah,
+      kelasFase,
+      bentuk,
+      bentukLabel: bentukMeta.name,
+      bentukShortLabel: bentukMeta.shortName,
+      tema,
+      alokasi,
+      lokasi,
+      fokusDetail,
+      tujuanPembelajaran: tpList,
+      selectedDpl,
+      customPrompt,
+      includeLkpd: Boolean(includeLkpd),
+      praktikPedagogis: (aiDoc && aiDoc.praktikPedagogis)
+        ? String(aiDoc.praktikPedagogis).trim()
+        : `Pembelajaran kolaboratif dan kontekstual berbasis proyek/aksi nyata pada kegiatan "${tema}" (${bentukMeta.name}) yang mengaktifkan eksplorasi langsung murid ${kelasFase}.`,
+      lingkunganBelajar: (aiDoc && aiDoc.lingkunganBelajar)
+        ? String(aiDoc.lingkunganBelajar).trim()
+        : `Memanfaatkan ${lokasi} sebagai ruang belajar autentik yang aman, inklusif, dan mendorong murid mengamati serta mempraktikkan langsung topik "${tema}".`,
+      kemitraanPembelajaran: (aiDoc && aiDoc.kemitraanPembelajaran)
+        ? String(aiDoc.kemitraanPembelajaran).trim()
+        : `Kolaborasi sinergis antara guru kelas, guru mata pelajaran terkait (${fokusDetail}), orang tua murid, dan warga sekolah dalam mendukung keberhasilan "${tema}".`,
+      pemanfaatanDigital: (aiDoc && aiDoc.pemanfaatanDigital)
+        ? String(aiDoc.pemanfaatanDigital).trim()
+        : `Pemanfaatan media visual/video edukatif terkait "${tema}", dokumentasi foto progres kegiatan, serta pencatatan jurnal Logbook digital kokurikuler.`,
+      pertanyaanPemantik: (aiDoc && Array.isArray(aiDoc.pertanyaanPemantik) && aiDoc.pertanyaanPemantik.length > 0)
+        ? aiDoc.pertanyaanPemantik.map(s => String(s).trim()).filter(Boolean)
+        : [
+            `Apa saja hal menarik di sekitar ${lokasi} yang berkaitan dengan "${tema}"?`,
+            `Mengapa kegiatan "${tema}" penting bagi diri kita, sekolah, dan lingkungan sekitar?`,
+            `Karya atau aksi nyata apa yang bisa kita buat bersama kelompok untuk menyukseskan "${tema}"?`
+          ],
+      panduanLkpd: (aiDoc && aiDoc.panduanLkpd)
+        ? String(aiDoc.panduanLkpd).trim()
+        : `Setiap kelompok murid mengamati objek terkait "${tema}" di ${lokasi}, mencatat hasil temuan pada tabel LKPD, merancang solusi/karya nyata sesuai fokus (${fokusDetail}), lalu mempresentasikan hasilnya di depan kelas.`,
+      activities: (aiDoc && Array.isArray(aiDoc.activities) && aiDoc.activities.length > 0)
+        ? aiDoc.activities.map(s => String(s).trim()).filter(Boolean)
+        : [
+            `Tahap 1 (Pengenalan & Apersepsi): Guru membuka kegiatan dengan pertanyaan pemantik seputar "${tema}" dan menjelaskan tujuan kegiatan (${tpList[0] || tema}).`,
+            `Tahap 2 (Eksplorasi Kontekstual): Murid dibagi ke dalam kelompok belajar untuk melakukan pengamatan langsung terkait "${tema}" di ${lokasi}.`,
+            `Tahap 3 (Diskusi & Perencanaan Aksi): Setiap kelompok mendiskusikan hasil temuan dan menyusun rencana karya/aksi "${tema}" dengan mengintegrasikan ${fokusDetail}.`,
+            `Tahap 4 (Pelaksanaan Aksi & Pembuatan Karya): Murid secara kolaboratif melaksanakan aksi nyata / membuat produk karya bertema "${tema}"${customPrompt ? ` (${customPrompt})` : ''} dengan pendampingan guru.`,
+            `Tahap 5 (Presentasi & Berbagi Karya): Setiap kelompok menampilkan dan mempresentasikan hasil karya/aksinya di depan kelas serta saling memberikan apresiasi.`,
+            `Tahap 6 (Evaluasi, Refleksi & Tindak Lanjut): Guru bersama murid melakukan refleksi ketercapaian dimensi (${dplJoined}) dan menyepakati pembiasaan berkelanjutan.`
+          ],
+      asesmenFormatif: (aiDoc && aiDoc.asesmenFormatif)
+        ? String(aiDoc.asesmenFormatif).trim()
+        : `Observasi berkala terhadap keaktifan diskusi kelompok, pengisian jurnal Logbook harian, dan perkembangan sikap dimensi (${dplJoined}) selama proses kegiatan "${tema}".`,
+      asesmenSumatif: (aiDoc && aiDoc.asesmenSumatif)
+        ? String(aiDoc.asesmenSumatif).trim()
+        : `Penilaian unjuk kerja, kualitas produk/aksi nyata kelompok, dan presentasi akhir murid pada kegiatan "${tema}" menggunakan matriks rubrik 4 kriteria (SB/B/C/K).`,
+      rubrikRows: (aiDoc && Array.isArray(aiDoc.rubrikRows) && aiDoc.rubrikRows.length > 0)
+        ? aiDoc.rubrikRows.map((r, idx) => ({
+            dimensi: r.dimensi || selectedDpl[idx] || 'Penalaran Kritis',
+            aspek: r.aspek || `Aktualisasi dimensi dalam kegiatan ${tema}`,
+            SB: r.SB || defaultRubrikRows[idx % defaultRubrikRows.length].SB,
+            B: r.B || defaultRubrikRows[idx % defaultRubrikRows.length].B,
+            C: r.C || defaultRubrikRows[idx % defaultRubrikRows.length].C,
+            K: r.K || defaultRubrikRows[idx % defaultRubrikRows.length].K
+          }))
+        : defaultRubrikRows
+    };
+
+    return resultBlueprint;
+  },
+
+  // Handler Utama saat Guru Menekan Tombol "🚀 Analisis Mendalam dengan AI Murni & Susun Modul Kokurikuler"
+  async handleGenerateKokuModul(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
+    const sekolahRaw = (document.getElementById('koku-mod-sekolah')?.value || '').trim();
+    const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+    const sekolah = normSchool.display;
+    const kelasFase = (document.getElementById('koku-mod-kelas')?.value || '').trim() || 'Kelas 4 / Fase B';
+    const bentuk = document.getElementById('koku-mod-bentuk')?.value || 'LINTAS_DISIPLIN';
+    const tema = (document.getElementById('koku-mod-tema')?.value || '').trim();
+    const alokasi = (document.getElementById('koku-mod-alokasi')?.value || '').trim() || '36 JP';
+    const lokasi = (document.getElementById('koku-mod-lokasi')?.value || '').trim() || 'Lingkungan satuan pendidikan';
+    const customPrompt = (document.getElementById('koku-mod-custom-prompt')?.value || '').trim();
+    const includeLkpd = Boolean(document.getElementById('koku-mod-include-lkpd')?.checked);
+
+    const tglInp = document.getElementById('koku-mod-tanggal-susun');
+    const chosenDateISO = (tglInp && tglInp.value) ? tglInp.value : DateTimeUtil.getTodayISO();
+    const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
+    const lockedTimeStr = DateTimeUtil.getCurrentTimeStr();
+    const lockedFullTimestamp = `${lockedFormattedDate} (Pukul ${lockedTimeStr})`;
+
+    if (!sekolah || !kelasFase || !tema) {
+      UI.showNotif(
+        'Lengkapi Identitas & Tema Kegiatan',
+        'Harap isi Nama Satuan Pendidikan, Kelas/Fase, dan Tema/Topik Spesifik Kegiatan Kokurikuler.',
+        'warning'
+      );
+      return;
+    }
+
+    const selectedDpl = Array.from(document.querySelectorAll('input[name="koku_mod_dpl"]:checked'))
+      .map(el => el.value);
+
+    if (selectedDpl.length === 0) {
+      UI.showNotif(
+        'Pilih Dimensi Profil Lulusan',
+        'Silakan centang minimal satu Dimensi Profil Lulusan (DPL) yang akan dikuatkan dan dinilai pada modul ini.',
+        'warning'
+      );
+      return;
+    }
+
+    let fokusDetail = (document.getElementById('koku-mod-fokus-detail')?.value || '').trim();
+    let tpRaw = (document.getElementById('koku-mod-tp')?.value || '').trim();
+
+    // Jika kolom Fokus (#7) atau TP (#8) belum diisi, otomatis jalankan AI perumus Fokus & TP terlebih dahulu
+    if (!fokusDetail || !tpRaw) {
+      await this.autoSuggestKokuFokusAndTp(!fokusDetail && !tpRaw ? 'BOTH' : 'TP_ONLY');
+      fokusDetail = (document.getElementById('koku-mod-fokus-detail')?.value || '').trim();
+      tpRaw = (document.getElementById('koku-mod-tp')?.value || '').trim();
+    }
+
+    const tpList = tpRaw
+      .split(/\n+/)
+      .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+      .filter(Boolean);
+
+    DB.isSyncing = true;
+    DB.lastLocalWriteTimestamp = Date.now();
+
+    this.setKokuAiLoading(
+      true,
+      `AI Murni Menyusun Modul Kokurikuler "${tema}"...`,
+      `Mengintegrasikan ${tpList.length} Tujuan Pembelajaran, skenario kegiatan A s.d. H, LKPD Proyek, dan Matriks Rubrik (${selectedDpl.join(', ')})...`
+    );
+
+    let docBlueprint;
+    try {
+      docBlueprint = await this.buildPureAIKokuModulBlueprint({
+        sekolah,
+        kelasFase,
+        bentuk,
+        tema,
+        alokasi,
+        lokasi,
+        fokusDetail,
+        tpList,
+        selectedDpl,
+        customPrompt,
+        includeLkpd
+      });
+    } finally {
+      this.setKokuAiLoading(false);
+      DB.isSyncing = false;
+      DB.lastLocalWriteTimestamp = Date.now();
+    }
+
+    docBlueprint.savedDateISO = chosenDateISO;
+    docBlueprint.createdAt = lockedFormattedDate;
+    docBlueprint.savedTimestamp = lockedFullTimestamp;
+    docBlueprint.isDateLocked = true;
+
+    this.currentModulDoc = docBlueprint;
+
+    const freshBucket = DB.getActiveClassBucket();
+    if (freshBucket) {
+      if (!freshBucket.kokurikuler) freshBucket.kokurikuler = {};
+      freshBucket.kokurikuler.perencanaanDoc = JSON.parse(JSON.stringify(docBlueprint));
+
+      if (!Array.isArray(freshBucket.kokurikuler.savedModules)) {
+        freshBucket.kokurikuler.savedModules = [];
+      }
+
+      const exactSameIdx = freshBucket.kokurikuler.savedModules.findIndex(m =>
+        m &&
+        String(m.bentuk || '') === bentuk &&
+        String(m.tema || '').trim().toLowerCase() === tema.toLowerCase() &&
+        String(m.savedDateISO || '') === chosenDateISO
+      );
+
+      if (exactSameIdx >= 0) {
+        docBlueprint.id = freshBucket.kokurikuler.savedModules[exactSameIdx].id || docBlueprint.id;
+        this.currentModulDoc.id = docBlueprint.id;
+        freshBucket.kokurikuler.savedModules[exactSameIdx] = JSON.parse(JSON.stringify(docBlueprint));
+      } else {
+        freshBucket.kokurikuler.savedModules.unshift(JSON.parse(JSON.stringify(docBlueprint)));
+      }
+
+      await DB.saveImmediate();
+    }
+
+    const formCard = document.getElementById('koku-modul-form-card');
+    const resWrap = document.getElementById('koku-modul-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resWrap) resWrap.classList.remove('hidden');
+
+    this.renderKokuModulPages();
+    this.switchModulPage(1);
+    if (typeof this.renderSavedKokuArchiveTable === 'function') {
+      this.renderSavedKokuArchiveTable();
+    }
+
+    UI.showNotif(
+      'Modul Perencanaan & Rubrik Kokurikuler Selesai Disusun AI',
+      `Modul "${tema}" (${docBlueprint.bentukShortLabel}) telah selesai dianalisis oleh AI Murni dan disimpan ke Arsip Cloud.`,
+      'success'
+    );
+  },
+
+  // Meracik variasi kegiatan & rubrik baru dengan AI Murni tanpa perlu mengetik ulang form
+  async regenerateKokuActivitiesAndRubricWithAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    if (!doc) return;
+
+    this.setKokuAiLoading(
+      true,
+      `Meracik Variasi Kegiatan & Rubrik Baru: "${doc.tema}"...`,
+      'AI Murni sedang menyusun variasi langkah kegiatan proyek, LKPD, dan indikator rubrik baru yang segar...'
+    );
+
+    const updated = await this.buildPureAIKokuModulBlueprint({
+      sekolah: doc.sekolah,
+      kelasFase: doc.kelasFase,
+      bentuk: doc.bentuk,
+      tema: doc.tema,
+      alokasi: doc.alokasi,
+      lokasi: doc.lokasi,
+      fokusDetail: doc.fokusDetail,
+      tpList: doc.tujuanPembelajaran || [],
+      selectedDpl: doc.selectedDpl || ['Penalaran Kritis', 'Komunikasi'],
+      customPrompt: (doc.customPrompt || '') + ' (Berikan variasi aktivitas proyek yang baru dan kreatif)',
+      includeLkpd: doc.includeLkpd !== false
+    });
+
+    this.setKokuAiLoading(false);
+
+    updated.id = doc.id;
+    updated.savedDateISO = doc.savedDateISO;
+    updated.createdAt = doc.createdAt;
+    updated.savedTimestamp = doc.savedTimestamp;
+    updated.isDateLocked = true;
+
+    this.currentModulDoc = updated;
+    if (typeof this.syncCurrentKokuDocToArchive === 'function') {
+      await this.syncCurrentKokuDocToArchive();
+    }
+    this.renderKokuModulPages();
+
+    UI.showNotif(
+      'Variasi Kegiatan & Rubrik Baru Berhasil Dibuat',
+      `Rangkaian kegiatan, LKPD, dan matriks rubrik untuk "${doc.tema}" telah diperbarui oleh AI Murni.`,
+      'success'
+    );
+  }
+});
+
+    // ============================================================================
+// TAHAP 3 (KOKURIKULER): DIRECT INLINE EDITOR HALAMAN 1 & 2, ARSIP MULTI-MODUL
+// PERMANEN, & SINKRONISASI 1-KLIK KE PAPAN ORIENTASI, SISWA, & ASESMEN RAPOR
+// ============================================================================
+
+// 1. Perluas DB dengan Daftar Hitam Hapus Permanen Khusus Modul Kokurikuler
+Object.assign(DB, {
+  getDeletedKokuIds() {
+    try {
+      const raw = localStorage.getItem('SIMAK_EDU_DELETED_KOKU_IDS_V1');
+      const localArr = raw ? JSON.parse(raw) : [];
+      const cloudArr = (this.data && Array.isArray(this.data.deletedKokuIds)) ? this.data.deletedKokuIds : [];
+      return Array.from(new Set([...localArr.map(String), ...cloudArr.map(String)]));
+    } catch (e) {
+      return [];
+    }
+  },
+
+  lockPermanentKokuDeletion(kokuIdsInput) {
+    this.lastLocalDeleteTimestamp = Date.now();
+    this.lastLocalWriteTimestamp = Date.now();
+    const idsToAdd = Array.isArray(kokuIdsInput) ? kokuIdsInput.map(String) : [String(kokuIdsInput)];
+    const merged = Array.from(new Set([...this.getDeletedKokuIds(), ...idsToAdd].filter(Boolean)));
+
+    try {
+      localStorage.setItem('SIMAK_EDU_DELETED_KOKU_IDS_V1', JSON.stringify(merged));
+    } catch (e) {}
+
+    if (this.data) {
+      this.data.deletedKokuIds = merged;
+    }
+  }
+});
+
+// 2. Lengkapi KokuApp dengan Renderer Dokumen A-H, Inline Editor, Arsip, & Jembatan Sinkronisasi
+Object.assign(KokuApp, {
+  // Mengisi otomatis identitas awal saat Tab 2 dibuka tanpa mereset modul yang sedang dikerjakan
+  initPerencanaanFormDefaults(forceReset = false) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const sekolahEl = document.getElementById('koku-mod-sekolah');
+    const kelasEl = document.getElementById('koku-mod-kelas');
+    const tglEl = document.getElementById('koku-mod-tanggal-susun');
+    const temaEl = document.getElementById('koku-mod-tema');
+
+    if (sekolahEl && (!sekolahEl.value || forceReset)) {
+      sekolahEl.value = bucket.schoolDisplay || 'SDN 2 SABEDO';
+    }
+    if (kelasEl && (!kelasEl.value || forceReset)) {
+      kelasEl.value = bucket.kelasFaseLabel || bucket.classKey || 'Kelas 4 / Fase B';
+    }
+    if (tglEl && (!tglEl.value || forceReset)) {
+      tglEl.value = DateTimeUtil.getTodayISO();
+    }
+
+    if (!forceReset && !this.currentModulDoc && bucket.kokurikuler && bucket.kokurikuler.perencanaanDoc) {
+      const deletedSet = new Set(DB.getDeletedKokuIds());
+      if (!deletedSet.has(String(bucket.kokurikuler.perencanaanDoc.id))) {
+        this.currentModulDoc = JSON.parse(JSON.stringify(bucket.kokurikuler.perencanaanDoc));
+      }
+    }
+
+    if (temaEl && !temaEl.value && bucket.kokurikuler?.projectInfo?.tema && !forceReset) {
+      temaEl.value = bucket.kokurikuler.projectInfo.tema;
+    }
+
+    this.updateKokuTpCountBadge();
+    this.renderSavedKokuArchiveTable();
+  },
+
+  // Membuka formulir bersih untuk membuat Modul Kokurikuler baru tanpa menimpa modul sebelumnya
+  startNewKokuModul() {
+    if (AppState.isReadOnlyInspection) return;
+
+    if (this.currentModulDoc) {
+      this.syncCurrentKokuDocToArchive();
+    }
+
+    this.currentModulDoc = null;
+
+    const temaEl = document.getElementById('koku-mod-tema');
+    const fokusEl = document.getElementById('koku-mod-fokus-detail');
+    const tpEl = document.getElementById('koku-mod-tp');
+    const promptEl = document.getElementById('koku-mod-custom-prompt');
+    const tglEl = document.getElementById('koku-mod-tanggal-susun');
+
+    if (temaEl) temaEl.value = '';
+    if (fokusEl) fokusEl.value = '';
+    if (tpEl) tpEl.value = '';
+    if (promptEl) promptEl.value = '';
+    if (tglEl) tglEl.value = DateTimeUtil.getTodayISO();
+
+    this.updateKokuTpCountBadge();
+    this.reopenModulBuilder();
+    this.renderSavedKokuArchiveTable();
+
+    if (temaEl) temaEl.focus();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    UI.showNotif(
+      'Siap Menyusun Modul Kokurikuler Baru',
+      'Modul sebelumnya telah diamankan di Arsip. Silakan pilih Bentuk Kegiatan dan ketik Tema baru untuk dianalisis oleh AI Murni.',
+      'info'
+    );
+  },
+
+  reopenModulBuilder() {
+    const formCard = document.getElementById('koku-modul-form-card');
+    const resWrap = document.getElementById('koku-modul-result-wrapper');
+    if (formCard) formCard.classList.remove('hidden');
+    if (resWrap) resWrap.classList.add('hidden');
+  },
+
+  switchModulPage(pageNum) {
+    const p1 = document.getElementById('koku-modul-page-1');
+    const p2 = document.getElementById('koku-modul-page-2');
+    const b1 = document.getElementById('btn-koku-doc-page1');
+    const b2 = document.getElementById('btn-koku-doc-page2');
+
+    if (pageNum === 2) {
+      if (p1) p1.classList.add('hidden');
+      if (p2) p2.classList.remove('hidden');
+      if (b1) b1.classList.remove('active-tab');
+      if (b2) b2.classList.add('active-tab');
+    } else {
+      if (p1) p1.classList.remove('hidden');
+      if (p2) p2.classList.add('hidden');
+      if (b1) b1.classList.add('active-tab');
+      if (b2) b2.classList.remove('active-tab');
+    }
+  },
+
+  showAllModulPages() {
+    const p1 = document.getElementById('koku-modul-page-1');
+    const p2 = document.getElementById('koku-modul-page-2');
+    if (p1) p1.classList.remove('hidden');
+    if (p2) p2.classList.remove('hidden');
+  },
+
+  scrollToSavedKokuArchive() {
+    const card = document.getElementById('koku-saved-archive-card');
+    if (card) {
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  },
+
+  // Menyimpan perubahan teks yang diklik & diedit langsung oleh guru pada Halaman 1 maupun Halaman 2
+  updateKokuDocInlineField(sectionKey, subIndex, subField, newValue) {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    if (!doc) return;
+
+    const cleanVal = String(newValue || '').trim();
+
+    if (sectionKey === 'fokusDetail') {
+      doc.fokusDetail = cleanVal;
+      const fEl = document.getElementById('koku-mod-fokus-detail');
+      if (fEl) fEl.value = cleanVal;
+    } else if (sectionKey === 'tujuanPembelajaran') {
+      if (Array.isArray(doc.tujuanPembelajaran) && doc.tujuanPembelajaran[subIndex] !== undefined) {
+        doc.tujuanPembelajaran[subIndex] = cleanVal.replace(/^\d+[\.\)]\s*/, '').trim();
+        const tpEl = document.getElementById('koku-mod-tp');
+        if (tpEl) {
+          tpEl.value = doc.tujuanPembelajaran.map((t, i) => `${i + 1}. ${t}`).join('\n');
+          this.updateKokuTpCountBadge();
+        }
+      }
+    } else if (
+      sectionKey === 'praktikPedagogis' ||
+      sectionKey === 'lingkunganBelajar' ||
+      sectionKey === 'kemitraanPembelajaran' ||
+      sectionKey === 'pemanfaatanDigital' ||
+      sectionKey === 'panduanLkpd' ||
+      sectionKey === 'asesmenFormatif' ||
+      sectionKey === 'asesmenSumatif'
+    ) {
+      doc[sectionKey] = cleanVal;
+    } else if (sectionKey === 'pertanyaanPemantik') {
+      if (Array.isArray(doc.pertanyaanPemantik) && doc.pertanyaanPemantik[subIndex] !== undefined) {
+        doc.pertanyaanPemantik[subIndex] = cleanVal;
+      }
+    } else if (sectionKey === 'activities') {
+      if (Array.isArray(doc.activities) && doc.activities[subIndex] !== undefined) {
+        doc.activities[subIndex] = cleanVal;
+      }
+    } else if (sectionKey === 'rubrikRows') {
+      if (Array.isArray(doc.rubrikRows) && doc.rubrikRows[subIndex] && subField) {
+        doc.rubrikRows[subIndex][subField] = cleanVal;
+      }
+    }
+
+    this.syncCurrentKokuDocToArchive();
+  },
+
+  addCustomActivityStep() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    const inp = document.getElementById('koku-custom-activity-input');
+    if (!doc || !inp) return;
+
+    const val = inp.value.trim();
+    if (!val) {
+      UI.showNotif('Langkah Kegiatan Kosong', 'Ketikkan langkah aktivitas kegiatan yang ingin ditambahkan terlebih dahulu.', 'warning');
+      return;
+    }
+
+    if (!Array.isArray(doc.activities)) doc.activities = [];
+    doc.activities.push(val);
+    inp.value = '';
+
+    this.syncCurrentKokuDocToArchive();
+    this.renderKokuModulPages();
+    UI.showNotif('Langkah Kegiatan Ditambahkan', 'Langkah kegiatan baru telah disisipkan ke Bagian G dan disimpan ke Cloud.', 'success');
+  },
+
+  removeKokuActivityStep(idx) {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    if (!doc || !Array.isArray(doc.activities)) return;
+
+    if (doc.activities.length <= 1) {
+      UI.showNotif('Minimal 1 Langkah', 'Rangkaian kegiatan harus memiliki minimal 1 langkah aktivitas.', 'warning');
+      return;
+    }
+
+    doc.activities.splice(idx, 1);
+    this.syncCurrentKokuDocToArchive();
+    this.renderKokuModulPages();
+  },
+
+  // Merender Halaman 1 (Dokumen Perencanaan A-H + Pemantik + LKPD) & Halaman 2 (Matriks Rubrik SB/B/C/K)
+  renderKokuModulPages() {
+    const doc = this.currentModulDoc;
+    const page1El = document.getElementById('koku-modul-doc-page1-content');
+    const page2El = document.getElementById('koku-modul-doc-page2-content');
+    if (!doc || !page1El || !page2El) return;
+
+    const bucket = DB.getActiveClassBucket();
+    const teacher = DB.getActiveTeacherAccount();
+    const teacherName = (teacher && teacher.nama) || (bucket && bucket.homeroomTeacherName) || 'Guru Kelas / Koordinator Kokurikuler';
+    const lockedDateDisplay = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO()));
+
+    const editableAttr = AppState.isReadOnlyInspection
+      ? ''
+      : 'contenteditable="true" style="outline: none; transition: background 0.15s;" onfocus="this.style.background=\'#fef9c3\'"';
+
+    const dplBadges = (doc.selectedDpl || [])
+      .map(d => `<span class="badge badge-primary" style="margin-right: 0.35rem; margin-bottom: 0.25rem;">${UI.escapeHtml(d)}</span>`)
+      .join('');
+
+    const tpListHtml = (doc.tujuanPembelajaran || [])
+      .map((tp, idx) => `
+        <li style="margin-bottom: 0.4rem;">
+          <span ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('tujuanPembelajaran', ${idx}, null, this.innerText)">${UI.escapeHtml(tp)}</span>
+        </li>
+      `)
+      .join('');
+
+    const pemantikHtml = (doc.pertanyaanPemantik || [])
+      .map((q, idx) => `
+        <li style="margin-bottom: 0.35rem;">
+          <span ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('pertanyaanPemantik', ${idx}, null, this.innerText)">${UI.escapeHtml(q)}</span>
+        </li>
+      `)
+      .join('');
+
+    const activitiesHtml = (doc.activities || [])
+      .map((act, idx) => `
+        <li style="margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+          <span style="flex: 1; line-height: 1.55;" ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('activities', ${idx}, null, this.innerText)">${UI.escapeHtml(act)}</span>
+          <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.42rem; font-size: 0.68rem; color: var(--danger); border-color: #fca5a5; flex-shrink: 0;" title="Hapus langkah ini" onclick="KokuApp.removeKokuActivityStep(${idx})">✕</button>
+        </li>
+      `)
+      .join('');
+
+    const lkpdSectionHtml = doc.includeLkpd !== false
+      ? `
+        <tr>
+          <th style="background: #f0fdfa; color: #0f766e;">Pertanyaan Pemantik & Apersepsi</th>
+          <td>
+            <ol style="padding-left: 1.2rem; margin: 0;">${pemantikHtml}</ol>
+          </td>
+        </tr>
+        <tr>
+          <th style="background: #f0fdfa; color: #0f766e;">Panduan LKPD Proyek / Jurnal Aksi Murid</th>
+          <td>
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('panduanLkpd', null, null, this.innerText)">${UI.escapeHtml(doc.panduanLkpd || '-')}</div>
+          </td>
+        </tr>
+      `
+      : '';
+
+    // RENDER HALAMAN 1: DOKUMEN PERENCANAAN KOKURIKULER (A s.d. H)
+    page1El.innerHTML = `
+      <div style="border: 2px solid #0f172a; border-radius: var(--radius-md); overflow: hidden; background: #ffffff;">
+        <div class="koku-doc-header-bar">
+          PERENCANAAN KEGIATAN KOKURIKULER PEMBELAJARAN MENDALAM
+        </div>
+
+        <div style="padding: 1.65rem;">
+          <div class="no-print" style="background: #f0fdf4; border: 1px dashed #86efac; padding: 0.55rem 0.9rem; border-radius: 6px; margin-bottom: 1.15rem; font-size: 0.79rem; color: #14532d; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <span>✏️ <strong>Editor Interaktif Aktif:</strong> Klik langsung pada teks Tujuan Pembelajaran, Praktik Pedagogis, LKPD, atau Rangkaian Kegiatan di bawah ini untuk mengeditnya sebelum dicetak.</span>
+            <span class="badge badge-success">✓ Disusun oleh AI Murni</span>
+          </div>
+
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 240px;">Satuan Pendidikan</th>
+                <td><strong>${UI.escapeHtml(doc.sekolah)}</strong></td>
+                <th style="width: 200px;">Kelas / Fase</th>
+                <td><strong>${UI.escapeHtml(doc.kelasFase)}</strong></td>
+              </tr>
+              <tr>
+                <th>Bentuk Kokurikuler</th>
+                <td><span class="badge badge-info">${UI.escapeHtml(doc.bentukLabel || doc.bentuk)}</span></td>
+                <th>Alokasi Waktu</th>
+                <td><strong>${UI.escapeHtml(doc.alokasi)}</strong></td>
+              </tr>
+              <tr>
+                <th>Tema / Topik Kegiatan</th>
+                <td><strong style="color: var(--primary);">${UI.escapeHtml(doc.tema)}</strong></td>
+                <th>Lokasi Kegiatan</th>
+                <td>${UI.escapeHtml(doc.lokasi)}</td>
+              </tr>
+              <tr>
+                <th>Fokus Integrasi / Pembiasaan</th>
+                <td colspan="3">
+                  <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('fokusDetail', null, null, this.innerText)">${UI.escapeHtml(doc.fokusDetail)}</div>
+                </td>
+              </tr>
+              <tr>
+                <th>Tanggal Penyusunan (Terkunci)</th>
+                <td colspan="3"><strong>🔒 ${UI.escapeHtml(lockedDateDisplay)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <table class="academic-table" style="margin-bottom: 1.5rem;">
+            <tbody>
+              <tr>
+                <th style="width: 250px; background: #eff6ff; color: var(--primary);">A. Dimensi Profil Lulusan</th>
+                <td>${dplBadges}</td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">B. Tujuan Pembelajaran (${(doc.tujuanPembelajaran || []).length} TP)</th>
+                <td>
+                  <ol style="padding-left: 1.2rem; margin: 0;">
+                    ${tpListHtml}
+                  </ol>
+                </td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">C. Praktik Pedagogis</th>
+                <td>
+                  <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('praktikPedagogis', null, null, this.innerText)">${UI.escapeHtml(doc.praktikPedagogis)}</div>
+                </td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">D. Lingkungan Belajar</th>
+                <td>
+                  <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('lingkunganBelajar', null, null, this.innerText)">${UI.escapeHtml(doc.lingkunganBelajar)}</div>
+                </td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">E. Kemitraan Pembelajaran</th>
+                <td>
+                  <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('kemitraanPembelajaran', null, null, this.innerText)">${UI.escapeHtml(doc.kemitraanPembelajaran)}</div>
+                </td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">F. Pemanfaatan Digital</th>
+                <td>
+                  <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('pemanfaatanDigital', null, null, this.innerText)">${UI.escapeHtml(doc.pemanfaatanDigital)}</div>
+                </td>
+              </tr>
+              ${lkpdSectionHtml}
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">G. Kegiatan (Rangkaian Tahapan Pelaksanaan)</th>
+                <td>
+                  <ol style="padding-left: 1.2rem; margin: 0;">
+                    ${activitiesHtml}
+                  </ol>
+                </td>
+              </tr>
+              <tr>
+                <th style="background: #eff6ff; color: var(--primary);">H. Asesmen (Formatif & Sumatif)</th>
+                <td>
+                  <div style="margin-bottom: 0.5rem;">
+                    <strong>1. Asesmen Formatif (Proses):</strong>
+                    <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('asesmenFormatif', null, null, this.innerText)">${UI.escapeHtml(doc.asesmenFormatif)}</div>
+                  </div>
+                  <div>
+                    <strong>2. Asesmen Sumatif (Hasil/Karya):</strong>
+                    <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('asesmenSumatif', null, null, this.innerText)">${UI.escapeHtml(doc.asesmenSumatif)}</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; padding: 0 1rem;">
+            <div style="text-align: center; min-width: 220px;">
+              <div>Mengetahui,</div>
+              <div style="font-weight: 700; margin-bottom: 3.5rem;">Kepala ${UI.escapeHtml(doc.sekolah)}</div>
+              <div style="font-weight: 800; text-decoration: underline;">( ................................................. )</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">NIP. ............................................</div>
+            </div>
+
+            <div style="text-align: center; min-width: 220px;">
+              <div>${UI.escapeHtml(lockedDateDisplay)}</div>
+              <div style="font-weight: 700; margin-bottom: 3.5rem;">Guru Kelas / Koordinator Kokurikuler</div>
+              <div style="font-weight: 800; text-decoration: underline;">${UI.escapeHtml(teacherName)}</div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">Pendidik ${UI.escapeHtml(doc.sekolah)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // RENDER HALAMAN 2: MATRIKS RUBRIK ASESMEN (SB / B / C / K) & LEMBAR OBSERVASI MURID
+    const rubrikRowsHtml = (doc.rubrikRows || [])
+      .map((r, rIdx) => `
+        <tr>
+          <td><strong>${UI.escapeHtml(r.dimensi)}</strong></td>
+          <td>
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('rubrikRows', ${rIdx}, 'aspek', this.innerText)">${UI.escapeHtml(r.aspek)}</div>
+          </td>
+          <td style="background: #f0fdf4;">
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('rubrikRows', ${rIdx}, 'SB', this.innerText)">${UI.escapeHtml(r.SB)}</div>
+          </td>
+          <td style="background: #eff6ff;">
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('rubrikRows', ${rIdx}, 'B', this.innerText)">${UI.escapeHtml(r.B)}</div>
+          </td>
+          <td style="background: #fffbeb;">
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('rubrikRows', ${rIdx}, 'C', this.innerText)">${UI.escapeHtml(r.C)}</div>
+          </td>
+          <td style="background: #fef2f2;">
+            <div ${editableAttr} onblur="this.style.background='transparent'; KokuApp.updateKokuDocInlineField('rubrikRows', ${rIdx}, 'K', this.innerText)">${UI.escapeHtml(r.K)}</div>
+          </td>
+        </tr>
+      `)
+      .join('');
+
+    const students = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+    const obsHeadersHtml = (doc.selectedDpl || []).map(d => `<th style="text-align: center;">${UI.escapeHtml(d)} (SB/B/C/K)</th>`).join('');
+    const obsRowsHtml = students.length > 0
+      ? students.map((std, sIdx) => `
+          <tr>
+            <td style="text-align: center;">${sIdx + 1}</td>
+            <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+            ${(doc.selectedDpl || []).map(() => `<td style="text-align: center; color: #64748b;">SB / B / C / K</td>`).join('')}
+            <td>........................................................................................</td>
+          </tr>
+        `).join('')
+      : `
+        <tr>
+          <td colspan="${(doc.selectedDpl || []).length + 3}" style="text-align: center; color: var(--text-muted);">
+            Daftar murid akan tampil otomatis sesuai Data Kelas.
+          </td>
+        </tr>
+      `;
+
+    page2El.innerHTML = `
+      <div style="border: 2px solid #0f172a; border-radius: var(--radius-md); overflow: hidden; background: #ffffff;">
+        <div class="koku-doc-header-bar" style="background: #0f766e;">
+          LAMPIRAN RUBRIK ASESMEN & LEMBAR OBSERVASI KOKURIKULER (KRITERIA SB / B / C / K)
+        </div>
+
+        <div style="padding: 1.65rem;">
+          <div style="margin-bottom: 1rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);">
+              1. Matriks Rubrik Penilaian Dimensi Profil Lulusan — Tema: "${UI.escapeHtml(doc.tema)}"
+            </h3>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">
+              Setiap kriteria di bawah ini telah dikalibrasi oleh AI Murni sesuai kegiatan <strong>${UI.escapeHtml(doc.tema)} (${UI.escapeHtml(doc.kelasFase)})</strong> dan dapat Anda klik untuk diedit langsung.
+            </p>
+          </div>
+
+          <div class="table-responsive" style="margin-bottom: 1.75rem;">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 150px;">Dimensi Profil Lulusan</th>
+                  <th style="width: 195px;">Aspek yang Dinilai</th>
+                  <th style="background: #dcfce7; color: #166534;">Sangat Baik (SB)</th>
+                  <th style="background: #dbeafe; color: #1e40af;">Baik (B)</th>
+                  <th style="background: #fef3c7; color: #92400e;">Cukup (C)</th>
+                  <th style="background: #fee2e2; color: #991b1b;">Kurang (K)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rubrikRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <div style="margin-bottom: 0.85rem;">
+            <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);">
+              2. Instrumen Lembar Observasi Capaian Kokurikuler Murid (${UI.escapeHtml(doc.kelasFase)})
+            </h3>
+          </div>
+
+          <div class="table-responsive">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 48px; text-align: center;">No</th>
+                  <th style="width: 210px;">Nama Murid</th>
+                  ${obsHeadersHtml}
+                  <th>Catatan Observasi Pendidik / Tindak Lanjut</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${obsRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+
+  // Menyinkronkan perubahan modul kokurikuler aktif ke dalam array savedModules di Cloud
+  async syncCurrentKokuDocToArchive() {
+    const doc = this.currentModulDoc;
+    const bucket = DB.getActiveClassBucket();
+    if (!doc || !bucket) return;
+
+    const deletedSet = new Set(DB.getDeletedKokuIds());
+    if (deletedSet.has(String(doc.id))) return;
+
+    if (!bucket.kokurikuler) bucket.kokurikuler = {};
+    bucket.kokurikuler.perencanaanDoc = JSON.parse(JSON.stringify(doc));
+
+    if (!Array.isArray(bucket.kokurikuler.savedModules)) {
+      bucket.kokurikuler.savedModules = [];
+    }
+
+    const existingIdx = bucket.kokurikuler.savedModules.findIndex(m => m && String(m.id) === String(doc.id));
+    if (existingIdx >= 0) {
+      const prev = bucket.kokurikuler.savedModules[existingIdx];
+      doc.createdAt = prev.createdAt || doc.createdAt;
+      doc.savedDateISO = prev.savedDateISO || doc.savedDateISO;
+      doc.savedTimestamp = prev.savedTimestamp || doc.savedTimestamp;
+      doc.isDateLocked = true;
+      bucket.kokurikuler.savedModules[existingIdx] = JSON.parse(JSON.stringify(doc));
+    } else {
+      bucket.kokurikuler.savedModules.unshift(JSON.parse(JSON.stringify(doc)));
+    }
+
+    await DB.saveImmediate();
+  },
+
+  async saveCurrentKokuToArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    if (!doc) {
+      UI.showNotif('Belum Ada Modul Aktif', 'Silakan susun modul kokurikuler terlebih dahulu.', 'warning');
+      return;
+    }
+
+    if (!doc.createdAt) {
+      const iso = document.getElementById('koku-mod-tanggal-susun')?.value || DateTimeUtil.getTodayISO();
+      doc.savedDateISO = iso;
+      doc.createdAt = DateTimeUtil.formatIndonesianDate(iso);
+      doc.savedTimestamp = `${doc.createdAt} (Pukul ${DateTimeUtil.getCurrentTimeStr()})`;
+      doc.isDateLocked = true;
+    }
+
+    await this.syncCurrentKokuDocToArchive();
+    this.renderSavedKokuArchiveTable();
+
+    const bucket = DB.getActiveClassBucket();
+    const total = (bucket && bucket.kokurikuler && Array.isArray(bucket.kokurikuler.savedModules))
+      ? bucket.kokurikuler.savedModules.length
+      : 1;
+
+    UI.showNotif(
+      'Modul Kokurikuler Tersimpan di Arsip Cloud',
+      `Modul "${doc.tema}" (${doc.bentukShortLabel || doc.bentuk}) telah dikunci permanen di Arsip Kokurikuler (Total: ${total} Modul).`,
+      'success'
+    );
+  },
+
+  // Merender Tabel Arsip Modul Kokurikuler di bagian bawah Tab 2
+  renderSavedKokuArchiveTable() {
+    const bucket = DB.getActiveClassBucket();
+    const tbody = document.getElementById('tbody-koku-saved-archive');
+    const badgeEl = document.getElementById('koku-saved-archive-badge');
+    const topCountEl = document.getElementById('koku-saved-count-top');
+    if (!tbody) return;
+
+    const deletedSet = new Set(DB.getDeletedKokuIds());
+    let list = (bucket && bucket.kokurikuler && Array.isArray(bucket.kokurikuler.savedModules))
+      ? bucket.kokurikuler.savedModules
+      : [];
+
+    // Jika ada perencanaanDoc lama yang belum masuk ke savedModules, migrasikan otomatis
+    if (list.length === 0 && bucket?.kokurikuler?.perencanaanDoc && bucket.kokurikuler.perencanaanDoc.tema) {
+      const legacy = bucket.kokurikuler.perencanaanDoc;
+      if (!legacy.id) legacy.id = 'KOKU_MOD_LEGACY_1';
+      if (!deletedSet.has(String(legacy.id))) {
+        list = [legacy];
+        bucket.kokurikuler.savedModules = list;
+      }
+    }
+
+    list = list.filter((m, idx) => {
+      if (!m) return false;
+      if (!m.id) m.id = 'KOKU_ARC_' + idx;
+      return !deletedSet.has(String(m.id));
+    });
+
+    if (bucket && bucket.kokurikuler) {
+      bucket.kokurikuler.savedModules = list;
+    }
+
+    if (badgeEl) badgeEl.textContent = `${list.length} Modul Tersimpan`;
+    if (topCountEl) topCountEl.textContent = String(list.length);
+
+    if (list.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.35rem;">
+            Belum ada Modul Perencanaan Kokurikuler yang tersimpan di arsip kelas ini. Silakan susun modul menggunakan AI Murni pada formulir di atas.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = list.map((mod, idx) => {
+      const dateStr = mod.createdAt || (mod.savedDateISO ? DateTimeUtil.formatIndonesianDate(mod.savedDateISO) : 'Tanggal Terkunci');
+      const bentukMeta = this.getBentukMeta(mod.bentuk);
+      const tpPreview = Array.isArray(mod.tujuanPembelajaran) && mod.tujuanPembelajaran.length > 0
+        ? mod.tujuanPembelajaran[0]
+        : '-';
+      const dplChips = (mod.selectedDpl || [])
+        .map(d => `<span class="badge badge-primary" style="font-size: 0.68rem; margin: 0.1rem;">${UI.escapeHtml(d)}</span>`)
+        .join(' ');
+      const safeId = String(mod.id).replace(/'/g, "\\'");
+
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>
+            <div style="font-weight: 800; color: var(--dark); font-size: 0.84rem;">🔒 ${UI.escapeHtml(dateStr)}</div>
+            <div style="font-size: 0.73rem; color: var(--text-muted);">${UI.escapeHtml(mod.alokasi || '36 JP')}</div>
+          </td>
+          <td>
+            <span class="badge badge-info">${UI.escapeHtml(bentukMeta.shortName)}</span>
+          </td>
+          <td>
+            <div style="font-weight: 800; color: var(--primary);">${UI.escapeHtml(mod.tema || '-')}</div>
+            <div style="font-size: 0.76rem; color: var(--dark); margin-top: 0.15rem;"><strong>Fokus:</strong> ${UI.escapeHtml(mod.fokusDetail || '-')}</div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.1rem;"><strong>TP (${(mod.tujuanPembelajaran || []).length}):</strong> ${UI.escapeHtml(tpPreview)}</div>
+          </td>
+          <td><span class="badge badge-success">${UI.escapeHtml(mod.kelasFase || '-')}</span></td>
+          <td>${dplChips || '-'}</td>
+          <td>
+            <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-primary btn-sm" onclick="KokuApp.openSavedKokuFromArchive('${safeId}', ${idx})">
+                📂 Buka
+              </button>
+              <button type="button" class="btn btn-warning btn-sm write-action-btn" onclick="KokuApp.applySavedKokuToBoardAndAssessment('${safeId}', ${idx})">
+                📌 Terapkan
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.deleteSavedKokuFromArchive('${safeId}', ${idx})">
+                🗑️ Hapus
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  openSavedKokuFromArchive(modId, fallbackIndex = -1) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !bucket.kokurikuler || !Array.isArray(bucket.kokurikuler.savedModules)) return;
+
+    let found = bucket.kokurikuler.savedModules.find(m => m && String(m.id) === String(modId));
+    if (!found && fallbackIndex >= 0) {
+      found = bucket.kokurikuler.savedModules[fallbackIndex];
+    }
+    if (!found) return;
+
+    this.currentModulDoc = JSON.parse(JSON.stringify(found));
+    bucket.kokurikuler.perencanaanDoc = JSON.parse(JSON.stringify(found));
+
+    const formCard = document.getElementById('koku-modul-form-card');
+    const resWrap = document.getElementById('koku-modul-result-wrapper');
+    if (formCard) formCard.classList.add('hidden');
+    if (resWrap) resWrap.classList.remove('hidden');
+
+    this.renderKokuModulPages();
+    this.switchModulPage(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  },
+
+  async deleteSavedKokuFromArchive(modId, fallbackIndex = -1) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !bucket.kokurikuler || !Array.isArray(bucket.kokurikuler.savedModules)) return;
+
+    let target = bucket.kokurikuler.savedModules.find(m => m && String(m.id) === String(modId));
+    if (!target && fallbackIndex >= 0) {
+      target = bucket.kokurikuler.savedModules[fallbackIndex];
+    }
+
+    const targetId = target && target.id ? String(target.id) : String(modId);
+    const title = target ? target.tema : 'Modul Kokurikuler';
+
+    const confirmed = window.confirm(`Hapus permanen modul kokurikuler "${title}" dari Arsip dan Cloud?`);
+    if (!confirmed) return;
+
+    DB.lockPermanentKokuDeletion([targetId]);
+
+    if (this.currentModulDoc && String(this.currentModulDoc.id) === targetId) {
+      this.currentModulDoc = null;
+      this.reopenModulBuilder();
+    }
+    if (bucket.kokurikuler.perencanaanDoc && String(bucket.kokurikuler.perencanaanDoc.id) === targetId) {
+      bucket.kokurikuler.perencanaanDoc = null;
+    }
+
+    bucket.kokurikuler.savedModules = bucket.kokurikuler.savedModules.filter(m => m && String(m.id) !== targetId);
+
+    this.renderSavedKokuArchiveTable();
+    await DB.saveImmediate();
+
+    UI.showNotif(
+      'Modul Kokurikuler Dihapus Permanen',
+      `Modul "${title}" telah dihapus secara permanen dari perangkat dan Cloud Supabase.`,
+      'warning'
+    );
+  },
+
+  async clearAllSavedKokuArchive() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    const list = (bucket && bucket.kokurikuler && Array.isArray(bucket.kokurikuler.savedModules))
+      ? bucket.kokurikuler.savedModules
+      : [];
+
+    if (list.length === 0) {
+      UI.showNotif('Arsip Sudah Kosong', 'Belum ada modul kokurikuler yang tersimpan di arsip.', 'info');
+      return;
+    }
+
+    const confirmed = window.confirm(`Hapus permanen seluruh ${list.length} Modul Kokurikuler di arsip kelas ini?`);
+    if (!confirmed) return;
+
+    const allIds = list.map(m => m && m.id).filter(Boolean);
+    DB.lockPermanentKokuDeletion(allIds);
+
+    bucket.kokurikuler.savedModules = [];
+    bucket.kokurikuler.perencanaanDoc = null;
+    this.currentModulDoc = null;
+
+    this.reopenModulBuilder();
+    this.renderSavedKokuArchiveTable();
+    await DB.saveImmediate();
+
+    UI.showNotif('Seluruh Arsip Kokurikuler Dihapus', 'Semua modul kokurikuler pada kelas ini telah dibersihkan secara permanen.', 'warning');
+  },
+
+  // Jembatan Sinkronisasi 1-Klik: Menerapkan Modul AI ke Papan Orientasi (Tab 1), Portal Siswa, & Asesmen Rapor (Tab 5)
+  async applyCurrentModulToBoardAndAssessment() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = this.currentModulDoc;
+    const bucket = DB.getActiveClassBucket();
+    if (!doc || !bucket) {
+      UI.showNotif('Pilih Modul Terlebih Dahulu', 'Silakan buat atau buka salah satu Modul Kokurikuler terlebih dahulu.', 'warning');
+      return;
+    }
+
+    if (!bucket.kokurikuler) bucket.kokurikuler = {};
+    const bentukMeta = this.getBentukMeta(doc.bentuk);
+
+    // 1. Perbarui Papan Orientasi Kelas (Tab 1) & Portal Siswa
+    bucket.kokurikuler.projectInfo = {
+      bentuk: doc.bentuk || 'LINTAS_DISIPLIN',
+      tema: doc.tema || 'Kegiatan Kokurikuler',
+      judul: `${bentukMeta.shortName}: ${doc.tema}`,
+      alokasi: doc.alokasi || '36 JP',
+      tahapAktif: 'AKSI',
+      targetMingguan: (Array.isArray(doc.tujuanPembelajaran) && doc.tujuanPembelajaran[0])
+        ? doc.tujuanPembelajaran[0]
+        : `Menguatkan dimensi ${(doc.selectedDpl || []).join(', ')} melalui ${doc.tema}`,
+      fokusHarian: (Array.isArray(doc.activities) && doc.activities[0])
+        ? doc.activities[0]
+        : (doc.panduanLkpd || `Pelaksanaan eksplorasi dan kolaborasi kelompok pada kegiatan ${doc.tema}.`),
+      persiapan: `${doc.fokusDetail || ''} | Lokasi: ${doc.lokasi || 'Lingkungan Sekolah'}`
+    };
+
+    // 2. Sinkronkan Dimensi 1 & Dimensi 2 pada Tab 5 (Asesmen SB/B/C/K & 3 Inspirasi Deskripsi Rapor)
+    const dim1Sel = document.getElementById('koku-assess-dimensi-select');
+    const dim2Sel = document.getElementById('koku-assess-dimensi2-select');
+    if (Array.isArray(doc.selectedDpl) && doc.selectedDpl.length > 0) {
+      if (dim1Sel) dim1Sel.value = doc.selectedDpl[0];
+      if (dim2Sel) dim2Sel.value = doc.selectedDpl[1] || doc.selectedDpl[0];
+    }
+
+    await DB.saveImmediate();
+
+    if (typeof this.renderDashboardTab === 'function') {
+      this.renderDashboardTab();
+    }
+    if (typeof this.renderCharacterAssessmentTable === 'function') {
+      this.renderCharacterAssessmentTable();
+    }
+
+    this.switchTab('dashboard');
+
+    UI.showNotif(
+      'Modul Berhasil Diterapkan ke Papan Orientasi, Portal Siswa & Asesmen Rapor',
+      `Tema "${doc.tema}", fokus kegiatan, serta Dimensi Profil Lulusan (${(doc.selectedDpl || []).join(', ')}) telah disinkronkan ke Papan Orientasi Kelas (Tab 1), Portal Siswa, dan Tabel Asesmen Rapor (Tab 5).`,
+      'success'
+    );
+  },
+
+  async applySavedKokuToBoardAndAssessment(modId, fallbackIndex = -1) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket || !bucket.kokurikuler || !Array.isArray(bucket.kokurikuler.savedModules)) return;
+
+    let found = bucket.kokurikuler.savedModules.find(m => m && String(m.id) === String(modId));
+    if (!found && fallbackIndex >= 0) {
+      found = bucket.kokurikuler.savedModules[fallbackIndex];
+    }
+    if (!found) return;
+
+    this.currentModulDoc = JSON.parse(JSON.stringify(found));
+    bucket.kokurikuler.perencanaanDoc = JSON.parse(JSON.stringify(found));
+    await this.applyCurrentModulToBoardAndAssessment();
+  }
+});
+
+// 3. Pastikan saat Tab 2 (Modul Kokurikuler) dibuka, Tanggal & Tabel Arsip langsung dimuat
+if (typeof KokuApp !== 'undefined') {
+  const _origSwitchKokuTab = KokuApp.switchTab ? KokuApp.switchTab.bind(KokuApp) : null;
+
+  Object.assign(KokuApp, {
+    switchTab(tabName) {
+      if (_origSwitchKokuTab) {
+        _origSwitchKokuTab(tabName);
+      }
+      if (tabName === 'modul') {
+        this.initPerencanaanFormDefaults(false);
+        this.renderSavedKokuArchiveTable();
+      }
+    }
+  });
+}
 
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
