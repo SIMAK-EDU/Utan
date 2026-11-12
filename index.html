@@ -37935,13 +37935,56 @@ if (typeof SupabaseAIVault !== 'undefined') {
 }
 
 // ============================================================================
-// PATCH FINAL PENILAIAN AKADEMIK & REKAP PENILAIAN (V3 — 100% FUNGSIONAL):
-// 1. FIX MACET DI TAHAP 3 (LEWATI KETERAMPILAN & LANJUT KE LEMBAR NILAI)
-// 2. FIX LEMBAR PENILAIAN KETERAMPILAN (PROSES, HASIL & NILAI AKHIR)
-// 3. KUNCI BOBOT SKOR PER SOAL (BOBOT 1 TETAP 1, TIDAK JADI 10)
-// 4. MUNCULKAN SEMUA NILAI DI REKAP PENILAIAN & AKTIFKAN TOMBOL "EDIT MAPEL INI"
+// UNIFIED PENILAIAN & REKAP PENILAIAN ENGINE (V4 — 100% STABIL & LENGKAP):
+// 1. FIX PEMBUKA HALAMAN REKAP PENILAIAN (TIDAK MACET / LANGSUNG TERBUKA)
+// 2. AKTIFKAN SEMUA FITUR REKAP: BOBOT FLEKSIBEL, PRESET, FILTER, MULTI-SHEET,
+//    POP-UP HISTORY NILAI MURNI, EDIT MAPEL, & REKAP ULANG MASA LAMPAU
+// 3. FIX TAHAP 3 PENILAIAN AKADEMIK & KUNCI PRESISI BOBOT SOAL (MISAL 1 TETAP 1)
 // ============================================================================
 
+// 1. Pastikan DateTimeUtil.getIndonesianDayName selalu tersedia di seluruh sistem
+if (typeof DateTimeUtil !== 'undefined') {
+  DateTimeUtil.getIndonesianDayName = function(dateISO) {
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    if (dateISO && typeof dateISO === 'string') {
+      const parts = dateISO.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+        if (!isNaN(d.getTime())) return days[d.getDay()];
+      }
+    }
+    return days[new Date().getDay()];
+  };
+}
+
+// 2. Pastikan IntraApp.openSubPillar('rekap_penilaian') langsung membuka halaman Rekap Penilaian
+if (typeof IntraApp !== 'undefined') {
+  const _origIntraOpenSubPillar = IntraApp.openSubPillar ? IntraApp.openSubPillar.bind(IntraApp) : null;
+
+  Object.assign(IntraApp, {
+    openSubPillar(subKey) {
+      if (subKey === 'rekap_penilaian') {
+        UI.switchView('view-intra-rekap-penilaian');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        PenilaianApp.openRekapPenilaian();
+        return;
+      }
+      if (subKey === 'penilaian_akademik') {
+        UI.switchView('view-intra-penilaian-akademik');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (typeof PenilaianApp.openPenilaianAkademik === 'function') {
+          PenilaianApp.openPenilaianAkademik(false);
+        }
+        return;
+      }
+      if (_origIntraOpenSubPillar) {
+        _origIntraOpenSubPillar(subKey);
+      }
+    }
+  });
+}
+
+// 3. Mesin Lengkap PenilaianApp (Penilaian Akademik + Rekap Penilaian + History + Rekap Ulang Lampau)
 if (typeof PenilaianApp !== 'undefined') {
   Object.assign(PenilaianApp, {
     rekapActiveSheetIndex: 1,
@@ -37951,27 +37994,40 @@ if (typeof PenilaianApp !== 'undefined') {
       return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
     },
 
-    // Fungsi penyimpanan draft yang aman (mencegah crash TypeError di Tahap 3)
+    getSafeDayName(dateISO) {
+      if (typeof DateTimeUtil !== 'undefined' && typeof DateTimeUtil.getIndonesianDayName === 'function') {
+        return DateTimeUtil.getIndonesianDayName(dateISO);
+      }
+      const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      return days[new Date().getDay()];
+    },
+
+    // Kebijakan bobot Pengetahuan (%) dan Keterampilan (%) per kelas
+    getClassRekapWeightPolicy(bucketInput = null) {
+      const bucket = bucketInput || DB.getActiveClassBucket();
+      if (bucket && bucket.rekapWeightPolicy && typeof bucket.rekapWeightPolicy === 'object') {
+        const bp = parseInt(bucket.rekapWeightPolicy.bobotPengetahuan, 10);
+        const bk = parseInt(bucket.rekapWeightPolicy.bobotKeterampilan, 10);
+        if (!isNaN(bp) && !isNaN(bk) && (bp + bk === 100)) {
+          return { bobotPengetahuan: bp, bobotKeterampilan: bk };
+        }
+      }
+      return { bobotPengetahuan: 70, bobotKeterampilan: 30 };
+    },
+
     saveWizardDraft() {
       try {
-        if (typeof this.persistWizardDraft === 'function') {
-          this.persistWizardDraft();
-        } else if (typeof this.saveDraftToBucket === 'function') {
-          this.saveDraftToBucket();
-        }
         const bucket = DB.getActiveClassBucket();
         if (bucket) {
           bucket.penilaianDraft = JSON.parse(JSON.stringify(AppState.penilaianWizard));
         }
-      } catch (e) {
-        console.warn('Info auto-save draft:', e);
-      }
+      } catch (e) {}
     },
 
     bindUniformScoreLiveInput() {
       const uniformInp = document.getElementById('setup-nilai-skor-seragam-input');
-      if (uniformInp && !uniformInp._liveBoundV3) {
-        uniformInp._liveBoundV3 = true;
+      if (uniformInp && !uniformInp._liveBoundV4) {
+        uniformInp._liveBoundV4 = true;
         uniformInp.addEventListener('input', () => {
           const val = parseFloat(uniformInp.value);
           if (!isNaN(val) && val > 0) {
@@ -37988,7 +38044,6 @@ if (typeof PenilaianApp !== 'undefined') {
       }
     },
 
-    // Navigasi antar tahap 1, 2, 3 tanpa macet
     goToStep(stepNumber) {
       const wiz = AppState.penilaianWizard;
       if (stepNumber === 2) {
@@ -38018,9 +38073,7 @@ if (typeof PenilaianApp !== 'undefined') {
 
       [1, 2, 3, 4].forEach(n => {
         const badge = document.getElementById(`step-indicator-${n}`);
-        if (badge) {
-          badge.className = (n === stepNumber) ? 'badge badge-primary' : 'badge badge-info';
-        }
+        if (badge) badge.className = (n === stepNumber) ? 'badge badge-primary' : 'badge badge-info';
       });
 
       if (stepNumber === 2) {
@@ -38045,9 +38098,7 @@ if (typeof PenilaianApp !== 'undefined') {
         ? typedUniform
         : (parseFloat(wiz.bobotSeragamNilai) > 0 ? parseFloat(wiz.bobotSeragamNilai) : 1);
 
-      if (!Array.isArray(wiz.bobotPerSoal)) {
-        wiz.bobotPerSoal = [];
-      }
+      if (!Array.isArray(wiz.bobotPerSoal)) wiz.bobotPerSoal = [];
 
       if (wiz.skorSeragam && !keepExistingWeights) {
         wiz.bobotSeragamNilai = activeUniformVal;
@@ -38153,7 +38204,6 @@ if (typeof PenilaianApp !== 'undefined') {
       });
     },
 
-    // Tombol di Tahap 3: "Lewati Penilaian Keterampilan & Lanjut" (true) ATAU "Lanjut ke Lembar Penilaian Siswa" (false)
     finishSetupAndOpenSheet(skipKeterampilan = false) {
       this.captureCurrentWeightsFromDOM();
       const wiz = AppState.penilaianWizard;
@@ -38185,12 +38235,10 @@ if (typeof PenilaianApp !== 'undefined') {
       }
       if (tpKetEl) wiz.tpKeterampilan = tpKetEl.value.trim();
 
-      // Buka lembar penilaian siswa terlebih dahulu agar tidak pernah gagal pindah layar
       this.openPengetahuanSheet();
       this.saveWizardDraft();
     },
 
-    // Membuka Lembar Penilaian Pengetahuan (S1 s.d. Sn)
     openPengetahuanSheet() {
       this.captureCurrentWeightsFromDOM();
       const wiz = AppState.penilaianWizard;
@@ -38270,8 +38318,6 @@ if (typeof PenilaianApp !== 'undefined') {
 
       tbody.innerHTML = students.map((std, sIdx) => {
         let currentStdObj = wiz.tempScoresPengetahuan[std.id];
-
-        // Normalisasi jika sebelumnya tersimpan sebagai Array
         if (Array.isArray(currentStdObj)) {
           const converted = {};
           currentStdObj.forEach((v, idx) => {
@@ -38387,13 +38433,11 @@ if (typeof PenilaianApp !== 'undefined') {
       this.saveWizardDraft();
     },
 
-    // Membuka Lembar Penilaian Keterampilan Siswa (Berfungsi 100% tanpa macet)
     openKeterampilanSheet() {
       const wiz = AppState.penilaianWizard;
       const bucket = DB.getActiveClassBucket();
       if (!bucket) return;
 
-      // Pastikan skor pengetahuan yang sudah diketik di DOM tersimpan dulu ke memori
       const domScoreInputs = document.querySelectorAll('#tbody-penilaian-pengetahuan .std-qscore-input');
       if (domScoreInputs && domScoreInputs.length > 0) {
         domScoreInputs.forEach(inp => {
@@ -38550,7 +38594,6 @@ if (typeof PenilaianApp !== 'undefined') {
       this.saveWizardDraft();
     },
 
-    // Simpan Penilaian Akademik dengan Skema Kompatibel Ganda (studentScores & scores)
     async saveAcademicAssessment() {
       if (AppState.isReadOnlyInspection) return;
       const bucket = DB.getActiveClassBucket();
@@ -38568,7 +38611,7 @@ if (typeof PenilaianApp !== 'undefined') {
       wiz.mapel = mapelName;
 
       const activeDate = wiz.activeDate || DateTimeUtil.getTodayISO();
-      const dayName = DateTimeUtil.getIndonesianDayName(activeDate);
+      const dayName = this.getSafeDayName(activeDate);
       const jenisAsesmen = wiz.jenisAsesmen || document.getElementById('setup-nilai-jenis-asesmen')?.value || 'FORMATIF';
       const skipKet = Boolean(wiz.skipKeterampilan);
 
@@ -38579,7 +38622,6 @@ if (typeof PenilaianApp !== 'undefined') {
       });
       const totalMaxWeight = weights.reduce((a, b) => a + b, 0) || 1;
 
-      // 1. Baca seluruh input skor pengetahuan dari DOM (jika tabel pengetahuan sedang ada di DOM)
       const domScoreInputs = document.querySelectorAll('#tbody-penilaian-pengetahuan .std-qscore-input');
       if (domScoreInputs && domScoreInputs.length > 0) {
         domScoreInputs.forEach(inp => {
@@ -38600,7 +38642,6 @@ if (typeof PenilaianApp !== 'undefined') {
         });
       }
 
-      // 2. Baca seluruh input keterampilan dari DOM (jika lembar keterampilan pernah dibuka)
       const domProsesInputs = document.querySelectorAll('#tbody-penilaian-keterampilan .std-ket-proses-input');
       if (domProsesInputs && domProsesInputs.length > 0) {
         domProsesInputs.forEach(inp => {
@@ -38635,10 +38676,9 @@ if (typeof PenilaianApp !== 'undefined') {
       }
 
       const students = Array.isArray(bucket.students) ? bucket.students : [];
-      const bobotPengPolicy = typeof this.getClassRekapWeightPolicy === 'function'
-        ? this.getClassRekapWeightPolicy(bucket).bobotPengetahuan
-        : 70;
-      const bobotKetPolicy = 100 - bobotPengPolicy;
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      const bobotPengPolicy = policy.bobotPengetahuan;
+      const bobotKetPolicy = policy.bobotKeterampilan;
 
       const scoresRecord = {};
       students.forEach(std => {
@@ -38698,9 +38738,7 @@ if (typeof PenilaianApp !== 'undefined') {
         };
       });
 
-      if (!Array.isArray(bucket.penilaian)) {
-        bucket.penilaian = [];
-      }
+      if (!Array.isArray(bucket.penilaian)) bucket.penilaian = [];
 
       const existingIdx = bucket.penilaian.findIndex(r =>
         r && r.tanggal === activeDate &&
@@ -38750,7 +38788,477 @@ if (typeof PenilaianApp !== 'undefined') {
       IntraApp.openSubPillar('rekap_penilaian');
     },
 
-    // Fitur Tombol "✏️ Edit Nilai Mapel Ini" dari Halaman Rekap Penilaian
+    // =========================================================================
+    // PEMBUKA & PENGELOLA HALAMAN REKAP PENILAIAN AKADEMIK (100% FITUR AKTIF)
+    // =========================================================================
+    openRekapPenilaian() {
+      UI.switchView('view-intra-rekap-penilaian');
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const datePicker = document.getElementById('rekap-nilai-date-picker');
+      if (datePicker && !datePicker.value) {
+        datePicker.value = DateTimeUtil.getTodayISO();
+      }
+
+      // Sinkronkan input bobot fleksibel di atas halaman Rekap Penilaian
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      const inpPeng = document.getElementById('rekap-input-bobot-pengetahuan');
+      const inpKet = document.getElementById('rekap-input-bobot-keterampilan');
+      if (inpPeng) inpPeng.value = policy.bobotPengetahuan;
+      if (inpKet) inpKet.value = policy.bobotKeterampilan;
+      this.updateRekapFormulaBadges(policy.bobotPengetahuan, policy.bobotKeterampilan);
+
+      this.rekapShowAllMode = false;
+      this.renderRekapPenilaian(1);
+    },
+
+    updateRekapFormulaBadges(bPeng, bKet) {
+      const pill = document.getElementById('rekap-active-formula-pill');
+      const bannerBadge = document.getElementById('rekap-banner-formula-badge');
+      const text = `Rumus Rekap: ${bPeng}% Nilai Pengetahuan + ${bKet}% Nilai Keterampilan`;
+      if (pill) pill.textContent = `Rumus Aktif: ${bPeng}% Pengetahuan + ${bKet}% Keterampilan`;
+      if (bannerBadge) bannerBadge.textContent = text;
+    },
+
+    handleRekapWeightInputChange(changedType, rawValue) {
+      let val = parseInt(rawValue, 10);
+      if (isNaN(val)) val = 0;
+      val = Math.min(100, Math.max(0, val));
+
+      const inpPeng = document.getElementById('rekap-input-bobot-pengetahuan');
+      const inpKet = document.getElementById('rekap-input-bobot-keterampilan');
+
+      if (changedType === 'PENGETAHUAN') {
+        if (inpPeng) inpPeng.value = val;
+        if (inpKet) inpKet.value = 100 - val;
+        this.updateRekapFormulaBadges(val, 100 - val);
+      } else {
+        if (inpKet) inpKet.value = val;
+        if (inpPeng) inpPeng.value = 100 - val;
+        this.updateRekapFormulaBadges(100 - val, val);
+      }
+    },
+
+    applyRekapWeightPreset(bPeng, bKet) {
+      const inpPeng = document.getElementById('rekap-input-bobot-pengetahuan');
+      const inpKet = document.getElementById('rekap-input-bobot-keterampilan');
+      if (inpPeng) inpPeng.value = bPeng;
+      if (inpKet) inpKet.value = bKet;
+      this.updateRekapFormulaBadges(bPeng, bKet);
+      this.saveRekapWeightPolicy();
+    },
+
+    async saveRekapWeightPolicy() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const inpPeng = document.getElementById('rekap-input-bobot-pengetahuan');
+      const inpKet = document.getElementById('rekap-input-bobot-keterampilan');
+      let bPeng = parseInt(inpPeng?.value, 10);
+      if (isNaN(bPeng)) bPeng = 70;
+      bPeng = Math.min(100, Math.max(0, bPeng));
+      const bKet = 100 - bPeng;
+
+      if (inpPeng) inpPeng.value = bPeng;
+      if (inpKet) inpKet.value = bKet;
+
+      bucket.rekapWeightPolicy = {
+        bobotPengetahuan: bPeng,
+        bobotKeterampilan: bKet,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Hitung ulang nilaiAkhir / nilaiRekap pada seluruh sesi penilaian di kelas ini
+      (bucket.penilaian || []).forEach(rec => {
+        if (!rec) return;
+        const skipKet = Boolean(rec.skipKeterampilan);
+        const sMap = rec.studentScores || rec.scores || {};
+        Object.keys(sMap).forEach(stdId => {
+          const item = sMap[stdId];
+          if (!item) return;
+          const nPeng = parseFloat(item.nilaiPengetahuan) || 0;
+          const nKet = parseFloat(item.nilaiKeterampilan) || 0;
+          const updatedFinal = skipKet
+            ? Math.round(nPeng)
+            : Math.round((nPeng * (bPeng / 100)) + (nKet * (bKet / 100)));
+          item.nilaiRekap = updatedFinal;
+          item.nilaiAkhir = updatedFinal;
+        });
+      });
+
+      this.updateRekapFormulaBadges(bPeng, bKet);
+      this.renderRekapPenilaian(this.rekapActiveSheetIndex || 1);
+      await DB.saveImmediate();
+
+      UI.showNotif(
+        'Bobot Rekap Berhasil Disimpan',
+        `Rumus Rekap Penilaian (${bPeng}% Pengetahuan + ${bKet}% Keterampilan) telah diterapkan dan seluruh nilai siswa telah dihitung ulang.`,
+        'success'
+      );
+    },
+
+    async forceCloudSyncRekap() {
+      if (typeof DB.syncFromCloudSilent === 'function') {
+        await DB.syncFromCloudSilent();
+      }
+      this.renderRekapPenilaian(this.rekapActiveSheetIndex || 1);
+      UI.showNotif('Sinkronisasi Rekap Selesai', 'Data Rekap Penilaian terbaru telah dimuat dari Cloud.', 'success');
+    },
+
+    renderRekapPenilaian(pageIndex = 1) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const datePicker = document.getElementById('rekap-nilai-date-picker');
+      const filterJenisEl = document.getElementById('rekap-nilai-filter-jenis');
+      if (datePicker && !datePicker.value) {
+        datePicker.value = DateTimeUtil.getTodayISO();
+      }
+
+      const selectedDate = datePicker?.value || DateTimeUtil.getTodayISO();
+      const filterJenis = filterJenisEl?.value || 'ALL';
+      const rawDayName = this.getSafeDayName(selectedDate);
+      const dayName = rawDayName === 'Minggu' ? 'Senin' : rawDayName;
+
+      const allRecords = Array.isArray(bucket.penilaian) ? bucket.penilaian : [];
+
+      const savedDatesWrap = document.getElementById('rekap-saved-dates-chips-wrap');
+      const totalSavedBadge = document.getElementById('rekap-total-saved-sessions-badge');
+      if (totalSavedBadge) {
+        totalSavedBadge.textContent = `${allRecords.length} Total Sesi Penilaian di Kelas Ini`;
+      }
+      if (savedDatesWrap) {
+        const uniqueDates = Array.from(new Set(allRecords.map(r => r?.tanggal).filter(Boolean))).sort().reverse();
+        if (uniqueDates.length === 0) {
+          savedDatesWrap.innerHTML = `<span style="font-size: 0.78rem; color: var(--text-muted);">Belum ada tanggal penilaian tersimpan</span>`;
+        } else {
+          savedDatesWrap.innerHTML = uniqueDates.map(d => {
+            const isActive = d === selectedDate;
+            return `<button type="button" class="rekap-saved-date-chip ${isActive ? 'active-date-chip' : ''}" onclick="document.getElementById('rekap-nilai-date-picker').value='${d}'; PenilaianApp.renderRekapPenilaian(1);">📅 ${DateTimeUtil.formatIndonesianDate(d)}</button>`;
+          }).join('');
+        }
+      }
+
+      // Ambil daftar mata pelajaran dari jadwal hari itu tanpa rekursi + tambahkan mapel yang memiliki nilai pada tanggal itu
+      let scheduleSubjects = [];
+      try {
+        const rawSched = (bucket.schedules && bucket.schedules[dayName]) || '';
+        scheduleSubjects = String(rawSched).split(',').map(s => s.trim()).filter(Boolean);
+      } catch (e) {}
+
+      const assessedOnDate = allRecords.filter(r => r && r.tanggal === selectedDate);
+      const subjectList = [...scheduleSubjects];
+
+      assessedOnDate.forEach(r => {
+        if (r.mapel && !subjectList.some(s => this.normalizeSubjKey(s) === this.normalizeSubjKey(r.mapel))) {
+          subjectList.push(r.mapel.trim());
+        }
+      });
+
+      if (subjectList.length === 0) {
+        const allSubjs = typeof DataKelasApp.getAllUniqueSubjects === 'function'
+          ? DataKelasApp.getAllUniqueSubjects(bucket)
+          : [];
+        if (allSubjs.length > 0) subjectList.push(...allSubjs.slice(0, 4));
+        else subjectList.push('Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS');
+      }
+
+      const dayEl = document.getElementById('rekap-nilai-detected-day');
+      const dateEl = document.getElementById('rekap-nilai-detected-date');
+      const subjEl = document.getElementById('rekap-nilai-detected-subjects');
+      if (dayEl) dayEl.textContent = rawDayName;
+      if (dateEl) dateEl.textContent = DateTimeUtil.formatIndonesianDate(selectedDate);
+      if (subjEl) subjEl.textContent = subjectList.join(', ');
+
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      this.updateRekapFormulaBadges(policy.bobotPengetahuan, policy.bobotKeterampilan);
+
+      const totalSheets = Math.max(1, subjectList.length);
+      this.rekapActiveSheetIndex = Math.min(Math.max(1, pageIndex), totalSheets);
+
+      const pageInd = document.getElementById('rekap-sheet-page-indicator');
+      if (pageInd) {
+        pageInd.textContent = this.rekapShowAllMode
+          ? `Menampilkan Semua ${totalSheets} Lembar Mata Pelajaran`
+          : `Lembar ${this.rekapActiveSheetIndex} dari ${totalSheets}`;
+      }
+
+      const showAllBtn = document.getElementById('btn-rekap-show-all-sheets');
+      if (showAllBtn) {
+        showAllBtn.innerHTML = this.rekapShowAllMode
+          ? '📄 Tampilkan Per 1 Lembar'
+          : '📑 Tampilkan Semua Lembar Sekaligus';
+      }
+
+      const tabsBar = document.getElementById('rekap-sheet-tabs-bar');
+      if (tabsBar) {
+        tabsBar.innerHTML = subjectList.map((subj, idx) => {
+          const sheetNum = idx + 1;
+          const hasData = assessedOnDate.some(r => this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj));
+          const activeClass = (!this.rekapShowAllMode && sheetNum === this.rekapActiveSheetIndex) ? 'active-sheet-tab' : '';
+          return `
+            <button type="button" class="rekap-sheet-tab-btn ${activeClass}" onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${sheetNum})">
+              <span class="rekap-sheet-tab-num">${sheetNum}</span>
+              <span>${UI.escapeHtml(subj)} ${hasData ? '✓' : ''}</span>
+            </button>
+          `;
+        }).join('');
+      }
+
+      const container = document.getElementById('rekap-nilai-tables-container');
+      const students = Array.isArray(bucket.students) ? bucket.students : [];
+
+      if (container) {
+        container.innerHTML = subjectList.map((subj, idx) => {
+          const sheetNum = idx + 1;
+          const isVisible = this.rekapShowAllMode || (sheetNum === this.rekapActiveSheetIndex);
+
+          let matchedRecords = assessedOnDate.filter(r =>
+            this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj) &&
+            (filterJenis === 'ALL' || (r.jenisAsesmen || r.jenis) === filterJenis)
+          );
+
+          if (matchedRecords.length === 0) {
+            matchedRecords = assessedOnDate.filter(r => this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj));
+          }
+
+          const latestRec = matchedRecords.length > 0 ? matchedRecords[matchedRecords.length - 1] : null;
+          const isSkipKet = latestRec ? Boolean(latestRec.skipKeterampilan) : false;
+          const activeJenisLabel = latestRec ? (latestRec.jenisAsesmen || latestRec.jenis || 'FORMATIF') : (filterJenis === 'ALL' ? 'FORMATIF' : filterJenis);
+          const safeSubj = String(subj).replace(/'/g, "\\'");
+          const safeRecId = latestRec ? String(latestRec.id).replace(/'/g, "\\'") : '';
+
+          const rowsHtml = students.length === 0
+            ? `<tr><td colspan="${isSkipKet ? 5 : 6}" style="text-align:center; padding:1.25rem; color:var(--text-muted);">Belum ada data siswa di kelas ini.</td></tr>`
+            : students.map((std, sIdx) => {
+                const sData = latestRec ? ((latestRec.studentScores && latestRec.studentScores[std.id]) || (latestRec.scores && latestRec.scores[std.id])) : null;
+                const nPeng = (sData && sData.nilaiPengetahuan !== undefined && sData.nilaiPengetahuan !== null) ? Number(sData.nilaiPengetahuan) : null;
+                const nKet = (sData && sData.nilaiKeterampilan !== undefined && sData.nilaiKeterampilan !== null) ? Number(sData.nilaiKeterampilan) : null;
+
+                let nRekap = null;
+                if (nPeng !== null && !isNaN(nPeng)) {
+                  if (isSkipKet || nKet === null || isNaN(nKet)) {
+                    nRekap = Math.round(nPeng);
+                  } else {
+                    nRekap = Math.round((nPeng * (policy.bobotPengetahuan / 100)) + (nKet * (policy.bobotKeterampilan / 100)));
+                  }
+                }
+
+                const safeStdId = String(std.id).replace(/'/g, "\\'");
+
+                return `
+                  <tr>
+                    <td>${sIdx + 1}</td>
+                    <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+                    <td style="text-align: center;">
+                      ${nPeng !== null
+                        ? `<span class="clickable-score" title="Klik untuk melihat History Nilai Murni" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nPeng}</span>`
+                        : '<span style="color:var(--text-muted);">-</span>'}
+                    </td>
+                    ${isSkipKet ? '' : `
+                      <td style="text-align: center;">
+                        ${nKet !== null
+                          ? `<span class="clickable-score" title="Klik untuk melihat History Nilai Murni" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nKet}</span>`
+                          : '<span style="color:var(--text-muted);">-</span>'}
+                      </td>
+                    `}
+                    <td style="text-align: center; font-weight: 900; color: var(--success); background: #f0fdf4;">
+                      ${nRekap !== null
+                        ? `<span class="clickable-score" style="color: var(--success);" title="Klik untuk melihat History Nilai Murni" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nRekap}</span>`
+                        : '<span style="color:var(--text-muted);">Belum Dinilai</span>'}
+                    </td>
+                    <td>${UI.escapeHtml(sData?.catatan || (nRekap !== null ? 'Tuntas Tercatat' : '-'))}</td>
+                  </tr>
+                `;
+              }).join('');
+
+          return `
+            <div class="card rekap-single-sheet-page ${isVisible ? '' : 'hidden'}" style="margin-bottom: 1.25rem; border-top: 4px solid var(--primary-light);">
+              <div class="card-header">
+                <div>
+                  <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <span class="badge badge-primary">LEMBAR ${sheetNum} — ${UI.escapeHtml(subj.toUpperCase())}</span>
+                    <span class="badge ${latestRec ? 'badge-success' : 'badge-warning'}">
+                      ${latestRec ? `✓ Nilai ${activeJenisLabel} Tersimpan (${latestRec.savedAt || 'Aktif'})` : 'Belum Ada Penilaian pada Tanggal Ini'}
+                    </span>
+                    ${isSkipKet ? '<span class="badge badge-info">100% Nilai Pengetahuan (Keterampilan Dilewati)</span>' : ''}
+                  </div>
+                  <h3 class="card-title">Rekap Penilaian Mata Pelajaran: ${UI.escapeHtml(subj)}</h3>
+                  <p class="card-subtitle">
+                    Tujuan Pembelajaran: <strong>${UI.escapeHtml(latestRec?.tpPengetahuan || '-')}</strong> | Instrumen: <strong>${UI.escapeHtml(latestRec?.jenisInstrumen || '-')}</strong>
+                  </p>
+                </div>
+
+                <div class="no-print write-action-btn" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                  <button type="button" class="btn btn-warning btn-sm" onclick="PenilaianApp.editSubjectFromRekap('${selectedDate}', '${safeSubj}', '${activeJenisLabel}')">
+                    ✏️ ${latestRec ? 'Edit Nilai Mapel Ini' : 'Input Nilai Mapel Ini'}
+                  </button>
+                  ${latestRec ? `
+                    <button type="button" class="btn btn-danger btn-sm" onclick="PenilaianApp.deleteAssessmentSession('${safeRecId}')">
+                      🗑️ Hapus Sesi
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="academic-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 50px;">No</th>
+                      <th>Nama Siswa</th>
+                      <th style="text-align: center;">Nilai Murni Pengetahuan</th>
+                      ${isSkipKet ? '' : `<th style="text-align: center;">Nilai Murni Keterampilan</th>`}
+                      <th style="text-align: center; background: #f0fdf4;">
+                        Nilai Akhir Rekap ${isSkipKet ? '(100% Peng)' : `(${policy.bobotPengetahuan}%:${policy.bobotKeterampilan}%)`}
+                      </th>
+                      <th>Catatan / Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>${rowsHtml}</tbody>
+                </table>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const pagerBar = document.getElementById('rekap-sheet-bottom-pager-bar');
+      if (pagerBar) {
+        const prevIdx = Math.max(1, this.rekapActiveSheetIndex - 1);
+        const nextIdx = Math.min(totalSheets, this.rekapActiveSheetIndex + 1);
+        pagerBar.innerHTML = `
+          <button type="button" class="btn btn-outline btn-sm" ${this.rekapActiveSheetIndex <= 1 ? 'disabled' : ''} onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${prevIdx})">
+            &larr; Lembar Sebelumnya
+          </button>
+          <span style="font-size: 0.86rem; font-weight: 700; color: var(--dark);">
+            Lembar ${this.rekapActiveSheetIndex} dari ${totalSheets} (${UI.escapeHtml(subjectList[this.rekapActiveSheetIndex - 1] || '-')})
+          </span>
+          <button type="button" class="btn btn-primary btn-sm" ${this.rekapActiveSheetIndex >= totalSheets ? 'disabled' : ''} onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${nextIdx})">
+            Lembar Berikutnya &rarr;
+          </button>
+        `;
+      }
+    },
+
+    showAllRekapSheetsSimultaneously() {
+      this.rekapShowAllMode = !this.rekapShowAllMode;
+      this.renderRekapPenilaian(this.rekapActiveSheetIndex || 1);
+    },
+
+    async deleteAssessmentSession(recordId) {
+      if (AppState.isReadOnlyInspection || !recordId) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !Array.isArray(bucket.penilaian)) return;
+      if (!window.confirm('Hapus sesi penilaian mata pelajaran ini?')) return;
+
+      bucket.penilaian = bucket.penilaian.filter(r => String(r?.id) !== String(recordId));
+      await DB.saveImmediate();
+      this.renderRekapPenilaian(this.rekapActiveSheetIndex || 1);
+      UI.showNotif('Sesi Penilaian Dihapus', 'Data penilaian telah dihapus dari Rekap Penilaian.', 'success');
+    },
+
+    // =========================================================================
+    // POP-UP DETAIL HISTORY NILAI MURNI SISWA (#modal-history-penilaian)
+    // =========================================================================
+    openHistoryModal(studentId, mapelName, jenisFilter = 'ALL') {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const std = (bucket.students || []).find(s => String(s.id) === String(studentId));
+      const allRecords = Array.isArray(bucket.penilaian) ? bucket.penilaian : [];
+      const policy = this.getClassRekapWeightPolicy(bucket);
+
+      const matched = allRecords.filter(r =>
+        r && this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(mapelName) &&
+        (jenisFilter === 'ALL' || (r.jenisAsesmen || r.jenis) === jenisFilter)
+      );
+      const listToUse = matched.length > 0
+        ? matched
+        : allRecords.filter(r => r && this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(mapelName));
+
+      const nameEl = document.getElementById('hist-nilai-student-name');
+      const mapelEl = document.getElementById('hist-nilai-mapel');
+      const jenisEl = document.getElementById('hist-nilai-jenis');
+      if (nameEl) nameEl.textContent = std ? std.nama : 'Siswa';
+      if (mapelEl) mapelEl.textContent = mapelName;
+      if (jenisEl) jenisEl.textContent = jenisFilter;
+
+      let sumPeng = 0;
+      let sumKet = 0;
+      let sumAkhir = 0;
+      let countValid = 0;
+
+      const tbody = document.getElementById('tbody-hist-nilai-detail');
+      if (tbody) {
+        if (listToUse.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:1.25rem; color:var(--text-muted);">Belum ada riwayat penilaian untuk mata pelajaran ini.</td></tr>`;
+        } else {
+          tbody.innerHTML = listToUse.map(rec => {
+            const sRec = (rec.studentScores && rec.studentScores[studentId]) || (rec.scores && rec.scores[studentId]) || {};
+            const nPeng = parseFloat(sRec.nilaiPengetahuan);
+            const nKet = parseFloat(sRec.nilaiKeterampilan);
+            const skipK = Boolean(rec.skipKeterampilan);
+
+            const validPeng = !isNaN(nPeng) ? Math.round(nPeng) : 0;
+            const validKet = skipK ? null : (!isNaN(nKet) ? Math.round(nKet) : validPeng);
+            const validAkhir = skipK
+              ? validPeng
+              : Math.round((validPeng * (policy.bobotPengetahuan / 100)) + ((validKet || 0) * (policy.bobotKeterampilan / 100)));
+
+            sumPeng += validPeng;
+            if (validKet !== null) sumKet += validKet;
+            sumAkhir += validAkhir;
+            countValid++;
+
+            const perSoalBadges = sRec.perSoal
+              ? Object.entries(sRec.perSoal).map(([k, v]) => `<span class="badge badge-info" style="font-size:0.68rem; margin-right:0.2rem;">${k}: ${v}</span>`).join('')
+              : '';
+
+            return `
+              <tr>
+                <td>${DateTimeUtil.formatIndonesianDate(rec.tanggal)}</td>
+                <td><span class="badge badge-primary">${UI.escapeHtml(rec.jenisAsesmen || rec.jenis || 'FORMATIF')}</span></td>
+                <td>
+                  <div><strong>${UI.escapeHtml(rec.tpPengetahuan || '-')}</strong></div>
+                  <div style="font-size:0.75rem; color:var(--text-muted);">${UI.escapeHtml(rec.jenisInstrumen || '')} • ${UI.escapeHtml(rec.soloLevel || '')}</div>
+                  <div style="margin-top:0.25rem;">${perSoalBadges}</div>
+                </td>
+                <td style="text-align:center; font-weight:800; color:var(--primary-light);">${validPeng}</td>
+                <td style="text-align:center; font-weight:800; color:var(--secondary);">${skipK ? '<span class="badge badge-warning">Dilewati (100% Peng)</span>' : validKet}</td>
+                <td style="text-align:center; font-weight:900; color:var(--success); background:#f0fdf4;">${validAkhir}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      const avgPengEl = document.getElementById('hist-nilai-avg-pengetahuan');
+      const avgKetEl = document.getElementById('hist-nilai-avg-keterampilan');
+      const akhirEl = document.getElementById('hist-nilai-akhir');
+      const hintPeng = document.getElementById('hist-nilai-weight-hint-peng');
+      const hintKet = document.getElementById('hist-nilai-weight-hint-ket');
+
+      if (avgPengEl) avgPengEl.textContent = countValid > 0 ? Math.round(sumPeng / countValid) : 0;
+      if (avgKetEl) avgKetEl.textContent = countValid > 0 ? Math.round(sumKet / countValid) : 0;
+      if (akhirEl) akhirEl.textContent = countValid > 0 ? Math.round(sumAkhir / countValid) : 0;
+      if (hintPeng) hintPeng.textContent = `Bobot Kontribusi: ${policy.bobotPengetahuan}%`;
+      if (hintKet) hintKet.textContent = `Bobot Kontribusi: ${policy.bobotKeterampilan}%`;
+
+      const modal = document.getElementById('modal-history-penilaian');
+      if (modal) modal.classList.remove('hidden');
+    },
+
+    closeHistoryModal() {
+      const modal = document.getElementById('modal-history-penilaian');
+      if (modal) modal.classList.add('hidden');
+    },
+
+    // =========================================================================
+    // FITUR EDIT MAPEL & REKAP ULANG MASA LAMPAU (#view-intra-rekap-ulang-nilai)
+    // =========================================================================
     editSubjectFromRekap(dateISO, subjectName, jenisAsesmen = 'FORMATIF') {
       const bucket = DB.getActiveClassBucket();
       if (!bucket) return;
@@ -38806,7 +39314,6 @@ if (typeof PenilaianApp !== 'undefined') {
         });
       }
 
-      // Buka tampilan Penilaian Akademik dan langsung tampilkan Lembar Penilaian Siswa
       UI.switchView('view-intra-penilaian-akademik');
 
       const mapelEl = document.getElementById('setup-nilai-mapel');
@@ -38838,232 +39345,219 @@ if (typeof PenilaianApp !== 'undefined') {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
 
-    // Render Halaman Rekap Penilaian yang 100% Menampilkan Semua Nilai & Tombol "Edit Mapel Ini"
-    renderRekapPenilaian(pageIndex = 1) {
+    openRekapUlangMasaLampau() {
       const bucket = DB.getActiveClassBucket();
       if (!bucket) return;
 
-      const datePicker = document.getElementById('rekap-nilai-date-picker');
-      const filterJenisEl = document.getElementById('rekap-nilai-filter-jenis');
-      if (datePicker && !datePicker.value) {
-        datePicker.value = DateTimeUtil.getTodayISO();
+      const pickedDate = document.getElementById('rekap-nilai-date-picker')?.value || DateTimeUtil.getTodayISO();
+      AppState.rekapUlangDate = pickedDate;
+      const rawDay = this.getSafeDayName(pickedDate);
+      const dayName = rawDay === 'Minggu' ? 'Senin' : rawDay;
+
+      const hDate = document.getElementById('rekap-ulang-header-date');
+      const hDay = document.getElementById('rekap-ulang-header-day');
+      const sDay = document.getElementById('rekap-ulang-sub-day');
+      if (hDate) hDate.textContent = DateTimeUtil.formatIndonesianDate(pickedDate);
+      if (hDay) hDay.textContent = rawDay;
+      if (sDay) sDay.textContent = rawDay;
+
+      let subjects = [];
+      try {
+        const rawSched = (bucket.schedules && bucket.schedules[dayName]) || '';
+        subjects = String(rawSched).split(',').map(s => s.trim()).filter(Boolean);
+      } catch (e) {}
+      if (subjects.length === 0 && typeof DataKelasApp.getAllUniqueSubjects === 'function') {
+        subjects = DataKelasApp.getAllUniqueSubjects(bucket);
+      }
+      if (subjects.length === 0) {
+        subjects = ['Pendidikan Pancasila', 'Bahasa Indonesia', 'Matematika', 'IPAS'];
       }
 
-      const selectedDate = datePicker?.value || DateTimeUtil.getTodayISO();
-      const filterJenis = filterJenisEl?.value || 'ALL';
-      const dayName = DateTimeUtil.getIndonesianDayName(selectedDate);
-
-      const allRecords = Array.isArray(bucket.penilaian) ? bucket.penilaian : [];
-
-      // Tampilkan pintasan tanggal yang memiliki nilai tersimpan
-      const savedDatesWrap = document.getElementById('rekap-saved-dates-chips-wrap');
-      const totalSavedBadge = document.getElementById('rekap-total-saved-sessions-badge');
-      if (totalSavedBadge) {
-        totalSavedBadge.textContent = `${allRecords.length} Total Sesi Penilaian di Kelas Ini`;
-      }
-      if (savedDatesWrap) {
-        const uniqueDates = Array.from(new Set(allRecords.map(r => r?.tanggal).filter(Boolean))).sort().reverse();
-        if (uniqueDates.length === 0) {
-          savedDatesWrap.innerHTML = `<span style="font-size: 0.78rem; color: var(--text-muted);">Belum ada tanggal penilaian tersimpan</span>`;
-        } else {
-          savedDatesWrap.innerHTML = uniqueDates.map(d => {
-            const isActive = d === selectedDate;
-            return `<button type="button" class="rekap-saved-date-chip ${isActive ? 'active-date-chip' : ''}" onclick="document.getElementById('rekap-nilai-date-picker').value='${d}'; PenilaianApp.renderRekapPenilaian(1);">📅 ${DateTimeUtil.formatIndonesianDate(d)}</button>`;
-          }).join('');
-        }
+      const mapelSelect = document.getElementById('rekap-ulang-mapel-select');
+      if (mapelSelect) {
+        mapelSelect.innerHTML = subjects.map(s => `<option value="${UI.escapeHtml(s)}">${UI.escapeHtml(s)}</option>`).join('');
       }
 
-      // Gabungkan daftar mata pelajaran dari jadwal hari itu + mata pelajaran yang dinilai pada tanggal itu
-      const scheduleSubjects = DataKelasApp.getSubjectsForDay(dayName, bucket) || [];
-      const assessedOnDate = allRecords.filter(r => r && r.tanggal === selectedDate);
-
-      // Jika pada tanggal terpilih ada penilaian yang jenisnya berbeda dari filter dropdown (misal SUMATIF saat filter FORMATIF), tetap sertakan agar guru tidak bingung
-      const subjectList = [...scheduleSubjects];
-      assessedOnDate.forEach(r => {
-        if (r.mapel && !subjectList.some(s => this.normalizeSubjKey(s) === this.normalizeSubjKey(r.mapel))) {
-          subjectList.push(r.mapel.trim());
-        }
-      });
-      if (subjectList.length === 0) {
-        const allSubjs = DataKelasApp.getAllUniqueSubjects(bucket);
-        if (allSubjs.length > 0) subjectList.push(...allSubjs.slice(0, 3));
-        else subjectList.push('Bahasa Indonesia', 'Matematika', 'IPAS');
-      }
-
-      const dayEl = document.getElementById('rekap-nilai-detected-day');
-      const dateEl = document.getElementById('rekap-nilai-detected-date');
-      const subjEl = document.getElementById('rekap-nilai-detected-subjects');
-      if (dayEl) dayEl.textContent = dayName;
-      if (dateEl) dateEl.textContent = DateTimeUtil.formatIndonesianDate(selectedDate);
-      if (subjEl) subjEl.textContent = subjectList.join(', ');
-
-      const policy = typeof this.getClassRekapWeightPolicy === 'function'
-        ? this.getClassRekapWeightPolicy(bucket)
-        : { bobotPengetahuan: 70, bobotKeterampilan: 30 };
-
-      const totalSheets = subjectList.length;
-      this.rekapActiveSheetIndex = Math.min(Math.max(1, pageIndex), totalSheets);
-
-      const pageInd = document.getElementById('rekap-sheet-page-indicator');
-      if (pageInd) {
-        pageInd.textContent = this.rekapShowAllMode
-          ? `Menampilkan Semua ${totalSheets} Lembar Mata Pelajaran`
-          : `Lembar ${this.rekapActiveSheetIndex} dari ${totalSheets}`;
-      }
-
-      // Render Tab Navigasi Mata Pelajaran
-      const tabsBar = document.getElementById('rekap-sheet-tabs-bar');
-      if (tabsBar) {
-        tabsBar.innerHTML = subjectList.map((subj, idx) => {
-          const sheetNum = idx + 1;
-          const hasData = assessedOnDate.some(r => this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj));
-          const activeClass = (!this.rekapShowAllMode && sheetNum === this.rekapActiveSheetIndex) ? 'active-sheet-tab' : '';
-          return `
-            <button type="button" class="rekap-sheet-tab-btn ${activeClass}" onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${sheetNum})">
-              <span class="rekap-sheet-tab-num">${sheetNum}</span>
-              <span>${UI.escapeHtml(subj)} ${hasData ? '✓' : ''}</span>
-            </button>
-          `;
-        }).join('');
-      }
-
-      // Render Tabel Rekap Per Mata Pelajaran
-      const container = document.getElementById('rekap-nilai-tables-container');
-      const students = Array.isArray(bucket.students) ? bucket.students : [];
-
-      if (container) {
-        container.innerHTML = subjectList.map((subj, idx) => {
-          const sheetNum = idx + 1;
-          const isVisible = this.rekapShowAllMode || (sheetNum === this.rekapActiveSheetIndex);
-
-          // Cari sesi penilaian yang cocok untuk mata pelajaran & tanggal ini
-          let matchedRecords = assessedOnDate.filter(r =>
-            this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj) &&
-            (filterJenis === 'ALL' || (r.jenisAsesmen || r.jenis) === filterJenis)
-          );
-
-          // Jika filter jenis sedang FORMATIF tetapi adanya SUMATIF (atau sebaliknya), tampilkan tetap datanya agar nilai tidak hilang
-          if (matchedRecords.length === 0) {
-            matchedRecords = assessedOnDate.filter(r => this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(subj));
-          }
-
-          const latestRec = matchedRecords.length > 0 ? matchedRecords[matchedRecords.length - 1] : null;
-          const isSkipKet = latestRec ? Boolean(latestRec.skipKeterampilan) : false;
-          const activeJenisLabel = latestRec ? (latestRec.jenisAsesmen || latestRec.jenis || 'FORMATIF') : (filterJenis === 'ALL' ? 'FORMATIF' : filterJenis);
-          const safeSubj = String(subj).replace(/'/g, "\\'");
-
-          const rowsHtml = students.length === 0
-            ? `<tr><td colspan="${isSkipKet ? 5 : 6}" style="text-align:center; padding:1.25rem; color:var(--text-muted);">Belum ada data siswa di kelas ini.</td></tr>`
-            : students.map((std, sIdx) => {
-                const sData = latestRec ? ((latestRec.studentScores && latestRec.studentScores[std.id]) || (latestRec.scores && latestRec.scores[std.id])) : null;
-                const nPeng = sData && sData.nilaiPengetahuan !== undefined ? sData.nilaiPengetahuan : null;
-                const nKet = sData && sData.nilaiKeterampilan !== undefined ? sData.nilaiKeterampilan : null;
-
-                let nRekap = null;
-                if (nPeng !== null) {
-                  if (isSkipKet || nKet === null) {
-                    nRekap = nPeng;
-                  } else {
-                    nRekap = Math.round((nPeng * (policy.bobotPengetahuan / 100)) + (nKet * (policy.bobotKeterampilan / 100)));
-                  }
-                }
-
-                const safeStdId = String(std.id).replace(/'/g, "\\'");
-
-                return `
-                  <tr>
-                    <td>${sIdx + 1}</td>
-                    <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
-                    <td style="text-align: center;">
-                      ${nPeng !== null
-                        ? `<span class="clickable-score" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nPeng}</span>`
-                        : '<span style="color:var(--text-muted);">-</span>'}
-                    </td>
-                    ${isSkipKet ? '' : `
-                      <td style="text-align: center;">
-                        ${nKet !== null
-                          ? `<span class="clickable-score" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nKet}</span>`
-                          : '<span style="color:var(--text-muted);">-</span>'}
-                      </td>
-                    `}
-                    <td style="text-align: center; font-weight: 900; color: var(--success); background: #f0fdf4;">
-                      ${nRekap !== null
-                        ? `<span class="clickable-score" style="color: var(--success);" onclick="PenilaianApp.openHistoryModal('${safeStdId}', '${safeSubj}', '${activeJenisLabel}')">${nRekap}</span>`
-                        : '<span style="color:var(--text-muted);">Belum Dinilai</span>'}
-                    </td>
-                    <td>${UI.escapeHtml(sData?.catatan || (nRekap !== null ? 'Tuntas Tercatat' : '-'))}</td>
-                  </tr>
-                `;
-              }).join('');
-
-          return `
-            <div class="card rekap-single-sheet-page ${isVisible ? '' : 'hidden'}" style="margin-bottom: 1.25rem; border-top: 4px solid var(--primary-light);">
-              <div class="card-header">
-                <div>
-                  <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
-                    <span class="badge badge-primary">LEMBAR ${sheetNum} — ${UI.escapeHtml(subj.toUpperCase())}</span>
-                    <span class="badge ${latestRec ? 'badge-success' : 'badge-warning'}">
-                      ${latestRec ? `✓ Nilai ${activeJenisLabel} Tersimpan (${latestRec.savedAt || 'Aktif'})` : 'Belum Ada Penilaian pada Tanggal Ini'}
-                    </span>
-                    ${isSkipKet ? '<span class="badge badge-info">100% Nilai Pengetahuan (Keterampilan Dilewati)</span>' : ''}
-                  </div>
-                  <h3 class="card-title">Rekap Penilaian Mata Pelajaran: ${UI.escapeHtml(subj)}</h3>
-                  <p class="card-subtitle">
-                    Tujuan Pembelajaran: <strong>${UI.escapeHtml(latestRec?.tpPengetahuan || '-')}</strong> | Instrumen: <strong>${UI.escapeHtml(latestRec?.jenisInstrumen || '-')}</strong>
-                  </p>
-                </div>
-
-                <div class="no-print write-action-btn" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                  <button type="button" class="btn btn-warning btn-sm" onclick="PenilaianApp.editSubjectFromRekap('${selectedDate}', '${safeSubj}', '${activeJenisLabel}')">
-                    ✏️ ${latestRec ? 'Edit Nilai Mapel Ini' : 'Input Nilai Mapel Ini'}
-                  </button>
-                </div>
-              </div>
-
-              <div class="table-responsive">
-                <table class="academic-table">
-                  <thead>
-                    <tr>
-                      <th style="width: 50px;">No</th>
-                      <th>Nama Siswa</th>
-                      <th style="text-align: center;">Nilai Murni Pengetahuan</th>
-                      ${isSkipKet ? '' : `<th style="text-align: center;">Nilai Murni Keterampilan</th>`}
-                      <th style="text-align: center; background: #f0fdf4;">
-                        Nilai Akhir Rekap ${isSkipKet ? '(100% Peng)' : `(${policy.bobotPengetahuan}%:${policy.bobotKeterampilan}%)`}
-                      </th>
-                      <th>Catatan / Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>${rowsHtml}</tbody>
-                </table>
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
-
-      // Render Pager Bawah (Sebelumnya / Berikutnya)
-      const pagerBar = document.getElementById('rekap-sheet-bottom-pager-bar');
-      if (pagerBar) {
-        const prevIdx = Math.max(1, this.rekapActiveSheetIndex - 1);
-        const nextIdx = Math.min(totalSheets, this.rekapActiveSheetIndex + 1);
-        pagerBar.innerHTML = `
-          <button type="button" class="btn btn-outline btn-sm" ${this.rekapActiveSheetIndex <= 1 ? 'disabled' : ''} onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${prevIdx})">
-            &larr; Lembar Sebelumnya
-          </button>
-          <span style="font-size: 0.86rem; font-weight: 700; color: var(--dark);">
-            Lembar ${this.rekapActiveSheetIndex} dari ${totalSheets} (${UI.escapeHtml(subjectList[this.rekapActiveSheetIndex - 1] || '-')})
-          </span>
-          <button type="button" class="btn btn-primary btn-sm" ${this.rekapActiveSheetIndex >= totalSheets ? 'disabled' : ''} onclick="PenilaianApp.rekapShowAllMode=false; PenilaianApp.renderRekapPenilaian(${nextIdx})">
-            Lembar Berikutnya &rarr;
-          </button>
-        `;
-      }
+      UI.switchView('view-intra-rekap-ulang-nilai');
+      this.loadRekapUlangSheet();
     },
 
-    showAllRekapSheetsSimultaneously() {
-      this.rekapShowAllMode = !this.rekapShowAllMode;
-      this.renderRekapPenilaian(this.rekapActiveSheetIndex || 1);
+    loadRekapUlangSheet() {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const targetDate = AppState.rekapUlangDate || DateTimeUtil.getTodayISO();
+      const jenis = document.getElementById('rekap-ulang-jenis-select')?.value || 'FORMATIF';
+      const mapel = document.getElementById('rekap-ulang-mapel-select')?.value || '';
+
+      const existing = (bucket.penilaian || []).find(r =>
+        r && r.tanggal === targetDate &&
+        this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(mapel) &&
+        (r.jenisAsesmen || r.jenis) === jenis
+      );
+
+      const tpInp = document.getElementById('rekap-ulang-tp-input');
+      const skipChk = document.getElementById('rekap-ulang-skip-ket-checkbox');
+      if (tpInp) tpInp.value = existing?.tpPengetahuan || '';
+      if (skipChk) skipChk.checked = existing ? Boolean(existing.skipKeterampilan) : false;
+
+      const isSkipKet = skipChk ? skipChk.checked : false;
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      const students = Array.isArray(bucket.students) ? bucket.students : [];
+      const tbody = document.getElementById('tbody-rekap-ulang-nilai');
+      if (!tbody) return;
+
+      tbody.innerHTML = students.map((std, idx) => {
+        const sRec = existing ? ((existing.studentScores && existing.studentScores[std.id]) || (existing.scores && existing.scores[std.id])) : null;
+        const nPeng = sRec?.nilaiPengetahuan ?? 80;
+        const nKet = sRec?.nilaiKeterampilan ?? 80;
+        const nAkhir = isSkipKet
+          ? Math.round(nPeng)
+          : Math.round((nPeng * (policy.bobotPengetahuan / 100)) + (nKet * (policy.bobotKeterampilan / 100)));
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+            <td>
+              <input type="number" min="0" max="100" class="form-control ru-peng-inp" data-student-id="${UI.escapeHtml(std.id)}" value="${nPeng}" oninput="PenilaianApp.recalcRekapUlangRow('${UI.escapeHtml(std.id)}')">
+            </td>
+            <td>
+              <input type="number" min="0" max="100" class="form-control ru-ket-inp" data-student-id="${UI.escapeHtml(std.id)}" value="${nKet}" ${isSkipKet ? 'disabled' : ''} oninput="PenilaianApp.recalcRekapUlangRow('${UI.escapeHtml(std.id)}')">
+            </td>
+            <td style="text-align:center; font-weight:900; color:var(--success); background:#f0fdf4;" id="ru-akhir-${UI.escapeHtml(std.id)}">
+              ${nAkhir}
+            </td>
+            <td>
+              <input type="text" class="form-control ru-catatan-inp" data-student-id="${UI.escapeHtml(std.id)}" placeholder="Catatan..." value="${UI.escapeHtml(sRec?.catatan || '')}">
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    toggleRekapUlangSkipKeterampilan(isSkip) {
+      const ketInps = document.querySelectorAll('#tbody-rekap-ulang-nilai .ru-ket-inp');
+      ketInps.forEach(inp => {
+        inp.disabled = Boolean(isSkip);
+        const sid = inp.getAttribute('data-student-id');
+        if (sid) this.recalcRekapUlangRow(sid);
+      });
+    },
+
+    recalcRekapUlangRow(studentId) {
+      const bucket = DB.getActiveClassBucket();
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      const isSkip = Boolean(document.getElementById('rekap-ulang-skip-ket-checkbox')?.checked);
+
+      const pInp = document.querySelector(`.ru-peng-inp[data-student-id="${studentId}"]`);
+      const kInp = document.querySelector(`.ru-ket-inp[data-student-id="${studentId}"]`);
+      const akhirCell = document.getElementById(`ru-akhir-${studentId}`);
+
+      const nPeng = Math.min(100, Math.max(0, parseFloat(pInp?.value) || 0));
+      const nKet = Math.min(100, Math.max(0, parseFloat(kInp?.value) || 0));
+      const finalVal = isSkip
+        ? Math.round(nPeng)
+        : Math.round((nPeng * (policy.bobotPengetahuan / 100)) + (nKet * (policy.bobotKeterampilan / 100)));
+
+      if (akhirCell) akhirCell.textContent = String(finalVal);
+    },
+
+    openFullSetupForPastDate() {
+      const targetDate = AppState.rekapUlangDate || DateTimeUtil.getTodayISO();
+      const mapel = document.getElementById('rekap-ulang-mapel-select')?.value || '';
+      const jenis = document.getElementById('rekap-ulang-jenis-select')?.value || 'FORMATIF';
+      this.editSubjectFromRekap(targetDate, mapel, jenis);
+    },
+
+    async saveRekapUlangMasaLampau() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const targetDate = AppState.rekapUlangDate || DateTimeUtil.getTodayISO();
+      const dayName = this.getSafeDayName(targetDate);
+      const jenis = document.getElementById('rekap-ulang-jenis-select')?.value || 'FORMATIF';
+      const mapel = (document.getElementById('rekap-ulang-mapel-select')?.value || '').trim();
+      const solo = document.getElementById('rekap-ulang-solo-select')?.value || 'Relational';
+      const tp = (document.getElementById('rekap-ulang-tp-input')?.value || '').trim() || '-';
+      const skipKet = Boolean(document.getElementById('rekap-ulang-skip-ket-checkbox')?.checked);
+
+      if (!mapel) {
+        UI.showNotif('Pilih Mata Pelajaran', 'Silakan pilih mata pelajaran terlebih dahulu.', 'warning');
+        return;
+      }
+
+      const policy = this.getClassRekapWeightPolicy(bucket);
+      const students = Array.isArray(bucket.students) ? bucket.students : [];
+      const scoresRecord = {};
+
+      students.forEach(std => {
+        const pInp = document.querySelector(`.ru-peng-inp[data-student-id="${std.id}"]`);
+        const kInp = document.querySelector(`.ru-ket-inp[data-student-id="${std.id}"]`);
+        const cInp = document.querySelector(`.ru-catatan-inp[data-student-id="${std.id}"]`);
+
+        const nPeng = Math.min(100, Math.max(0, Math.round(parseFloat(pInp?.value) || 0)));
+        const nKet = skipKet ? null : Math.min(100, Math.max(0, Math.round(parseFloat(kInp?.value) || 0)));
+        const nAkhir = skipKet
+          ? nPeng
+          : Math.round((nPeng * (policy.bobotPengetahuan / 100)) + ((nKet || 0) * (policy.bobotKeterampilan / 100)));
+
+        scoresRecord[std.id] = {
+          questionScores: [nPeng],
+          perSoal: { S1: nPeng },
+          skorPerolehan: nPeng,
+          skorMaksimal: 100,
+          nilaiPengetahuan: nPeng,
+          skorProses: nKet,
+          skorHasil: nKet,
+          nilaiKeterampilan: nKet,
+          skipKeterampilan: skipKet,
+          nilaiRekap: nAkhir,
+          nilaiAkhir: nAkhir,
+          catatan: (cInp?.value || '').trim()
+        };
+      });
+
+      if (!Array.isArray(bucket.penilaian)) bucket.penilaian = [];
+      const existingIdx = bucket.penilaian.findIndex(r =>
+        r && r.tanggal === targetDate &&
+        this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(mapel) &&
+        (r.jenisAsesmen || r.jenis) === jenis
+      );
+
+      const payload = {
+        id: existingIdx >= 0 ? bucket.penilaian[existingIdx].id : ('NILAI_' + Date.now()),
+        tanggal: targetDate,
+        hari: dayName,
+        jenis,
+        jenisAsesmen: jenis,
+        mapel,
+        tpPengetahuan: tp,
+        soloLevel: solo,
+        jenisInstrumen: 'Rekap Nilai Langsung',
+        jumlahSoal: 1,
+        bobotPerSoal: [100],
+        skipKeterampilan: skipKet,
+        jenisKeterampilan: skipKet ? '-' : 'Praktik / Unjuk Kerja',
+        tpKeterampilan: skipKet ? '-' : tp,
+        studentScores: scoresRecord,
+        scores: scoresRecord,
+        savedAt: DateTimeUtil.getCurrentTimeStr()
+      };
+
+      if (existingIdx >= 0) bucket.penilaian[existingIdx] = payload;
+      else bucket.penilaian.push(payload);
+
+      await DB.saveImmediate();
+
+      const dp = document.getElementById('rekap-nilai-date-picker');
+      const jf = document.getElementById('rekap-nilai-filter-jenis');
+      if (dp) dp.value = targetDate;
+      if (jf) jf.value = jenis;
+
+      UI.showNotif('Rekap Ulang Berhasil Disimpan', `Nilai ${mapel} untuk tanggal ${DateTimeUtil.formatIndonesianDate(targetDate)} telah disimpan.`, 'success');
+      this.openRekapPenilaian();
     }
   });
 }
