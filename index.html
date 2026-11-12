@@ -34674,176 +34674,1170 @@ Kembalikan HANYA objek JSON murni dengan struktur persis berikut:
 });
 
   // ============================================================================
-// PATCH PERBAIKAN AKSES HALAMAN KOKURIKULER (AUTO-CLEAN DUPLIKAT DOM #koku-panel-modul
-// & SAFE OPENER ANTI-MACET UNTUK SEMUA 5 TAB KOKURIKULER)
+// FULL UNIFIED KOKUAPP ENGINE V2 — PERBAIKAN TOTAL SELURUH FITUR & FUNGSI
+// HALAMAN KOKURIKULER (TAB 1 ORIENTASI, TAB 2 MODUL AI MURNI & ARSIP,
+// TAB 3 KELOMPOK, TAB 4 LOGBOOK FOTO, & TAB 5 ASESMEN SB/B/C/K + RAPOR)
 // ============================================================================
 
-const KokuAccessFixer = {
-  // 1. Bersihkan otomatis duplikat blok <div id="koku-panel-modul"> di dalam HTML
-  cleanDuplicateKokuDomNodes() {
-    const allModPanels = document.querySelectorAll('#view-pilar-kokurikuler #koku-panel-modul');
-    if (allModPanels.length > 1) {
-      for (let i = 1; i < allModPanels.length; i++) {
-        allModPanels[i].remove();
-      }
-      console.log('Duplikat #koku-panel-modul berhasil dibersihkan otomatis.');
+// 1. Bersihkan duplikat DOM #koku-panel-modul SECARA LANGSUNG saat script dimuat
+(function cleanDuplicateKokuDomImmediately() {
+  const modPanels = document.querySelectorAll('#view-pilar-kokurikuler #koku-panel-modul');
+  if (modPanels.length > 1) {
+    for (let i = 1; i < modPanels.length; i++) {
+      modPanels[i].remove();
     }
+  }
+  const mainContainer = document.getElementById('app-main-container');
+  const kokuSection = document.getElementById('view-pilar-kokurikuler');
+  if (mainContainer && kokuSection && kokuSection.parentElement !== mainContainer) {
+    mainContainer.appendChild(kokuSection);
+  }
+})();
 
-    // Pastikan section utama Kokurikuler berada langsung di dalam #app-main-container
-    const mainContainer = document.getElementById('app-main-container');
-    const kokuSection = document.getElementById('view-pilar-kokurikuler');
-    if (mainContainer && kokuSection && kokuSection.parentElement !== mainContainer) {
-      mainContainer.appendChild(kokuSection);
+// 2. Pastikan DB memiliki daftar hitam penghapusan permanen untuk Arsip Kokurikuler
+Object.assign(DB, {
+  getDeletedKokuIds() {
+    try {
+      const raw = localStorage.getItem('SIMAK_EDU_DELETED_KOKU_IDS_V1');
+      const localArr = raw ? JSON.parse(raw) : [];
+      const cloudArr = (this.data && Array.isArray(this.data.deletedKokuIds)) ? this.data.deletedKokuIds : [];
+      return Array.from(new Set([...localArr.map(String), ...cloudArr.map(String)]));
+    } catch (e) {
+      return [];
     }
   },
 
-  // 2. Pastikan struktur objek kokurikuler pada bucket kelas selalu lengkap (anti-null error)
-  ensureKokuBucketStructure(bucket) {
+  lockPermanentKokuDeletion(kokuIdsInput) {
+    this.lastLocalDeleteTimestamp = Date.now();
+    this.lastLocalWriteTimestamp = Date.now();
+    const idsToAdd = Array.isArray(kokuIdsInput) ? kokuIdsInput.map(String) : [String(kokuIdsInput)];
+    const merged = Array.from(new Set([...this.getDeletedKokuIds(), ...idsToAdd].filter(Boolean)));
+    try {
+      localStorage.setItem('SIMAK_EDU_DELETED_KOKU_IDS_V1', JSON.stringify(merged));
+    } catch (e) {}
+    if (this.data) {
+      this.data.deletedKokuIds = merged;
+    }
+  }
+});
+
+// 3. Definisi Lengkap & Terpadu KokuApp (100% Semua Fungsi Tab 1 s.d. Tab 5 Aktif)
+Object.assign(KokuApp, {
+  currentModulDoc: null,
+
+  cleanDomDuplicates() {
+    const modPanels = document.querySelectorAll('#view-pilar-kokurikuler #koku-panel-modul');
+    if (modPanels.length > 1) {
+      for (let i = 1; i < modPanels.length; i++) {
+        modPanels[i].remove();
+      }
+    }
+  },
+
+  setKokuAiLoading(isVisible, titleText = '', statusText = '') {
+    const modal = document.getElementById('koku-ai-loading-modal');
+    const titleEl = modal ? modal.querySelector('h3') : null;
+    const statusEl = document.getElementById('koku-ai-loading-status');
+    if (!modal) return;
+    if (isVisible) {
+      if (titleEl && titleText) titleEl.textContent = titleText;
+      if (statusEl && statusText) statusEl.textContent = statusText;
+      modal.classList.remove('hidden');
+    } else {
+      modal.classList.add('hidden');
+    }
+  },
+
+  getBentukMeta(bentukCode) {
+    if (bentukCode === 'G7KAIH') {
+      return {
+        code: 'G7KAIH',
+        name: 'Gerakan 7 Kebiasaan Anak Indonesia Hebat (G7KAIH)',
+        shortName: 'G7KAIH (7 Kebiasaan Hebat)',
+        fokusLabel: '7. Fokus Kebiasaan G7KAIH yang Dikuatkan & Strategi Pembiasaan :',
+        alurTitle: 'Bagan Alur Pengembangan G7KAIH (Gerakan 7 Kebiasaan Anak Indonesia Hebat) :',
+        alurSteps: [
+          '1. Analisis Karakter & Penentuan Fokus DPL',
+          '2. Penetapan Fokus 7 Kebiasaan Anak Indonesia Hebat',
+          '3. Perencanaan Jurnal & Kemitraan Sekolah–Orang Tua',
+          '4. Pembiasaan Harian yang Berkesadaran & Menggembirakan',
+          '5. Pemantauan Jurnal, Asesmen (SB/B/C/K) & Tindak Lanjut'
+        ]
+      };
+    }
+    if (bentukCode === 'CARA_LAIN') {
+      return {
+        code: 'CARA_LAIN',
+        name: 'Cara Lainnya / Karakteristik & Kearifan Lokal Satuan Pendidikan',
+        shortName: 'Kearifan Lokal & Kekhasan Sekolah',
+        fokusLabel: '7. Fokus Kekhasan Sekolah / Budaya & Kearifan Lokal yang Dikembangkan :',
+        alurTitle: 'Bagan Alur Pengembangan Kokurikuler Berbasis Kearifan Lokal & Kekhasan Sekolah :',
+        alurSteps: [
+          '1. Identifikasi Potensi Budaya Lokal & Kebutuhan Murid',
+          '2. Penentuan Dimensi Profil Lulusan & Tema Lokal',
+          '3. Perencanaan Aktivitas Kontekstual & Kemitraan Daerah',
+          '4. Praktik Langsung Karya / Budaya & Kolaborasi Murid',
+          '5. Gelar Karya, Asesmen (SB/B/C/K) & Refleksi Bermakna'
+        ]
+      };
+    }
+    return {
+      code: 'LINTAS_DISIPLIN',
+      name: 'Pembelajaran Kolaboratif Lintas Disiplin Ilmu',
+      shortName: 'Kolaborasi Lintas Disiplin Ilmu',
+      fokusLabel: '7. Mata Pelajaran yang Berkolaborasi & Keterkaitan Materi :',
+      alurTitle: 'Bagan Alur Pengembangan Pembelajaran Kolaboratif Lintas Disiplin Ilmu :',
+      alurSteps: [
+        '1. Analisis Kompetensi & Penentuan Dimensi Profil Lulusan',
+        '2. Penentuan Tema & Pemetaan Kolaborasi Lintas Mapel',
+        '3. Perencanaan Modul Kokurikuler, LKPD & Rubrik',
+        '4. Eksplorasi Kontekstual & Aksi Proyek Kolaboratif Murid',
+        '5. Presentasi Karya, Asesmen (SB/B/C/K) & Evaluasi'
+      ]
+    };
+  },
+
+  // Memastikan seluruh struktur data kokurikuler pada kelas aktif selalu valid dan kompatibel
+  ensureKokuDataIntegrity(bucket) {
     if (!bucket) return null;
     if (!bucket.kokurikuler || typeof bucket.kokurikuler !== 'object') {
       bucket.kokurikuler = {};
     }
-    if (!bucket.kokurikuler.projectInfo || typeof bucket.kokurikuler.projectInfo !== 'object') {
-      bucket.kokurikuler.projectInfo = {
-        bentuk: 'LINTAS_DISIPLIN',
-        tema: 'Gaya Hidup Berkelanjutan & Peduli Lingkungan',
-        judul: 'Projek Kolaborasi Ekosistem Sekolah Hijau',
-        alokasi: '36 JP (6 Pertemuan Efektif)',
-        tahapAktif: 'KONTEKSTUALISASI',
-        targetMingguan: 'Menguatkan Penalaran Kritis dan Komunikasi melalui observasi lingkungan sekolah',
-        fokusHarian: 'Setiap kelompok melakukan pengamatan langsung di lingkungan sekolah dan mencatat temuan pada jurnal Logbook.',
-        persiapan: 'Buku catatan observasi, alat tulis, dan perlengkapan kerja kelompok.'
+    const koku = bucket.kokurikuler;
+
+    if (!koku.projectInfo || typeof koku.projectInfo !== 'object') {
+      koku.projectInfo = {};
+    }
+    koku.projectInfo.bentuk = koku.projectInfo.bentuk || 'LINTAS_DISIPLIN';
+    koku.projectInfo.tema = koku.projectInfo.tema || 'Peduli Lingkungan & Pengelolaan Sampah Sekolah';
+    koku.projectInfo.judul = koku.projectInfo.judul || 'Proyek Kolaborasi Lingkungan Sekolah Bersih & Hijau';
+    koku.projectInfo.alokasi = koku.projectInfo.alokasi || '36 JP (Lingkungan Satuan Pendidikan)';
+    koku.projectInfo.tahapAktif = koku.projectInfo.tahapAktif || 'KONTEKSTUALISASI';
+    koku.projectInfo.targetMingguan = koku.projectInfo.targetMingguan || 'Menguatkan Penalaran Kritis dan Komunikasi melalui pengamatan langsung dan aksi kolaboratif murid.';
+    koku.projectInfo.fokusHarian = koku.projectInfo.fokusHarian || 'Setiap kelompok melakukan pengamatan lingkungan sekolah, mencatat temuan pada jurnal Logbook, dan merancang karya.';
+    koku.projectInfo.persiapan = koku.projectInfo.persiapan || 'Buku catatan pengamatan, alat tulis, dan perlengkapan kerja kelompok.';
+
+    if (!Array.isArray(koku.groups) || koku.groups.length === 0) {
+      koku.groups = [
+        { id: 'GRP_1', name: 'Kelompok 1 - Ekosistem Hijau', nama: 'Kelompok 1 - Ekosistem Hijau' },
+        { id: 'GRP_2', name: 'Kelompok 2 - Energi Lestari', nama: 'Kelompok 2 - Energi Lestari' },
+        { id: 'GRP_3', name: 'Kelompok 3 - Nusantara Bersih', nama: 'Kelompok 3 - Nusantara Bersih' }
+      ];
+    } else {
+      koku.groups.forEach((g, idx) => {
+        if (!g.id) g.id = 'GRP_' + (idx + 1);
+        const label = g.name || g.nama || `Kelompok ${idx + 1}`;
+        g.name = label;
+        g.nama = label;
+      });
+    }
+
+    if (!koku.studentGroups || typeof koku.studentGroups !== 'object') {
+      koku.studentGroups = {};
+    }
+
+    if (!Array.isArray(koku.logbooks)) {
+      koku.logbooks = [];
+    }
+
+    if (!koku.characterAssessments || typeof koku.characterAssessments !== 'object') {
+      koku.characterAssessments = {};
+    }
+
+    if (!Array.isArray(koku.savedModules)) {
+      koku.savedModules = [];
+    }
+
+    return koku;
+  },
+
+  // Pembuka utama halaman Kokurikuler
+  openKokurikuler() {
+    this.cleanDomDuplicates();
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) {
+      UI.showNotif('Kelas Belum Aktif', 'Silakan login kembali sebagai Guru untuk memuat data kelas.', 'warning');
+      return;
+    }
+
+    this.ensureKokuDataIntegrity(bucket);
+
+    const badge = document.getElementById('koku-active-class-badge');
+    if (badge) {
+      badge.textContent = `Kelas Aktif: ${bucket.kelasFaseLabel || bucket.classKey} (${bucket.schoolDisplay})`;
+    }
+
+    if (typeof SupabaseAIVault !== 'undefined' && typeof SupabaseAIVault.renderAllQuotaIndicators === 'function') {
+      SupabaseAIVault.renderAllQuotaIndicators();
+    }
+
+    UI.switchView('view-pilar-kokurikuler');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.switchTab(AppState.kokuActiveTab || 'dashboard');
+  },
+
+  // Navigasi antar 5 Tab Kokurikuler
+  switchTab(tabName = 'dashboard') {
+    this.cleanDomDuplicates();
+    const validTabs = ['dashboard', 'modul', 'kelompok', 'logbook', 'penilaian'];
+    const target = validTabs.includes(tabName) ? tabName : 'dashboard';
+    AppState.kokuActiveTab = target;
+
+    const bucket = DB.getActiveClassBucket();
+    if (bucket) {
+      this.ensureKokuDataIntegrity(bucket);
+    }
+
+    validTabs.forEach(t => {
+      const panel = document.getElementById(`koku-panel-${t}`);
+      const btn = document.getElementById(`btn-koku-tab-${t}`);
+      if (panel) panel.classList.toggle('hidden', t !== target);
+      if (btn) btn.classList.toggle('active-koku-tab', t === target);
+    });
+
+    if (target === 'dashboard') {
+      this.renderDashboardTab();
+    } else if (target === 'modul') {
+      this.initPerencanaanFormDefaults(false);
+      this.renderSavedKokuArchiveTable();
+      if (this.currentModulDoc) {
+        this.renderKokuModulPages();
+      }
+    } else if (target === 'kelompok') {
+      this.renderGroupsTab();
+    } else if (target === 'logbook') {
+      this.renderLogbookTab();
+    } else if (target === 'penilaian') {
+      this.renderCharacterAssessmentTable();
+    }
+  },
+
+  // =========================================================================
+  // TAB 1: DASHBOARD ORIENTASI & ALUR 3 BENTUK KOKURIKULER
+  // =========================================================================
+  renderAlurVisualDiagram(bentukCode) {
+    const meta = this.getBentukMeta(bentukCode);
+    const titleEl = document.getElementById('koku-alur-visual-title');
+    const wrapEl = document.getElementById('koku-alur-visual-diagram');
+    if (titleEl) titleEl.textContent = meta.alurTitle;
+    if (!wrapEl) return;
+
+    wrapEl.innerHTML = meta.alurSteps.map((stepText, idx) => {
+      const arrow = idx < meta.alurSteps.length - 1 ? `<div class="koku-alur-arrow">&rarr;</div>` : '';
+      const highlightClass = idx === 3 ? 'node-highlight' : '';
+      return `<div class="koku-alur-node ${highlightClass}">${UI.escapeHtml(stepText)}</div>${arrow}`;
+    }).join('');
+  },
+
+  renderDashboardTab() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const info = koku.projectInfo;
+    const bentukMeta = this.getBentukMeta(info.bentuk);
+
+    ['LINTAS_DISIPLIN', 'G7KAIH', 'CARA_LAIN'].forEach(code => {
+      const card = document.getElementById(`koku-card-bentuk-${code}`);
+      if (card) card.classList.toggle('active-bentuk', code === info.bentuk);
+    });
+
+    this.renderAlurVisualDiagram(info.bentuk);
+
+    const bentukBadge = document.getElementById('koku-board-bentuk-badge');
+    const titleEl = document.getElementById('koku-board-title');
+    const themeEl = document.getElementById('koku-board-theme-subtitle');
+    const phaseEl = document.getElementById('koku-board-phase-badge');
+    const allocEl = document.getElementById('koku-board-allocation-badge');
+    const focusEl = document.getElementById('koku-board-daily-focus');
+    const targetEl = document.getElementById('koku-board-weekly-target');
+    const prepEl = document.getElementById('koku-board-preparation');
+
+    if (bentukBadge) bentukBadge.textContent = `PAPAN ORIENTASI — ${bentukMeta.shortName.toUpperCase()}`;
+    if (titleEl) titleEl.textContent = info.judul || 'Kegiatan Kokurikuler Kelas';
+    if (themeEl) themeEl.textContent = `Tema: ${info.tema || '-'}`;
+    if (phaseEl) phaseEl.textContent = `Kelas / Fase: ${bucket.kelasFaseLabel || bucket.classKey}`;
+    if (allocEl) allocEl.textContent = `Alokasi: ${info.alokasi || '36 JP'}`;
+    if (focusEl) focusEl.textContent = info.fokusHarian || '-';
+    if (targetEl) targetEl.textContent = info.targetMingguan || '-';
+    if (prepEl) prepEl.textContent = info.persiapan || '-';
+
+    const stages = ['PENGENALAN', 'KONTEKSTUALISASI', 'AKSI', 'REFLEKSI'];
+    const activeIdx = Math.max(0, stages.indexOf(info.tahapAktif || 'KONTEKSTUALISASI'));
+
+    stages.forEach((st, idx) => {
+      const card = document.getElementById(`koku-stage-card-${st}`);
+      const statusSpan = document.getElementById(`koku-stage-status-${st}`);
+      if (card) {
+        if (idx === activeIdx) {
+          card.style.background = 'rgba(245, 158, 11, 0.28)';
+          card.style.borderColor = '#fbbf24';
+          card.style.boxShadow = '0 0 0 3px rgba(251, 191, 36, 0.25)';
+        } else if (idx < activeIdx) {
+          card.style.background = 'rgba(22, 163, 74, 0.22)';
+          card.style.borderColor = '#4ade80';
+          card.style.boxShadow = 'none';
+        } else {
+          card.style.background = 'rgba(255, 255, 255, 0.08)';
+          card.style.borderColor = 'rgba(255, 255, 255, 0.22)';
+          card.style.boxShadow = 'none';
+        }
+      }
+      if (statusSpan) {
+        statusSpan.textContent = idx === activeIdx ? '● SEDANG BERJALAN' : idx < activeIdx ? '✓ SELESAI' : 'MENUNGGU';
+        statusSpan.style.color = idx === activeIdx ? '#fde68a' : idx < activeIdx ? '#86efac' : '#cbd5e1';
+      }
+    });
+
+    // Isi juga nilai ke dalam form editor papan orientasi
+    const fBentuk = document.getElementById('koku-input-bentuk');
+    const fTema = document.getElementById('koku-input-tema');
+    const fAlok = document.getElementById('koku-input-alokasi');
+    const fJudul = document.getElementById('koku-input-judul');
+    const fTahap = document.getElementById('koku-input-tahap');
+    const fTarget = document.getElementById('koku-input-target-mingguan');
+    const fFokus = document.getElementById('koku-input-fokus-harian');
+    const fPers = document.getElementById('koku-input-persiapan');
+
+    if (fBentuk) fBentuk.value = info.bentuk;
+    if (fTema) fTema.value = info.tema;
+    if (fAlok) fAlok.value = info.alokasi;
+    if (fJudul) fJudul.value = info.judul;
+    if (fTahap) fTahap.value = info.tahapAktif;
+    if (fTarget) fTarget.value = info.targetMingguan;
+    if (fFokus) fFokus.value = info.fokusHarian;
+    if (fPers) fPers.value = info.persiapan;
+  },
+
+  async selectBentukKokurikuler(bentukCode) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    koku.projectInfo.bentuk = bentukCode;
+
+    const fBentuk = document.getElementById('koku-input-bentuk');
+    if (fBentuk && fBentuk.value !== bentukCode) {
+      fBentuk.value = bentukCode;
+    }
+
+    this.renderDashboardTab();
+    if (!AppState.isReadOnlyInspection) {
+      await DB.saveImmediate();
+    }
+  },
+
+  async setProjectStage(stageCode) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    koku.projectInfo.tahapAktif = stageCode;
+
+    this.renderDashboardTab();
+    await DB.saveImmediate();
+    UI.showNotif('Tahap Kokurikuler Diperbarui', `Status tahapan pelaksanaan aktif diubah ke: ${stageCode}.`, 'success');
+  },
+
+  toggleEditDashboardForm() {
+    const editCard = document.getElementById('koku-edit-dashboard-card');
+    if (!editCard) return;
+    const willOpen = editCard.classList.contains('hidden');
+    editCard.classList.toggle('hidden', !willOpen);
+    if (willOpen) {
+      this.renderDashboardTab();
+      editCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  },
+
+  async saveProjectDashboard(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    koku.projectInfo = {
+      bentuk: document.getElementById('koku-input-bentuk')?.value || 'LINTAS_DISIPLIN',
+      tema: (document.getElementById('koku-input-tema')?.value || '').trim() || 'Peduli Lingkungan',
+      alokasi: (document.getElementById('koku-input-alokasi')?.value || '').trim() || '36 JP',
+      judul: (document.getElementById('koku-input-judul')?.value || '').trim() || 'Kegiatan Kokurikuler Kelas',
+      tahapAktif: document.getElementById('koku-input-tahap')?.value || 'KONTEKSTUALISASI',
+      targetMingguan: (document.getElementById('koku-input-target-mingguan')?.value || '').trim(),
+      fokusHarian: (document.getElementById('koku-input-fokus-harian')?.value || '').trim(),
+      persiapan: (document.getElementById('koku-input-persiapan')?.value || '').trim()
+    };
+
+    await DB.saveImmediate();
+    this.renderDashboardTab();
+
+    const editCard = document.getElementById('koku-edit-dashboard-card');
+    if (editCard) editCard.classList.add('hidden');
+
+    UI.showNotif(
+      'Papan Orientasi Kokurikuler Tersimpan',
+      'Perubahan Papan Orientasi Kelas telah disimpan ke Cloud dan langsung tampil di Portal Siswa.',
+      'success'
+    );
+  },
+
+  async autoFillProjectBoardByAI() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    const kelasFase = (bucket && bucket.kelasFaseLabel) || 'Kelas 4 / Fase B';
+    const bentuk = document.getElementById('koku-input-bentuk')?.value || 'LINTAS_DISIPLIN';
+    const tema = (document.getElementById('koku-input-tema')?.value || '').trim() || 'Peduli Lingkungan & Energi Berkelanjutan';
+    const bentukMeta = this.getBentukMeta(bentuk);
+
+    this.setKokuAiLoading(
+      true,
+      `AI Murni Menganalisis Papan Orientasi "${tema}"...`,
+      `Menyusun judul kegiatan, target kompetensi, fokus harian, dan persiapan murid untuk ${bentukMeta.name} (${kelasFase})...`
+    );
+
+    const prompt = `Anda adalah Pakar Kurikulum Merdeka & Koordinator Kokurikuler SD Indonesia.
+Susun rencana Papan Orientasi Kegiatan Kokurikuler Kelas yang spesifik, kontekstual, dan aplikatif berdasarkan data berikut:
+- Kelas / Fase: ${kelasFase}
+- Bentuk Kokurikuler: ${bentukMeta.name}
+- Tema Kegiatan: "${tema}"
+
+Kembalikan HANYA JSON valid dengan struktur:
+{
+  "judul": "Judul kegiatan kokurikuler yang menarik dan spesifik sesuai tema",
+  "alokasi": "36 JP (6 Pertemuan Efektif)",
+  "targetMingguan": "Target penguatan kompetensi dan Dimensi Profil Lulusan terkait tema ini",
+  "fokusHarian": "2-3 kalimat rincian aktivitas nyata yang dilakukan murid hari ini di kelas/lapangan",
+  "persiapan": "Daftar alat, bahan, dan persiapan konkret murid untuk kegiatan ini"
+}`;
+
+    let aiRes = null;
+    try {
+      aiRes = await SupabaseAIVault.executePromptWithMultiProvider(prompt);
+    } finally {
+      this.setKokuAiLoading(false);
+    }
+
+    const judulEl = document.getElementById('koku-input-judul');
+    const alokasiEl = document.getElementById('koku-input-alokasi');
+    const targetEl = document.getElementById('koku-input-target-mingguan');
+    const fokusEl = document.getElementById('koku-input-fokus-harian');
+    const persEl = document.getElementById('koku-input-persiapan');
+
+    if (aiRes && typeof aiRes === 'object') {
+      if (judulEl && aiRes.judul) judulEl.value = String(aiRes.judul).trim();
+      if (alokasiEl && aiRes.alokasi) alokasiEl.value = String(aiRes.alokasi).trim();
+      if (targetEl && aiRes.targetMingguan) targetEl.value = String(aiRes.targetMingguan).trim();
+      if (fokusEl && aiRes.fokusHarian) fokusEl.value = String(aiRes.fokusHarian).trim();
+      if (persEl && aiRes.persiapan) persEl.value = String(aiRes.persiapan).trim();
+    } else {
+      if (judulEl) judulEl.value = `${bentukMeta.shortName}: ${tema}`;
+      if (alokasiEl) alokasiEl.value = '36 JP (Lingkungan Satuan Pendidikan)';
+      if (targetEl) targetEl.value = `Menguatkan Penalaran Kritis, Kolaborasi, dan Komunikasi melalui kegiatan nyata "${tema}" pada tingkat ${kelasFase}.`;
+      if (fokusEl) fokusEl.value = `Murid secara berkelompok melakukan pengamatan kontekstual terkait "${tema}" di lingkungan sekolah, mendiskusikan temuan, dan mencatat hasilnya pada jurnal Logbook.`;
+      if (persEl) persEl.value = `Lembar kerja pengamatan kelompok, buku jurnal kokurikuler, alat tulis, dan bahan praktik sederhana terkait "${tema}".`;
+    }
+
+    UI.showNotif(
+      'Rekomendasi Papan Orientasi Selesai Disusun AI',
+      `Rekomendasi kegiatan untuk tema "${tema}" telah terisi. Klik tombol Simpan untuk menampilkannya di Papan Orientasi Kelas.`,
+      'success'
+    );
+  },
+
+  // =========================================================================
+  // TAB 3: MANAJEMEN KELOMPOK BELAJAR & KOLABORASI MURID
+  // =========================================================================
+  renderGroupsTab() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const students = Array.isArray(bucket.students) ? bucket.students : [];
+    const groups = koku.groups || [];
+    const studentGroups = koku.studentGroups || {};
+
+    const totalBadge = document.getElementById('koku-total-students-grouped-badge');
+    if (totalBadge) {
+      const groupedCount = students.filter(s => studentGroups[s.id] && studentGroups[s.id].groupId).length;
+      totalBadge.textContent = `${groupedCount} / ${students.length} Murid Ditempatkan`;
+    }
+
+    // 1. Render Kartu Kelompok
+    const cardsContainer = document.getElementById('koku-groups-cards-container');
+    if (cardsContainer) {
+      if (groups.length === 0) {
+        cardsContainer.innerHTML = `<div class="alert-box alert-info">Belum ada kelompok yang dibuat. Klik "Bagi Kelompok Otomatis" atau tambahkan kelompok baru di atas.</div>`;
+      } else {
+        cardsContainer.innerHTML = groups.map((grp, gIdx) => {
+          const members = students.filter(s => studentGroups[s.id] && studentGroups[s.id].groupId === grp.id);
+          const memberListHtml = members.length > 0
+            ? `<ol style="padding-left: 1.15rem; margin: 0.45rem 0 0; font-size: 0.82rem; color: var(--dark);">
+                ${members.map(m => {
+                  const role = (studentGroups[m.id] && studentGroups[m.id].role) || 'Anggota Tim';
+                  return `<li style="margin-bottom: 0.2rem;"><strong>${UI.escapeHtml(m.nama)}</strong> <span style="color: var(--text-muted); font-size: 0.75rem;">(${UI.escapeHtml(role)})</span></li>`;
+                }).join('')}
+              </ol>`
+            : `<p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.4rem;">Belum ada anggota yang ditempatkan di kelompok ini.</p>`;
+
+          const safeGrpId = String(grp.id).replace(/'/g, "\\'");
+          return `
+            <div class="card" style="margin-bottom: 0; border-top: 4px solid #0f766e; padding: 1.1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                <div>
+                  <span class="badge badge-info" style="margin-bottom: 0.25rem;">KELOMPOK ${gIdx + 1}</span>
+                  <h4 style="font-size: 0.98rem; font-weight: 800; color: var(--dark);">${UI.escapeHtml(grp.name || grp.nama)}</h4>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.35rem;">
+                  <span class="badge badge-success">${members.length} Murid</span>
+                  <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.15rem 0.45rem; color: var(--danger); border-color: #fca5a5;" onclick="KokuApp.deleteGroup('${safeGrpId}')" title="Hapus Kelompok">✕</button>
+                </div>
+              </div>
+              ${memberListHtml}
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // 2. Render Tabel Penempatan Kelompok & Peran Murid
+    const tbody = document.getElementById('tbody-koku-student-groups');
+    if (!tbody) return;
+
+    if (students.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.25rem;">
+            Belum ada data murid di kelas ini. Silakan tambahkan murid pada menu <strong>1. Data Kelas</strong> terlebih dahulu.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const rolesList = [
+      'Ketua Kelompok',
+      'Sekretaris / Pencatat Jurnal',
+      'Koordinator Alat & Karya',
+      'Penyaji / Presenter',
+      'Anggota Tim Eksplorasi'
+    ];
+
+    tbody.innerHTML = students.map((std, idx) => {
+      const assignment = studentGroups[std.id] || { groupId: '', role: 'Anggota Tim Eksplorasi' };
+      const safeStdId = String(std.id).replace(/'/g, "\\'");
+
+      const groupOpts = [
+        `<option value="">-- Belum Ditempatkan --</option>`,
+        ...groups.map(g => `<option value="${UI.escapeHtml(g.id)}" ${assignment.groupId === g.id ? 'selected' : ''}>${UI.escapeHtml(g.name || g.nama)}</option>`)
+      ].join('');
+
+      const roleOpts = rolesList.map(r => `<option value="${UI.escapeHtml(r)}" ${assignment.role === r ? 'selected' : ''}>${UI.escapeHtml(r)}</option>`).join('');
+
+      return `
+        <tr>
+          <td>${idx + 1}</td>
+          <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+          <td><span class="badge badge-primary">${UI.escapeHtml(bucket.kelasFaseLabel || bucket.classKey)}</span></td>
+          <td>
+            <select class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.84rem;" onchange="KokuApp.assignStudentGroup('${safeStdId}', this.value)">
+              ${groupOpts}
+            </select>
+          </td>
+          <td>
+            <select class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.84rem;" onchange="KokuApp.assignStudentRole('${safeStdId}', this.value)">
+              ${roleOpts}
+            </select>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  async syncStudentsFromDataKelas() {
+    this.renderGroupsTab();
+    UI.showNotif('Sinkronisasi Murid Berhasil', 'Daftar murid pada Manajemen Kelompok telah disinkronkan dengan Data Kelas.', 'success');
+  },
+
+  async generateGroupsAutomatically() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const students = Array.isArray(bucket.students) ? bucket.students : [];
+
+    if (students.length === 0) {
+      UI.showNotif('Daftar Murid Kosong', 'Tambahkan nama murid di menu 1. Data Kelas terlebih dahulu sebelum membagi kelompok.', 'warning');
+      return;
+    }
+
+    const groupSize = Math.max(2, parseInt(document.getElementById('koku-group-size-input')?.value, 10) || 4);
+    const totalGroups = Math.max(1, Math.ceil(students.length / groupSize));
+    const groupNamesTheme = [
+      'Cendekia Lestari',
+      'Garuda Kreatif',
+      'Nusantara Hijau',
+      'Pelopor Mandiri',
+      'Tunas Berkarakter',
+      'Bhinneka Kompak',
+      'Karya Cemerlang',
+      'Sains Inovatif'
+    ];
+
+    koku.groups = [];
+    for (let i = 0; i < totalGroups; i++) {
+      const gName = `Kelompok ${i + 1} - ${groupNamesTheme[i % groupNamesTheme.length]}`;
+      koku.groups.push({
+        id: 'GRP_' + (i + 1) + '_' + Date.now().toString().slice(-3),
+        name: gName,
+        nama: gName
+      });
+    }
+
+    const rolesCycle = [
+      'Ketua Kelompok',
+      'Sekretaris / Pencatat Jurnal',
+      'Koordinator Alat & Karya',
+      'Penyaji / Presenter',
+      'Anggota Tim Eksplorasi'
+    ];
+
+    koku.studentGroups = {};
+    const groupMemberCounters = {};
+
+    students.forEach((std, sIdx) => {
+      const targetGroup = koku.groups[sIdx % koku.groups.length];
+      const countInGrp = groupMemberCounters[targetGroup.id] || 0;
+      groupMemberCounters[targetGroup.id] = countInGrp + 1;
+
+      koku.studentGroups[std.id] = {
+        groupId: targetGroup.id,
+        role: rolesCycle[countInGrp % rolesCycle.length]
+      };
+    });
+
+    await DB.saveImmediate();
+    this.renderGroupsTab();
+
+    UI.showNotif(
+      'Pembagian Kelompok Otomatis Selesai',
+      `${students.length} murid berhasil dibagi secara merata ke dalam ${koku.groups.length} kelompok beserta peran timnya.`,
+      'success'
+    );
+  },
+
+  async addManualGroup() {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    const inp = document.getElementById('koku-new-group-name');
+    const rawName = (inp ? inp.value : '').trim();
+    const newName = rawName || `Kelompok ${koku.groups.length + 1}`;
+
+    koku.groups.push({
+      id: 'GRP_' + Date.now(),
+      name: newName,
+      nama: newName
+    });
+
+    if (inp) inp.value = '';
+    await DB.saveImmediate();
+    this.renderGroupsTab();
+    UI.showNotif('Kelompok Baru Ditambahkan', `Kelompok "${newName}" berhasil dibuat.`, 'success');
+  },
+
+  async deleteGroup(groupId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    if (koku.groups.length <= 1) {
+      UI.showNotif('Minimal 1 Kelompok', 'Kelas harus memiliki minimal 1 kelompok kokurikuler.', 'warning');
+      return;
+    }
+
+    koku.groups = koku.groups.filter(g => String(g.id) !== String(groupId));
+    Object.keys(koku.studentGroups || {}).forEach(stdId => {
+      if (koku.studentGroups[stdId] && String(koku.studentGroups[stdId].groupId) === String(groupId)) {
+        koku.studentGroups[stdId].groupId = '';
+      }
+    });
+
+    await DB.saveImmediate();
+    this.renderGroupsTab();
+  },
+
+  async assignStudentGroup(studentId, groupId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    if (!koku.studentGroups[studentId]) {
+      koku.studentGroups[studentId] = { groupId: '', role: 'Anggota Tim Eksplorasi' };
+    }
+    koku.studentGroups[studentId].groupId = groupId;
+
+    await DB.saveImmediate();
+    this.renderGroupsTab();
+  },
+
+  async assignStudentRole(studentId, roleName) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    if (!koku.studentGroups[studentId]) {
+      koku.studentGroups[studentId] = { groupId: '', role: roleName };
+    } else {
+      koku.studentGroups[studentId].role = roleName;
+    }
+
+    await DB.saveImmediate();
+    this.renderGroupsTab();
+  },
+
+  // =========================================================================
+  // TAB 4: JURNAL LOGBOOK HARIAN & DOKUMENTASI FOTO
+  // =========================================================================
+  renderLogbookTab() {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const groups = koku.groups || [];
+
+    const inputKelSelect = document.getElementById('logbook-input-kelompok');
+    const filterKelSelect = document.getElementById('logbook-filter-kelompok');
+
+    if (inputKelSelect) {
+      inputKelSelect.innerHTML = groups.map(g => `<option value="${UI.escapeHtml(g.name || g.nama)}">${UI.escapeHtml(g.name || g.nama)}</option>`).join('');
+    }
+    if (filterKelSelect) {
+      const currentFilter = filterKelSelect.value || 'ALL';
+      filterKelSelect.innerHTML = [
+        `<option value="ALL">Semua Kelompok</option>`,
+        ...groups.map(g => `<option value="${UI.escapeHtml(g.name || g.nama)}" ${currentFilter === (g.name || g.nama) ? 'selected' : ''}>${UI.escapeHtml(g.name || g.nama)}</option>`)
+      ].join('');
+    }
+
+    this.renderLogbookList();
+  },
+
+  previewLogbookPhoto(fileInput) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const maxW = 640;
+        const scale = img.width > maxW ? maxW / img.width : 1;
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.72);
+
+        const hiddenInp = document.getElementById('logbook-photo-dataurl');
+        const previewWrap = document.getElementById('logbook-photo-preview-wrap');
+        const previewImg = document.getElementById('logbook-photo-preview-img');
+
+        if (hiddenInp) hiddenInp.value = compressedDataUrl;
+        if (previewImg) previewImg.src = compressedDataUrl;
+        if (previewWrap) previewWrap.classList.remove('hidden');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  },
+
+  clearLogbookPhoto() {
+    const fileInp = document.getElementById('logbook-input-foto');
+    const hiddenInp = document.getElementById('logbook-photo-dataurl');
+    const previewWrap = document.getElementById('logbook-photo-preview-wrap');
+    if (fileInp) fileInp.value = '';
+    if (hiddenInp) hiddenInp.value = '';
+    if (previewWrap) previewWrap.classList.add('hidden');
+  },
+
+  async handleAddLogbookEntry(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    const kelompok = document.getElementById('logbook-input-kelompok')?.value || 'Kelompok 1';
+    const tahap = document.getElementById('logbook-input-tahap')?.value || 'Pelaksanaan Aksi / G7KAIH';
+    const progres = (document.getElementById('logbook-input-progres')?.value || '').trim();
+    const kendala = (document.getElementById('logbook-input-kendala')?.value || '').trim();
+    const photoDataUrl = document.getElementById('logbook-photo-dataurl')?.value || '';
+
+    if (!progres) {
+      UI.showNotif('Isi Ringkasan Progres', 'Silakan tuliskan ringkasan aktivitas atau hasil pengamatan terlebih dahulu.', 'warning');
+      return;
+    }
+
+    const newEntry = {
+      id: 'LOG_' + Date.now(),
+      tanggal: DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO()),
+      waktu: DateTimeUtil.getCurrentTimeStr(),
+      kelompok,
+      tahap,
+      progres,
+      kendala: kendala || 'Tidak ada kendala berarti.',
+      photoDataUrl,
+      teacherFeedback: ''
+    };
+
+    koku.logbooks.unshift(newEntry);
+
+    const progEl = document.getElementById('logbook-input-progres');
+    const kendEl = document.getElementById('logbook-input-kendala');
+    if (progEl) progEl.value = '';
+    if (kendEl) kendEl.value = '';
+    this.clearLogbookPhoto();
+
+    await DB.saveImmediate();
+    this.renderLogbookList();
+
+    UI.showNotif('Jurnal Kegiatan Tersimpan', `Jurnal progres untuk ${kelompok} telah disimpan ke Cloud.`, 'success');
+  },
+
+  renderLogbookList() {
+    const bucket = DB.getActiveClassBucket();
+    const container = document.getElementById('koku-logbook-entries-container');
+    if (!bucket || !container) return;
+
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const filterVal = document.getElementById('logbook-filter-kelompok')?.value || 'ALL';
+    const allLogs = Array.isArray(koku.logbooks) ? koku.logbooks : [];
+    const filtered = filterVal === 'ALL' ? allLogs : allLogs.filter(l => l.kelompok === filterVal);
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div class="alert-box alert-info" style="margin-top: 0;">
+          Belum ada catatan jurnal logbook untuk filter kelompok ini. Silakan isi formulir jurnal di atas untuk mendokumentasikan kegiatan kokurikuler.
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = filtered.map(log => {
+      const safeId = String(log.id).replace(/'/g, "\\'");
+      const photoHtml = log.photoDataUrl
+        ? `<div style="margin-top: 0.75rem;">
+            <img src="${log.photoDataUrl}" alt="Foto Dokumentasi" style="max-height: 180px; border-radius: 8px; border: 1px solid var(--border); object-fit: cover;">
+          </div>`
+        : '';
+
+      return `
+        <div class="card" style="margin-bottom: 1rem; border-left: 5px solid #0f766e;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+            <div>
+              <span class="badge badge-primary">${UI.escapeHtml(log.kelompok || '-')}</span>
+              <span class="badge badge-info" style="margin-left: 0.35rem;">${UI.escapeHtml(log.tahap || '-')}</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted); margin-left: 0.5rem;">📅 ${UI.escapeHtml(log.tanggal || '-')} (${UI.escapeHtml(log.waktu || '')})</span>
+            </div>
+            <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.deleteLogbookEntry('${safeId}')">
+              🗑️ Hapus Jurnal
+            </button>
+          </div>
+
+          <div class="grid-2" style="margin-bottom: 0.75rem;">
+            <div style="background: #f0fdf4; padding: 0.8rem; border-radius: 6px; border: 1px solid #bbf7d0;">
+              <strong style="font-size: 0.8rem; color: #166534; display: block; margin-bottom: 0.25rem;">✓ Aktivitas & Progres Capaian:</strong>
+              <div style="font-size: 0.86rem; color: var(--dark);">${UI.escapeHtml(log.progres || '-')}</div>
+            </div>
+            <div style="background: #fffbeb; padding: 0.8rem; border-radius: 6px; border: 1px solid #fde68a;">
+              <strong style="font-size: 0.8rem; color: #92400e; display: block; margin-bottom: 0.25rem;">⚠️ Catatan Kendala / Evaluasi:</strong>
+              <div style="font-size: 0.86rem; color: var(--dark);">${UI.escapeHtml(log.kendala || '-')}</div>
+            </div>
+          </div>
+
+          ${photoHtml}
+
+          <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="log-feedback-inp-${safeId}"
+              class="form-control"
+              style="flex: 1; min-width: 240px; font-size: 0.84rem;"
+              placeholder="Tuliskan umpan balik / apresiasi pembimbingan guru untuk kelompok ini..."
+              value="${UI.escapeHtml(log.teacherFeedback || '')}"
+            >
+            <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.saveTeacherFeedback('${safeId}')">
+              💬 Simpan Feedback Guru
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async saveTeacherFeedback(logId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const inp = document.getElementById(`log-feedback-inp-${logId}`);
+    const found = (koku.logbooks || []).find(l => String(l.id) === String(logId));
+    if (!found || !inp) return;
+
+    found.teacherFeedback = inp.value.trim();
+    await DB.saveImmediate();
+    UI.showNotif('Umpan Balik Guru Tersimpan', 'Catatan pembimbingan guru pada jurnal ini telah disimpan.', 'success');
+  },
+
+  async deleteLogbookEntry(logId) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    if (!window.confirm('Hapus catatan jurnal logbook ini?')) return;
+    koku.logbooks = (koku.logbooks || []).filter(l => String(l.id) !== String(logId));
+    await DB.saveImmediate();
+    this.renderLogbookList();
+  },
+
+  // =========================================================================
+  // TAB 5: ASESMEN (SB / B / C / K) & 3 INSPIRASI DESKRIPSI RAPOR KOKURIKULER
+  // =========================================================================
+  buildThreeInspirasiDescriptions(studentName, dim1, pred1, dim2, pred2, note, projectInfo, perencanaanDoc) {
+    const predMap = {
+      SB: { label: 'Sangat Baik (SB)', desc: 'sangat berkembang, mandiri, dan konsisten menjadi teladan' },
+      B: { label: 'Baik (B)', desc: 'berkembang dengan baik sesuai harapan dan mampu menerapkan secara tepat' },
+      C: { label: 'Cukup (C)', desc: 'mulai berkembang namun masih memerlukan penguatan agar lebih konsisten' },
+      K: { label: 'Kurang (K)', desc: 'masih memerlukan bimbingan dan pendampingan intensif dari pendidik' }
+    };
+
+    const p1 = predMap[pred1] || predMap.B;
+    const p2 = predMap[pred2] || predMap.B;
+    const tema = (perencanaanDoc && perencanaanDoc.tema) || (projectInfo && projectInfo.tema) || 'Kegiatan Kokurikuler Pembelajaran Mendalam';
+    const fokus = (perencanaanDoc && perencanaanDoc.fokusDetail) || (projectInfo && projectInfo.judul) || 'kolaborasi lintas disiplin dan pembiasaan positif';
+    const cleanNote = String(note || '').trim();
+
+    const insp1 = `Ananda ${studentName} menunjukkan capaian ${p1.label} pada dimensi ${dim1} serta capaian ${p2.label} pada dimensi ${dim2} selama mengikuti kegiatan kokurikuler bertema "${tema}". Ananda ${p1.desc} dalam kegiatan ${fokus}.${cleanNote ? ' Catatan pendidik: ' + cleanNote : ''}`;
+
+    const insp2 = `Melalui pelaksanaan program kokurikuler "${tema}", Ananda ${studentName} ${p1.desc} pada aspek ${dim1} (${pred1}) dan ${p2.desc} dalam menunjukkan ${dim2} (${pred2}) bersama kelompok belajarnya.${cleanNote ? ' ' + cleanNote : ''}`;
+
+    const insp3 = `Dalam kegiatan kokurikuler "${tema}" (${fokus}), perkembangan karakter dan kompetensi Ananda ${studentName} pada dimensi ${dim1} berada pada kategori ${p1.label}, sedangkan pada dimensi ${dim2} mencapai kategori ${p2.label}.${cleanNote ? ' Tindak lanjut: ' + cleanNote : ''}`;
+
+    return [insp1, insp2, insp3];
+  },
+
+  renderCharacterAssessmentTable() {
+    const bucket = DB.getActiveClassBucket();
+    const tbody = document.getElementById('tbody-koku-character-assessment');
+    if (!bucket || !tbody) return;
+
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const students = Array.isArray(bucket.students) ? bucket.students : [];
+    const groups = koku.groups || [];
+    const studentGroups = koku.studentGroups || {};
+
+    const dim1 = document.getElementById('koku-assess-dimensi-select')?.value || 'Penalaran Kritis';
+    const dim2 = document.getElementById('koku-assess-dimensi2-select')?.value || 'Komunikasi';
+    const grpFilterEl = document.getElementById('koku-assess-group-filter');
+
+    if (grpFilterEl) {
+      const currentVal = grpFilterEl.value || 'ALL';
+      grpFilterEl.innerHTML = [
+        `<option value="ALL">Tampilkan Semua Murid Kelas (${students.length} Murid)</option>`,
+        ...groups.map(g => `<option value="${UI.escapeHtml(g.id)}" ${currentVal === g.id ? 'selected' : ''}>${UI.escapeHtml(g.name || g.nama)}</option>`)
+      ].join('');
+    }
+
+    const activeGrpFilter = grpFilterEl ? grpFilterEl.value : 'ALL';
+    const filteredStudents = activeGrpFilter === 'ALL'
+      ? students
+      : students.filter(s => studentGroups[s.id] && studentGroups[s.id].groupId === activeGrpFilter);
+
+    if (filteredStudents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.35rem;">
+            Tidak ada murid pada filter ini. Pastikan data murid sudah terdaftar di menu <strong>1. Data Kelas</strong>.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const predOptions = [
+      { code: 'SB', label: 'SB — Sangat Baik' },
+      { code: 'B', label: 'B — Baik' },
+      { code: 'C', label: 'C — Cukup' },
+      { code: 'K', label: 'K — Kurang' }
+    ];
+
+    tbody.innerHTML = filteredStudents.map((std, idx) => {
+      if (!koku.characterAssessments[std.id]) {
+        koku.characterAssessments[std.id] = {
+          dim1Name: dim1,
+          dim1Predicate: 'B',
+          dim2Name: dim2,
+          dim2Predicate: 'B',
+          teacherNote: '',
+          selectedInspirationIndex: 0,
+          reportDescription: ''
+        };
+      }
+      const rec = koku.characterAssessments[std.id];
+      rec.dim1Name = dim1;
+      rec.dim2Name = dim2;
+
+      const inspirations = this.buildThreeInspirasiDescriptions(
+        std.nama,
+        dim1,
+        rec.dim1Predicate || 'B',
+        dim2,
+        rec.dim2Predicate || 'B',
+        rec.teacherNote || '',
+        koku.projectInfo,
+        koku.perencanaanDoc
+      );
+
+      const chosenIdx = Number.isInteger(rec.selectedInspirationIndex) ? rec.selectedInspirationIndex : 0;
+      rec.reportDescription = inspirations[chosenIdx] || inspirations[0];
+
+      const safeStdId = String(std.id).replace(/'/g, "\\'");
+      const grpId = studentGroups[std.id]?.groupId;
+      const grpObj = groups.find(g => g.id === grpId);
+      const grpBadge = grpObj ? `<div style="font-size: 0.72rem; color: var(--secondary); font-weight: 700; margin-top: 0.2rem;">${UI.escapeHtml(grpObj.name || grpObj.nama)}</div>` : '';
+
+      return `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td>
+            <strong>${UI.escapeHtml(std.nama)}</strong>
+            ${grpBadge}
+          </td>
+          <td>
+            <div style="font-size: 0.73rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem;">${UI.escapeHtml(dim1)}</div>
+            <select class="form-control" style="font-weight: 700; font-size: 0.83rem;" onchange="KokuApp.updateStudentAssessmentField('${safeStdId}', 'dim1Predicate', this.value)">
+              ${predOptions.map(p => `<option value="${p.code}" ${rec.dim1Predicate === p.code ? 'selected' : ''}>${p.label}</option>`).join('')}
+            </select>
+          </td>
+          <td>
+            <div style="font-size: 0.73rem; font-weight: 700; color: var(--secondary); margin-bottom: 0.25rem;">${UI.escapeHtml(dim2)}</div>
+            <select class="form-control" style="font-weight: 700; font-size: 0.83rem;" onchange="KokuApp.updateStudentAssessmentField('${safeStdId}', 'dim2Predicate', this.value)">
+              ${predOptions.map(p => `<option value="${p.code}" ${rec.dim2Predicate === p.code ? 'selected' : ''}>${p.label}</option>`).join('')}
+            </select>
+          </td>
+          <td>
+            <textarea
+              class="form-control"
+              rows="3"
+              style="font-size: 0.82rem;"
+              placeholder="Catatan observasi khusus murid ini..."
+              onchange="KokuApp.updateStudentAssessmentField('${safeStdId}', 'teacherNote', this.value)"
+            >${UI.escapeHtml(rec.teacherNote || '')}</textarea>
+          </td>
+          <td>
+            ${inspirations.map((text, iIdx) => `
+              <div class="koku-inspirasi-box" style="border-color: ${chosenIdx === iIdx ? '#0f766e' : '#e2e8f0'}; border-width: ${chosenIdx === iIdx ? '2px' : '1px'};">
+                <div class="koku-inspirasi-header" style="background: ${chosenIdx === iIdx ? '#0f766e' : '#c26d4a'}; display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.75rem;">
+                  <span>Inspirasi Deskripsi Rapor ${iIdx + 1} ${chosenIdx === iIdx ? '✓ (Dipilih)' : ''}</span>
+                  <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.5rem; font-size: 0.7rem; background: #ffffff; color: #0f172a;" onclick="KokuApp.updateStudentAssessmentField('${safeStdId}', 'selectedInspirationIndex', ${iIdx})">
+                    Gunakan Ini
+                  </button>
+                </div>
+                <div class="koku-inspirasi-body">${UI.escapeHtml(text)}</div>
+              </div>
+            `).join('')}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  },
+
+  async updateStudentAssessmentField(studentId, fieldName, newValue) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+
+    if (!koku.characterAssessments[studentId]) {
+      koku.characterAssessments[studentId] = {
+        dim1Predicate: 'B',
+        dim2Predicate: 'B',
+        teacherNote: '',
+        selectedInspirationIndex: 0
       };
     }
-    if (!Array.isArray(bucket.kokurikuler.groups) || bucket.kokurikuler.groups.length === 0) {
-      bucket.kokurikuler.groups = [
-        { id: 'GRP_1', nama: 'Kelompok 1 - Garuda Hijau' },
-        { id: 'GRP_2', nama: 'Kelompok 2 - Nusantara Lestari' }
-      ];
-    }
-    if (!Array.isArray(bucket.kokurikuler.logbooks)) {
-      bucket.kokurikuler.logbooks = [];
-    }
-    if (!bucket.kokurikuler.characterAssessments || typeof bucket.kokurikuler.characterAssessments !== 'object') {
-      bucket.kokurikuler.characterAssessments = {};
-    }
-    if (!Array.isArray(bucket.kokurikuler.savedModules)) {
-      bucket.kokurikuler.savedModules = [];
-    }
-    return bucket.kokurikuler;
+    koku.characterAssessments[studentId][fieldName] = newValue;
+
+    this.renderCharacterAssessmentTable();
+    await DB.saveImmediate();
+  },
+
+  async setAllP5Predicates(predicateCode) {
+    if (AppState.isReadOnlyInspection) return;
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+    const koku = this.ensureKokuDataIntegrity(bucket);
+    const students = Array.isArray(bucket.students) ? bucket.students : [];
+    const dim1 = document.getElementById('koku-assess-dimensi-select')?.value || 'Penalaran Kritis';
+    const dim2 = document.getElementById('koku-assess-dimensi2-select')?.value || 'Komunikasi';
+
+    students.forEach(std => {
+      if (!koku.characterAssessments[std.id]) {
+        koku.characterAssessments[std.id] = {};
+      }
+      koku.characterAssessments[std.id].dim1Name = dim1;
+      koku.characterAssessments[std.id].dim1Predicate = predicateCode;
+      koku.characterAssessments[std.id].dim2Name = dim2;
+      koku.characterAssessments[std.id].dim2Predicate = predicateCode;
+    });
+
+    this.renderCharacterAssessmentTable();
+    await DB.saveImmediate();
+
+    UI.showNotif(
+      `Semua Murid Diset ke Predikat ${predicateCode}`,
+      `Seluruh murid telah diatur ke capaian ${predicateCode} beserta pembaruan otomatis 3 Inspirasi Deskripsi Rapor.`,
+      'success'
+    );
+  },
+
+  async saveAllCharacterAssessments() {
+    if (AppState.isReadOnlyInspection) return;
+    this.renderCharacterAssessmentTable();
+    await DB.saveImmediate();
+    UI.showNotif(
+      'Asesmen & Deskripsi Rapor Kokurikuler Tersimpan',
+      'Seluruh predikat capaian (SB/B/C/K) dan deskripsi rapor kokurikuler murid telah disimpan ke Cloud dan tampil di Portal Siswa.',
+      'success'
+    );
   }
-};
+});
 
-// 3. Perbaiki fungsi KokuApp.openKokurikuler & KokuApp.switchTab (Bebas Infinite Recursion & Anti-Crash)
-if (typeof KokuApp !== 'undefined') {
-  Object.assign(KokuApp, {
-    openKokurikuler() {
-      KokuAccessFixer.cleanDuplicateKokuDomNodes();
-      const bucket = DB.getActiveClassBucket();
-      if (!bucket) {
-        UI.showNotif('Data Kelas Belum Aktif', 'Silakan login kembali sebagai Guru untuk memuat kelas aktif.', 'warning');
-        return;
-      }
-
-      KokuAccessFixer.ensureKokuBucketStructure(bucket);
-
-      const badge = document.getElementById('koku-active-class-badge');
-      if (badge) {
-        badge.textContent = `Kelas Aktif: ${bucket.kelasFaseLabel || bucket.classKey} (${bucket.schoolDisplay})`;
-      }
-
-      // Pindahkan tampilan layar TERLEBIH DAHULU agar halaman 100% langsung terbuka!
-      UI.switchView('view-pilar-kokurikuler');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      // Render isi tab dengan proteksi try-catch
-      this.switchTab(AppState.kokuActiveTab || 'dashboard');
-    },
-
-    switchTab(tabName = 'dashboard') {
-      KokuAccessFixer.cleanDuplicateKokuDomNodes();
-      const validTabs = ['dashboard', 'modul', 'kelompok', 'logbook', 'penilaian'];
-      const targetTab = validTabs.includes(tabName) ? tabName : 'dashboard';
-      AppState.kokuActiveTab = targetTab;
-
-      const bucket = DB.getActiveClassBucket();
-      if (bucket) {
-        KokuAccessFixer.ensureKokuBucketStructure(bucket);
-      }
-
-      // Atur visibilitas panel dan tombol tab secara langsung tanpa memanggil wrapper rekursif
-      validTabs.forEach(t => {
-        const panelEl = document.getElementById(`koku-panel-${t}`);
-        const btnEl = document.getElementById(`btn-koku-tab-${t}`);
-        if (panelEl) {
-          if (t === targetTab) panelEl.classList.remove('hidden');
-          else panelEl.classList.add('hidden');
-        }
-        if (btnEl) {
-          if (t === targetTab) btnEl.classList.add('active-koku-tab');
-          else btnEl.classList.remove('active-koku-tab');
-        }
-      });
-
-      // Jalankan fungsi render masing-masing tab secara aman
-      try {
-        if (targetTab === 'dashboard') {
-          if (typeof this.renderDashboardTab === 'function') this.renderDashboardTab();
-          const bentuk = bucket?.kokurikuler?.projectInfo?.bentuk || 'LINTAS_DISIPLIN';
-          if (typeof this.renderAlurVisualDiagram === 'function') this.renderAlurVisualDiagram(bentuk);
-        } else if (targetTab === 'modul') {
-          if (typeof this.initPerencanaanFormDefaults === 'function') this.initPerencanaanFormDefaults(false);
-          if (typeof this.renderSavedKokuArchiveTable === 'function') this.renderSavedKokuArchiveTable();
-        } else if (targetTab === 'kelompok') {
-          if (typeof this.renderGroupsTab === 'function') this.renderGroupsTab();
-        } else if (targetTab === 'logbook') {
-          if (typeof this.renderLogbookTab === 'function') this.renderLogbookTab();
-          else if (typeof this.renderLogbookList === 'function') this.renderLogbookList();
-        } else if (targetTab === 'penilaian') {
-          if (typeof this.renderCharacterAssessmentTable === 'function') this.renderCharacterAssessmentTable();
-        }
-      } catch (err) {
-        console.warn(`Proteksi render tab Kokurikuler (${targetTab}):`, err);
-      }
-    }
-  });
-}
-
-// 4. Pastikan TeacherApp.openPillar('kokurikuler') langsung membuka halaman Kokurikuler tanpa terhambat
+// 4. Pastikan TeacherApp.openPillar('kokurikuler') langsung memanggil KokuApp.openKokurikuler()
 if (typeof TeacherApp !== 'undefined') {
-  const _origTeacherOpenPillar = TeacherApp.openPillar ? TeacherApp.openPillar.bind(TeacherApp) : null;
-
+  const _baseOpenPillar = TeacherApp.openPillar ? TeacherApp.openPillar.bind(TeacherApp) : null;
   Object.assign(TeacherApp, {
     openPillar(pilarKey) {
       if (pilarKey === 'kokurikuler') {
         const locks = (DB.data && DB.data.pillarLocks) || {};
         const user = AppState.currentUser;
         const isMaster = user && user.isMasterAdmin === true;
-
         if (locks.kokurikuler === true && !isMaster && !AppState.isReadOnlyInspection) {
-          UI.showNotif(
-            'Pilar Kokurikuler Sedang Dikunci Admin',
-            'Akses ke halaman Kokurikuler sedang dikunci oleh Administrator. Silakan buka kunci pilar melalui Halaman Admin.',
-            'warning'
-          );
+          UI.showNotif('Pilar Kokurikuler Dikunci', 'Akses Kokurikuler sedang dikunci oleh Admin.', 'warning');
           return;
         }
-
         KokuApp.openKokurikuler();
         return;
       }
-
-      if (_origTeacherOpenPillar) {
-        _origTeacherOpenPillar(pilarKey);
+      if (_baseOpenPillar) {
+        _baseOpenPillar(pilarKey);
       }
     }
   });
 }
-
-// Jalankan pembersihan duplikat DOM Kokurikuler saat halaman pertama kali dibuka
-window.addEventListener('DOMContentLoaded', () => {
-  KokuAccessFixer.cleanDuplicateKokuDomNodes();
-});
 
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
