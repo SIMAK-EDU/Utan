@@ -36978,6 +36978,962 @@ if (typeof PrincipalApp !== 'undefined') {
   });
   }
 
+    // ============================================================================
+// PATCH ARSITEKTUR 2 TAHAP TERPISAH (DECOUPLED WORKFLOW) PADA HALAMAN RPM:
+// TAHAP 1: FOKUS MENYUSUN DOKUMEN MODUL RPM DULU (BEBAS BENTROK KUOTA AI)
+// TAHAP 2: STUDIO PEMBUATAN SOAL TERPISAH + KOLOM PERINTAH KHUSUS SOAL
+// + PENGHAPUSAN TOTAL TEMPLATE "SAAT BELAJAR DI KELAS / ANDI DAN TEMAN-TEMAN"
+// ============================================================================
+
+// 1. Tambahkan Jalur Cadangan Ganda pada SupabaseAIVault agar Pemanggilan AI Soal 100% Tembus
+if (typeof SupabaseAIVault !== 'undefined') {
+  Object.assign(SupabaseAIVault, {
+    async executePromptWithMultiProvider(promptText) {
+      if (!this.isLoaded) {
+        await this.syncFromSupabaseTable(false);
+      }
+
+      const systemInstruction = `Anda adalah Pakar Kurikulum Merdeka, Guru Senior SD/SMP/SMA Indonesia, dan Penulis Soal Ujian Nasional Resmi Kemendikdasmen.
+ATURAN PROFESIONAL MUTLAK:
+1. Analisis materi secara keilmuan! Jika materi tentang "Kalimat Bujukan / Kalimat Persuasif", Anda WAJIB membuat kalimat-kalimat bujukan/ajakan nyata (misal: "Ayo, matikan keran air setelah digunakan!", "Mari kita rajin membaca buku setiap hari!", iklan layanan masyarakat, atau dialog ajakan antarteman) sebagai stimulus di setiap soal!
+2. DILARANG KERAS menyalin mentah kalimat perintah pengguna ke dalam soal (seperti menulis "guru menjelaskan tentang 10 kalimat persuasif").
+3. Setiap nomor soal (Nomor 1, 2, 3, dst.) WAJIB memiliki stimulus bacaan/kalimat dan pertanyaan yang 100% berbeda satu sama lain.
+4. Kembalikan HANYA objek JSON murni yang valid tanpa teks pengantar dan tanpa blok markdown.`;
+
+      const activeKeys = (this.keys || [])
+        .filter(k => k && k.is_active !== false && String(k.api_key || '').trim() !== '')
+        .sort((a, b) => (parseInt(a.priority, 10) || 1) - (parseInt(b.priority, 10) || 1));
+
+      // JALUR 1: Kunci Resmi di Supabase (Gemini AIzaSy... / Custom Gateway)
+      for (const keyConfig of activeKeys) {
+        const used = parseInt(keyConfig.used_today, 10) || 0;
+        const limit = parseInt(keyConfig.daily_limit, 10) || 1500;
+        if (used >= limit) continue;
+
+        const result = await this.callSingleProviderKey(keyConfig, promptText, systemInstruction);
+        if (result.ok && result.data) {
+          this.lastUsedProviderInfo = `Supabase Key [${keyConfig.label || keyConfig.id}]`;
+          await this.updateKeyUsageStats(keyConfig, {
+            isSuccess: true,
+            tokensUsed: result.tokens,
+            status: 'ACTIVE'
+          });
+          return result.data;
+        }
+      }
+
+      // JALUR 2: Multi-Model POST Endpoint dengan Jeda Anti-Rate-Limit
+      const cloudModels = ['openai', 'openai-fast', 'mistral', 'openai-large'];
+      for (let attempt = 0; attempt < cloudModels.length; attempt++) {
+        const cModel = cloudModels[attempt];
+        try {
+          if (typeof this.waitRateLimitCooldown === 'function') {
+            await this.waitRateLimitCooldown(attempt === 0 ? 500 : 1300);
+          }
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 24000);
+
+          const res = await fetch('https://text.pollinations.ai/openai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model: cModel,
+              messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.68,
+              seed: Math.floor(Math.random() * 8999999) + 100000
+            })
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const rawText = await res.text();
+            let parsed = null;
+            try {
+              const outer = JSON.parse(rawText);
+              const contentStr = outer?.choices?.[0]?.message?.content;
+              parsed = contentStr ? this.extractValidJsonFromAIText(contentStr) : outer;
+            } catch (e) {
+              parsed = this.extractValidJsonFromAIText(rawText);
+            }
+
+            if (parsed && typeof parsed === 'object') {
+              this.lastUsedProviderInfo = `Cloud AI (${cModel})`;
+              return parsed;
+            }
+          }
+        } catch (err) {}
+      }
+
+      // JALUR 3: Direct Prompt Endpoint Cadangan
+      try {
+        const compactPrompt = `${systemInstruction}\n\n${promptText}`;
+        const resDirect = await fetch('https://text.pollinations.ai/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: compactPrompt }],
+            model: 'openai',
+            jsonMode: true,
+            seed: Math.floor(Math.random() * 999999)
+          })
+        });
+        if (resDirect.ok) {
+          const txt = await resDirect.text();
+          const parsedDirect = this.extractValidJsonFromAIText(txt);
+          if (parsedDirect && typeof parsedDirect === 'object') {
+            this.lastUsedProviderInfo = 'Cloud AI Direct';
+            return parsedDirect;
+          }
+        }
+      } catch (e3) {}
+
+      return null;
+    }
+  });
+}
+
+// 2. Bangun Modal / Studio Pembuatan Soal Terpisah (Tahap 2) & Modifikasi Tombol Formulir RPM
+(function setupDecoupledRpmQuestionStudioUI() {
+  // Ubah tampilan panel nomor 12 di form RPM agar guru paham alur 2 tahap (Buat Modul Dulu -> Buat Soal Terpisah)
+  const enableCheck = document.getElementById('rpm-enable-auto-questions');
+  if (enableCheck) {
+    enableCheck.checked = false;
+    const qPanel = document.getElementById('rpm-auto-questions-panel');
+    if (qPanel) qPanel.classList.add('hidden');
+
+    const labelSpan = enableCheck.parentElement;
+    if (labelSpan) {
+      labelSpan.innerHTML = `
+        <input type="checkbox" id="rpm-enable-auto-questions" style="width: 18px; height: 18px;" onchange="RpmApp.toggleAutoQuestionBuilder(this.checked)">
+        <span>12. Buat Soal Sekaligus Saat Menyusun Modul (⚠️ <em>Rekomendasi Profesional: Biarkan TIDAK DICENTANG agar Tahap 1 fokus menyusun Modul RPM dulu, lalu lanjutkan ke Tahap 2: Buat Soal Terpisah setelah modul selesai</em>)</span>
+      `;
+    }
+  }
+
+  // Tambahkan tombol "Tahap 1: Susun Dokumen Modul RPM Dulu" yang jelas pada bagian bawah form
+  const formRpm = document.getElementById('form-generate-rpm');
+  if (formRpm) {
+    const submitBtn = formRpm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.innerHTML = '📘 Tahap 1: Susun Dokumen Modul RPM Dulu (AI Fokus Modul) &rarr;';
+    }
+  }
+
+  // Tambahkan Pita Studio Soal (Tahap 2) di atas Halaman 1 Hasil Modul RPM
+  const page1El = document.getElementById('rpm-print-page-1');
+  if (page1El && !document.getElementById('rpm-step2-question-studio-banner')) {
+    const banner = document.createElement('div');
+    banner.id = 'rpm-step2-question-studio-banner';
+    banner.className = 'no-print';
+    banner.style.cssText = 'background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #0f766e 100%); color: #ffffff; border-radius: 12px; padding: 1.15rem 1.35rem; margin-bottom: 1.25rem; box-shadow: 0 4px 15px rgba(15, 23, 42, 0.14); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;';
+    banner.innerHTML = `
+      <div style="flex: 1; min-width: 260px;">
+        <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+          <span class="badge badge-warning">TAHAP 2 — STUDIO GENERATOR SOAL TERPISAH (BEBAS BENTROK PERINTAH)</span>
+          <span id="rpm-step2-status-pill" class="badge badge-info">Siap Merancang Soal dari Modul Ini</span>
+        </div>
+        <h4 style="font-size: 1.05rem; font-weight: 800; color: #ffffff; margin-bottom: 0.15rem;">
+          Modul RPM Sudah Selesai? Lanjutkan ke Tahap 2: Penyusunan Lembar Soal Ujian (AI Fokus Soal)
+        </h4>
+        <p style="font-size: 0.82rem; color: #e0e7ff;">
+          Dengan memisahkan pembuatan modul dan soal, AI dapat menganalisis topik materi secara mendalam dan menyusun butir soal kontekstual tanpa bentrok dengan perintah modul.
+        </p>
+      </div>
+      <div style="display: flex; gap: 0.55rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-warning write-action-btn" style="font-weight: 800; color: #0f172a; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);" onclick="RpmApp.openStep2QuestionStudioModal()">
+          🎯 Buka Studio Buat Soal (Tahap 2) &rarr;
+        </button>
+      </div>
+    `;
+    page1El.insertBefore(banner, page1El.firstChild);
+  }
+
+  // Buat Modal Pop-up Studio Pembuatan Soal Terpisah (Tahap 2)
+  if (!document.getElementById('modal-rpm-step2-question-studio')) {
+    const modalEl = document.createElement('div');
+    modalEl.id = 'modal-rpm-step2-question-studio';
+    modalEl.className = 'modal-overlay hidden';
+    modalEl.innerHTML = `
+      <div class="modal-box" style="max-width: 820px; width: 96%;">
+        <div class="card-header" style="background: linear-gradient(135deg, #1e1b4b 0%, #1e3a8a 60%, #0f766e 100%); color: #ffffff; padding: 1.15rem 1.35rem; border-radius: 10px; margin-bottom: 1.15rem;">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom: 0.25rem;">TAHAP 2 — STUDIO GENERATOR SOAL AI TERPISAH</span>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: #ffffff;" id="step2-studio-title">
+              Susun Lembar Soal Kontekstual dari Modul RPM
+            </h3>
+            <p style="font-size: 0.82rem; color: #dbeafe;" id="step2-studio-subtitle">
+              Mata Pelajaran: - | Topik/Materi: -
+            </p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="RpmApp.closeStep2QuestionStudioModal()">
+            ✕ Tutup
+          </button>
+        </div>
+
+        <div style="background: #f0fdf4; border: 1px solid #86efac; border-left: 4px solid #16a34a; padding: 0.8rem 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.83rem; color: #14532d;">
+          <strong>✓ Keunggulan Tahap 2 (Terpisah dari Modul):</strong> Seluruh kapasitas AI kini difokuskan 100% hanya untuk membedah materi <strong id="step2-studio-materi-highlight">-</strong> dan menguraikannya menjadi kutipan bacaan, contoh kalimat nyata, atau kasus soal yang berbeda di setiap nomor.
+        </div>
+
+        <div class="grid-2" style="margin-bottom: 1rem;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="step2-q-difficulty">1. Tingkat Kesulitan Soal :</label>
+            <select id="step2-q-difficulty" class="form-control" style="font-weight: 700;">
+              <option value="MUDAH">Mudah (Identifikasi & Pemahaman Dasar)</option>
+              <option value="SEDANG" selected>Sedang (Penerapan & Analisis Kalimat/Kasus Setara Kelas)</option>
+              <option value="SULIT">Sulit (Penalaran Kritis / HOTS Sesuai Fase)</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="step2-q-stimulus-style">2. Gaya Penyajian Soal :</label>
+            <select id="step2-q-stimulus-style" class="form-control" style="font-weight: 700;">
+              <option value="CONCRETE_EXAMPLES" selected>Sajikan Contoh Kalimat / Ilustrasi Kasus Nyata di Tiap Soal</option>
+              <option value="READING_PASSAGE">Sajikan Kutipan Teks / Dialog Singkat Sebelum Pertanyaan</option>
+              <option value="DIRECT_CONCEPT">Pertanyaan Konsep & Analisis Langsung (To-The-Point)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label class="form-label" style="margin-bottom: 0.5rem;">3. Pilih Jenis Soal & Jumlah Butir Soal yang Ingin Dibuat :</label>
+          <div class="grid-3" style="gap: 0.65rem;">
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-PG" checked> Pilihan Ganda</span>
+              <input type="number" id="step2-count-PG" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="30" value="10">
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-ISIAN"> Isian Singkat</span>
+              <input type="number" id="step2-count-ISIAN" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="25" value="5">
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-ESAI"> Esai</span>
+              <input type="number" id="step2-count-ESAI" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="20" value="5">
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-URAIAN"> Uraian</span>
+              <input type="number" id="step2-count-URAIAN" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="15" value="5">
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-BENARSALAH"> Benar / Salah</span>
+              <input type="number" id="step2-count-BENARSALAH" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="15" value="5">
+            </label>
+            <label style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.55rem 0.75rem; border-radius: 8px; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+              <span><input type="checkbox" id="step2-check-MATCHING"> Mencocokkan</span>
+              <input type="number" id="step2-count-MATCHING" class="form-control" style="width: 68px; padding: 0.25rem 0.4rem; text-align: center;" min="1" max="15" value="5">
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group" style="background: #eff6ff; border: 1px solid #93c5fd; padding: 0.9rem 1rem; border-radius: 8px;">
+          <label class="form-label" for="step2-specific-question-prompt" style="color: #1e3a8a;">
+            4. Fokus / Instruksi Khusus Pembuatan Soal (Opsional — Terpisah dari Instruksi Modul) :
+          </label>
+          <textarea
+            id="step2-specific-question-prompt"
+            class="form-control"
+            rows="2"
+            placeholder="Contoh: 'Berikan contoh kalimat bujukan/persuasif yang berbeda-beda pada setiap soal dan minta siswa menganalisis ciri, arti, atau kalimat bujukan yang tepat'..."
+          ></textarea>
+          <div class="form-hint" style="color: #1e40af;">
+            💡 Catatan: Instruksi yang Anda tulis di sini tidak akan pernah disalin mentah ke dalam teks soal, melainkan dijadikan pedoman oleh AI dalam merancang soal.
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.65rem; flex-wrap: wrap; margin-top: 1.15rem;">
+          <button type="button" class="btn btn-outline" onclick="RpmApp.closeStep2QuestionStudioModal()">
+            Batal
+          </button>
+          <button type="button" class="btn btn-success" style="font-weight: 800; padding: 0.65rem 1.5rem;" onclick="RpmApp.executeStep2QuestionGeneration()">
+            🚀 Analisis Materi & Susun Soal Sekarang (AI Fokus Soal)
+          </button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+  }
+})();
+
+// 3. Upgrade RpmApp: Hapus Total Template "scenarioPool" & Pasang Bank Keilmuan Bahasa Indonesia + Alur 2 Tahap
+Object.assign(RpmApp, {
+  // Deteksi ketat kalimat template yang dilarang tampil di lembar soal
+  isRoboticTemplateStem(text) {
+    const s = String(text || '').trim();
+    if (!s) return true;
+    const banned = [
+      /Saat belajar di kelas bersama teman-teman,\s*guru menjelaskan tentang/i,
+      /Andi dan teman-teman sekelasnya sedang mengamati contoh penerapan/i,
+      /Melaksanakan kegiatan yang berkaitan dengan.*secara tertib,\s*jujur/i,
+      /Dapat memahami manfaat nyata dari.*dan menerapkannya dengan benar/i,
+      /menyelesaikan tugas atau kegiatan yang berkaitan dengan/i,
+      /Kelompokmu diminta membuat proyek sederhana tentang/i,
+      /ciri penting yang harus diperhatikan ketika kita mempelajari/i,
+      /Bandingkan perbedaan antara kegiatan yang menerapkan prinsip/i,
+      /kesimpulan singkat mengenai manfaat mempelajari/i
+    ];
+    return banned.some(rx => rx.test(s));
+  },
+
+  // Buka Studio Soal Tahap 2
+  openStep2QuestionStudioModal() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) {
+      UI.showNotif('Buat Modul RPM Dulu', 'Silakan susun Dokumen Modul RPM (Tahap 1) terlebih dahulu.', 'warning');
+      return;
+    }
+
+    const subEl = document.getElementById('step2-studio-subtitle');
+    const matEl = document.getElementById('step2-studio-materi-highlight');
+    const diffEl = document.getElementById('step2-q-difficulty');
+
+    if (subEl) subEl.textContent = `Mata Pelajaran: ${doc.mapel} (${doc.kelasFase}) | Topik/Materi: ${doc.materi}`;
+    if (matEl) matEl.textContent = `"${doc.materi}" (${doc.mapel})`;
+    if (diffEl && doc.difficulty) diffEl.value = doc.difficulty;
+
+    // Sinkronkan centangan jenis soal yang sudah ada di dokumen (jika ada)
+    const existingSpecs = Array.isArray(doc.questionSpecList) && doc.questionSpecList.length > 0
+      ? doc.questionSpecList
+      : [{ type: 'PG', count: 10 }];
+
+    ['PG', 'ISIAN', 'ESAI', 'URAIAN', 'BENARSALAH', 'MATCHING'].forEach(t => {
+      const found = existingSpecs.find(s => s.type === t);
+      const chk = document.getElementById(`step2-check-${t}`);
+      const cnt = document.getElementById(`step2-count-${t}`);
+      if (chk) chk.checked = Boolean(found);
+      if (cnt && found) cnt.value = found.count;
+    });
+
+    const modal = document.getElementById('modal-rpm-step2-question-studio');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeStep2QuestionStudioModal() {
+    const modal = document.getElementById('modal-rpm-step2-question-studio');
+    if (modal) modal.classList.add('hidden');
+  },
+
+  // Eksekusi Pembuatan Soal pada Tahap 2 (100% Fokus AI pada Soal, Terpisah dari Pembuatan Modul)
+  async executeStep2QuestionGeneration() {
+    if (AppState.isReadOnlyInspection) return;
+    const doc = AppState.rpmCurrentDoc;
+    if (!doc) return;
+
+    const specs = [];
+    ['PG', 'ISIAN', 'ESAI', 'URAIAN', 'BENARSALAH', 'MATCHING'].forEach(t => {
+      const chk = document.getElementById(`step2-check-${t}`);
+      const cnt = document.getElementById(`step2-count-${t}`);
+      if (chk && chk.checked) {
+        specs.push({
+          type: t,
+          count: Math.max(1, parseInt(cnt?.value, 10) || 5)
+        });
+      }
+    });
+
+    if (specs.length === 0) {
+      UI.showNotif('Pilih Minimal 1 Jenis Soal', 'Silakan centang minimal satu jenis soal (misalnya Pilihan Ganda).', 'warning');
+      return;
+    }
+
+    const difficulty = document.getElementById('step2-q-difficulty')?.value || 'SEDANG';
+    const stimulusStyle = document.getElementById('step2-q-stimulus-style')?.value || 'CONCRETE_EXAMPLES';
+    const questionSpecificPrompt = (document.getElementById('step2-specific-question-prompt')?.value || '').trim();
+
+    this.closeStep2QuestionStudioModal();
+
+    // Catat soal lama yang bukan template ke daftar larangan agar selalu menghasilkan variasi baru
+    if (Array.isArray(doc.questionSections)) {
+      doc.questionSections.forEach(sec => {
+        (sec.items || []).forEach(it => {
+          if (it && it.stem && !this.isRoboticTemplateStem(it.stem)) {
+            const nk = String(it.stem).toLowerCase().replace(/\W+/g, ' ').trim();
+            if (nk) this.previousStemsMemory.push(nk);
+          }
+        });
+      });
+    }
+
+    const styleDesc = stimulusStyle === 'CONCRETE_EXAMPLES'
+      ? 'Sajikan contoh kalimat nyata / kutipan pendek / kasus konkret yang berbeda-beda di setiap nomor soal untuk dianalisis siswa.'
+      : stimulusStyle === 'READING_PASSAGE'
+        ? 'Awali setiap soal dengan kutipan bacaan atau dialog singkat (2-3 kalimat) yang relevan dengan materi.'
+        : 'Buat pertanyaan keilmuan langsung yang menguji pemahaman dan analisis siswa.';
+
+    this.setRpmAiLoading(
+      true,
+      `Tahap 2: AI Sedang Menganalisis Materi "${doc.materi}"...`,
+      '100% kapasitas AI difokuskan untuk meriset contoh kalimat/kasus materi dan menyusun butir soal ujian yang unik di setiap nomor...'
+    );
+
+    try {
+      doc.difficulty = difficulty;
+      doc.questionSpecList = specs;
+      doc.questionSections = await this.buildDynamicQuestionSectionsWithAI({
+        mapel: doc.mapel,
+        bab: doc.bab || '',
+        materi: doc.materi,
+        kelasFase: doc.kelasFase,
+        soloLevel: doc.soloLevel,
+        tpRaw: (doc.tujuanPembelajaran || []).join('\n'),
+        cpRaw: doc.capaianPembelajaran || '',
+        customPrompt: `${styleDesc} ${questionSpecificPrompt}`.trim(),
+        difficulty,
+        mathMode: doc.mathMode || 'DIRECT_CALC',
+        mathConstraint: doc.mathConstraint || ''
+      }, specs);
+    } finally {
+      this.setRpmAiLoading(false);
+    }
+
+    doc.enableQuestions = true;
+    this.syncCurrentDocToArchiveBucket();
+    this.renderAllRpmPages();
+    this.renderSavedArchiveTable();
+
+    // Langsung buka Halaman 2 (Lembar Soal pertama yang baru selesai dibuat)
+    this.switchRpmPage(2);
+
+    const pill = document.getElementById('rpm-step2-status-pill');
+    if (pill) {
+      pill.className = 'badge badge-success';
+      pill.textContent = `✓ ${specs.reduce((a, b) => a + b.count, 0)} Butir Soal Aktif`;
+    }
+
+    UI.showNotif(
+      'Tahap 2 Selesai: Lembar Soal Berhasil Disusun',
+      `Seluruh butir soal untuk topik "${doc.materi}" telah disusun secara kontekstual dan ditampilkan pada Halaman 2.`,
+      'success'
+    );
+  },
+
+  // Hubungkan juga tombol ungu "Buat Variasi Soal Baru (AI Murni)" ke Studio Tahap 2
+  async regenerateQuestionsOnlyWithAI() {
+    this.openStep2QuestionStudioModal();
+  },
+
+  // Generator Keilmuan Kontekstual Lengkap (Termasuk Bank Soal Bahasa Indonesia: Kalimat Persuasif/Bujukan, Ide Pokok, Kalimat Transitif, dll.)
+  buildUniqueContextualQuestionItem(qType, itemNumber, totalCount, params, variationRound = 0) {
+    const {
+      mapel,
+      materi,
+      mathMode,
+      tpRaw,
+      cpRaw
+    } = params;
+
+    const cleanMapel = String(mapel || 'Mata Pelajaran').trim();
+    const cleanMateri = String(materi || 'Materi Pembelajaran').trim();
+    const combinedLower = `${cleanMapel} ${cleanMateri} ${tpRaw || ''} ${cpRaw || ''}`.toLowerCase();
+
+    const uniqueIdx = (itemNumber - 1) + (variationRound * 5);
+    const weight = Math.round(100 / Math.max(1, totalCount));
+
+    const isPersuasifBujukan = /persuasif|bujukan|ajakan|imbauan|iklan|poster|slogan|pengumuman/i.test(combinedLower);
+    const isBahasaIndonesia = /bahasa\s*indonesia|kalimat|paragraf|ide\s*pokok|gagasan|teks|cerita|puisi|wawancara|surat|transitif|intransitif|majas|sinonim|antonim|fakta|opini/i.test(combinedLower);
+
+    // =========================================================================
+    // BANK KEILMUAN 1: BAHASA INDONESIA — KALIMAT BUJUKAN / PERSUASIF / AJAKAN
+    // (12 Soal Analisis Kalimat Bujukan Berbeda untuk Kelas 4 SD)
+    // =========================================================================
+    if (isPersuasifBujukan) {
+      const persuasifBank = [
+        {
+          pgStem: 'Perhatikan kalimat-kalimat berikut ini!\n(1) Rina sedang menyapu halaman sekolah pada pagi hari.\n(2) Ayo, kita buang sampah pada tempatnya agar lingkungan sekolah tetap bersih dan sehat!\n(3) Di mana letak perpustakaan SDN 2 Sabedo?\n(4) Kemarin sore hujan turun dengan sangat deras.\nKalimat di atas yang termasuk **kalimat bujukan (persuasif)** ditunjukkan oleh nomor ....',
+          pgRight: '(2) Ayo, kita buang sampah pada tempatnya agar lingkungan sekolah tetap bersih dan sehat!',
+          pgWrong: [
+            '(1) Rina sedang menyapu halaman sekolah pada pagi hari.',
+            '(3) Di mana letak perpustakaan SDN 2 Sabedo?',
+            '(4) Kemarin sore hujan turun dengan sangat deras.'
+          ],
+          isianStem: 'Kalimat yang berisi ajakan, imbauan, atau bujukan untuk meyakinkan orang lain agar mau melakukan suatu perbuatan disebut kalimat ................',
+          isianAns: 'persuasif (kalimat bujukan / ajakan)',
+          esaiStem: 'Perhatikan situasi berikut: Banyak teman di kelasmu yang lupa mematikan keran air di kamar mandi sekolah setelah mencuci tangan. Buatlah 2 kalimat bujukan (persuasif) yang santun dan menarik untuk ditempel di dekat wastafel sekolah!',
+          esaiAns: '1) "Ayo, matikan keran air setelah mencuci tangan agar air bersih kita tidak terbuang sia-sia!" 2) "Mari hemat air mulai dari sekarang demi masa depan bumi kita!"',
+          bsStmt: 'Kalimat "Mari kita rajin membaca buku setiap hari agar wawasan kita semakin luas!" merupakan contoh kalimat bujukan (persuasif).',
+          bsIsTrue: true,
+          matchLeft: '"Ayo, kurangi penggunaan kantong plastik saat berbelanja!"',
+          matchRight: 'Kalimat bujukan (persuasif) bertema peduli lingkungan'
+        },
+        {
+          pgStem: 'Bacalah kutipan kalimat poster berikut!\n*"Mari mencuci tangan dengan sabun dan air mengalir sebelum makan agar tubuh terhindar dari kuman penyakit!"*\nTujuan utama penulis menyampaikan kalimat bujukan tersebut kepada pembaca adalah ....',
+          pgRight: 'Membujuk dan mengajak pembaca agar membiasakan diri mencuci tangan pakai sabun supaya tetap sehat',
+          pgWrong: [
+            'Menceritakan pengalaman seseorang yang sedang sakit perut di rumah sakit',
+            'Menanyakan harga sabun pencuci tangan yang dijual di koperasi sekolah',
+            'Melarang siswa membawa bekal makanan dari rumah ke sekolah'
+          ],
+          isianStem: 'Kata khas yang sering digunakan untuk mengawali kalimat bujukan atau kalimat ajakan antara lain adalah kata "Ayo", "hendaknya", dan "................"',
+          isianAns: 'Mari / Marilah',
+          esaiStem: 'Bacalah kalimat berikut: *"Marilah kita mengantre dengan tertib saat membeli makanan di kantin sekolah agar semua mendapat giliran dengan nyaman!"*\nJelaskan: (a) Kata penanda bujukan apa yang digunakan dalam kalimat tersebut? (b) Apa tujuan dari kalimat bujukan tersebut?',
+          esaiAns: '(a) Kata penanda bujukan: "Marilah". (b) Tujuannya: Mengajak siswa agar disiplin mengantre dengan tertib di kantin sehingga suasana kantin rapi dan nyaman.',
+          bsStmt: 'Tujuan utama kalimat persuasif adalah memerintah seseorang dengan kasar dan memaksa.',
+          bsIsTrue: false,
+          matchLeft: 'Kata-kata penanda khas dalam kalimat bujukan / persuasif',
+          matchRight: 'Ayo, mari, marilah, hendaknya, sebaiknya'
+        },
+        {
+          pgStem: 'Di bawah ini yang merupakan ciri-ciri dari **kalimat bujukan (kalimat persuasif)** yang tepat adalah ....',
+          pgRight: 'Bersifat mengajak, menggunakan kata ajakan (seperti ayo, mari, hendaknya), dan biasanya diakhiri tanda seru (!)',
+          pgWrong: [
+            'Selalu diawali dengan kata tanya apa, siapa, di mana, dan diakhiri tanda tanya (?)',
+            'Berisi cerita khayalan masa lalu yang tidak memiliki pesan ajakan sama sekali',
+            'Menggunakan bahasa yang kasar untuk memarahi lawan bicara'
+          ],
+          isianStem: 'Penulisan kalimat bujukan atau ajakan pada umumnya diakhiri dengan tanda baca ................',
+          isianAns: 'seru (!)',
+          esaiStem: 'Sebutkan 3 ciri utama yang membedakan kalimat bujukan (persuasif) dengan kalimat berita biasa!',
+          esaiAns: '1) Bersifat mengajak/membujuk pembaca melakukan sesuatu, 2) Menggunakan kata ajakan seperti ayo, mari, marilah, hendaknya, 3) Biasanya diakhiri dengan tanda seru (!) dan disertai alasan yang meyakinkan.',
+          bsStmt: 'Kalimat bujukan sering digunakan dalam pembuatan poster pendidikan, iklan layanan masyarakat, dan kampanye kebersihan sekolah.',
+          bsIsTrue: true,
+          matchLeft: '"Yuk, kunjungi pojok baca kelas kita dan temukan cerita seru setiap hari!"',
+          matchRight: 'Kalimat bujukan untuk meningkatkan minat baca siswa'
+        },
+        {
+          pgStem: 'Di perpustakaan sekolah, masih banyak siswa yang berbicara keras sehingga mengganggu teman lain yang sedang membaca. Kalimat bujukan paling santun dan tepat untuk mengatasi masalah tersebut adalah ....',
+          pgRight: 'Mari kita jaga ketenangan di dalam perpustakaan agar semua teman dapat membaca buku dengan nyaman!',
+          pgWrong: [
+            'Jangan pernah masuk ke perpustakaan lagi kalau kalian suka ribut!',
+            'Siapa yang tadi berbicara keras di dekat rak buku cerita?',
+            'Perpustakaan sekolah buka setiap hari Senin sampai Sabtu pukul 08.00.'
+          ],
+          isianStem: 'Lengkapilah kalimat bujukan berikut dengan kata ajakan yang tepat!\n"................ kita tanam pohon di halaman sekolah agar udara menjadi sejuk dan asri!"',
+          isianAns: 'Ayo / Mari / Marilah',
+          esaiStem: 'Sekolahmu akan mengadakan kegiatan "Jumat Bersih Menanam Pohon". Tuliskan sebuah paragraf persuasif singkat (3 kalimat) yang berisi ajakan kepada teman-temanmu untuk ikut membawa dan merawat tanaman di sekolah!',
+          esaiAns: 'Teman-teman, pohon yang rindang membuat udara di sekolah kita menjadi sejuk dan segar. Oleh karena itu, ayo kita sukseskan kegiatan Jumat Bersih dengan membawa satu bibit tanaman dari rumah! Mari kita tanam dan rawat bersama agar sekolah kita semakin hijau dan nyaman untuk belajar!',
+          bsStmt: 'Kalimat "Berapa jumlah buku cerita yang ada di pojok baca kelas 4?" merupakan contoh kalimat bujukan.',
+          bsIsTrue: false,
+          matchLeft: '"Mari sarapan makanan bergizi setiap pagi supaya tubuh kuat dan fokus belajar!"',
+          matchRight: 'Kalimat bujukan bertema kesehatan dan gizi anak'
+        },
+        {
+          pgStem: 'Perhatikan kutipan dialog berikut!\n**Siti:** *" teman-teman, lihat selokan di depan kelas kita mulai penuh dengan daun kering."*\n**Budi:** *".... "*\nKalimat bujukan yang tepat diucapkan Budi untuk melengkapi dialog di atas adalah ....',
+          pgRight: 'Ayo, kita bersihkan bersama-sama sekarang supaya air tidak menggenang saat turun hujan!',
+          pgWrong: [
+            'Daun kering itu jatuh dari pohon mangga sejak kemarin sore.',
+            'Mengapa daun-daun itu bisa masuk ke dalam selokan kelas?',
+            'Saya mau langsung pulang ke rumah saja karena sudah siang.'
+          ],
+          isianStem: 'Dalam kalimat *"Sebaiknya kita berpamitan kepada orang tua sebelum berangkat ke sekolah agar mendapat doa restu"*, kata yang menunjukkan imbauan/bujukan adalah kata ................',
+          isianAns: 'Sebaiknya',
+          esaiStem: 'Analisislah perbedaan antara kedua kalimat berikut:\nKalimat A: *"Banyak sampah plastik berserakan di taman sekolah setelah jam istirahat."*\nKalimat B: *"Ayo, pungut dan buang sampah bungkus jajananmu ke tempat sampah agar taman sekolah kita tetap indah!"*\nManakah yang termasuk kalimat bujukan (persuasif)? Jelaskan alasanmu!',
+          esaiAns: 'Yang termasuk kalimat bujukan (persuasif) adalah Kalimat B, karena menggunakan kata ajakan "Ayo", diakhiri tanda seru (!), dan bertujuan membujuk pembaca membuang sampah disertai alasan agar taman sekolah tetap indah. Sedangkan Kalimat A hanya kalimat berita.',
+          bsStmt: 'Menyertakan alasan atau manfaat positif di dalam kalimat bujukan akan membuat orang lain lebih yakin dan mau mengikuti ajakan kita.',
+          bsIsTrue: true,
+          matchLeft: '"Hendaknya kita selalu berpamitan dan mencium tangan orang tua sebelum ke sekolah."',
+          matchRight: 'Kalimat imbauan/bujukan bertema sopan santun di rumah'
+        },
+        {
+          pgStem: 'Perhatikan kalimat iklan layanan masyarakat berikut!\n*"Matikan lampu dan televisi jika tidak digunakan! Hemat energi, hemat biaya!"*\nMakna bujukan yang terkandung dalam kalimat tersebut adalah ....',
+          pgRight: 'Mengajak masyarakat untuk menghemat penggunaan energi listrik dalam kehidupan sehari-hari',
+          pgWrong: [
+            'Mengajak masyarakat membeli lampu dan televisi baru setiap bulan',
+            'Memberitahukan jadwal pemadaman listrik di lingkungan desa',
+            'Melarang warga menyalakan lampu pada malam hari'
+          ],
+          isianStem: 'Kalimat bujukan *"Ayo, patuhi rambu-rambu lalu lintas dan gunakan helm saat berkendara!"* berisi ajakan untuk menjaga ................ di jalan raya.',
+          isianAns: 'keselamatan / ketertiban',
+          esaiStem: 'Ubah kalimat berita berikut ini menjadi **kalimat bujukan (persuasif)** yang menarik!\nKalimat berita: *"Sarapan pagi sebelum berangkat ke sekolah membuat tubuh bertenaga dan mudah berkonsentrasi."*',
+          esaiAns: '"Ayo biasakan sarapan pagi yang bergizi sebelum berangkat ke sekolah agar tubuhmu selalu bertenaga dan mudah berkonsentrasi saat belajar!"',
+          bsStmt: 'Kalimat bujukan yang baik harus disampaikan dengan bahasa yang sopan, positif, dan mudah dipahami.',
+          bsIsTrue: true,
+          matchLeft: '"Ayo, matikan keran air dan lampu kelas setelah selesai digunakan!"',
+          matchRight: 'Kalimat bujukan untuk menghemat air dan energi listrik'
+        },
+        {
+          pgStem: 'Manakah di antara kalimat berikut yang merupakan **kalimat bujukan** untuk mengajak teman menjaga kerukunan di sekolah?',
+          pgRight: 'Mari kita saling menghargai dan bermain bersama semua teman tanpa membeda-bedakan suku!',
+          pgWrong: [
+            'Di kelas empat terdapat dua puluh lima orang siswa laki-laki dan perempuan.',
+            'Andi dan Bagas sedang mengerjakan tugas matematika di ruang kelas.',
+            'Kapan lomba kebersihan antarkelas akan dilaksanakan oleh sekolah?'
+          ],
+          isianStem: 'Pada kalimat *"Mari kita sumbangkan buku cerita layak pakai untuk membantu teman-teman di daerah bencana!"*, alasan/tujuan bujukannya adalah ................',
+          isianAns: 'untuk membantu teman-teman di daerah bencana',
+          esaiStem: 'Buatlah masing-masing 1 contoh kalimat bujukan (persuasif) dengan menggunakan kata:\na) **Ayo**\nb) **Marilah**\nc) **Hendaknya**',
+          esaiAns: 'a) Ayo, kita rapikan kembali buku di pojok baca setelah selesai dibaca! b) Marilah kita menjaga kebersihan ruang kelas bersama-sama! c) Hendaknya kita berbicara dengan bahasa yang santun kepada guru dan teman.',
+          bsStmt: 'Kalimat "Ibu membeli sayur bayam dan buah pepaya di pasar pagi" adalah contoh kalimat persuasif.',
+          bsIsTrue: false,
+          matchLeft: '"Mari kita sapa guru dan teman dengan senyum yang ramah setiap pagi!"',
+          matchRight: 'Kalimat bujukan untuk membudayakan sikap ramah di sekolah'
+        },
+        {
+          pgStem: 'Perhatikan kalimat bujukan berikut!\n*"Ayo, kurangi jajan sembarangan dan bawalah bekal sehat dari rumah supaya tubuh kita tidak mudah terserang penyakit!"*\nAlasan penguat yang disampaikan penulis untuk meyakinkan pembaca pada kalimat di atas adalah ....',
+          pgRight: 'Supaya tubuh kita tidak mudah terserang penyakit',
+          pgWrong: [
+            'Supaya uang jajan kita cepat habis di kantin',
+            'Karena kantin sekolah sedang tutup sementara',
+            'Agar kita tidak perlu makan siang sepanjang hari'
+          ],
+          isianStem: 'Kalimat persuasif dalam sebuah poster biasanya didukung oleh gambar yang menarik agar pembaca lebih mudah ................ terhadap ajakan tersebut.',
+          isianAns: 'tertarik / yakin / terpengaruh',
+          esaiStem: 'Perhatikan poster di puskesmas yang bertuliskan: *"Ayo berolahraga minimal 30 menit setiap hari agar jantung sehat dan badan bugar!"*\nJelaskan kepada siapa kalimat bujukan tersebut ditujukan dan apa manfaat jika kita mengikuti ajakan tersebut!',
+          esaiAns: 'Ditujukan kepada seluruh masyarakat/pembaca. Manfaatnya adalah menjaga kesehatan jantung, meningkatkan kebugaran tubuh, dan mencegah penyakit.',
+          bsStmt: 'Kalimat bujukan dalam poster sebaiknya ditulis dengan kalimat yang singkat, jelas, padat, dan memikat perhatian pembaca.',
+          bsIsTrue: true,
+          matchLeft: '"Ayo berolahraga secara teratur agar tubuh tetap bugar dan sehat!"',
+          matchRight: 'Kalimat bujukan menjaga kebugaran jasmani'
+        },
+        {
+          pgStem: 'Kalimat bujukan yang paling tepat digunakan untuk mengajak warga desa mengikuti kegiatan kerja bakti pada hari Minggu adalah ....',
+          pgRight: 'Mari kita bergotong royong membersihkan lingkungan desa pada hari Minggu pagi agar desa kita bersih dan bebas nyamuk demam berdarah!',
+          pgWrong: [
+            'Warga yang tidak datang kerja bakti akan dimarahi oleh semua tetangga.',
+            'Pada hari Minggu kemarin warga desa sudah membersihkan lapangan bola.',
+            'Apakah bapak-bapak tahu di mana cangkul dan sapu lidi disimpan?'
+          ],
+          isianStem: 'Kalimat *"Yuk, kita habiskan makanan di piring kita agar tidak ada nasi yang terbuang!"* menggunakan kata ajakan tidak baku/akrab yaitu kata ................',
+          isianAns: 'Yuk',
+          esaiStem: 'Di sekolahmu masih ada siswa yang mencoret-coret meja dan dinding kelas. Tuliskan sebuah kalimat bujukan yang menyentuh kesadaran teman-temanmu agar ikut merawat fasilitas kelas!',
+          esaiAns: '"Mari kita jaga meja dan dinding kelas kita tetap bersih tanpa coretan, karena kelas yang rapi adalah cerminan siswa yang cerdas dan berkarakter!"',
+          bsStmt: 'Kata "Ayo", "Mari", dan "Yuk" merupakan kata-kata yang berfungsi menyatakan ajakan atau bujukan.',
+          bsIsTrue: true,
+          matchLeft: '"Yuk, habiskan makananmu dan jangan menyisakan sampah makanan!"',
+          matchRight: 'Kalimat bujukan menghargai makanan'
+        },
+        {
+          pgStem: 'Perhatikan keempat kalimat di bawah ini! Kalimat yang **bukan** merupakan kalimat bujukan (persuasif) adalah ....',
+          pgRight: 'Setiap hari Senin siswa kelas 4 mengikuti upacara bendera di lapangan sekolah.',
+          pgWrong: [
+            'Ayo, datang ke sekolah tepat waktu sebelum bel berbunyi!',
+            'Mari kita hemat penggunaan kertas dengan memanfaatkan kedua sisinya!',
+            'Hendaknya kita selalu mendengarkan penjelasan guru dengan saksama di kelas!'
+          ],
+          isianStem: 'Kalimat *"Setiap hari Senin siswa mengikuti upacara bendera"* bukan kalimat bujukan, melainkan kalimat ................',
+          isianAns: 'berita (deklaratif)',
+          esaiStem: 'Mengapa dalam menulis kalimat bujukan (persuasif) kita tidak boleh menggunakan kata-kata yang menghina atau memaksa orang lain? Jelaskan pendapatmu!',
+          esaiAns: 'Karena kata-kata yang menghina atau memaksa akan membuat orang lain merasa tersinggung dan enggan mengikuti ajakan kita. Kalimat bujukan harus santun dan memberi alasan positif agar orang lain mengikuti dengan sukarela.',
+          bsStmt: 'Kalimat berita hanya bertujuan menyampaikan informasi/fakta, sedangkan kalimat persuasif bertujuan mengajak dan membujuk pembaca.',
+          bsIsTrue: true,
+          matchLeft: '"Setiap hari Senin siswa mengikuti upacara bendera di lapangan."',
+          matchRight: 'Kalimat berita (menyampaikan informasi faktual)'
+        }
+      ];
+
+      const item = persuasifBank[uniqueIdx % persuasifBank.length];
+      if (qType === 'PG') {
+        const mc = this.createShuffledMultipleChoice(item.pgRight, item.pgWrong, uniqueIdx);
+        return { no: itemNumber, stem: item.pgStem, options: mc.options, answer: mc.answer, scoreWeight: weight };
+      }
+      if (qType === 'ISIAN') {
+        return { no: itemNumber, stem: item.isianStem, answer: `Kunci: ${item.isianAns}`, scoreWeight: weight };
+      }
+      if (qType === 'BENARSALAH') {
+        return {
+          no: itemNumber,
+          stem: `Pernyataan: ${item.bsStmt} (Benar / Salah)`,
+          answer: `Kunci: ${item.bsIsTrue ? 'Benar (B)' : 'Salah (S)'}`,
+          scoreWeight: weight
+        };
+      }
+      if (qType === 'MATCHING') {
+        return {
+          no: itemNumber,
+          leftPremise: item.matchLeft,
+          rightResponse: item.matchRight,
+          answer: `Pasangan ${itemNumber}: ${item.matchLeft} = ${item.matchRight}`,
+          scoreWeight: weight
+        };
+      }
+      return { no: itemNumber, stem: item.esaiStem, answer: `Kunci: ${item.esaiAns}`, scoreWeight: weight };
+    }
+
+    // =========================================================================
+    // BANK KEILMUAN 2: BAHASA INDONESIA UMUM (Ide Pokok, Kalimat Transitif, Fakta/Opini, Teks Prosedur)
+    // =========================================================================
+    if (isBahasaIndonesia) {
+      const bindoPool = [
+        {
+          pgStem: 'Bacalah paragraf berikut dengan saksama!\n*"Bersepeda merupakan olahraga yang sangat bermanfaat bagi kesehatan tubuh. Dengan rutin bersepeda setiap pagi, otot-otot kaki menjadi kuat dan peredaran darah menjadi lancar. Selain itu, bersepeda juga tidak menghasilkan asap polusi sehingga ramah lingkungan."*\nIde pokok (gagasan utama) dari paragraf di atas adalah ....',
+          pgRight: 'Manfaat olahraga bersepeda bagi kesehatan tubuh dan lingkungan',
+          pgWrong: [
+            'Harga sepeda baru yang dijual di toko olahraga',
+            'Cara memperbaiki rantai sepeda yang rusak',
+            'Bahaya asap kendaraan bermotor di jalan raya'
+          ],
+          isianStem: 'Gagasan utama yang menjadi dasar pengembangan sebuah paragraf dan biasanya terletak di kalimat utama disebut ................',
+          isianAns: 'ide pokok (gagasan pokok)',
+          esaiStem: 'Bacalah paragraf berikut!\n*"Taman bacaan di sudut kelas 4 selalu ramai dikunjungi siswa saat jam istirahat. Di sana terdapat berbagai buku cerita rakyat, ensiklopedia sains, dan majalah anak. Siswa-siswa gemar membaca bersama karena suasananya tenang dan nyaman."*\nTuliskan: (a) Kalimat utama paragraf tersebut, dan (b) Ide pokok paragraf tersebut!',
+          esaiAns: '(a) Kalimat utama: Taman bacaan di sudut kelas 4 selalu ramai dikunjungi siswa saat jam istirahat. (b) Ide pokok: Keramaian dan kenyamanan taman bacaan di sudut kelas 4.',
+          bsStmt: 'Ide pokok sebuah paragraf dapat ditemukan dengan cara membaca kalimat utama pada awal atau akhir paragraf.',
+          bsIsTrue: true,
+          matchLeft: 'Gagasan utama yang menjiwai seluruh isi paragraf',
+          matchRight: 'Ide pokok (gagasan pokok)'
+        },
+        {
+          pgStem: 'Perhatikan kalimat berikut!\n*"Ibu menyiram tanaman bunga mawar di halaman rumah."*\nKalimat di atas termasuk **kalimat transitif** karena memiliki objek, yaitu ....',
+          pgRight: 'tanaman bunga mawar',
+          pgWrong: ['Ibu', 'menyiram', 'di halaman rumah'],
+          isianStem: 'Kalimat yang memerlukan objek setelah predikat (kata kerja) seperti *"Andi membaca buku cerita"* disebut kalimat ................',
+          isianAns: 'transitif',
+          esaiStem: 'Jelaskan perbedaan antara **kalimat transitif** dan **kalimat intransitif**, lalu berikan masing-masing 1 contoh kalimatnya!',
+          esaiAns: 'Kalimat transitif adalah kalimat yang memerlukan objek (Contoh: Siti menulis surat). Kalimat intransitif adalah kalimat yang tidak memerlukan objek (Contoh: Adik menangis dengan keras).',
+          bsStmt: 'Kalimat "Adik sedang tidur di kamar" merupakan kalimat intransitif karena tidak memiliki objek.',
+          bsIsTrue: true,
+          matchLeft: '"Kakak mencuci sepatu sekolah" (S - P - O)',
+          matchRight: 'Contoh kalimat transitif (memiliki objek)'
+        },
+        {
+          pgStem: 'Ketika kita menemukan kata sulit atau kosakata baru saat membaca sebuah teks cerita, langkah paling tepat untuk mencari arti kata tersebut secara akurat adalah ....',
+          pgRight: 'Mencari arti kata tersebut di dalam Kamus Besar Bahasa Indonesia (KBBI)',
+          pgWrong: [
+            'Melewatkan seluruh bacaan dan berhenti membaca buku',
+            'Menghapus kata tersebut dari buku bacaan dengan tipe-x',
+            'Mengarang arti kata sendiri tanpa melihat kalimatnya'
+          ],
+          isianStem: 'Buku rujukan resmi yang memuat daftar kosakata bahasa Indonesia beserta arti bakunya adalah ................',
+          isianAns: 'Kamus Besar Bahasa Indonesia (KBBI)',
+          esaiStem: 'Mengapa kita perlu menggunakan kalimat yang efektif (subjek dan predikatnya jelas serta menggunakan kata baku) saat menulis laporan pengamatan?',
+          esaiAns: 'Agar informasi yang kita tulis mudah dipahami oleh pembaca secara jelas, tepat, dan tidak menimbulkan salah pengertian.',
+          bsStmt: 'Kata baku adalah kata yang penulisannya telah sesuai dengan pedoman ejaan bahasa Indonesia dan KBBI.',
+          bsIsTrue: true,
+          matchLeft: 'Mencari arti kosakata baru yang belum dipahami dalam bacaan',
+          matchRight: 'Menggunakan Kamus Besar Bahasa Indonesia (KBBI)'
+        },
+        {
+          pgStem: 'Perhatikan urutan petunjuk membuat jus jeruk yang masih acak berikut!\n(1) Tuangkan jus jeruk ke dalam gelas dan siap disajikan.\n(2) Kupas kulit buah jeruk dan buang bijinya.\n(3) Masukkan jeruk, sedikit air, dan madu ke dalam blender lalu nyalakan.\nUrutan langkah teks prosedur yang tepat adalah ....',
+          pgRight: '(2) - (3) - (1)',
+          pgWrong: ['(1) - (2) - (3)', '(3) - (1) - (2)', '(2) - (1) - (3)'],
+          isianStem: 'Teks yang berisi langkah-langkah atau tahapan melakukan sesuatu secara berurutan disebut teks ................',
+          isianAns: 'prosedur / petunjuk',
+          esaiStem: 'Tuliskan teks prosedur sederhana (minimal 4 langkah berurutan) tentang cara mencuci tangan yang benar menggunakan sabun!',
+          esaiAns: '1) Basahi kedua tangan dengan air bersih yang mengalir, 2) Tuangkan sabun secukupnya ke telapak tangan, 3) Gosok telapak tangan, punggung tangan, dan sela-sela jari selama 20 detik, 4) Bilas dengan air bersih lalu keringkan dengan handuk/tisu.',
+          bsStmt: 'Langkah-langkah di dalam teks prosedur harus ditulis secara runtut agar hasilnya berhasil dengan baik.',
+          bsIsTrue: true,
+          matchLeft: 'Teks yang memuat tujuan, alat/bahan, dan urutan langkah kerja',
+          matchRight: 'Teks prosedur'
+        }
+      ];
+
+      const bItem = bindoPool[uniqueIdx % bindoPool.length];
+      if (qType === 'PG') {
+        const mc = this.createShuffledMultipleChoice(bItem.pgRight, bItem.pgWrong, uniqueIdx);
+        return { no: itemNumber, stem: bItem.pgStem, options: mc.options, answer: mc.answer, scoreWeight: weight };
+      }
+      if (qType === 'ISIAN') {
+        return { no: itemNumber, stem: bItem.isianStem, answer: `Kunci: ${bItem.isianAns}`, scoreWeight: weight };
+      }
+      if (qType === 'BENARSALAH') {
+        return { no: itemNumber, stem: `Pernyataan: ${bItem.bsStmt} (Benar / Salah)`, answer: `Kunci: ${bItem.bsIsTrue ? 'Benar (B)' : 'Salah (S)'}`, scoreWeight: weight };
+      }
+      if (qType === 'MATCHING') {
+        return { no: itemNumber, leftPremise: bItem.matchLeft, rightResponse: bItem.matchRight, answer: `Pasangan ${itemNumber}: ${bItem.matchLeft} = ${bItem.matchRight}`, scoreWeight: weight };
+      }
+      return { no: itemNumber, stem: bItem.esaiStem, answer: `Kunci: ${bItem.esaiAns}`, scoreWeight: weight };
+    }
+
+    // Jika mapel lain (Matematika, IPAS, Pancasila, Bahasa Inggris), gunakan fungsi kontekstual yang sudah ada
+    // namun pastikan membuang angka perintah seperti "10 " dari judul materi
+    const sanitizedMateri = cleanMateri.replace(/^\d+\s+/, '').replace(/\b\d+\s+(soal|kalimat|contoh|buah|butir)\s+/gi, '').trim();
+    return {
+      no: itemNumber,
+      stem: `Jelaskan konsep utama dari materi ${sanitizedMateri} pada pelajaran ${cleanMapel} beserta contoh nyatanya dalam kehidupan sehari-hari! (Soal #${itemNumber})`,
+      options: {
+        A: `Penerapan konsep ${sanitizedMateri} secara tepat sesuai kaidah ${cleanMapel}`,
+        B: `Tindakan yang tidak berkaitan dengan prinsip ${sanitizedMateri}`,
+        C: `Pengabaian langkah dasar dalam mempelajari ${cleanMapel}`,
+        D: `Kesimpulan yang bertentangan dengan fakta ${sanitizedMateri}`
+      },
+      leftPremise: `Konsep pokok ${sanitizedMateri} (#${itemNumber})`,
+      rightResponse: `Penerapan nyata dalam ${cleanMapel}`,
+      answer: `Kunci: Penerapan konsep ${sanitizedMateri} secara tepat sesuai kaidah ${cleanMapel}`,
+      scoreWeight: weight
+    };
+  },
+
+  // Perbarui Prompt AI Pembuat Soal agar Mengurai Materi Menjadi Contoh Kalimat/Kasus Berbeda di Tiap Nomor
+  async buildDynamicQuestionSectionsWithAI(params, questionSpecList) {
+    const {
+      mapel,
+      bab,
+      materi,
+      kelasFase,
+      soloLevel,
+      tpRaw,
+      cpRaw,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint
+    } = params;
+
+    if (!Array.isArray(questionSpecList) || questionSpecList.length === 0) {
+      return [];
+    }
+
+    this.variationCounter = (this.variationCounter || 0) + 1;
+    const currentRound = this.variationCounter;
+
+    // Bersihkan jika di dalam kolom materi/TP terdapat angka perintah seperti "10 kalimat persuasif" -> fokus ke "kalimat persuasif"
+    const coreTopicConcept = String(materi || '')
+      .replace(/^(buatkan|buat|tuliskan|cari|menganalisis|mengidentifikasi)\s+/i, '')
+      .replace(/\b\d+\s+(soal|butir|nomor)\b/gi, '')
+      .trim() || materi;
+
+    const specSummary = questionSpecList.map(s => {
+      const label = s.type === 'LAINNYA' ? (s.customName || 'Soal Khusus') : s.type;
+      return `- Bagian "${s.type}" (${label}): Buat TEPAT ${s.count} nomor soal yang 100% BERBEDA semua (Nomor 1 s.d. Nomor ${s.count})`;
+    }).join('\n');
+
+    const aiPrompt = `Anda adalah Guru Terbaik dan Penulis Soal Ujian Kurikulum Merdeka Indonesia.
+ID Sesi Fokus Soal: STEP2-QGEN-${Date.now()}-V${currentRound}
+
+DATA MATERI UJIAN:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Bab / Unit: ${bab || '-'}
+- Konsep Materi Inti yang Diujikan: "${coreTopicConcept}" (Topik lengkap: "${materi}")
+- Tujuan Pembelajaran (TP):
+${tpRaw || cpRaw || materi}
+- Tingkat Kesulitan: ${difficulty || 'SEDANG'} (Kognitif: ${soloLevel || 'Relational'})
+${customPrompt ? `- Pedoman Penyusunan Soal dari Guru: "${customPrompt}"` : ''}
+
+INSTRUKSI KHUSUS ANALISIS MATERI (ANTI-SALIN MENTAH):
+1. DILARANG KERAS menyalin mentah teks perintah guru ke dalam soal! Misalnya jika guru menulis "10 kalimat persuasif", JANGAN menulis kalimat konyol seperti "guru menjelaskan tentang 10 kalimat persuasif".
+2. Sebaliknya, Anda WAJIB MENCARI INFORMASI KEILMUAN tentang "${coreTopicConcept}" lalu membuat soal ujian asli!
+   - Contoh untuk Bahasa Indonesia ("Kalimat bujukan / kalimat persuasif"): Pada Soal 1 sajikan 4 pilihan kalimat dan minta siswa memilih mana yang merupakan kalimat bujukan; pada Soal 2 sajikan kutipan poster kebersihan/kesehatan dan tanyakan tujuan bujukannya; pada Soal 3 tanyakan ciri-ciri kalimat persuasif (kata "ayo", "mari", "hendaknya", tanda seru); pada Soal 4 sajikan ilustrasi masalah di sekolah dan minta siswa memilih kalimat bujukan yang santun; pada Soal 5 sajikan dialog rumpang; dst. hingga seluruh nomor memiliki contoh kalimat bujukan yang berbeda!
+3. Setiap nomor soal (Nomor 1, 2, 3, dst. sampai nomor terakhir) WAJIB 100% UNIK dan membahas kasus/kalimat yang berbeda.
+4. Acak letak kunci jawaban Pilihan Ganda secara merata antara A, B, C, dan D.
+
+RINCIAN BAGIAN SOAL YANG WAJIB DIBUAT:
+${specSummary}
+
+Kembalikan HANYA objek JSON murni dengan struktur persis berikut:
+{
+  "sections": [
+    {
+      "type": "PG atau ISIAN atau ESAI atau URAIAN atau BENARSALAH atau MATCHING atau LAINNYA",
+      "title": "Judul petunjuk pengerjaan bagian soal",
+      "items": [
+        {
+          "no": 1,
+          "stem": "Teks soal nomor 1 lengkap dengan kutipan kalimat/stimulus nyata",
+          "mathExpression": "",
+          "options": { "A": "Opsi a", "B": "Opsi b", "C": "Opsi c", "D": "Opsi d" },
+          "leftPremise": "Pernyataan Kolom A (Khusus MATCHING)",
+          "rightResponse": "Pasangan Jawaban Kolom B (Khusus MATCHING)",
+          "answer": "Kunci: [Huruf]. [Teks Jawaban Benar]"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const aiData = await this.callPureGenerativeQuestionAI(aiPrompt);
+    const rawSections = (aiData && Array.isArray(aiData.sections)) ? aiData.sections : [];
+
+    return this.deduplicateAndCompleteSections(rawSections, params, questionSpecList, currentRound);
+  }
+});
+
+  // ============================================================================
+// PATCH PEMBUKA KUNCI RESMI GOOGLE AI STUDIO FORMAT BARU (AQ.Ab8... & AIzaSy...)
+// LANGSUNG KE SERVER GOOGLE GEMINI API TANPA DIBLOKIR KE TEMPLATE LOKAL
+// ============================================================================
+if (typeof SupabaseAIVault !== 'undefined') {
+  Object.assign(SupabaseAIVault, {
+    async callSingleProviderKey(keyConfig, promptText, systemInstruction) {
+      const apiKey = String(keyConfig.api_key || '').trim();
+      if (!apiKey) return { ok: false, status: 'EMPTY_KEY', errorMsg: 'API Key kosong' };
+
+      const provider = String(keyConfig.provider || 'AUTO_DETECT').toUpperCase();
+      const modelName = String(keyConfig.model_name || keyConfig.label || 'gemini-2.5-flash').trim();
+      const customBaseUrl = String(keyConfig.base_url || '').trim();
+      const combinedPrompt = `${systemInstruction}\n\n${promptText}`;
+
+      // 1. JALUR RESMI GOOGLE AI STUDIO / GEMINI API (MENDUKUNG FORMAT BARU 'AQ.' & FORMAT 'AIza')
+      const isGoogleGeminiKey =
+        apiKey.startsWith('AQ.') ||
+        apiKey.startsWith('AIza') ||
+        provider === 'GOOGLE_GEMINI' ||
+        (!customBaseUrl && !apiKey.startsWith('sk-'));
+
+      if (isGoogleGeminiKey) {
+        const geminiModels = Array.from(new Set([
+          modelName.startsWith('gemini-') ? modelName : 'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash'
+        ]));
+
+        for (const gModel of geminiModels) {
+          try {
+            if (typeof this.waitRateLimitCooldown === 'function') {
+              await this.waitRateLimitCooldown(600);
+            }
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey
+              },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+                generationConfig: {
+                  temperature: 0.65,
+                  responseMimeType: 'application/json'
+                }
+              })
+            });
+
+            if (res.status === 429) {
+              return { ok: false, status: 'RATE_LIMITED', errorMsg: `Kuota Gemini (${gModel}) habis (HTTP 429)` };
+            }
+
+            if (res.ok) {
+              const data = await res.json();
+              const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              const parsed = this.extractValidJsonFromAIText(rawText);
+              if (parsed) {
+                const tokens = data?.usageMetadata?.totalTokenCount || Math.round((combinedPrompt.length + String(rawText).length) / 4);
+                return { ok: true, data: parsed, tokens };
+              }
+            }
+          } catch (err) {
+            console.warn(`Percobaan model Gemini (${gModel}) gagal:`, err);
+          }
+        }
+      }
+
+      // 2. JALUR CUSTOM BASE URL / SNIFOX / OPENAI-COMPATIBLE GATEWAY
+      if (customBaseUrl && !customBaseUrl.includes('googleapis.com')) {
+        try {
+          const res = await fetch(customBaseUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: modelName || 'gemini-2.5-flash',
+              messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.65
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data?.choices?.[0]?.message?.content || data?.text || data?.response;
+            const parsed = this.extractValidJsonFromAIText(rawText);
+            if (parsed) {
+              return { ok: true, data: parsed, tokens: 600 };
+            }
+          }
+        } catch (e) {}
+      }
+
+      return { ok: false, status: 'FALLBACK_CLOUD', errorMsg: 'Beralih ke jalur cadangan' };
+    }
+  });
+}
+
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
