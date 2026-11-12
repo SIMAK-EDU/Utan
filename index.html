@@ -35839,6 +35839,1145 @@ if (typeof TeacherApp !== 'undefined') {
   });
 }
 
+    // ============================================================================
+// PATCH UPGRADE MANDAT VISI-MISI KEPALA SEKOLAH & GURU KELAS:
+// 1. ISOLASI PENILAIAN PER KELAS/GURU (GURU A != GURU B SESUAI SISWA MASING-MASING)
+// 2. AKUMULASI OTOMATIS KELAS 1-6 (ATAU KELAS YANG ADA DI LINGKUP SEKOLAH SAMA)
+// 3. DESAIN COMPACT EXECUTIVE STRIP & COLLAPSIBLE PANEL PADA HALAMAN GURU KELAS
+// ============================================================================
+
+// 1. Injeksi CSS Khusus Tampilan Compact & Profesional pada Panel Mandat Guru Kelas
+(function injectCompactMandateStyles() {
+  if (document.getElementById('simak-compact-mandate-styles')) return;
+  const styleEl = document.createElement('style');
+  styleEl.id = 'simak-compact-mandate-styles';
+  styleEl.textContent = `
+    #teacher-mandate-container {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      border-left: 5px solid #2563eb !important;
+      padding: 1rem 1.25rem !important;
+      margin-bottom: 1.25rem !important;
+      box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06) !important;
+    }
+    #teacher-mandate-container .card-header {
+      padding-bottom: 0.75rem !important;
+      margin-bottom: 0.85rem !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    #teacher-mandate-list {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)) !important;
+      gap: 0.85rem !important;
+      max-height: 310px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+    .compact-mandate-card {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.6rem;
+      transition: all 0.18s ease;
+    }
+    .compact-mandate-card:hover {
+      background: #ffffff;
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+    }
+    .compact-mandate-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.65rem;
+    }
+    .compact-mandate-title {
+      font-size: 0.94rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.3;
+      margin-bottom: 0.15rem;
+    }
+    .compact-mandate-sub {
+      font-size: 0.76rem;
+      color: #64748b;
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .compact-mandate-metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem;
+    }
+    .compact-metric-box {
+      display: flex;
+      flex-direction: column;
+    }
+    .compact-metric-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+    }
+    .compact-metric-val {
+      font-size: 0.95rem;
+      font-weight: 900;
+    }
+    .compact-mandate-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+    }
+    .compact-mini-bar-wrap {
+      flex: 1;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .compact-mini-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+      border-radius: 999px;
+      transition: width 0.35s ease;
+    }
+    .class-breakdown-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.73rem;
+      font-weight: 700;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #1e293b;
+    }
+    .class-breakdown-chip.active-filled {
+      background: #ecfdf5;
+      border-color: #6ee7b7;
+      color: #065f46;
+    }
+  `;
+  document.head.appendChild(styleEl);
+})();
+
+// 2. Engine Kalkulasi Isolasi Per-Kelas (Guru A != Guru B) & Akumulasi Kelas 1-6 Se-Sekolah
+const SchoolMandateAccumulator = {
+  isCollapsed: false,
+
+  // Standarisasi kode kelas (KELAS 1 s.d. KELAS 6)
+  normalizeClassCode(rawClassStr) {
+    return SchoolNormalizer.normalizeClassName(rawClassStr || 'KELAS 1');
+  },
+
+  // Mendapatkan seluruh daftar Kelas (1-6) yang ADA/TERDAFTAR pada sekolah yang sama
+  getExistingSchoolClasses(schoolKey) {
+    const classMap = new Map();
+
+    // 1. Pindai dari akun Guru Kelas aktif di sekolah tersebut
+    const accounts = (DB.data && Array.isArray(DB.data.accounts)) ? DB.data.accounts : [];
+    accounts.forEach(acc => {
+      if (!acc || acc.schoolKey !== schoolKey) return;
+      if (acc.role === 'GURU_KELAS') {
+        const cKey = this.normalizeClassCode(acc.kelasFase);
+        const bucket = DB.getClassBucket(schoolKey, cKey);
+        const stdList = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+        classMap.set(cKey, {
+          unitKey: cKey,
+          classKey: cKey,
+          label: cKey,
+          teacherId: acc.id,
+          teacherName: acc.nama,
+          role: 'GURU_KELAS',
+          studentCount: stdList.length,
+          bucket
+        });
+      }
+    });
+
+    // 2. Pindai juga dari bucket classes yang sudah memiliki data siswa di sekolah tersebut
+    const allBuckets = (DB.data && DB.data.classes) ? DB.data.classes : {};
+    Object.values(allBuckets).forEach(b => {
+      if (!b || b.schoolKey !== schoolKey) return;
+      const cKey = this.normalizeClassCode(b.classKey || b.kelasFaseLabel);
+      if (!classMap.has(cKey)) {
+        const stdList = Array.isArray(b.students) ? b.students : [];
+        if (stdList.length > 0) {
+          classMap.set(cKey, {
+            unitKey: cKey,
+            classKey: cKey,
+            label: cKey,
+            teacherId: null,
+            teacherName: 'Wali ' + cKey,
+            role: 'GURU_KELAS',
+            studentCount: stdList.length,
+            bucket: b
+          });
+        }
+      }
+    });
+
+    // Urutkan mulai dari KELAS 1 sampai KELAS 6
+    return Array.from(classMap.values()).sort((a, b) => a.classKey.localeCompare(b.classKey, 'id', { numeric: true }));
+  },
+
+  // Menentukan daftar unit kelas/guru yang menjadi cakupan akumulasi suatu program misi di sekolah tersebut
+  getTargetUnitsForProgram(schoolKey, prog) {
+    const existingClasses = this.getExistingSchoolClasses(schoolKey);
+    const allTeachersInSchool = DB.getTeachersBySchool(schoolKey);
+
+    // Jika ditugaskan ke SEMUA GURU atau tidak dibatasi, akumulasikan dari semua Kelas (1-6) yang ada di sekolah itu
+    if (!prog || prog.assignMode === 'ALL' || !Array.isArray(prog.assignedTeacherIds) || prog.assignedTeacherIds.length === 0) {
+      if (existingClasses.length > 0) return existingClasses;
+    }
+
+    // Jika ditugaskan ke guru tertentu (SINGLE / SELECTED), ambil unit kelas dari guru-guru yang ditugaskan
+    const assignedIds = (prog.assignedTeacherIds || []).map(String);
+    const units = [];
+    const seenKeys = new Set();
+
+    assignedIds.forEach(tId => {
+      const tAcc = allTeachersInSchool.find(a => String(a.id) === tId);
+      if (!tAcc) return;
+
+      if (tAcc.role === 'GURU_KELAS') {
+        const cKey = this.normalizeClassCode(tAcc.kelasFase);
+        if (!seenKeys.has(cKey)) {
+          seenKeys.add(cKey);
+          const bucket = DB.getClassBucket(schoolKey, cKey);
+          const stdList = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+          units.push({
+            unitKey: cKey,
+            classKey: cKey,
+            label: cKey,
+            teacherId: tAcc.id,
+            teacherName: tAcc.nama,
+            role: 'GURU_KELAS',
+            studentCount: stdList.length,
+            bucket
+          });
+        }
+      } else {
+        // Guru Mapel: menggunakan unitKey spesifik guru mapel pada kelas aktifnya
+        const activeClassKey = TeacherApp.getActiveClassKeyForUser(tAcc);
+        const uKey = `MAPEL__${tAcc.id}__${activeClassKey}`;
+        if (!seenKeys.has(uKey)) {
+          seenKeys.add(uKey);
+          const bucket = DB.getClassBucket(schoolKey, activeClassKey);
+          const stdList = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+          units.push({
+            unitKey: uKey,
+            classKey: activeClassKey,
+            label: `${tAcc.mapelDiampu || 'Mapel'} (${activeClassKey})`,
+            teacherId: tAcc.id,
+            teacherName: tAcc.nama,
+            role: 'GURU_MAPEL',
+            studentCount: stdList.length,
+            bucket
+          });
+        }
+      }
+    });
+
+    if (units.length > 0) {
+      return units.sort((a, b) => a.label.localeCompare(b.label, 'id', { numeric: true }));
+    }
+    return existingClasses;
+  },
+
+  // Mendapatkan atau menginisialisasi penyimpanan mandiri untuk 1 kelas/guru pada program tertentu
+  ensureUnitExecutionRecord(prog, unitKey) {
+    if (!prog.classExecutions || typeof prog.classExecutions !== 'object') {
+      prog.classExecutions = {};
+    }
+    if (!prog.classExecutions[unitKey] || typeof prog.classExecutions[unitKey] !== 'object') {
+      prog.classExecutions[unitKey] = {
+        agendaStatus: {},
+        studentAssessments: {},
+        updatedAt: null,
+        teacherName: ''
+      };
+    }
+    const rec = prog.classExecutions[unitKey];
+    if (!rec.agendaStatus || typeof rec.agendaStatus !== 'object') rec.agendaStatus = {};
+    if (!rec.studentAssessments || typeof rec.studentAssessments !== 'object') rec.studentAssessments = {};
+    return rec;
+  },
+
+  // Menghitung persentase bukti pilar (20%) khusus untuk 1 kelas (bucket)
+  computeBucketPillarScore(bucket, fokusPilar) {
+    if (!bucket) return 0;
+    const stdCount = Array.isArray(bucket.students) ? bucket.students.length : 0;
+    const presensiDays = Object.keys(bucket.presensi || {}).length;
+    const nilaiCount = Array.isArray(bucket.penilaian) ? bucket.penilaian.length : 0;
+    const dplCount = Object.keys(bucket.dplAssessments || {}).length;
+    const rpmCount = (Array.isArray(bucket.savedRpmModules) ? bucket.savedRpmModules.length : 0) + (bucket.rpmLastGenerated ? 1 : 0);
+    const kokuLogs = (bucket.kokurikuler && Array.isArray(bucket.kokurikuler.logbooks)) ? bucket.kokurikuler.logbooks.length : 0;
+    const kokuAssess = (bucket.kokurikuler && bucket.kokurikuler.characterAssessments) ? Object.keys(bucket.kokurikuler.characterAssessments).length : 0;
+    const ekskulCount = Array.isArray(bucket.ekskulAssessments) ? bucket.ekskulAssessments.length : 0;
+
+    const intraScore = Math.min(100, (stdCount > 0 ? 25 : 0) + Math.min(25, presensiDays * 8) + Math.min(25, nilaiCount * 10) + Math.min(15, dplCount * 15) + Math.min(10, rpmCount * 10));
+    const kokuScore = Math.min(100, (stdCount > 0 ? 25 : 0) + Math.min(40, kokuLogs * 15) + (kokuAssess > 0 ? 35 : 0));
+    const ekskulScore = Math.min(100, (stdCount > 0 ? 30 : 0) + Math.min(70, ekskulCount * 25));
+
+    if (fokusPilar === 'INTRAKURIKULER') return intraScore;
+    if (fokusPilar === 'KOKURIKULER') return kokuScore;
+    if (fokusPilar === 'EKSTRAKURIKULER') return ekskulScore;
+    return Math.round((intraScore + kokuScore + ekskulScore) / 3);
+  },
+
+  // Menghitung persentase ketercapaian SPESIFIK 1 KELAS / 1 GURU (Guru A vs Guru B dijamin berbeda!)
+  calculateSingleUnitAchievement(schoolKey, prog, unitInfo) {
+    const unitKey = unitInfo.unitKey || unitInfo.classKey;
+    const execRec = this.ensureUnitExecutionRecord(prog, unitKey);
+    const bucket = unitInfo.bucket || DB.getClassBucket(schoolKey, unitInfo.classKey);
+    const students = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+    const evalMode = prog.evaluationMode || 'CUSTOM_PREDICATE';
+
+    const agendas = Array.isArray(prog.agendas) ? prog.agendas : [];
+    const indicators = Array.isArray(prog.indicators) ? prog.indicators : [];
+
+    // 1. Komponen Agenda Kelas Ini (Bobot 40%)
+    let agendaPercent = 0;
+    let doneAgendasCount = 0;
+    if (agendas.length > 0) {
+      agendas.forEach((ag, idx) => {
+        const agKey = String(ag.id || `AG_${idx}`);
+        if (execRec.agendaStatus[agKey] && execRec.agendaStatus[agKey].done === true) {
+          doneAgendasCount++;
+        }
+      });
+      agendaPercent = Math.round((doneAgendasCount / agendas.length) * 100);
+    }
+
+    // 2. Komponen Penilaian Indikator Siswa di Kelas Ini (Bobot 40%)
+    let indicatorPercent = 0;
+    let assessedStudentsCount = 0;
+
+    if (evalMode === 'AUTO_PILLAR') {
+      indicatorPercent = this.computeBucketPillarScore(bucket, prog.fokusPilar);
+      assessedStudentsCount = students.length;
+    } else if (students.length > 0 && indicators.length > 0) {
+      let totalStudentScoreSum = 0;
+
+      students.forEach(std => {
+        const stdScores = execRec.studentAssessments[std.id];
+        if (!stdScores || typeof stdScores !== 'object') return;
+
+        let stdIndSum = 0;
+        let hasAnyInput = false;
+
+        indicators.forEach((ind, iIdx) => {
+          const rawVal = stdScores[`IND_${iIdx}`] !== undefined ? stdScores[`IND_${iIdx}`] : stdScores[iIdx];
+          if (rawVal === undefined || rawVal === null || rawVal === '') return;
+          hasAnyInput = true;
+
+          if (evalMode === 'CUSTOM_PREDICATE') {
+            const mapPred = { SB: 100, B: 85, C: 70, PB: 55 };
+            stdIndSum += (mapPred[rawVal] || 0);
+          } else if (evalMode === 'CUSTOM_CHECKLIST') {
+            stdIndSum += (rawVal === true || rawVal === 'YA' || rawVal === '1') ? 100 : 0;
+          } else if (evalMode === 'CUSTOM_SCORE') {
+            const num = parseFloat(rawVal);
+            stdIndSum += isNaN(num) ? 0 : Math.min(100, Math.max(0, num));
+          }
+        });
+
+        if (hasAnyInput) {
+          assessedStudentsCount++;
+          totalStudentScoreSum += (stdIndSum / indicators.length);
+        }
+      });
+
+      // Dibagi jumlah seluruh siswa di kelas tersebut agar adil sesuai rasio populasi kelas
+      indicatorPercent = Math.round(totalStudentScoreSum / students.length);
+    }
+
+    // 3. Komponen Bukti Aktivitas Pilar Kelas Ini (Bobot 20%)
+    const pillarPercent = this.computeBucketPillarScore(bucket, prog.fokusPilar);
+
+    // Total Capaian Kelas Ini (40% Agenda + 40% Nilai Siswa Kelas Ini + 20% Bukti Pilar Kelas Ini)
+    const totalUnitPercent = Math.min(100, Math.round(
+      (agendaPercent * 0.40) +
+      (indicatorPercent * 0.40) +
+      (pillarPercent * 0.20)
+    ));
+
+    const hasTeacherActivity = doneAgendasCount > 0 || assessedStudentsCount > 0;
+
+    return {
+      unitKey,
+      classKey: unitInfo.classKey,
+      label: unitInfo.label,
+      teacherName: unitInfo.teacherName || '-',
+      studentCount: students.length,
+      assessedStudentsCount,
+      doneAgendasCount,
+      totalAgendasCount: agendas.length,
+      agendaPercent,
+      indicatorPercent,
+      pillarPercent,
+      totalUnitPercent,
+      hasTeacherActivity,
+      updatedAt: execRec.updatedAt || null
+    };
+  },
+
+  // Menghitung AKUMULASI SEKOLAH dari semua Kelas (1-6) yang ada di sekolah yang sama
+  calculateSchoolProgramAccumulation(schoolKey, prog) {
+    const targetUnits = this.getTargetUnitsForProgram(schoolKey, prog);
+    if (targetUnits.length === 0) {
+      return {
+        schoolPercent: 0,
+        activeClassCount: 0,
+        filledClassCount: 0,
+        totalStudentsInScope: 0,
+        unitBreakdowns: [],
+        doneAgendasSummary: 0,
+        totalAgendas: (prog.agendas || []).length,
+        doneIndsSummary: 0,
+        totalInds: (prog.indicators || []).length
+      };
+    }
+
+    const breakdowns = targetUnits.map(u => this.calculateSingleUnitAchievement(schoolKey, prog, u));
+    const sumPercent = breakdowns.reduce((acc, item) => acc + item.totalUnitPercent, 0);
+    const schoolPercent = Math.round(sumPercent / breakdowns.length);
+
+    const filledClassCount = breakdowns.filter(b => b.hasTeacherActivity).length;
+    const totalStudentsInScope = breakdowns.reduce((acc, item) => acc + item.studentCount, 0);
+
+    const avgAgendaPercent = Math.round(breakdowns.reduce((a, b) => a + b.agendaPercent, 0) / breakdowns.length);
+    const avgIndPercent = Math.round(breakdowns.reduce((a, b) => a + b.indicatorPercent, 0) / breakdowns.length);
+
+    const totalAgendas = (prog.agendas || []).length;
+    const totalInds = (prog.indicators || []).length;
+
+    return {
+      schoolPercent,
+      activeClassCount: breakdowns.length,
+      filledClassCount,
+      totalStudentsInScope,
+      unitBreakdowns: breakdowns,
+      avgAgendaPercent,
+      avgIndPercent,
+      doneAgendasSummary: Math.round((avgAgendaPercent / 100) * totalAgendas),
+      totalAgendas,
+      doneIndsSummary: Math.round((avgIndPercent / 100) * totalInds),
+      totalInds
+    };
+  },
+
+  // Mendapatkan identitas unitKey untuk guru yang sedang aktif login / diinspeksi
+  getCurrentTeacherUnitInfo(user) {
+    if (!user) return null;
+    const schoolKey = user.schoolKey;
+    const activeClassKey = TeacherApp.getActiveClassKeyForUser(user);
+    const normClass = this.normalizeClassCode(activeClassKey);
+    const bucket = DB.getClassBucket(schoolKey, normClass);
+    const stdList = (bucket && Array.isArray(bucket.students)) ? bucket.students : [];
+
+    if (user.role === 'GURU_MAPEL') {
+      return {
+        unitKey: `MAPEL__${user.id}__${normClass}`,
+        classKey: normClass,
+        label: `${user.mapelDiampu || 'Mapel'} (${normClass})`,
+        teacherId: user.id,
+        teacherName: user.nama,
+        role: 'GURU_MAPEL',
+        studentCount: stdList.length,
+        bucket
+      };
+    }
+
+    return {
+      unitKey: normClass,
+      classKey: normClass,
+      label: normClass,
+      teacherId: user.id,
+      teacherName: user.nama,
+      role: 'GURU_KELAS',
+      studentCount: stdList.length,
+      bucket
+    };
+  },
+
+  toggleMandatePanelCollapse() {
+    this.isCollapsed = !this.isCollapsed;
+    const listEl = document.getElementById('teacher-mandate-list');
+    const btnEl = document.getElementById('btn-toggle-collapse-mandate');
+    if (listEl) {
+      listEl.classList.toggle('hidden', this.isCollapsed);
+    }
+    if (btnEl) {
+      btnEl.innerHTML = this.isCollapsed
+        ? '🔼 Tampilkan Daftar Mandat'
+        : '🔽 Ringkas / Sembunyikan';
+    }
+  }
+};
+
+// 3. Upgrade MandateWorkspaceApp agar Menyimpan & Membaca Data SPESIFIK Kelas/Guru Masing-Masing
+if (typeof MandateWorkspaceApp !== 'undefined') {
+  Object.assign(MandateWorkspaceApp, {
+    activeProgramId: null,
+    activeUnitInfo: null,
+
+    openWorkspace(programId) {
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(programId));
+      if (!prog) {
+        UI.showNotif('Program Tidak Ditemukan', 'Data program mandat tidak ditemukan.', 'warning');
+        return;
+      }
+
+      this.activeProgramId = prog.id;
+      this.activeUnitInfo = SchoolMandateAccumulator.getCurrentTeacherUnitInfo(user);
+      const unitInfo = this.activeUnitInfo;
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, unitInfo.unitKey);
+      execRec.teacherName = user.nama;
+
+      // Inisialisasi nilai default bagi siswa di kelas ini yang belum memiliki record penilaian
+      const students = (unitInfo.bucket && Array.isArray(unitInfo.bucket.students)) ? unitInfo.bucket.students : [];
+      const indicators = Array.isArray(prog.indicators) ? prog.indicators : [];
+      const evalMode = prog.evaluationMode || 'CUSTOM_PREDICATE';
+
+      students.forEach(std => {
+        if (!execRec.studentAssessments[std.id] || typeof execRec.studentAssessments[std.id] !== 'object') {
+          execRec.studentAssessments[std.id] = {};
+        }
+      });
+
+      this.renderWorkspaceModalContent(user.schoolKey, prog, unitInfo, execRec, students, indicators, evalMode);
+
+      const modal = document.getElementById('modal-teacher-mandate-workspace');
+      if (modal) modal.classList.remove('hidden');
+    },
+
+    renderWorkspaceModalContent(schoolKey, prog, unitInfo, execRec, students, indicators, evalMode) {
+      const unitStats = SchoolMandateAccumulator.calculateSingleUnitAchievement(schoolKey, prog, unitInfo);
+      const schoolStats = SchoolMandateAccumulator.calculateSchoolProgramAccumulation(schoolKey, prog);
+
+      const modeLabels = {
+        CUSTOM_PREDICATE: 'Instrumen: Predikat Sikap (SB / B / C / PB)',
+        CUSTOM_CHECKLIST: 'Instrumen: Ceklis Keterlaksanaan (Ya / Tidak)',
+        CUSTOM_SCORE: 'Instrumen: Skor Capaian (0 - 100)',
+        AUTO_PILLAR: 'Otomatis dari Bukti Pilar Akademik'
+      };
+
+      const modeBadge = document.getElementById('mandate-ws-evalmode-badge');
+      const achBadge = document.getElementById('mandate-ws-achievement-badge');
+      const titleEl = document.getElementById('mandate-ws-title');
+      const subEl = document.getElementById('mandate-ws-subtitle');
+      const descEl = document.getElementById('mandate-ws-method-desc');
+      const classLabelEl = document.getElementById('mandate-ws-class-label');
+
+      if (modeBadge) modeBadge.textContent = modeLabels[evalMode] || 'Instrumen Dinamis';
+      if (achBadge) {
+        achBadge.textContent = `Capaian ${unitInfo.label}: ${unitStats.totalUnitPercent}% | Akumulasi Sekolah (${schoolStats.activeClassCount} Kelas): ${schoolStats.schoolPercent}%`;
+      }
+      if (titleEl) titleEl.textContent = prog.title || 'Program Misi Sekolah';
+      if (subEl) subEl.textContent = `Guru Penanggung Jawab: ${unitInfo.teacherName} (${unitInfo.label} — ${students.length} Siswa) | Strategi: ${prog.strategy || '-'}`;
+      if (descEl) {
+        descEl.innerHTML = `
+          <div>${UI.escapeHtml(prog.assessmentMethodDesc || 'Lakukan penilaian indikator siswa di kelas Anda serta centang agenda yang telah terlaksana.')}</div>
+          <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #93c5fd; font-size: 0.8rem; color: #1e40af;">
+            <strong>📊 Rumus Akumulasi Sekolah:</strong> Penilaian yang Anda simpan pada lembar ini khusus menghitung ketercapaian <strong>${UI.escapeHtml(unitInfo.label)} (${students.length} Siswa)</strong>, kemudian diakumulasikan secara proporsional dengan kelas lain (Kelas 1–6) yang terdaftar di <strong>${UI.escapeHtml(unitInfo.bucket?.schoolDisplay || schoolKey)}</strong>.
+          </div>
+        `;
+      }
+      if (classLabelEl) {
+        classLabelEl.textContent = `${unitInfo.label} — ${students.length} Siswa (${unitInfo.teacherName})`;
+      }
+
+      // Render Bagian 1: Ceklis Agenda Khusus Kelas/Guru Ini
+      const agendasContainer = document.getElementById('mandate-ws-agendas-list');
+      const agendas = Array.isArray(prog.agendas) ? prog.agendas : [];
+      if (agendasContainer) {
+        if (agendas.length === 0) {
+          agendasContainer.innerHTML = `<div class="alert-box alert-info" style="margin-top:0;">Belum ada rincian agenda pada program ini.</div>`;
+        } else {
+          agendasContainer.innerHTML = agendas.map((ag, idx) => {
+            const agKey = String(ag.id || `AG_${idx}`);
+            const st = execRec.agendaStatus[agKey] || { done: false, note: '' };
+            const safeAgKey = agKey.replace(/'/g, "\\'");
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem; background: ${st.done ? '#f0fdf4' : '#ffffff'}; border: 1px solid ${st.done ? '#86efac' : '#cbd5e1'}; border-radius: 8px; padding: 0.65rem 0.9rem; margin-bottom: 0.5rem;">
+                <label style="display: flex; align-items: center; gap: 0.6rem; font-size: 0.86rem; font-weight: 700; color: var(--dark); cursor: pointer; flex: 1; min-width: 240px;">
+                  <input type="checkbox" style="width: 18px; height: 18px;" ${st.done ? 'checked' : ''} onchange="MandateWorkspaceApp.toggleUnitAgenda('${safeAgKey}', this.checked)">
+                  <span>${idx + 1}. ${UI.escapeHtml(ag.text || '-')}</span>
+                </label>
+                <input
+                  type="text"
+                  class="form-control"
+                  style="max-width: 320px; font-size: 0.8rem; padding: 0.35rem 0.65rem;"
+                  placeholder="Catatan bukti pelaksanaan di ${UI.escapeHtml(unitInfo.label)}..."
+                  value="${UI.escapeHtml(st.note || '')}"
+                  onchange="MandateWorkspaceApp.updateUnitAgendaNote('${safeAgKey}', this.value)"
+                >
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // Render Tombol Quick-Fill di Bagian 2
+      const quickBar = document.getElementById('mandate-ws-quickfill-bar');
+      if (quickBar) {
+        if (evalMode === 'CUSTOM_PREDICATE') {
+          quickBar.innerHTML = `
+            <button type="button" class="btn btn-success btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents('SB')">Set Semua SB (100%)</button>
+            <button type="button" class="btn btn-primary btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents('B')">Set Semua B (85%)</button>
+            <button type="button" class="btn btn-warning btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents('C')">Set Semua C (70%)</button>
+          `;
+        } else if (evalMode === 'CUSTOM_CHECKLIST') {
+          quickBar.innerHTML = `
+            <button type="button" class="btn btn-success btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents('YA')">☑️ Centang Semua Siswa Terlaksana (Ya)</button>
+          `;
+        } else if (evalMode === 'CUSTOM_SCORE') {
+          quickBar.innerHTML = `
+            <button type="button" class="btn btn-primary btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents(85)">Isi Skor Seragam 85</button>
+            <button type="button" class="btn btn-success btn-sm" onclick="MandateWorkspaceApp.quickFillAllStudents(95)">Isi Skor Seragam 95</button>
+          `;
+        } else {
+          quickBar.innerHTML = `<span class="badge badge-info">Dihitung Otomatis dari Data Pilar ${UI.escapeHtml(unitInfo.label)}</span>`;
+        }
+      }
+
+      // Render Tabel Penilaian Siswa Khusus Kelas Ini
+      const thead = document.getElementById('thead-mandate-ws-students');
+      const tbody = document.getElementById('tbody-mandate-ws-students');
+      if (!thead || !tbody) return;
+
+      if (evalMode === 'AUTO_PILLAR') {
+        thead.innerHTML = `<tr><th>Informasi Integrasi Otomatis Pilar (${UI.escapeHtml(unitInfo.label)})</th></tr>`;
+        tbody.innerHTML = `
+          <tr>
+            <td style="padding: 1.25rem; background: #f0fdf4; color: #166534; font-weight: 600;">
+              ✓ Program ini menggunakan mode <strong>Otomatis dari Data Pilar</strong>. Capaian untuk <strong>${UI.escapeHtml(unitInfo.label)}</strong> dihitung otomatis sebesar <strong>${unitStats.pillarPercent}%</strong> dari rekam presensi, penilaian akademik, DPL, modul RPM, kokurikuler, dan ekstrakurikuler di kelas Anda.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 48px;">No</th>
+          <th style="min-width: 185px;">Nama Siswa (${UI.escapeHtml(unitInfo.label)})</th>
+          ${indicators.map((ind, idx) => `<th style="min-width: 190px;">Indikator ${idx + 1}:<br><span style="font-weight: 600; font-size: 0.76rem; color: var(--text-muted); white-space: normal;">${UI.escapeHtml(ind.text || '-')}</span></th>`).join('')}
+        </tr>
+      `;
+
+      if (students.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${indicators.length + 2}" style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+              Belum ada siswa terdaftar di <strong>${UI.escapeHtml(unitInfo.label)}</strong>. Tambahkan siswa terlebih dahulu pada menu <strong>1. Data Kelas</strong> agar Anda dapat menilai indikator mandat ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = students.map((std, sIdx) => {
+        const stdRec = execRec.studentAssessments[std.id] || {};
+        const safeStdId = String(std.id).replace(/'/g, "\\'");
+
+        const colsHtml = indicators.map((ind, iIdx) => {
+          const indKey = `IND_${iIdx}`;
+          const currentVal = stdRec[indKey] !== undefined ? stdRec[indKey] : (stdRec[iIdx] !== undefined ? stdRec[iIdx] : '');
+
+          if (evalMode === 'CUSTOM_PREDICATE') {
+            const opts = [
+              { v: '', l: '-- Pilih Capaian --' },
+              { v: 'SB', l: 'SB — Sangat Baik (100)' },
+              { v: 'B', l: 'B — Baik (85)' },
+              { v: 'C', l: 'C — Cukup (70)' },
+              { v: 'PB', l: 'PB — Perlu Bimbingan (55)' }
+            ];
+            return `
+              <td>
+                <select class="form-control" style="padding: 0.35rem 0.55rem; font-size: 0.82rem; font-weight: 700;" onchange="MandateWorkspaceApp.updateUnitStudentScore('${safeStdId}', '${indKey}', this.value)">
+                  ${opts.map(o => `<option value="${o.v}" ${String(currentVal) === o.v ? 'selected' : ''}>${o.l}</option>`).join('')}
+                </select>
+              </td>
+            `;
+          }
+
+          if (evalMode === 'CUSTOM_CHECKLIST') {
+            const isChecked = currentVal === true || currentVal === 'YA' || currentVal === '1';
+            return `
+              <td>
+                <label style="display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.83rem; font-weight: 700; cursor: pointer;">
+                  <input type="checkbox" style="width: 17px; height: 17px;" ${isChecked ? 'checked' : ''} onchange="MandateWorkspaceApp.updateUnitStudentScore('${safeStdId}', '${indKey}', this.checked ? 'YA' : 'TIDAK')">
+                  <span>${isChecked ? 'Terlaksana (Ya)' : 'Belum'}</span>
+                </label>
+              </td>
+            `;
+          }
+
+          return `
+            <td>
+              <input
+                type="number"
+                class="form-control"
+                min="0"
+                max="100"
+                style="width: 95px; font-weight: 700; text-align: center;"
+                placeholder="0-100"
+                value="${UI.escapeHtml(currentVal)}"
+                oninput="MandateWorkspaceApp.updateUnitStudentScore('${safeStdId}', '${indKey}', this.value)"
+              >
+            </td>
+          `;
+        }).join('');
+
+        return `
+          <tr>
+            <td>${sIdx + 1}</td>
+            <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+            ${colsHtml}
+          </tr>
+        `;
+      }).join('');
+    },
+
+    toggleUnitAgenda(agendaKey, isDone) {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, this.activeUnitInfo.unitKey);
+      if (!execRec.agendaStatus[agendaKey]) execRec.agendaStatus[agendaKey] = { done: false, note: '' };
+      execRec.agendaStatus[agendaKey].done = Boolean(isDone);
+      execRec.updatedAt = new Date().toISOString();
+
+      const students = (this.activeUnitInfo.bucket && Array.isArray(this.activeUnitInfo.bucket.students)) ? this.activeUnitInfo.bucket.students : [];
+      this.renderWorkspaceModalContent(user.schoolKey, prog, this.activeUnitInfo, execRec, students, prog.indicators || [], prog.evaluationMode || 'CUSTOM_PREDICATE');
+    },
+
+    updateUnitAgendaNote(agendaKey, noteText) {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, this.activeUnitInfo.unitKey);
+      if (!execRec.agendaStatus[agendaKey]) execRec.agendaStatus[agendaKey] = { done: false, note: '' };
+      execRec.agendaStatus[agendaKey].note = String(noteText || '').trim();
+      execRec.updatedAt = new Date().toISOString();
+    },
+
+    markAllAgendasDone(isDone = true) {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, this.activeUnitInfo.unitKey);
+      (prog.agendas || []).forEach((ag, idx) => {
+        const agKey = String(ag.id || `AG_${idx}`);
+        if (!execRec.agendaStatus[agKey]) execRec.agendaStatus[agKey] = { done: false, note: '' };
+        execRec.agendaStatus[agKey].done = Boolean(isDone);
+      });
+      execRec.updatedAt = new Date().toISOString();
+
+      const students = (this.activeUnitInfo.bucket && Array.isArray(this.activeUnitInfo.bucket.students)) ? this.activeUnitInfo.bucket.students : [];
+      this.renderWorkspaceModalContent(user.schoolKey, prog, this.activeUnitInfo, execRec, students, prog.indicators || [], prog.evaluationMode || 'CUSTOM_PREDICATE');
+    },
+
+    updateUnitStudentScore(studentId, indKey, newValue) {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, this.activeUnitInfo.unitKey);
+      if (!execRec.studentAssessments[studentId]) execRec.studentAssessments[studentId] = {};
+      execRec.studentAssessments[studentId][indKey] = newValue;
+      execRec.updatedAt = new Date().toISOString();
+
+      const unitStats = SchoolMandateAccumulator.calculateSingleUnitAchievement(user.schoolKey, prog, this.activeUnitInfo);
+      const schoolStats = SchoolMandateAccumulator.calculateSchoolProgramAccumulation(user.schoolKey, prog);
+      const achBadge = document.getElementById('mandate-ws-achievement-badge');
+      if (achBadge) {
+        achBadge.textContent = `Capaian ${this.activeUnitInfo.label}: ${unitStats.totalUnitPercent}% | Akumulasi Sekolah (${schoolStats.activeClassCount} Kelas): ${schoolStats.schoolPercent}%`;
+      }
+    },
+
+    quickFillAllStudents(fillValue) {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const execRec = SchoolMandateAccumulator.ensureUnitExecutionRecord(prog, this.activeUnitInfo.unitKey);
+      const students = (this.activeUnitInfo.bucket && Array.isArray(this.activeUnitInfo.bucket.students)) ? this.activeUnitInfo.bucket.students : [];
+      const indicators = Array.isArray(prog.indicators) ? prog.indicators : [];
+
+      students.forEach(std => {
+        if (!execRec.studentAssessments[std.id]) execRec.studentAssessments[std.id] = {};
+        indicators.forEach((_, iIdx) => {
+          execRec.studentAssessments[std.id][`IND_${iIdx}`] = fillValue;
+        });
+      });
+      execRec.updatedAt = new Date().toISOString();
+
+      this.renderWorkspaceModalContent(user.schoolKey, prog, this.activeUnitInfo, execRec, students, indicators, prog.evaluationMode || 'CUSTOM_PREDICATE');
+    },
+
+    async saveMandateExecution() {
+      if (AppState.isReadOnlyInspection) return;
+      const user = TeacherApp.getEffectiveTeacherUser();
+      if (!user || !this.activeProgramId || !this.activeUnitInfo) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const prog = (vData.programs || []).find(p => String(p.id) === String(this.activeProgramId));
+      if (!prog) return;
+
+      const unitStats = SchoolMandateAccumulator.calculateSingleUnitAchievement(user.schoolKey, prog, this.activeUnitInfo);
+      const schoolStats = SchoolMandateAccumulator.calculateSchoolProgramAccumulation(user.schoolKey, prog);
+
+      await DB.saveImmediate();
+      TeacherApp.renderTeacherMandates(user);
+      this.closeWorkspace();
+
+      UI.showNotif(
+        'Penilaian & Realisasi Kelas Tersimpan',
+        `Capaian ${this.activeUnitInfo.label} untuk "${prog.title}" tercatat sebesar ${unitStats.totalUnitPercent}%. Total Akumulasi Sekolah (${schoolStats.activeClassCount} Kelas Aktif) kini menjadi ${schoolStats.schoolPercent}%.`,
+        'success'
+      );
+    },
+
+    closeWorkspace() {
+      const modal = document.getElementById('modal-teacher-mandate-workspace');
+      if (modal) modal.classList.add('hidden');
+    }
+  });
+}
+
+// 4. Upgrade TeacherApp.renderTeacherMandates menjadi Tampilan Compact Executive Strip & Collapsible
+if (typeof TeacherApp !== 'undefined') {
+  Object.assign(TeacherApp, {
+    renderTeacherMandates(userInput) {
+      const user = userInput || this.getEffectiveTeacherUser();
+      const container = document.getElementById('teacher-mandate-container');
+      const listEl = document.getElementById('teacher-mandate-list');
+      const countBadge = document.getElementById('teacher-mandate-count-badge');
+      if (!user || !container || !listEl) return;
+
+      const vData = DB.getSchoolVisiMisi(user.schoolKey);
+      const allPrograms = Array.isArray(vData.programs) ? vData.programs : [];
+
+      const myPrograms = allPrograms.filter(p => {
+        if (!p) return false;
+        if (p.assignMode === 'ALL') return true;
+        return Array.isArray(p.assignedTeacherIds) && p.assignedTeacherIds.map(String).includes(String(user.id));
+      });
+
+      if (myPrograms.length === 0) {
+        container.classList.add('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      const unitInfo = SchoolMandateAccumulator.getCurrentTeacherUnitInfo(user);
+
+      // Hitung rata-rata kelas guru ini & rata-rata akumulasi sekolah
+      let sumMyClass = 0;
+      let sumSchool = 0;
+      let activeClassesTotal = 1;
+
+      const cardsData = myPrograms.map((prog, idx) => {
+        const myUnitStat = SchoolMandateAccumulator.calculateSingleUnitAchievement(user.schoolKey, prog, unitInfo);
+        const schoolStat = SchoolMandateAccumulator.calculateSchoolProgramAccumulation(user.schoolKey, prog);
+        sumMyClass += myUnitStat.totalUnitPercent;
+        sumSchool += schoolStat.schoolPercent;
+        activeClassesTotal = schoolStat.activeClassCount;
+        return { prog, idx, myUnitStat, schoolStat };
+      });
+
+      const avgMyClass = Math.round(sumMyClass / myPrograms.length);
+      const avgSchool = Math.round(sumSchool / myPrograms.length);
+
+      // Perbarui Header Container Mandat agar Ringkas, Profesional, dan Memiliki Tombol Lipat (Collapse)
+      const headerEl = container.querySelector('.card-header');
+      if (headerEl) {
+        headerEl.innerHTML = `
+          <div style="flex: 1; min-width: 260px;">
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+              <span class="badge badge-primary">MANDAT VISI & MISI KEPALA SEKOLAH</span>
+              <span class="badge badge-success">Capaian ${UI.escapeHtml(unitInfo.label)}: ${avgMyClass}%</span>
+              <span class="badge badge-info">Akumulasi Sekolah (${activeClassesTotal} Kelas Aktif): ${avgSchool}%</span>
+            </div>
+            <h3 class="card-title" style="font-size: 1.02rem; margin-bottom: 0.1rem;">
+              Program Strategis Kepala Sekolah — Penanggung Jawab: ${UI.escapeHtml(user.nama)} (${UI.escapeHtml(unitInfo.label)})
+            </h3>
+            <p class="card-subtitle" style="font-size: 0.78rem; color: var(--text-muted);">
+              Penilaian dihitung mandiri sesuai daftar siswa <strong>${UI.escapeHtml(unitInfo.label)} (${unitInfo.studentCount} Siswa)</strong> lalu diakumulasikan otomatis dengan kelas lain di sekolah Anda.
+            </p>
+          </div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span id="teacher-mandate-count-badge" class="badge badge-warning" style="font-size: 0.78rem; padding: 0.35rem 0.7rem;">
+              ${myPrograms.length} Program Aktif
+            </span>
+            <button type="button" id="btn-toggle-collapse-mandate" class="btn btn-outline btn-sm" style="padding: 0.32rem 0.7rem; font-size: 0.76rem;" onclick="SchoolMandateAccumulator.toggleMandatePanelCollapse()">
+              ${SchoolMandateAccumulator.isCollapsed ? '🔼 Tampilkan Daftar Mandat' : '🔽 Ringkas / Sembunyikan'}
+            </button>
+          </div>
+        `;
+      } else if (countBadge) {
+        countBadge.textContent = `${myPrograms.length} Program Aktif`;
+      }
+
+      listEl.classList.toggle('hidden', SchoolMandateAccumulator.isCollapsed);
+
+      // Render Kartu Mandat dengan Desain Compact Executive Strip (Rapi & Tidak Memanjang ke Bawah)
+      listEl.innerHTML = cardsData.map(({ prog, idx, myUnitStat, schoolStat }) => {
+        const safeProgId = String(prog.id).replace(/'/g, "\\'");
+        const pilarBadgeMap = {
+          INTRAKURIKULER: { label: 'Intrakurikuler', cls: 'badge-primary' },
+          KOKURIKULER: { label: 'Kokurikuler (P5)', cls: 'badge-warning' },
+          EKSTRAKURIKULER: { label: 'Ekstrakurikuler', cls: 'badge-info' },
+          SEMUA_PILAR: { label: 'Semua Pilar', cls: 'badge-success' }
+        };
+        const pMeta = pilarBadgeMap[prog.fokusPilar] || pilarBadgeMap.SEMUA_PILAR;
+
+        return `
+          <div class="compact-mandate-card">
+            <div class="compact-mandate-top">
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+                  <span class="badge ${pMeta.cls}" style="font-size: 0.68rem; padding: 0.12rem 0.45rem;">Misi ${idx + 1} • ${pMeta.label}</span>
+                  <span style="font-size: 0.7rem; color: #64748b; font-weight: 600;">
+                    Agenda: ${myUnitStat.doneAgendasCount}/${myUnitStat.totalAgendasCount} • Siswa Dinilai: ${myUnitStat.assessedStudentsCount}/${myUnitStat.studentCount}
+                  </span>
+                </div>
+                <div class="compact-mandate-title" title="${UI.escapeHtml(prog.title || '')}">
+                  ${UI.escapeHtml(prog.title || 'Program Misi Sekolah')}
+                </div>
+                <div class="compact-mandate-sub" title="${UI.escapeHtml(prog.strategy || '')}">
+                  ${UI.escapeHtml(prog.strategy || 'Klik tombol Nilai & Realisasi untuk mengisi capaian kelas Anda.')}
+                </div>
+              </div>
+            </div>
+
+            <div class="compact-mandate-metrics">
+              <div class="compact-metric-box" style="border-right: 1px solid #e2e8f0; padding-right: 0.4rem;">
+                <span class="compact-metric-label">Capaian ${UI.escapeHtml(unitInfo.label)} (${unitInfo.studentCount} Siswa)</span>
+                <span class="compact-metric-val" style="color: #2563eb;">${myUnitStat.totalUnitPercent}%</span>
+              </div>
+              <div class="compact-metric-box" style="padding-left: 0.25rem;">
+                <span class="compact-metric-label">Akumulasi Sekolah (${schoolStat.activeClassCount} Kelas)</span>
+                <span class="compact-metric-val" style="color: #0f766e;">${schoolStat.schoolPercent}%</span>
+              </div>
+            </div>
+
+            <div class="compact-mandate-footer">
+              <div class="compact-mini-bar-wrap" title="Progres Kelas Anda: ${myUnitStat.totalUnitPercent}%">
+                <div class="compact-mini-bar-fill" style="width: ${myUnitStat.totalUnitPercent}%;"></div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm" style="padding: 0.32rem 0.75rem; font-size: 0.76rem; white-space: nowrap;" onclick="MandateWorkspaceApp.openWorkspace('${safeProgId}')">
+                📝 Nilai & Realisasi
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  });
+}
+
+// 5. Upgrade PrincipalApp agar Menghitung & Menampilkan Akumulasi Kelas 1-6 (atau Kelas yang Ada di Sekolah Tersebut)
+if (typeof PrincipalApp !== 'undefined') {
+  Object.assign(PrincipalApp, {
+    calculateProgramAchievement(schoolKey, prog, vData) {
+      const acc = SchoolMandateAccumulator.calculateSchoolProgramAccumulation(schoolKey, prog);
+      return {
+        percent: acc.schoolPercent,
+        doneInds: acc.doneIndsSummary,
+        totalInds: acc.totalInds,
+        doneAgendas: acc.doneAgendasSummary,
+        totalAgendas: acc.totalAgendas,
+        activeClassCount: acc.activeClassCount,
+        filledClassCount: acc.filledClassCount,
+        totalStudentsInScope: acc.totalStudentsInScope,
+        unitBreakdowns: acc.unitBreakdowns
+      };
+    },
+
+    renderKetercapaianDashboard() {
+      const user = AppState.currentUser;
+      if (!user) return;
+      const schoolKey = user.schoolKey;
+      const vData = DB.getSchoolVisiMisi(schoolKey);
+      const programs = Array.isArray(vData.programs) ? vData.programs : [];
+      const existingClasses = SchoolMandateAccumulator.getExistingSchoolClasses(schoolKey);
+
+      const visiEl = document.getElementById('ketercapaian-display-visi');
+      const narrativeEl = document.getElementById('ketercapaian-executive-summary-narrative');
+      const overallPctEl = document.getElementById('ketercapaian-overall-percent');
+      const overallPredEl = document.getElementById('ketercapaian-overall-predicate');
+      const chartsContainer = document.getElementById('ketercapaian-charts-container');
+      const tbodyDetail = document.getElementById('tbody-ketercapaian-programs-detail');
+
+      if (visiEl) visiEl.textContent = vData.visi || 'Visi Satuan Pendidikan Belum Ditetapkan';
+
+      if (programs.length === 0) {
+        if (overallPctEl) overallPctEl.textContent = '0%';
+        if (overallPredEl) overallPredEl.textContent = 'BELUM ADA PROGRAM';
+        if (narrativeEl) narrativeEl.textContent = 'Silakan rancang Visi dan Misi pada Tab 2 terlebih dahulu untuk memantau akumulasi ketercapaian kelas 1–6.';
+        if (chartsContainer) chartsContainer.innerHTML = `<div class="alert-box alert-info">Belum ada program misi sekolah yang diterbitkan.</div>`;
+        if (tbodyDetail) tbodyDetail.innerHTML = '';
+        return;
+      }
+
+      const programStats = programs.map(prog => ({
+        prog,
+        stat: this.calculateProgramAchievement(schoolKey, prog, vData)
+      }));
+
+      const overallPercent = Math.round(
+        programStats.reduce((sum, item) => sum + item.stat.percent, 0) / programStats.length
+      );
+
+      let predicate = 'PERLU PEMBINAAN (<60%)';
+      if (overallPercent >= 85) predicate = 'SANGAT TINGGI / UNGGUL (85–100%)';
+      else if (overallPercent >= 70) predicate = 'BAIK / TERCAPAI SESUAI TARGET (70–84%)';
+      else if (overallPercent >= 55) predicate = 'CUKUP / SEDANG BERKEMBANG (55–69%)';
+
+      if (overallPctEl) overallPctEl.textContent = `${overallPercent}%`;
+      if (overallPredEl) overallPredEl.textContent = predicate;
+
+      const classListNames = existingClasses.length > 0
+        ? existingClasses.map(c => `${c.label} (${c.studentCount} Siswa)`).join(', ')
+        : 'Kelas yang terdaftar';
+
+      if (narrativeEl) {
+        narrativeEl.innerHTML = `
+          Berdasarkan akumulasi data nyata dari <strong>${existingClasses.length} kelas aktif</strong> yang terdaftar di <strong>${UI.escapeHtml(user.schoolDisplay)}</strong> (${UI.escapeHtml(classListNames)}), rata-rata ketercapaian pelaksanaan <strong>${programs.length} Program Misi Sekolah</strong> saat ini mencapai <strong>${overallPercent}% (${predicate})</strong>. Setiap kelas dihitung secara proporsional berdasarkan jumlah siswanya masing-masing.
+        `;
+      }
+
+      // Render Grafik Batang + Rincian Capaian Per Kelas (Kelas 1 s.d. Kelas 6 yang ada)
+      if (chartsContainer) {
+        chartsContainer.innerHTML = programStats.map(({ prog, stat }, idx) => {
+          const breakdownHtml = (stat.unitBreakdowns || []).map(b => `
+            <span class="class-breakdown-chip ${b.totalUnitPercent > 0 ? 'active-filled' : ''}">
+              <span>🏫 ${UI.escapeHtml(b.label)} (${UI.escapeHtml(b.teacherName)} • ${b.studentCount} Siswa):</span>
+              <strong>${b.totalUnitPercent}%</strong>
+            </span>
+          `).join('');
+
+          return `
+            <div class="card" style="margin-bottom: 0; border-left: 5px solid #2563eb; padding: 1.15rem 1.35rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem;">
+                <div style="flex: 1; min-width: 250px;">
+                  <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <span class="badge badge-primary">MISI / PROGRAM ${idx + 1}</span>
+                    <span class="badge badge-info">${UI.escapeHtml(prog.fokusPilar || 'SEMUA_PILAR')}</span>
+                    <span class="badge badge-success">Akumulasi ${stat.activeClassCount} Kelas Aktif (${stat.totalStudentsInScope} Siswa)</span>
+                  </div>
+                  <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);">${UI.escapeHtml(prog.title || '-')}</h4>
+                  <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.15rem;">${UI.escapeHtml(prog.strategy || '-')}</p>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Akumulasi Sekolah</div>
+                  <div style="font-size: 1.65rem; font-weight: 900; color: var(--primary-light); line-height: 1.1;">${stat.percent}%</div>
+                </div>
+              </div>
+
+              <div class="progress-track" style="height: 20px; margin: 0.7rem 0;">
+                <div class="progress-fill" style="width: ${Math.max(6, stat.percent)}%;">${stat.percent}%</div>
+              </div>
+
+              <div style="margin-top: 0.5rem;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: var(--dark); margin-bottom: 0.35rem;">
+                  📌 Rincian Capaian Masing-Masing Kelas / Guru (Sumber Akumulasi Sekolah):
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+                  ${breakdownHtml || '<span style="font-size:0.78rem; color:var(--text-muted);">Belum ada kelas terdaftar.</span>'}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Render Tabel Matriks Detail
+      if (tbodyDetail) {
+        tbodyDetail.innerHTML = programStats.map(({ prog, stat }, idx) => {
+          const perClassSummary = (stat.unitBreakdowns || [])
+            .map(b => `<div>• <strong>${UI.escapeHtml(b.label)}</strong> (${UI.escapeHtml(b.teacherName)}, ${b.studentCount} Siswa): <strong>${b.totalUnitPercent}%</strong> <em>(Agenda: ${b.doneAgendasCount}/${b.totalAgendasCount}, Siswa Dinilai: ${b.assessedStudentsCount}/${b.studentCount})</em></div>`)
+            .join('');
+
+          const firstTeacherId = prog.assignedTeacherIds && prog.assignedTeacherIds[0]
+            ? prog.assignedTeacherIds[0]
+            : (DB.getTeachersBySchool(schoolKey)[0]?.id || '');
+          const safeTid = String(firstTeacherId).replace(/'/g, "\\'");
+
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>
+                <strong>${UI.escapeHtml(prog.title || '-')}</strong>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(prog.strategy || '')}</div>
+              </td>
+              <td><span class="badge badge-info">${UI.escapeHtml(prog.fokusPilar || 'SEMUA_PILAR')}</span></td>
+              <td>
+                <span class="badge badge-primary">${stat.activeClassCount} Kelas Diakumulasi</span>
+                <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.25rem;">Total ${stat.totalStudentsInScope} Siswa</div>
+              </td>
+              <td style="font-size: 0.8rem; line-height: 1.55;">
+                ${perClassSummary || '-'}
+              </td>
+              <td style="text-align: center;">
+                <span style="font-size: 1.2rem; font-weight: 900; color: var(--success);">${stat.percent}%</span>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Rata-rata ${stat.activeClassCount} Kelas</div>
+              </td>
+              <td class="no-print">
+                ${safeTid ? `<button type="button" class="btn btn-primary btn-sm btn-block" onclick="PrincipalApp.inspectTeacher('${safeTid}', 'dashboard')">🔍 Supervisi Guru</button>` : '-'}
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+  });
+  }
+
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
