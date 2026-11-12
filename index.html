@@ -34673,6 +34673,178 @@ Kembalikan HANYA objek JSON murni dengan struktur persis berikut:
   }
 });
 
+  // ============================================================================
+// PATCH PERBAIKAN AKSES HALAMAN KOKURIKULER (AUTO-CLEAN DUPLIKAT DOM #koku-panel-modul
+// & SAFE OPENER ANTI-MACET UNTUK SEMUA 5 TAB KOKURIKULER)
+// ============================================================================
+
+const KokuAccessFixer = {
+  // 1. Bersihkan otomatis duplikat blok <div id="koku-panel-modul"> di dalam HTML
+  cleanDuplicateKokuDomNodes() {
+    const allModPanels = document.querySelectorAll('#view-pilar-kokurikuler #koku-panel-modul');
+    if (allModPanels.length > 1) {
+      for (let i = 1; i < allModPanels.length; i++) {
+        allModPanels[i].remove();
+      }
+      console.log('Duplikat #koku-panel-modul berhasil dibersihkan otomatis.');
+    }
+
+    // Pastikan section utama Kokurikuler berada langsung di dalam #app-main-container
+    const mainContainer = document.getElementById('app-main-container');
+    const kokuSection = document.getElementById('view-pilar-kokurikuler');
+    if (mainContainer && kokuSection && kokuSection.parentElement !== mainContainer) {
+      mainContainer.appendChild(kokuSection);
+    }
+  },
+
+  // 2. Pastikan struktur objek kokurikuler pada bucket kelas selalu lengkap (anti-null error)
+  ensureKokuBucketStructure(bucket) {
+    if (!bucket) return null;
+    if (!bucket.kokurikuler || typeof bucket.kokurikuler !== 'object') {
+      bucket.kokurikuler = {};
+    }
+    if (!bucket.kokurikuler.projectInfo || typeof bucket.kokurikuler.projectInfo !== 'object') {
+      bucket.kokurikuler.projectInfo = {
+        bentuk: 'LINTAS_DISIPLIN',
+        tema: 'Gaya Hidup Berkelanjutan & Peduli Lingkungan',
+        judul: 'Projek Kolaborasi Ekosistem Sekolah Hijau',
+        alokasi: '36 JP (6 Pertemuan Efektif)',
+        tahapAktif: 'KONTEKSTUALISASI',
+        targetMingguan: 'Menguatkan Penalaran Kritis dan Komunikasi melalui observasi lingkungan sekolah',
+        fokusHarian: 'Setiap kelompok melakukan pengamatan langsung di lingkungan sekolah dan mencatat temuan pada jurnal Logbook.',
+        persiapan: 'Buku catatan observasi, alat tulis, dan perlengkapan kerja kelompok.'
+      };
+    }
+    if (!Array.isArray(bucket.kokurikuler.groups) || bucket.kokurikuler.groups.length === 0) {
+      bucket.kokurikuler.groups = [
+        { id: 'GRP_1', nama: 'Kelompok 1 - Garuda Hijau' },
+        { id: 'GRP_2', nama: 'Kelompok 2 - Nusantara Lestari' }
+      ];
+    }
+    if (!Array.isArray(bucket.kokurikuler.logbooks)) {
+      bucket.kokurikuler.logbooks = [];
+    }
+    if (!bucket.kokurikuler.characterAssessments || typeof bucket.kokurikuler.characterAssessments !== 'object') {
+      bucket.kokurikuler.characterAssessments = {};
+    }
+    if (!Array.isArray(bucket.kokurikuler.savedModules)) {
+      bucket.kokurikuler.savedModules = [];
+    }
+    return bucket.kokurikuler;
+  }
+};
+
+// 3. Perbaiki fungsi KokuApp.openKokurikuler & KokuApp.switchTab (Bebas Infinite Recursion & Anti-Crash)
+if (typeof KokuApp !== 'undefined') {
+  Object.assign(KokuApp, {
+    openKokurikuler() {
+      KokuAccessFixer.cleanDuplicateKokuDomNodes();
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) {
+        UI.showNotif('Data Kelas Belum Aktif', 'Silakan login kembali sebagai Guru untuk memuat kelas aktif.', 'warning');
+        return;
+      }
+
+      KokuAccessFixer.ensureKokuBucketStructure(bucket);
+
+      const badge = document.getElementById('koku-active-class-badge');
+      if (badge) {
+        badge.textContent = `Kelas Aktif: ${bucket.kelasFaseLabel || bucket.classKey} (${bucket.schoolDisplay})`;
+      }
+
+      // Pindahkan tampilan layar TERLEBIH DAHULU agar halaman 100% langsung terbuka!
+      UI.switchView('view-pilar-kokurikuler');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Render isi tab dengan proteksi try-catch
+      this.switchTab(AppState.kokuActiveTab || 'dashboard');
+    },
+
+    switchTab(tabName = 'dashboard') {
+      KokuAccessFixer.cleanDuplicateKokuDomNodes();
+      const validTabs = ['dashboard', 'modul', 'kelompok', 'logbook', 'penilaian'];
+      const targetTab = validTabs.includes(tabName) ? tabName : 'dashboard';
+      AppState.kokuActiveTab = targetTab;
+
+      const bucket = DB.getActiveClassBucket();
+      if (bucket) {
+        KokuAccessFixer.ensureKokuBucketStructure(bucket);
+      }
+
+      // Atur visibilitas panel dan tombol tab secara langsung tanpa memanggil wrapper rekursif
+      validTabs.forEach(t => {
+        const panelEl = document.getElementById(`koku-panel-${t}`);
+        const btnEl = document.getElementById(`btn-koku-tab-${t}`);
+        if (panelEl) {
+          if (t === targetTab) panelEl.classList.remove('hidden');
+          else panelEl.classList.add('hidden');
+        }
+        if (btnEl) {
+          if (t === targetTab) btnEl.classList.add('active-koku-tab');
+          else btnEl.classList.remove('active-koku-tab');
+        }
+      });
+
+      // Jalankan fungsi render masing-masing tab secara aman
+      try {
+        if (targetTab === 'dashboard') {
+          if (typeof this.renderDashboardTab === 'function') this.renderDashboardTab();
+          const bentuk = bucket?.kokurikuler?.projectInfo?.bentuk || 'LINTAS_DISIPLIN';
+          if (typeof this.renderAlurVisualDiagram === 'function') this.renderAlurVisualDiagram(bentuk);
+        } else if (targetTab === 'modul') {
+          if (typeof this.initPerencanaanFormDefaults === 'function') this.initPerencanaanFormDefaults(false);
+          if (typeof this.renderSavedKokuArchiveTable === 'function') this.renderSavedKokuArchiveTable();
+        } else if (targetTab === 'kelompok') {
+          if (typeof this.renderGroupsTab === 'function') this.renderGroupsTab();
+        } else if (targetTab === 'logbook') {
+          if (typeof this.renderLogbookTab === 'function') this.renderLogbookTab();
+          else if (typeof this.renderLogbookList === 'function') this.renderLogbookList();
+        } else if (targetTab === 'penilaian') {
+          if (typeof this.renderCharacterAssessmentTable === 'function') this.renderCharacterAssessmentTable();
+        }
+      } catch (err) {
+        console.warn(`Proteksi render tab Kokurikuler (${targetTab}):`, err);
+      }
+    }
+  });
+}
+
+// 4. Pastikan TeacherApp.openPillar('kokurikuler') langsung membuka halaman Kokurikuler tanpa terhambat
+if (typeof TeacherApp !== 'undefined') {
+  const _origTeacherOpenPillar = TeacherApp.openPillar ? TeacherApp.openPillar.bind(TeacherApp) : null;
+
+  Object.assign(TeacherApp, {
+    openPillar(pilarKey) {
+      if (pilarKey === 'kokurikuler') {
+        const locks = (DB.data && DB.data.pillarLocks) || {};
+        const user = AppState.currentUser;
+        const isMaster = user && user.isMasterAdmin === true;
+
+        if (locks.kokurikuler === true && !isMaster && !AppState.isReadOnlyInspection) {
+          UI.showNotif(
+            'Pilar Kokurikuler Sedang Dikunci Admin',
+            'Akses ke halaman Kokurikuler sedang dikunci oleh Administrator. Silakan buka kunci pilar melalui Halaman Admin.',
+            'warning'
+          );
+          return;
+        }
+
+        KokuApp.openKokurikuler();
+        return;
+      }
+
+      if (_origTeacherOpenPillar) {
+        _origTeacherOpenPillar(pilarKey);
+      }
+    }
+  });
+}
+
+// Jalankan pembersihan duplikat DOM Kokurikuler saat halaman pertama kali dibuka
+window.addEventListener('DOMContentLoaded', () => {
+  KokuAccessFixer.cleanDuplicateKokuDomNodes();
+});
+
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
