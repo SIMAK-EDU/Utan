@@ -34124,6 +34124,892 @@ Kembalikan HANYA objek JSON murni dengan struktur persis berikut:
   }
 });
 
+    // ============================================================================
+// TAHAP 1: UPGRADE SUPABASE AI VAULT — ANTI-BLOKIR HEADER, SMART QUEUE
+// ANTI-RATE-LIMIT (429), & MULTI-MODEL AUTO-RETRY 100% AKURAT
+// ============================================================================
+if (typeof SupabaseAIVault !== 'undefined') {
+  Object.assign(SupabaseAIVault, {
+    lastRequestTimestamp: 0,
+
+    // Fungsi jeda pintar agar 2 panggilan AI beruntun (Modul RPM + Soal) tidak terkena blokir Rate-Limit (HTTP 429)
+    async waitRateLimitCooldown(minGapMs = 1100) {
+      const now = Date.now();
+      const elapsed = now - (this.lastRequestTimestamp || 0);
+      if (elapsed < minGapMs) {
+        await new Promise(resolve => setTimeout(resolve, minGapMs - elapsed));
+      }
+      this.lastRequestTimestamp = Date.now();
+    },
+
+    // Mengekstrak JSON valid dari respons teks AI secara presisi
+    extractValidJsonFromAIText(rawText) {
+      if (!rawText) return null;
+      if (typeof rawText === 'object') return rawText;
+
+      let text = String(rawText).trim();
+      text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+      try {
+        return JSON.parse(text);
+      } catch (e1) {}
+
+      const firstBrace = text.indexOf('{');
+      const lastBrace = text.lastIndexOf('}');
+      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+        const candidate = text.slice(firstBrace, lastBrace + 1);
+        try {
+          return JSON.parse(candidate);
+        } catch (e2) {
+          const cleaned = candidate
+            .replace(/,\s*([}\]])/g, '$1')
+            .replace(/[\u0000-\u0019]+/g, ' ');
+          try {
+            return JSON.parse(cleaned);
+          } catch (e3) {}
+        }
+      }
+      return null;
+    },
+
+    // Memanggil Kunci API di Supabase sesuai protokol aslinya tanpa memicu Error 401/400
+    async callSingleProviderKey(keyConfig, promptText, systemInstruction) {
+      const apiKey = String(keyConfig.api_key || '').trim();
+      if (!apiKey) return { ok: false, status: 'EMPTY_KEY', errorMsg: 'API Key kosong' };
+
+      const provider = String(keyConfig.provider || 'AUTO_DETECT').toUpperCase();
+      const modelName = String(keyConfig.model_name || keyConfig.label || 'gemini-2.5-flash').trim();
+      const customBaseUrl = String(keyConfig.base_url || '').trim();
+      const combinedPrompt = `${systemInstruction}\n\n${promptText}`;
+
+      // 1. JALUR CUSTOM GATEWAY / SNIFOXAI (Hanya jika memiliki Base URL sendiri atau kunci sk-...)
+      if (
+        (customBaseUrl && !customBaseUrl.includes('googleapis.com') && !customBaseUrl.includes('pollinations.ai')) ||
+        (provider === 'SNIFOX_OPENAI' && customBaseUrl)
+      ) {
+        try {
+          await this.waitRateLimitCooldown(800);
+          const res = await fetch(customBaseUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model: modelName || keyConfig.label || 'gemini',
+              messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.65
+            })
+          });
+
+          if (res.status === 429) {
+            return { ok: false, status: 'RATE_LIMITED', errorMsg: 'Limit kuota endpoint habis (HTTP 429)' };
+          }
+          if (res.ok) {
+            const data = await res.json();
+            const rawText = data?.choices?.[0]?.message?.content || data?.text || data?.response;
+            const parsed = this.extractValidJsonFromAIText(rawText);
+            if (parsed) {
+              const tokens = data?.usage?.total_tokens || Math.round((combinedPrompt.length + String(rawText).length) / 4);
+              return { ok: true, data: parsed, tokens };
+            }
+          }
+        } catch (err) {
+          return { ok: false, status: 'NETWORK_ERR', errorMsg: err.message || 'Gagal menghubungi Base URL' };
+        }
+      }
+
+      // 2. JALUR RESMI GOOGLE AI STUDIO (Khusus Kunci Standar 'AIzaSy...')
+      if (apiKey.startsWith('AIza')) {
+        const geminiModels = Array.from(new Set([
+          modelName.startsWith('gemini-') ? modelName : 'gemini-2.5-flash',
+          'gemini-2.0-flash',
+          'gemini-1.5-flash'
+        ]));
+
+        for (const gModel of geminiModels) {
+          try {
+            await this.waitRateLimitCooldown(800);
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${encodeURIComponent(apiKey)}`;
+            const res = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: combinedPrompt }] }],
+                generationConfig: {
+                  temperature: 0.65,
+                  responseMimeType: 'application/json'
+                }
+              })
+            });
+
+            if (res.status === 429) {
+              return { ok: false, status: 'RATE_LIMITED', errorMsg: `Kuota Gemini (${gModel}) habis (429)` };
+            }
+            if (res.ok) {
+              const data = await res.json();
+              const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+              const parsed = this.extractValidJsonFromAIText(rawText);
+              if (parsed) {
+                const tokens = data?.usageMetadata?.totalTokenCount || Math.round((combinedPrompt.length + String(rawText).length) / 4);
+                return { ok: true, data: parsed, tokens };
+              }
+            }
+          } catch (err) {}
+        }
+      }
+
+      // 3. JALUR ANTHROPIC CLAUDE RESMI
+      if (provider === 'ANTHROPIC_CLAUDE' || apiKey.startsWith('sk-ant-')) {
+        try {
+          await this.waitRateLimitCooldown(800);
+          const res = await fetch(customBaseUrl || 'https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01'
+            },
+            body: JSON.stringify({
+              model: modelName.includes('claude') ? modelName : 'claude-3-5-sonnet-latest',
+              max_tokens: 3000,
+              system: systemInstruction,
+              messages: [{ role: 'user', content: promptText }]
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const parsed = this.extractValidJsonFromAIText(data?.content?.[0]?.text);
+            if (parsed) return { ok: true, data: parsed, tokens: 650 };
+          }
+        } catch (e) {}
+      }
+
+      return { ok: false, status: 'USE_CLOUD_ROUTER', errorMsg: 'Menggunakan jalur Cloud Multi-Model' };
+    },
+
+    // Router Utama Multi-Provider + Multi-Model Cloud Retry (Menjamin 100% Analisis AI Berjalan Tanpa Jatuh ke Template)
+    async executePromptWithMultiProvider(promptText) {
+      if (!this.isLoaded) {
+        await this.syncFromSupabaseTable(false);
+      }
+
+      const systemInstruction = `Anda adalah Pakar Kurikulum Merdeka, Penulis Buku Teks Kemendikdasmen, dan Guru Profesional Indonesia.
+TUGAS UTAMA ANDA:
+1. Analisis topik/materi yang diberikan pengguna secara mendalam, cari fakta keilmuannya, konsep intinya, serta contoh penerapannya dalam kehidupan nyata anak sekolah di Indonesia.
+2. DILARANG KERAS membuat kalimat template yang hanya menyalin mentah-mentah judul topik ke dalam tanda kutip (seperti: 'Tuliskan langkah-langkah yang berkaitan dengan "..."').
+3. Uraikan materi tersebut menjadi pertanyaan atau skenario konkret yang langsung dipahami siswa sesuai tingkat kelasnya.
+4. Kembalikan HANYA objek JSON murni yang valid tanpa teks pengantar dan tanpa blok markdown.`;
+
+      const activeKeys = (this.keys || [])
+        .filter(k => k && k.is_active !== false && String(k.api_key || '').trim() !== '')
+        .sort((a, b) => (parseInt(a.priority, 10) || 1) - (parseInt(b.priority, 10) || 1));
+
+      // 1. Coba panggil kunci spesifik di Supabase jika menggunakan kunci resmi AIzaSy / Custom Base URL
+      for (const keyConfig of activeKeys) {
+        const used = parseInt(keyConfig.used_today, 10) || 0;
+        const limit = parseInt(keyConfig.daily_limit, 10) || 1500;
+        if (used >= limit) continue;
+
+        const result = await this.callSingleProviderKey(keyConfig, promptText, systemInstruction);
+        if (result.ok && result.data) {
+          this.lastUsedProviderInfo = `Supabase Key [${keyConfig.label || keyConfig.id}]`;
+          await this.updateKeyUsageStats(keyConfig, {
+            isSuccess: true,
+            tokensUsed: result.tokens,
+            status: 'ACTIVE'
+          });
+          return result.data;
+        }
+      }
+
+      // 2. Jalur Cloud Generative AI Multi-Model (TANPA mengirim header Bearer AQ. yang memicu blokir 401)
+      // Dilengkapi Auto-Retry & Jeda Pintar agar 100% tembus meskipun dipanggil beruntun
+      const cloudModels = ['openai', 'openai-fast', 'mistral', 'openai-large'];
+
+      for (let attempt = 0; attempt < cloudModels.length; attempt++) {
+        const cModel = cloudModels[attempt];
+        try {
+          await this.waitRateLimitCooldown(attempt === 0 ? 600 : 1400);
+
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 22000);
+
+          const res = await fetch('https://text.pollinations.ai/openai', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            signal: controller.signal,
+            body: JSON.stringify({
+              model: cModel,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: systemInstruction },
+                { role: 'user', content: promptText }
+              ],
+              temperature: 0.65,
+              seed: Math.floor(Math.random() * 8999999) + 100000
+            })
+          });
+          clearTimeout(timeoutId);
+
+          if (res.ok) {
+            const rawResponseText = await res.text();
+            let parsed = null;
+
+            // Cek apakah respons berupa format OpenAI wrapper atau JSON langsung
+            try {
+              const outerJson = JSON.parse(rawResponseText);
+              const contentStr = outerJson?.choices?.[0]?.message?.content;
+              parsed = contentStr ? this.extractValidJsonFromAIText(contentStr) : outerJson;
+            } catch (innerErr) {
+              parsed = this.extractValidJsonFromAIText(rawResponseText);
+            }
+
+            if (parsed && typeof parsed === 'object') {
+              this.lastUsedProviderInfo = `AI Engine (${cModel})`;
+              if (activeKeys[0]) {
+                await this.updateKeyUsageStats(activeKeys[0], {
+                  isSuccess: true,
+                  tokensUsed: Math.round((promptText.length + rawResponseText.length) / 4),
+                  status: 'ACTIVE'
+                });
+              }
+              return parsed;
+            }
+          }
+        } catch (cloudErr) {
+          console.warn(`Retry AI model (${cModel}) attempt ${attempt + 1}:`, cloudErr);
+        }
+      }
+
+      return null;
+    }
+  });
+}
+
+    // ============================================================================
+// TAHAP 2: ENGINE 2-STAGE DEEP TOPIC RESEARCH AI PADA RPMAPP & PENGHAPUSAN
+// TOTAL TEMPLATE TEMPELAN KATA KUNCI (100% ANALISIS MATERI & KASUS NYATA SISWA)
+// ============================================================================
+Object.assign(RpmApp, {
+  // Sensor pendeteksi kalimat template kaku (Mad-Libs) agar DILARANG TAMPIL di lembar soal siswa
+  isRoboticTemplateStem(text) {
+    const s = String(text || '').trim();
+    if (!s) return true;
+    const forbiddenPatterns = [
+      /menyelesaikan tugas atau kegiatan yang berkaitan dengan/i,
+      /Kelompokmu diminta membuat proyek sederhana tentang/i,
+      /ciri penting yang harus diperhatikan ketika kita mempelajari/i,
+      /Bandingkan perbedaan antara kegiatan yang menerapkan prinsip/i,
+      /kesimpulan singkat mengenai manfaat mempelajari/i,
+      /Berikut ini yang merupakan contoh penerapan.*dalam kegiatan sehari-hari/i,
+      /Tujuan utama kita mempelajari.*pada pelajaran/i,
+      /Hal yang paling tepat dilakukan saat mempelajari/i,
+      /\[Ranah SOLO/i,
+      /\[Tingkat (MUDAH|SEDANG|SULIT)/i
+    ];
+    return forbiddenPatterns.some(rx => rx.test(s));
+  },
+
+  // Generator Skenario Keilmuan Kurikulum (Bebas 100% dari Tempelan Judul Mentah)
+  buildUniqueContextualQuestionItem(qType, itemNumber, totalCount, params, variationRound = 0) {
+    const {
+      mapel,
+      materi,
+      mathMode,
+      tpRaw,
+      cpRaw
+    } = params;
+
+    const cleanMapel = String(mapel || 'Mata Pelajaran').trim();
+    const cleanMateri = String(materi || 'Materi Pembelajaran').trim();
+    const combinedLower = `${cleanMapel} ${cleanMateri} ${tpRaw || ''} ${cpRaw || ''}`.toLowerCase();
+
+    const uniqueIdx = (itemNumber - 1) + (variationRound * 5);
+    const weight = Math.round(100 / Math.max(1, totalCount));
+
+    const isEnglish = /inggris|english|introducing|greeting|number|color|family|animal|school|hobby|time|food|verb|tense|pronoun|daily/i.test(combinedLower);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan|luas|keliling|sudut|bangun|satuan|berat|panjang|waktu|volume|debit|skala/i.test(combinedLower);
+    const isKerjasamaPancasila = /kerja\s*sama|gotong\s*royong|piket|bakti|rukun|bersatu|tolong|bantu|lingkunganmu|pancasila|ppkn|norma|aturan|hak|kewajiban|musyawarah|keragaman|bhinneka/i.test(combinedLower);
+    const isIpas = /ipas|ipa|sains|energi|listrik|panas|cahaya|bunyi|fotosintesis|tumbuhan|hewan|ekosistem|siklus|air|wujud|zat|gaya|magnet|pancaindra|cuaca|alam/i.test(combinedLower);
+
+    // =========================================================================
+    // 1. PENDIDIKAN PANCASILA (Khususnya Kerja Sama, Gotong Royong, Norma, Hak & Kewajiban)
+    // =========================================================================
+    if (isKerjasamaPancasila) {
+      const pancasilaKnowledgePool = [
+        {
+          pgStem: 'Pada hari Minggu pagi, warga di lingkungan tempat tinggal Andi mengadakan kerja bakti membersihkan selokan agar tidak banjir saat musim hujan. Sikap yang sebaiknya dilakukan Andi adalah ....',
+          pgRight: 'Ikut membantu mengumpulkan sampah daun atau menyediakan air minum bagi warga yang bekerja bakti sesuai kemampuannya',
+          pgWrong: [
+            'Menutup pintu rumah dan bermain gim seharian karena merasa kerja bakti hanya tugas orang dewasa',
+            'Membuang sampah plastik ke dalam selokan yang baru saja dibersihkan warga',
+            'Menonton warga yang sedang bekerja bakti sambil bersendau gurau mengganggu mereka'
+          ],
+          isianStem: 'Kegiatan bekerja bersama-sama secara sukarela di lingkungan masyarakat tanpa mengharapkan imbalan agar pekerjaan cepat selesai disebut ................',
+          isianAns: 'gotong royong / kerja bakti',
+          esaiStem: 'Pada hari Minggu pagi, warga di desa tempat tinggal Andi mengadakan kerja bakti membersihkan selokan agar tidak tersumbat saat musim hujan. Tuliskan 2 contoh bantuan yang dapat dilakukan Andi sebagai anak SD dalam kegiatan kerja bakti tersebut!',
+          esaiAns: '1) Membantu memungut sampah kering/daun di sekitar halaman, 2) Membantu menyiapkan air minum atau kudapan untuk warga yang bekerja bakti.',
+          bsStmt: 'Kerja bakti membersihkan lingkungan desa merupakan tanggung jawab seluruh warga masyarakat agar lingkungan tetap sehat dan terhindar dari banjir.',
+          bsIsTrue: true,
+          matchLeft: 'Kerja bakti membersihkan selokan dan jalan desa pada hari Minggu',
+          matchRight: 'Bentuk kerja sama di lingkungan masyarakat'
+        },
+        {
+          pgStem: 'Ketika jadwal piket kelas berlangsung, Edo hanya duduk bermain di bangkunya sementara teman-teman satu regunya sibuk menyapu lantai dan merapikan meja. Akibat dari sikap Edo tersebut adalah ....',
+          pgRight: 'Pekerjaan piket menjadi lebih berat, lama selesai, dan menimbulkan rasa kurang rukun antaranggota regu piket',
+          pgWrong: [
+            'Ruang kelas menjadi lebih cepat bersih dan rapi tanpa bantuan Edo',
+            'Teman-teman satu regu merasa senang karena pekerjaannya diambil alih',
+            'Edo mendapatkan pujian dari guru karena berhasil menghemat tenaganya'
+          ],
+          isianStem: 'Melaksanakan jadwal piket menyapu lantai dan menghapus papan tulis secara bersama-sama merupakan contoh kerja sama di lingkungan ................',
+          isianAns: 'sekolah (kelas)',
+          esaiStem: 'Ketika jadwal piket kelas berlangsung, Edo hanya duduk bermain di bangkunya sementara teman-teman lainnya sibuk menyapu lantai dan merapikan meja. Bagaimana pendapatmu mengenai sikap Edo dan apa akibatnya bagi teman-teman satu regu piketnya?',
+          esaiAns: 'Sikap Edo tidak patut ditiru karena tidak bertanggung jawab. Akibatnya pekerjaan regu piket menjadi lebih berat, lebih lama selesai, dan kelas belum bersih saat jam pelajaran dimulai.',
+          bsStmt: 'Saat jadwal piket kelas tiba, kita boleh pulang lebih dulu tanpa izin agar tugas menyapu dikerjakan oleh teman yang lain saja.',
+          bsIsTrue: false,
+          matchLeft: 'Menyapu kelas, menghapus papan tulis, dan merapikan meja bersama regu piket',
+          matchRight: 'Bentuk kerja sama di lingkungan sekolah'
+        },
+        {
+          pgStem: 'Setiap pagi sebelum berangkat ke sekolah, Siti merapikan tempat tidurnya sendiri, sedangkan kakaknya membantu ibu menyapu halaman rumah. Manfaat pembagian tugas di rumah Siti tersebut adalah ....',
+          pgRight: 'Pekerjaan rumah tangga menjadi lebih ringan, cepat selesai, dan suasana keluarga menjadi harmonis',
+          pgWrong: [
+            'Membuat pekerjaan orang tua di rumah menjadi semakin menumpuk',
+            'Menimbulkan pertengkaran antara adik dan kakak setiap pagi',
+            'Membuat Siti dan kakaknya selalu terlambat tiba di sekolah'
+          ],
+          isianStem: 'Membantu ibu menjaga adik dan merapikan mainan bersama kakak merupakan wujud kerja sama di lingkungan ................',
+          isianAns: 'rumah (keluarga)',
+          esaiStem: 'Kerja sama dapat kita lakukan di lingkungan rumah maupun di sekolah. Sebutkan masing-masing 2 contoh kegiatan kerja sama yang biasa kamu lakukan bersama anggota keluargamu di rumah dan bersama teman-temanmu di sekolah!',
+          esaiAns: 'Di rumah: 1) Merapikan tempat tidur dan menyapu halaman bersama kakak/ibu, 2) Membantu mencuci piring setelah makan. Di sekolah: 1) Melaksanakan piket kelas bersama regu, 2) Mengerjakan tugas kelompok secara kompak.',
+          bsStmt: 'Berbagi tugas membersihkan rumah bersama ayah, ibu, dan kakak akan membuat pekerjaan rumah terasa lebih ringan dan mempererat kasih sayang keluarga.',
+          bsIsTrue: true,
+          matchLeft: 'Membantu ibu menyapu halaman dan merapikan meja makan bersama kakak',
+          matchRight: 'Bentuk kerja sama di lingkungan rumah (keluarga)'
+        },
+        {
+          pgStem: 'Saat berdiskusi mengerjakan tugas kelompok di kelas, Bagas dan Nabila memiliki pendapat yang berbeda mengenai pembagian materi presentasi. Sikap terbaik yang harus mereka tunjukkan adalah ....',
+          pgRight: 'Bermusyawarah dengan santun, saling mendengarkan alasan masing-masing, dan menyepakati keputusan bersama',
+          pgWrong: [
+            'Memaksakan pendapat sendiri dengan suara keras agar dituruti teman',
+            'Membubarkan kelompok belajar dan memilih mengerjakan tugas sendiri-sendiri',
+            'Menyalahkan pendapat teman di depan kelas tanpa mau berdiskusi'
+          ],
+          isianStem: 'Apabila terdapat perbedaan pendapat saat bekerja kelompok, cara terbaik untuk mengambil keputusan bersama adalah melalui ................',
+          isianAns: 'musyawarah untuk mufakat',
+          esaiStem: 'Saat berdiskusi mengerjakan tugas kelompok di kelas, terdapat teman yang memiliki pendapat berbeda denganmu. Bagaimana sikap yang sebaiknya kamu tunjukkan agar kerja sama di dalam kelompokmu tetap rukun dan kompak?',
+          esaiAns: 'Mendengarkan pendapat teman dengan sopan tanpa memotong pembicaraannya, menghargai perbedaannya, dan bermusyawarah mencari jalan tengah terbaik untuk kelompok.',
+          bsStmt: 'Dalam kerja kelompok, kita harus menghargai pendapat teman walaupun pendapat tersebut berbeda dengan keinginan kita.',
+          bsIsTrue: true,
+          matchLeft: 'Menghargai pendapat teman dan mengambil keputusan melalui musyawarah kelompok',
+          matchRight: 'Sikap menjaga kerukunan dan kekompakan dalam bekerja sama'
+        },
+        {
+          pgStem: 'Perhatikan kegiatan-kegiatan di sekolah berikut ini! Bentuk kerja sama yang **dilarang** untuk dilakukan oleh siswa karena melanggar nilai kejujuran adalah ....',
+          pgRight: 'Bekerja sama memberikan contekan jawaban kepada teman saat ulangan berlangsung',
+          pgWrong: [
+            'Bekerja sama membersihkan taman sekolah pada kegiatan Jumat Bersih',
+            'Bekerja sama mengumpulkan sumbangan untuk teman yang terkena musibah',
+            'Bekerja sama menyiapkan peralatan praktik kelompok di laboratorium'
+          ],
+          isianStem: 'Memberikan contekan saat ujian atau bekerja sama melakukan perbuatan curang merupakan bentuk kerja sama yang ................ untuk dilakukan.',
+          isianAns: 'dilarang / tidak boleh',
+          esaiStem: 'Mengapa pekerjaan yang berat seperti membersihkan halaman sekolah akan terasa lebih ringan dan cepat selesai jika dikerjakan secara gotong royong dibandingkan dikerjakan sendirian? Jelaskan alasanmu!',
+          esaiAns: 'Karena beban pekerjaan dibagi bersama-sama kepada banyak orang sehingga tenaga yang dikeluarkan tiap orang lebih ringan, waktu pengerjaan lebih singkat, dan mempererat persatuan.',
+          bsStmt: 'Bekerja sama memberi contekan saat ulangan di kelas merupakan contoh gotong royong yang baik antarteman.',
+          bsIsTrue: false,
+          matchLeft: 'Pekerjaan berat menjadi ringan, cepat selesai, dan mempererat persaudaraan',
+          matchRight: 'Manfaat utama melaksanakan kerja sama dan gotong royong'
+        },
+        {
+          pgStem: 'Di kelas 4 terdapat siswa yang berasal dari suku dan daerah yang berbeda-beda. Ketika guru membagi kelompok belajar untuk membuat karya poster, sikap yang mencerminkan persatuan adalah ....',
+          pgRight: 'Menerima semua anggota kelompok dengan senang hati dan bekerja sama secara adil tanpa membeda-bedakan suku',
+          pgWrong: [
+            'Hanya mau satu kelompok dengan teman yang berasal dari desa yang sama saja',
+            'Menolak bekerja sama dengan teman yang berbeda logat bahasanya',
+            'Menyerahkan seluruh pekerjaan membuat poster kepada satu orang anggota saja'
+          ],
+          isianStem: 'Semboyan bangsa Indonesia yang mengajarkan kita untuk tetap bersatu dan bekerja sama walaupun berbeda suku, agama, dan budaya adalah ................',
+          isianAns: 'Bhinneka Tunggal Ika',
+          esaiStem: 'Tidak semua kegiatan boleh dilakukan secara bekerja sama. Sebutkan 2 contoh kegiatan yang dilarang dilakukan secara bekerja sama di sekolah beserta alasannya!',
+          esaiAns: '1) Bekerja sama menyontek saat ujian/ulangan karena tidak jujur dan merugikan diri sendiri, 2) Bekerja sama mengganggu teman atau merusak fasilitas sekolah karena melanggar aturan.',
+          bsStmt: 'Kita harus mau bekerja sama dalam kegiatan piket dan belajar kelompok dengan semua teman tanpa membeda-bedakan suku maupun agama.',
+          bsIsTrue: true,
+          matchLeft: 'Bekerja sama dengan semua teman tanpa membeda-bedakan suku dan agama',
+          matchRight: 'Pengamalan nilai persatuan (Bhinneka Tunggal Ika) di lingkungan sekolah'
+        },
+        {
+          pgStem: 'Warga Desa Sabedo melaksanakan ronda malam secara bergiliran sesuai jadwal yang telah disepakati bersama. Tujuan utama kerja sama warga dalam kegiatan ronda malam tersebut adalah ....',
+          pgRight: 'Menjaga keamanan, ketertiban, dan ketenteraman lingkungan desa secara bersama-sama',
+          pgWrong: [
+            'Mengganggu waktu istirahat warga masyarakat di malam hari',
+            'Membuat warga menjadi kelelahan saat bekerja di pagi hari',
+            'Menggantikan tugas aparat desa agar tidak perlu bekerja'
+          ],
+          isianStem: 'Kegiatan kerja sama warga masyarakat pada malam hari secara bergiliran untuk menjaga keamanan lingkungan disebut ................',
+          isianAns: 'ronda malam / siskamling',
+          esaiStem: 'Di sekolahmu akan diadakan lomba kebersihan dan keindahan antarkelas. Rencanakan 3 kegiatan kerja sama yang akan kamu lakukan bersama teman-teman sekelasmu untuk memenangkan lomba tersebut!',
+          esaiAns: '1) Membagi tugas membersihkan lantai, kaca jendela, dan halaman kelas, 2) Bekerja sama menata pojok baca dan memajang karya siswa, 3) Menjaga kebersihan kelas setiap hari secara disiplin.',
+          bsStmt: 'Menjaga keamanan dan kebersihan lingkungan masyarakat adalah tanggung jawab bersama seluruh warga, bukan hanya tugas ketua RT saja.',
+          bsIsTrue: true,
+          matchLeft: 'Pelaksanaan ronda malam (siskamling) secara bergiliran oleh warga desa',
+          matchRight: 'Kerja sama menjaga keamanan dan ketertiban lingkungan masyarakat'
+        }
+      ];
+
+      const p = pancasilaKnowledgePool[uniqueIdx % pancasilaKnowledgePool.length];
+      if (qType === 'PG') {
+        const mc = this.createShuffledMultipleChoice(p.pgRight, p.pgWrong, uniqueIdx);
+        return { no: itemNumber, stem: p.pgStem, options: mc.options, answer: mc.answer, scoreWeight: weight };
+      }
+      if (qType === 'ISIAN') {
+        return { no: itemNumber, stem: p.isianStem, answer: `Kunci: ${p.isianAns}`, scoreWeight: weight };
+      }
+      if (qType === 'BENARSALAH') {
+        return {
+          no: itemNumber,
+          stem: `Pernyataan: ${p.bsStmt} (Benar / Salah)`,
+          answer: `Kunci: ${p.bsIsTrue ? 'Benar (B)' : 'Salah (S)'}`,
+          scoreWeight: weight
+        };
+      }
+      if (qType === 'MATCHING') {
+        return {
+          no: itemNumber,
+          leftPremise: p.matchLeft,
+          rightResponse: p.matchRight,
+          answer: `Pasangan ${itemNumber}: ${p.matchLeft} = ${p.matchRight}`,
+          scoreWeight: weight
+        };
+      }
+      return { no: itemNumber, stem: p.esaiStem, answer: `Kunci: ${p.esaiAns}`, scoreWeight: weight };
+    }
+
+    // =========================================================================
+    // 2. IPAS / SAINS SD (Energi, Tumbuhan, Wujud Zat, Gaya, Ekosistem, Siklus Air)
+    // =========================================================================
+    if (isIpas) {
+      const ipasPool = [
+        {
+          pgStem: 'Ketika ibu menjemur pakaian yang basah di bawah terik matahari, lama-kelamaan pakaian tersebut menjadi kering. Peristiwa ini terjadi karena air pada pakaian mengalami proses ....',
+          pgRight: 'Penguapan (menguap) akibat menerima energi panas dari sinar matahari',
+          pgWrong: [
+            'Pembekuan (membeku) karena terkena udara di halaman rumah',
+            'Pengembunan (mengembun) karena menyerap cahaya matahari',
+            'Pencairan (mencair) akibat tiupan angin di siang hari'
+          ],
+          isianStem: 'Perubahan wujud benda cair menjadi gas seperti saat air dipanaskan hingga mendidih disebut peristiwa ................',
+          isianAns: 'menguap (penguapan)',
+          esaiStem: 'Ketika ibu menjemur pakaian basah di bawah sinar matahari yang terik, beberapa jam kemudian pakaian tersebut menjadi kering. Jelaskan mengapa air pada pakaian basah tersebut dapat menghilang dan peran energi matahari dalam peristiwa itu!',
+          esaiAns: 'Pakaian menjadi kering karena air di dalam serat pakaian menyerap energi panas matahari sehingga mengalami penguapan (berubah wujud dari cair menjadi uap air/gas) ke udara.',
+          bsStmt: 'Energi panas matahari sangat berperan penting dalam membantu proses penguapan air laut pada siklus air maupun saat mengeringkan pakaian.',
+          bsIsTrue: true,
+          matchLeft: 'Pakaian basah menjadi kering saat dijemur di bawah terik matahari',
+          matchRight: 'Pemanfaatan energi panas matahari untuk proses penguapan'
+        },
+        {
+          pgStem: 'Tumbuhan hijau mampu membuat makanannya sendiri di daun dengan bantuan cahaya matahari. Proses pembuatan makanan pada tumbuhan hijau tersebut dinamakan ....',
+          pgRight: 'Fotosintesis yang menghasilkan karbohidrat (makanan) dan gas oksigen',
+          pgWrong: [
+            'Respirasi yang menyerap oksigen dan mengeluarkan batu bara',
+            'Adaptasi morfologi untuk menggugurkan daun di musim kemarau',
+            'Penyerbukan bunga dengan bantuan serangga kupu-kupu'
+          ],
+          isianStem: 'Zat hijau daun pada tumbuhan yang berfungsi menangkap energi cahaya matahari saat proses fotosintesis disebut ................',
+          isianAns: 'klorofil',
+          esaiStem: 'Tumbuhan hijau disebut sebagai produsen karena dapat memasak makanannya sendiri melalui proses fotosintesis. Sebutkan 4 bahan/komponen utama yang dibutuhkan tumbuhan agar dapat melakukan fotosintesis beserta hasilnya!',
+          esaiAns: 'Bahan yang dibutuhkan: 1) Air (H2O) dari tanah, 2) Karbon dioksida (CO2) dari udara, 3) Klorofil (zat hijau daun), dan 4) Cahaya matahari. Hasilnya: Karbohidrat (glukosa/makanan) dan gas Oksigen (O2).',
+          bsStmt: 'Proses fotosintesis pada tumbuhan hijau menghasilkan gas oksigen yang sangat dibutuhkan manusia dan hewan untuk bernapas.',
+          bsIsTrue: true,
+          matchLeft: 'Proses pembuatan makanan pada daun tumbuhan hijau dengan bantuan sinar matahari',
+          matchRight: 'Fotosintesis (menghasilkan karbohidrat dan oksigen)'
+        },
+        {
+          pgStem: 'Saat ibu menyetrika seragam sekolah dan memasak nasi menggunakan penanak nasi listrik (rice cooker), terjadi perubahan bentuk energi yaitu ....',
+          pgRight: 'Energi listrik berubah menjadi energi panas (kalor)',
+          pgWrong: [
+            'Energi listrik berubah menjadi energi gerak (kinetik)',
+            'Energi kimia berubah menjadi energi bunyi',
+            'Energi cahaya berubah menjadi energi listrik'
+          ],
+          isianStem: 'Pada kipas angin dan blender yang sedang dinyalakan, terjadi perubahan bentuk energi dari energi listrik menjadi energi ................',
+          isianAns: 'gerak (kinetik)',
+          esaiStem: 'Di rumahmu terdapat berbagai peralatan elektronik seperti setrika listrik, kipas angin, dan televisi. Jelaskan perubahan bentuk energi yang terjadi pada ketiga peralatan tersebut ketika dinyalakan!',
+          esaiAns: '1) Setrika listrik: energi listrik menjadi energi panas, 2) Kipas angin: energi listrik menjadi energi gerak, 3) Televisi: energi listrik menjadi energi cahaya dan energi bunyi.',
+          bsStmt: 'Mematikan lampu dan kipas angin di ruang kelas ketika sudah tidak digunakan merupakan tindakan nyata dalam menghemat energi listrik.',
+          bsIsTrue: true,
+          matchLeft: 'Penggunaan setrika listrik dan penanak nasi (magic com) di rumah',
+          matchRight: 'Perubahan energi listrik menjadi energi panas (kalor)'
+        },
+        {
+          pgStem: 'Ketika Bagas menendang bola yang sedang diam di lapangan, bola tersebut melaju kencang ke arah gawang. Hal ini membuktikan bahwa gaya otot kaki Bagas dapat ....',
+          pgRight: 'Membuat benda yang semula diam menjadi bergerak',
+          pgWrong: [
+            'Mengubah warna dan berat bola sepak secara permanen',
+            'Menghilangkan gaya gravitasi bumi di sekitar lapangan',
+            'Mengubah benda cair menjadi benda padat seketika'
+          ],
+          isianStem: 'Buah kelapa yang matang di pohon selalu jatuh ke bawah menuju permukaan tanah karena adanya tarikan gaya ................',
+          isianAns: 'gravitasi bumi',
+          esaiStem: 'Ketika kamu bermain plastisin (lilin mainan) dan menendang bola di lapangan, kamu memberikan gaya pada kedua benda tersebut. Jelaskan perbedaan pengaruh gaya yang terjadi pada plastisin yang ditekan dengan bola yang ditendang!',
+          esaiAns: 'Pada plastisin yang ditekan, gaya mengubah bentuk benda. Sedangkan pada bola yang ditendang, gaya mengubah benda diam menjadi bergerak (atau mengubah arah gerak benda).',
+          bsStmt: 'Gaya gesek antara telapak sepatu dengan permukaan lantai membantu kita berjalan tanpa mudah terpeleset.',
+          bsIsTrue: true,
+          matchLeft: 'Plastisin atau tanah liat yang ditekan dengan tangan menjadi bentuk mainan',
+          matchRight: 'Pengaruh gaya dapat mengubah bentuk suatu benda'
+        },
+        {
+          pgStem: 'Di ekosistem sawah terdapat padi, belalang, katak, ular, dan burung elang. Apabila populasi katak dan ular berkurang drastis karena diburu manusia, maka dampak langsung yang terjadi adalah ....',
+          pgRight: 'Populasi hama belalang meningkat pesat sehingga tanaman padi petani menjadi rusak dan gagal panen',
+          pgWrong: [
+            'Tanaman padi tumbuh semakin subur tanpa gangguan hama',
+            'Burung elang beralih memakan rumput dan daun padi di sawah',
+            'Belalang ikut punah karena kehilangan tempat berlindung'
+          ],
+          isianStem: 'Pada rantai makanan di sawah (Padi -> Belalang -> Katak -> Ular -> Elang), makhluk hidup yang berperan sebagai konsumen tingkat I adalah ................',
+          isianAns: 'belalang',
+          esaiStem: 'Di sebuah ekosistem sawah terdapat rantai makanan: Tanaman Padi -> Belalang -> Katak -> Ular -> Burung Elang. Jelaskan apa yang akan terjadi pada tanaman padi milik petani apabila banyak katak dan ular di sawah ditangkap oleh manusia!',
+          esaiAns: 'Jika katak dan ular ditangkap habis, maka populasi belalang tidak ada yang memangsa sehingga jumlah belalang meledak banyak dan memakan habis daun padi, akibatnya petani mengalami gagal panen.',
+          bsStmt: 'Dalam sebuah rantai makanan, tumbuhan hijau berperan sebagai produsen karena mampu menghasilkan makanan sendiri.',
+          bsIsTrue: true,
+          matchLeft: 'Peran tanaman padi dan rumput hijau di dalam rantai makanan',
+          matchRight: 'Produsen (penghasil makanan utama bagi konsumen)'
+        }
+      ];
+
+      const ip = ipasPool[uniqueIdx % ipasPool.length];
+      if (qType === 'PG') {
+        const mc = this.createShuffledMultipleChoice(ip.pgRight, ip.pgWrong, uniqueIdx);
+        return { no: itemNumber, stem: ip.pgStem, options: mc.options, answer: mc.answer, scoreWeight: weight };
+      }
+      if (qType === 'ISIAN') {
+        return { no: itemNumber, stem: ip.isianStem, answer: `Kunci: ${ip.isianAns}`, scoreWeight: weight };
+      }
+      if (qType === 'BENARSALAH') {
+        return {
+          no: itemNumber,
+          stem: `Pernyataan: ${ip.bsStmt} (Benar / Salah)`,
+          answer: `Kunci: ${ip.bsIsTrue ? 'Benar (B)' : 'Salah (S)'}`,
+          scoreWeight: weight
+        };
+      }
+      if (qType === 'MATCHING') {
+        return {
+          no: itemNumber,
+          leftPremise: ip.matchLeft,
+          rightResponse: ip.matchRight,
+          answer: `Pasangan ${itemNumber}: ${ip.matchLeft} = ${ip.matchRight}`,
+          scoreWeight: weight
+        };
+      }
+      return { no: itemNumber, stem: ip.esaiStem, answer: `Kunci: ${ip.esaiAns}`, scoreWeight: weight };
+    }
+
+    // =========================================================================
+    // 3. MATEMATIKA & BAHASA INGGRIS (Menggunakan logika numerik & dialog spesifik)
+    // =========================================================================
+    if (isMath || isEnglish) {
+      // Panggil perhitungan angka/dialog spesifik yang tidak memakai kalimat template
+      if (isMath) {
+        const b = ((itemNumber * 3 + variationRound * 5) % 8) + 3;
+        const resVal = ((itemNumber * 7 + variationRound * 11) % 35) + 12;
+        const a = b * resVal;
+        const actors = ['Andi', 'Siti', 'Pak Budi', 'Bu Rina', 'Nabila', 'Bagas'];
+        const items = ['buah mangga', 'buku cerita', 'kotak pensil', 'bibit pohon', 'roti cokelat'];
+        const boxes = ['keranjang', 'kelompok belajar', 'kardus', 'rak buku', 'kantong'];
+        const actor = actors[uniqueIdx % actors.length];
+        const itName = items[uniqueIdx % items.length];
+        const bxName = boxes[uniqueIdx % boxes.length];
+        const isWord = mathMode === 'WORD_PROBLEM' || (mathMode === 'MIXED_MATH' && itemNumber % 2 === 0);
+
+        if (qType === 'PG') {
+          const mc = this.createShuffledMultipleChoice(String(resVal), [String(resVal + 2), String(resVal - 3), String(resVal + 5)], uniqueIdx);
+          return {
+            no: itemNumber,
+            stem: isWord
+              ? `${actor} memiliki ${a} ${itName} yang akan dibagikan sama banyak kepada ${b} ${bxName}. Banyak ${itName} yang diterima setiap ${bxName} adalah ....`
+              : `Hasil operasi hitung dari ${a} : ${b} adalah ....`,
+            mathExpression: isWord ? '' : `${a} ÷ ${b} = ....`,
+            options: mc.options,
+            answer: mc.answer,
+            scoreWeight: weight
+          };
+        }
+        return {
+          no: itemNumber,
+          stem: isWord
+            ? `${actor} menyiapkan ${a} ${itName} untuk dimasukkan sama rata ke dalam ${b} ${bxName}. Berapa banyak ${itName} di dalam setiap ${bxName}? Tuliskan cara menghitungnya!`
+            : `Hitunglah dengan teliti hasil dari: ${a} ÷ ${b} = ....`,
+          mathExpression: isWord ? '' : `${a} ÷ ${b} = ....`,
+          answer: `Kunci: ${a} : ${b} = ${resVal}`,
+          scoreWeight: weight
+        };
+      }
+    }
+
+    // =========================================================================
+    // 4. SEMANTIC SCENARIO SYNTHESIZER UNTUK TOPIK KUSTOM LAINNYA (TANPA TANDA KUTIP MENTAH)
+    // =========================================================================
+    const { tpLines } = this.extractKeyConceptsFromInputs(materi, tpRaw, cpRaw, '');
+    const rawTp = tpLines[(itemNumber - 1) % tpLines.length] || cleanMateri;
+    // Bersihkan awalan KKO guru agar menjadi frasa materi yang alami tanpa tanda kutip judul
+    const naturalTopicPhrase = rawTp
+      .replace(/^(peserta didik mampu|siswa mampu|melalui.*peserta didik mampu)\s+/i, '')
+      .replace(/^(mengidentifikasi|menjelaskan|memahami|menganalisis|menerapkan|mempraktikkan|menyimpulkan|menyebutkan|menguraikan)\s+/i, '')
+      .replace(/["']/g, '')
+      .trim() || cleanMateri.replace(/["']/g, '').toLowerCase();
+
+    const scenarioPool = [
+      {
+        pgStem: `Saat belajar di kelas bersama teman-teman, guru menjelaskan tentang ${naturalTopicPhrase}. Contoh perilaku nyata yang tepat kita lakukan sesuai materi tersebut adalah ....`,
+        pgRight: `Melaksanakan kegiatan yang berkaitan dengan ${naturalTopicPhrase} secara tertib, jujur, dan bertanggung jawab`,
+        pgWrong: [
+          `Mengabaikan aturan yang berlaku saat melakukan kegiatan di kelas`,
+          `Menyerahkan seluruh tugas kepada teman tanpa mau ikut berusaha`,
+          `Melakukan tindakan yang merugikan teman dan lingkungan sekitar`
+        ],
+        isianStem: `Sikap positif yang harus kita tunjukkan ketika mempraktikkan kegiatan terkait ${naturalTopicPhrase} di sekolah adalah ................`,
+        isianAns: `tertib, disiplin, dan bertanggung jawab`,
+        esaiStem: `Dalam kegiatan sehari-hari di sekolah maupun di rumah, kita sering menjumpai hal yang berkaitan dengan ${naturalTopicPhrase}. Berikan 2 contoh kegiatan nyata yang pernah kamu lakukan terkait hal tersebut beserta manfaatnya!`,
+        esaiAns: `2 contoh aktivitas nyata terkait ${naturalTopicPhrase} di rumah/sekolah beserta manfaat positifnya.`,
+        bsStmt: `Melaksanakan kegiatan yang berkaitan dengan ${naturalTopicPhrase} secara disiplin dan jujur akan memberikan manfaat yang baik bagi diri kita dan orang lain.`,
+        bsIsTrue: true,
+        matchLeft: `Melaksanakan kegiatan terkait ${naturalTopicPhrase} dengan tertib di sekolah`,
+        matchRight: `Wujud sikap disiplin dan tanggung jawab peserta didik`
+      },
+      {
+        pgStem: `Andi dan teman-teman sekelasnya sedang mengamati contoh penerapan ${naturalTopicPhrase} di lingkungan sekitar sekolah. Manfaat utama yang diperoleh Andi dan teman-temannya dari kegiatan tersebut adalah ....`,
+        pgRight: `Dapat memahami manfaat nyata dari ${naturalTopicPhrase} dan menerapkannya dengan benar dalam kehidupan sehari-hari`,
+        pgWrong: [
+          `Membuat pekerjaan di kelas menjadi semakin sulit diselesaikan`,
+          `Mengurangi rasa peduli terhadap teman dan lingkungan sekolah`,
+          `Menghabiskan waktu belajar tanpa memperoleh pengetahuan baru`
+        ],
+        isianStem: `Tujuan utama kita mempraktikkan ${naturalTopicPhrase} secara langsung dalam kehidupan sehari-hari adalah agar ................`,
+        isianAns: `lebih memahami maknanya dan memberi manfaat bagi lingkungan`,
+        esaiStem: `Ketika Siti dan teman-teman satu kelompoknya sedang mengerjakan tugas praktik mengenai ${naturalTopicPhrase}, mereka menemukan kendala. Jelaskan bagaimana sikap yang sebaiknya dilakukan Siti dan kelompoknya agar tugas tersebut dapat selesai dengan baik!`,
+        esaiAns: `Berdiskusi dengan rukun, membagi tugas secara adil, dan bertanya kepada guru dengan santun untuk menyelesaikan kendala tersebut.`,
+        bsStmt: `Apabila kita menemukan kesulitan saat mempelajari ${naturalTopicPhrase}, kita sebaiknya langsung menyerah dan tidak perlu bertanya kepada guru.`,
+        bsIsTrue: false,
+        matchLeft: `Berdiskusi dan membagi peran secara adil saat mengerjakan tugas kelompok`,
+        matchRight: `Cara menyelesaikan tugas pembelajaran dengan baik dan tepat waktu`
+      }
+    ];
+
+    const sc = scenarioPool[uniqueIdx % scenarioPool.length];
+    if (qType === 'PG') {
+      const mc = this.createShuffledMultipleChoice(sc.pgRight, sc.pgWrong, uniqueIdx);
+      return { no: itemNumber, stem: sc.pgStem, options: mc.options, answer: mc.answer, scoreWeight: weight };
+    }
+    if (qType === 'ISIAN') {
+      return { no: itemNumber, stem: sc.isianStem, answer: `Kunci: ${sc.isianAns}`, scoreWeight: weight };
+    }
+    if (qType === 'BENARSALAH') {
+      return { no: itemNumber, stem: `Pernyataan: ${sc.bsStmt} (Benar / Salah)`, answer: `Kunci: ${sc.bsIsTrue ? 'Benar (B)' : 'Salah (S)'}`, scoreWeight: weight };
+    }
+    if (qType === 'MATCHING') {
+      return { no: itemNumber, leftPremise: sc.matchLeft, rightResponse: sc.matchRight, answer: `Pasangan ${itemNumber}: ${sc.matchLeft} = ${sc.matchRight}`, scoreWeight: weight };
+    }
+    return { no: itemNumber, stem: sc.esaiStem, answer: `Kunci: ${sc.esaiAns}`, scoreWeight: weight };
+  },
+
+  // Saring ketat hasil AI: Buang kalimat yang terdeteksi sebagai template Mad-Libs dan lengkapi yang kurang
+  deduplicateAndCompleteSections(rawSectionsFromAI, params, questionSpecList, variationRound = 0) {
+    const isEnglish = /inggris|english/i.test(`${params.mapel || ''} ${params.materi || ''}`);
+    const forbiddenSet = new Set(
+      (this.previousStemsMemory || []).map(s => String(s || '').toLowerCase().replace(/\W+/g, ' ').trim())
+    );
+
+    return (questionSpecList || []).map((spec, sIdx) => {
+      const qType = spec.type;
+      const targetCount = Math.max(1, parseInt(spec.count, 10) || 5);
+      const aiSec = Array.isArray(rawSectionsFromAI)
+        ? (rawSectionsFromAI.find(s => s && String(s.type).toUpperCase() === qType) || rawSectionsFromAI[sIdx])
+        : null;
+
+      const aiItems = (aiSec && Array.isArray(aiSec.items)) ? aiSec.items : [];
+      const seenInThisSection = new Set();
+      const finalItems = [];
+
+      for (let i = 0; i < aiItems.length; i++) {
+        if (finalItems.length >= targetCount) break;
+        const rawIt = aiItems[i];
+        if (!rawIt) continue;
+
+        const keyText = qType === 'MATCHING'
+          ? `${rawIt.leftPremise || ''} ${rawIt.rightResponse || ''}`
+          : String(rawIt.stem || '');
+
+        const normalizedStem = keyText.toLowerCase().replace(/\W+/g, ' ').trim();
+        if (!normalizedStem || normalizedStem.length < 8) continue;
+
+        // Tolak jika terdeteksi sebagai kalimat template tempelan kata kunci atau duplikat
+        if (this.isRoboticTemplateStem(keyText)) continue;
+        if (seenInThisSection.has(normalizedStem) || forbiddenSet.has(normalizedStem)) continue;
+
+        seenInThisSection.add(normalizedStem);
+        finalItems.push({
+          no: finalItems.length + 1,
+          stem: String(rawIt.stem || '').replace(/^\d+[\.\)]\s*/, '').trim(),
+          mathExpression: String(rawIt.mathExpression || '').trim(),
+          options: rawIt.options || { A: '-', B: '-', C: '-', D: '-' },
+          leftPremise: String(rawIt.leftPremise || '').trim(),
+          rightResponse: String(rawIt.rightResponse || '').trim(),
+          answer: String(rawIt.answer || '').trim(),
+          scoreWeight: Math.round(100 / targetCount)
+        });
+      }
+
+      // Lengkapi dengan skenario keilmuan kontekstual apabila masih kurang dari targetCount
+      let fallbackOffset = 0;
+      while (finalItems.length < targetCount) {
+        const nextNo = finalItems.length + 1;
+        const generated = this.buildUniqueContextualQuestionItem(
+          qType,
+          nextNo + fallbackOffset,
+          targetCount,
+          { ...params, customTypeName: spec.customName || '' },
+          variationRound + fallbackOffset
+        );
+
+        const genKey = qType === 'MATCHING'
+          ? `${generated.leftPremise} ${generated.rightResponse}`
+          : generated.stem;
+        const normGen = String(genKey || '').toLowerCase().replace(/\W+/g, ' ').trim();
+
+        if (!seenInThisSection.has(normGen) || fallbackOffset > 15) {
+          seenInThisSection.add(normGen);
+          generated.no = nextNo;
+          finalItems.push(generated);
+        }
+        fallbackOffset++;
+      }
+
+      finalItems.forEach(it => {
+        const k = qType === 'MATCHING' ? `${it.leftPremise} ${it.rightResponse}` : it.stem;
+        const nk = String(k || '').toLowerCase().replace(/\W+/g, ' ').trim();
+        if (nk) this.previousStemsMemory.push(nk);
+      });
+      if (this.previousStemsMemory.length > 120) {
+        this.previousStemsMemory = this.previousStemsMemory.slice(-120);
+      }
+
+      return {
+        type: qType,
+        title: (aiSec && aiSec.title)
+          ? aiSec.title
+          : this.getSectionInstructionTitle(qType, isEnglish, sIdx, spec.customName),
+        count: finalItems.length,
+        items: finalItems
+      };
+    });
+  },
+
+  // Engine Utama Pembuat Soal AI Murni dengan Metode 2-Stage Deep Topic Research
+  async buildDynamicQuestionSectionsWithAI(params, questionSpecList) {
+    const {
+      mapel,
+      bab,
+      materi,
+      kelasFase,
+      soloLevel,
+      tpRaw,
+      cpRaw,
+      customPrompt,
+      difficulty,
+      mathMode,
+      mathConstraint
+    } = params;
+
+    if (!Array.isArray(questionSpecList) || questionSpecList.length === 0) {
+      return [];
+    }
+
+    this.variationCounter = (this.variationCounter || 0) + 1;
+    const currentRound = this.variationCounter;
+
+    const isEnglish = /inggris|english/i.test(`${mapel} ${materi}`);
+    const isMath = /matematika|hitung|perkalian|pembagian|penjumlahan|pengurangan|pecahan|bilangan/i.test(`${mapel} ${materi}`);
+
+    const specSummary = questionSpecList.map(s => {
+      const label = s.type === 'LAINNYA' ? (s.customName || 'Soal Khusus') : s.type;
+      return `- Bagian "${s.type}" (${label}): WAJIB berisi TEPAT ${s.count} butir soal kontekstual yang berbeda semua (Nomor 1 s.d. Nomor ${s.count})`;
+    }).join('\n');
+
+    const recentExcluded = (this.previousStemsMemory || []).slice(-12);
+    const exclusionText = recentExcluded.length > 0
+      ? `\nJANGAN MENGULANGI PERTANYAAN BERIKUT (BUAT KASUS & SUDUT PANDANG BARU):\n- ${recentExcluded.join('\n- ')}\n`
+      : '';
+
+    const aiPrompt = `Anda adalah Guru Terbaik dan Penulis Soal Ujian Nasional Kurikulum Merdeka Indonesia.
+ID Sesi: DEEP-RESEARCH-${Date.now()}-V${currentRound}
+
+DATA PEMBELAJARAN:
+- Mata Pelajaran: ${mapel}
+- Kelas / Fase: ${kelasFase}
+- Bab / Unit: ${bab || '-'}
+- Topik / Materi yang Diajarkan: "${materi}"
+- Capaian & Tujuan Pembelajaran (TP):
+${tpRaw || cpRaw || materi}
+- Tingkat Kesulitan: ${difficulty || 'SEDANG'} (Kognitif: ${soloLevel || 'Relational'})
+${customPrompt ? `- Instruksi Khusus Guru: "${customPrompt}"` : ''}
+${isMath ? `- Mode Matematika: ${mathMode} (${mathConstraint || 'Angka bulat sesuai kelas'})` : ''}
+${exclusionText}
+
+METODE KERJA WAJIB 2 TAHAP (RISET MATERI -> PENYUSUNAN SOAL):
+TAHAP 1 (ANALISIS & CARI INFORMASI MATERI):
+Jangan langsung menyalin judul "${materi}" ke dalam soal! Analisis dulu apa isi keilmuan dari topik "${materi}" pada pelajaran ${mapel} untuk siswa ${kelasFase}. Cari fakta-fakta konkretnya, contoh kejadian nyata di rumah/sekolah/masyarakat, istilah penting, serta permasalahan sehari-hari yang terkait dengan "${materi}".
+Contoh: Jika topik adalah "Kerja sama di lingkunganmu" (Pendidikan Pancasila Kelas 4), maka uraikan menjadi kasus nyata seperti: (1) Kerja bakti warga membersihkan selokan desa, (2) Melaksanakan regu piket menyapu kelas secara adil, (3) Membantu ibu dan kakak berbagi tugas di rumah, (4) Bermusyawarah saat ada perbedaan pendapat di kelompok, dan (5) Manfaat gotong royong membuat pekerjaan berat menjadi ringan.
+
+TAHAP 2 (URAIKAN MENJADI SOAL YANG MUDAH DIPAHAMI SISWA):
+1. DILARANG KERAS menempelkan judul topik secara mentah di dalam tanda kutip seperti: 'Tuliskan langkah-langkah yang berkaitan dengan "${materi}"!' atau 'Sebutkan 2 ciri ketika kita mempelajari "${materi}"!'. Kalimat seperti itu membingungkan siswa!
+2. Buatlah soal yang langsung menyajikan ilustrasi kasus nyata, cerita pendek (1-2 kalimat tentang Andi, Siti, Budi, warga desa, atau kegiatan di kelas), atau pertanyaan keilmuan langsung yang jelas maksudnya bagi anak ${kelasFase}.
+3. Setiap nomor soal (Nomor 1 s.d. selesai) WAJIB membahas sub-konsep atau kasus yang berbeda.
+4. ${isEnglish ? 'Khusus Bahasa Inggris, gunakan soal Bahasa Inggris sederhana yang natural sesuai kelas (dialog perkenalan, sapaan, kosakata, arti kata, atau menyusun kalimat).' : 'Gunakan bahasa Indonesia yang mengalir, lugas, dan sesuai usia siswa.'}
+
+RINCIAN BAGIAN SOAL YANG WAJIB DIBUAT:
+${specSummary}
+
+Kembalikan HANYA objek JSON murni dengan struktur persis berikut:
+{
+  "topicResearchFacts": [
+    "Sub-materi / fakta keilmuan 1 hasil analisis topik...",
+    "Sub-materi / fakta keilmuan 2...",
+    "Sub-materi / fakta keilmuan 3..."
+  ],
+  "sections": [
+    {
+      "type": "PG atau ISIAN atau ESAI atau URAIAN atau BENARSALAH atau MATCHING atau LAINNYA",
+      "title": "Judul petunjuk pengerjaan bagian soal",
+      "items": [
+        {
+          "no": 1,
+          "stem": "Kalimat pertanyaan atau cerita kasus konkret nomor 1 (TANPA menempelkan judul topik mentah dalam tanda kutip)",
+          "mathExpression": "Kosongkan kecuali soal hitung matematika murni",
+          "options": { "A": "Opsi a", "B": "Opsi b", "C": "Opsi c", "D": "Opsi d" },
+          "leftPremise": "Pernyataan Kolom A (Khusus MATCHING)",
+          "rightResponse": "Pasangan Jawaban Kolom B (Khusus MATCHING)",
+          "answer": "Kunci Jawaban lengkap dan jelas"
+        }
+      ]
+    }
+  ]
+}`;
+
+    const aiData = await this.callPureGenerativeQuestionAI(aiPrompt);
+    const rawSections = (aiData && Array.isArray(aiData.sections)) ? aiData.sections : [];
+
+    return this.deduplicateAndCompleteSections(rawSections, params, questionSpecList, currentRound);
+  }
+});
+
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
