@@ -37934,6 +37934,598 @@ if (typeof SupabaseAIVault !== 'undefined') {
   });
 }
 
+    // ============================================================================
+// PATCH PERBAIKAN TOTAL PENILAIAN AKADEMIK & REKAP PENILAIAN (V2):
+// 1. KUNCI PRESISI BOBOT SKOR PER SOAL (MISAL BOBOT 1 TETAP 1, TIDAK JADI 10)
+// 2. PEMBACAAN LANGSUNG INPUT TABEL DOM SAAT SIMPAN PENILAIAN AKADEMIK
+// 3. SINKRONISASI PASTI KE REKAP PENILAIAN (TAMPILKAN SEMUA MAPEL DINILAI)
+// ============================================================================
+
+if (typeof PenilaianApp !== 'undefined') {
+  // Helper normalisasi nama mata pelajaran agar kebal perbedaan spasi / huruf kapital
+  PenilaianApp.normalizeSubjKey = function(name) {
+    return String(name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  };
+
+  // Pasang listener otomatis pada input Skor Seragam agar mengetik angka "1" langsung menerapkan bobot 1
+  PenilaianApp.bindUniformScoreLiveInput = function() {
+    const uniformInp = document.getElementById('setup-nilai-skor-seragam-input');
+    if (uniformInp && !uniformInp._liveBound) {
+      uniformInp._liveBound = true;
+      uniformInp.addEventListener('input', () => {
+        const val = parseFloat(uniformInp.value);
+        if (!isNaN(val) && val > 0) {
+          const wiz = AppState.penilaianWizard;
+          wiz.skorSeragam = true;
+          wiz.bobotSeragamNilai = val;
+          const count = Math.max(1, parseInt(document.getElementById('setup-nilai-jumlah-soal')?.value, 10) || wiz.jumlahSoal || 5);
+          wiz.jumlahSoal = count;
+          wiz.bobotPerSoal = Array.from({ length: count }, () => val);
+          this.renderQuestionWeightInputs(true);
+          this.saveWizardDraft();
+        }
+      });
+    }
+  };
+
+  Object.assign(PenilaianApp, {
+    // 1. Perbaiki renderQuestionWeightInputs agar TIDAK menimpa bobot pilihan guru (misal 1) dengan 100/jumlahSoal (10)
+    renderQuestionWeightInputs(keepExistingWeights = false) {
+      this.bindUniformScoreLiveInput();
+      const wiz = AppState.penilaianWizard;
+      const countEl = document.getElementById('setup-nilai-jumlah-soal');
+      const uniformEl = document.getElementById('setup-nilai-skor-seragam-input');
+      const container = document.getElementById('question-weights-container');
+      const totalBadge = document.getElementById('setup-nilai-total-bobot-badge');
+
+      const count = Math.min(50, Math.max(1, parseInt(countEl?.value, 10) || wiz.jumlahSoal || 5));
+      wiz.jumlahSoal = count;
+
+      // Baca nilai bobot seragam yang tertulis di input (contoh: 1)
+      const typedUniform = parseFloat(uniformEl?.value);
+      const activeUniformVal = (!isNaN(typedUniform) && typedUniform > 0)
+        ? typedUniform
+        : (parseFloat(wiz.bobotSeragamNilai) > 0 ? parseFloat(wiz.bobotSeragamNilai) : 1);
+
+      if (!Array.isArray(wiz.bobotPerSoal)) {
+        wiz.bobotPerSoal = [];
+      }
+
+      if (wiz.skorSeragam && !keepExistingWeights) {
+        wiz.bobotSeragamNilai = activeUniformVal;
+        wiz.bobotPerSoal = Array.from({ length: count }, () => activeUniformVal);
+      } else {
+        const newWeights = [];
+        for (let i = 0; i < count; i++) {
+          const existing = parseFloat(wiz.bobotPerSoal[i]);
+          newWeights.push((!isNaN(existing) && existing > 0) ? existing : activeUniformVal);
+        }
+        wiz.bobotPerSoal = newWeights;
+      }
+
+      const totalBobot = wiz.bobotPerSoal.reduce((acc, w) => acc + (parseFloat(w) || 0), 0);
+      if (totalBadge) {
+        totalBadge.textContent = `Total Skor Maksimal: ${Number(totalBobot.toFixed(2))} (Konversi Otomatis ke Skala 100)`;
+      }
+
+      if (!container) return;
+      container.innerHTML = wiz.bobotPerSoal.map((w, idx) => `
+        <div class="card" style="margin-bottom: 0; padding: 0.65rem 0.8rem; background: #ffffff; border: 1px solid var(--border);">
+          <label style="display: block; font-size: 0.78rem; font-weight: 700; color: var(--dark); margin-bottom: 0.25rem;">
+            Bobot Soal ${idx + 1} (S${idx + 1}) :
+          </label>
+          <input
+            type="number"
+            step="any"
+            min="0.1"
+            max="100"
+            class="form-control q-weight-item-input"
+            data-qindex="${idx}"
+            style="font-weight: 800; color: var(--primary); text-align: center;"
+            value="${w}"
+            oninput="PenilaianApp.updateSingleQuestionWeight(${idx}, this.value)"
+          >
+        </div>
+      `).join('');
+    },
+
+    updateSingleQuestionWeight(qIndex, rawValue) {
+      const wiz = AppState.penilaianWizard;
+      const val = parseFloat(rawValue);
+      if (!isNaN(val) && val > 0) {
+        wiz.bobotPerSoal[qIndex] = val;
+      }
+      const totalBobot = (wiz.bobotPerSoal || []).reduce((acc, w) => acc + (parseFloat(w) || 0), 0);
+      const totalBadge = document.getElementById('setup-nilai-total-bobot-badge');
+      if (totalBadge) {
+        totalBadge.textContent = `Total Skor Maksimal: ${Number(totalBobot.toFixed(2))} (Konversi Otomatis ke Skala 100)`;
+      }
+      this.saveWizardDraft();
+    },
+
+    applyUniformScore(enableUniform) {
+      const wiz = AppState.penilaianWizard;
+      wiz.skorSeragam = Boolean(enableUniform);
+      const uniformEl = document.getElementById('setup-nilai-skor-seragam-input');
+      const countEl = document.getElementById('setup-nilai-jumlah-soal');
+      const count = Math.min(50, Math.max(1, parseInt(countEl?.value, 10) || wiz.jumlahSoal || 5));
+      wiz.jumlahSoal = count;
+
+      if (enableUniform) {
+        const val = parseFloat(uniformEl?.value);
+        const finalWeight = (!isNaN(val) && val > 0) ? val : 1;
+        wiz.bobotSeragamNilai = finalWeight;
+        if (uniformEl) uniformEl.value = finalWeight;
+        wiz.bobotPerSoal = Array.from({ length: count }, () => finalWeight);
+      }
+      this.renderQuestionWeightInputs(true);
+      this.saveWizardDraft();
+    },
+
+    // Membaca & mengunci seluruh bobot aktual dari kotak input DOM sebelum membuka lembar penilaian siswa
+    captureCurrentWeightsFromDOM() {
+      const wiz = AppState.penilaianWizard;
+      const countEl = document.getElementById('setup-nilai-jumlah-soal');
+      const uniformEl = document.getElementById('setup-nilai-skor-seragam-input');
+      if (countEl) {
+        const c = parseInt(countEl.value, 10);
+        if (!isNaN(c) && c > 0) wiz.jumlahSoal = Math.min(50, c);
+      }
+
+      const weightInputs = document.querySelectorAll('#question-weights-container .q-weight-item-input');
+      if (weightInputs && weightInputs.length > 0) {
+        const domWeights = [];
+        weightInputs.forEach(inp => {
+          const v = parseFloat(inp.value);
+          domWeights.push((!isNaN(v) && v > 0) ? v : 1);
+        });
+        if (domWeights.length === wiz.jumlahSoal) {
+          wiz.bobotPerSoal = domWeights;
+          return;
+        }
+      }
+
+      // Jika kotak belum dirender atau jumlah soal baru berubah, gunakan angka di #setup-nilai-skor-seragam-input
+      const uniformVal = parseFloat(uniformEl?.value);
+      const fallbackWeight = (!isNaN(uniformVal) && uniformVal > 0)
+        ? uniformVal
+        : (parseFloat(wiz.bobotSeragamNilai) > 0 ? parseFloat(wiz.bobotSeragamNilai) : 1);
+
+      wiz.bobotPerSoal = Array.from({ length: wiz.jumlahSoal }, (_, i) => {
+        const ex = parseFloat(wiz.bobotPerSoal?.[i]);
+        return (!isNaN(ex) && ex > 0) ? ex : fallbackWeight;
+      });
+    },
+
+    // Jangan biarkan sinkronisasi Modul RPM menimpa bobot soal menjadi 100/jumlahSoal jika guru sudah mengatur bobot
+    applySelectedRpmModuleToWizard(rpmId) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const savedList = Array.isArray(bucket.savedRpmModules) ? bucket.savedRpmModules : [];
+      const found = savedList.find(m => String(m.id) === String(rpmId)) ||
+        (bucket.rpmLastGenerated && String(bucket.rpmLastGenerated.id) === String(rpmId) ? bucket.rpmLastGenerated : null);
+
+      if (!found) return;
+
+      const wiz = AppState.penilaianWizard;
+      const tpArr = Array.isArray(found.tujuanPembelajaran) ? found.tujuanPembelajaran : [];
+      if (tpArr.length > 0) {
+        wiz.tpPengetahuan = tpArr.join(' | ');
+        const tpEl = document.getElementById('setup-nilai-tp-pengetahuan');
+        if (tpEl) tpEl.value = wiz.tpPengetahuan;
+      }
+
+      if (found.soloLevel) {
+        wiz.soloLevel = found.soloLevel;
+        const soloEl = document.getElementById('setup-nilai-solo-level');
+        if (soloEl) soloEl.value = found.soloLevel;
+      }
+
+      // Hitung jumlah soal dari RPM jika ada, namun PERTAHANKAN bobot per soal pilihan guru
+      let totalQ = 0;
+      if (Array.isArray(found.questionSections)) {
+        found.questionSections.forEach(sec => {
+          totalQ += Array.isArray(sec.items) ? sec.items.length : 0;
+        });
+      }
+      if (totalQ > 0) {
+        wiz.jumlahSoal = totalQ;
+        const qCountEl = document.getElementById('setup-nilai-jumlah-soal');
+        if (qCountEl) qCountEl.value = totalQ;
+
+        const uniformEl = document.getElementById('setup-nilai-skor-seragam-input');
+        const currentWeight = parseFloat(uniformEl?.value) || parseFloat(wiz.bobotSeragamNilai) || 1;
+        wiz.bobotPerSoal = Array.from({ length: totalQ }, () => currentWeight);
+        this.renderQuestionWeightInputs(true);
+      }
+      this.saveWizardDraft();
+    },
+
+    finishSetupAndOpenSheet(skipKeterampilan = false) {
+      this.captureCurrentWeightsFromDOM();
+      const wiz = AppState.penilaianWizard;
+      wiz.skipKeterampilan = Boolean(skipKeterampilan);
+
+      const mapelEl = document.getElementById('setup-nilai-mapel');
+      const jenisEl = document.getElementById('setup-nilai-jenis-asesmen');
+      const tpPengEl = document.getElementById('setup-nilai-tp-pengetahuan');
+      const soloEl = document.getElementById('setup-nilai-solo-level');
+      const instrEl = document.getElementById('setup-nilai-jenis-instrumen');
+      const instrManEl = document.getElementById('setup-nilai-instrumen-manual');
+      const ketJenisEl = document.getElementById('setup-nilai-jenis-keterampilan');
+      const ketManEl = document.getElementById('setup-nilai-keterampilan-manual');
+      const tpKetEl = document.getElementById('setup-nilai-tp-keterampilan');
+
+      if (mapelEl && mapelEl.value) wiz.mapel = mapelEl.value.trim();
+      if (jenisEl && jenisEl.value) wiz.jenisAsesmen = jenisEl.value;
+      if (tpPengEl) wiz.tpPengetahuan = tpPengEl.value.trim();
+      if (soloEl && soloEl.value) wiz.soloLevel = soloEl.value;
+      if (instrEl) {
+        wiz.jenisInstrumen = instrEl.value === 'LAINNYA'
+          ? (instrManEl?.value.trim() || 'Instrumen Kustom')
+          : instrEl.value;
+      }
+      if (ketJenisEl) {
+        wiz.jenisKeterampilan = ketJenisEl.value === 'LAINNYA'
+          ? (ketManEl?.value.trim() || 'Keterampilan Kustom')
+          : ketJenisEl.value;
+      }
+      if (tpKetEl) wiz.tpKeterampilan = tpKetEl.value.trim();
+
+      this.saveWizardDraft();
+      this.openPengetahuanSheet();
+    },
+
+    // 2. Render Lembar Penilaian Siswa dengan Bobot Soal yang 100% Sesuai Input Guru (Misal Max: 1)
+    openPengetahuanSheet() {
+      this.captureCurrentWeightsFromDOM();
+      const wiz = AppState.penilaianWizard;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      ['penilaian-step-1-card', 'penilaian-step-2-card', 'penilaian-step-3-card', 'penilaian-sheet-keterampilan-card'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+      });
+      const sheetCard = document.getElementById('penilaian-sheet-pengetahuan-card');
+      if (sheetCard) sheetCard.classList.remove('hidden');
+
+      const btnKetTop = document.getElementById('btn-open-keterampilan-sheet');
+      const btnKetBot = document.getElementById('btn-bottom-open-keterampilan');
+      if (btnKetTop) btnKetTop.classList.toggle('hidden', Boolean(wiz.skipKeterampilan));
+      if (btnKetBot) btnKetBot.classList.toggle('hidden', Boolean(wiz.skipKeterampilan));
+
+      const count = Math.max(1, parseInt(wiz.jumlahSoal, 10) || 5);
+      const weights = Array.from({ length: count }, (_, i) => {
+        const w = parseFloat(wiz.bobotPerSoal?.[i]);
+        return (!isNaN(w) && w > 0) ? w : 1;
+      });
+      wiz.bobotPerSoal = weights;
+      const totalMaxWeight = weights.reduce((a, b) => a + b, 0) || count;
+
+      const metaEl = document.getElementById('sheet-pengetahuan-meta-info');
+      if (metaEl) {
+        metaEl.innerHTML = `Mata Pelajaran: <strong>${UI.escapeHtml(wiz.mapel || '-')}</strong> | Jenis: <strong>${UI.escapeHtml(wiz.jenisAsesmen)}</strong> | Jumlah Soal: <strong>${count} Butir</strong> (Total Bobot Maks: <strong>${Number(totalMaxWeight.toFixed(2))}</strong> &rarr; Skala 0–100)`;
+      }
+
+      const thead = document.getElementById('thead-penilaian-pengetahuan');
+      const tbody = document.getElementById('tbody-penilaian-pengetahuan');
+      if (!thead || !tbody) return;
+
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 48px;">No</th>
+          <th style="min-width: 180px;">Nama Siswa</th>
+          ${weights.map((w, idx) => `
+            <th style="text-align: center; min-width: 88px;">
+              S${idx + 1}<br>
+              <span class="badge badge-primary" style="font-size: 0.68rem;">Maks: ${w}</span>
+            </th>
+          `).join('')}
+          <th style="text-align: center; width: 120px; background: #eff6ff;">Skor Perolehan</th>
+          <th style="text-align: center; width: 135px; background: #f0fdf4;">Nilai Akhir (0–100)</th>
+        </tr>
+      `;
+
+      const students = Array.isArray(bucket.students) ? bucket.students : [];
+      if (students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="${count + 4}" style="text-align:center; padding: 1.25rem; color: var(--text-muted);">Belum ada siswa terdaftar di kelas ini. Tambahkan siswa di menu 1. Data Kelas.</td></tr>`;
+        return;
+      }
+
+      if (!wiz.tempScoresPengetahuan || typeof wiz.tempScoresPengetahuan !== 'object') {
+        wiz.tempScoresPengetahuan = {};
+      }
+
+      // Cek apakah ada penilaian yang sudah tersimpan sebelumnya pada tanggal, mapel & jenis yang sama
+      const activeDate = wiz.activeDate || DateTimeUtil.getTodayISO();
+      const existingSession = (bucket.penilaian || []).find(r =>
+        r.tanggal === activeDate &&
+        this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(wiz.mapel) &&
+        r.jenisAsesmen === wiz.jenisAsesmen
+      );
+
+      tbody.innerHTML = students.map((std, sIdx) => {
+        if (!wiz.tempScoresPengetahuan[std.id] || typeof wiz.tempScoresPengetahuan[std.id] !== 'object') {
+          const savedStd = existingSession?.scores?.[std.id];
+          wiz.tempScoresPengetahuan[std.id] = (savedStd && typeof savedStd.perSoal === 'object')
+            ? { ...savedStd.perSoal }
+            : {};
+        }
+
+        const stdMap = wiz.tempScoresPengetahuan[std.id];
+        let obtainedSum = 0;
+
+        const inputsHtml = weights.map((maxW, qIdx) => {
+          const rawVal = stdMap[`S${qIdx + 1}`] !== undefined ? stdMap[`S${qIdx + 1}`] : (stdMap[qIdx] !== undefined ? stdMap[qIdx] : '');
+          const numVal = parseFloat(rawVal);
+          const clampedVal = !isNaN(numVal) ? Math.min(maxW, Math.max(0, numVal)) : '';
+          if (clampedVal !== '') obtainedSum += clampedVal;
+
+          const safeStdId = String(std.id).replace(/'/g, "\\'");
+          return `
+            <td style="text-align: center;">
+              <input
+                type="number"
+                step="any"
+                min="0"
+                max="${maxW}"
+                class="form-control std-qscore-input"
+                data-student-id="${UI.escapeHtml(std.id)}"
+                data-qindex="${qIdx}"
+                data-max-weight="${maxW}"
+                style="width: 76px; margin: 0 auto; text-align: center; font-weight: 700;"
+                placeholder="0 - ${maxW}"
+                value="${clampedVal}"
+                oninput="PenilaianApp.handleStudentQuestionScoreInput('${safeStdId}', ${qIdx}, this.value, ${maxW})"
+              >
+            </td>
+          `;
+        }).join('');
+
+        const finalScore100 = totalMaxWeight > 0 ? Math.round((obtainedSum / totalMaxWeight) * 100) : 0;
+
+        return `
+          <tr id="row-peng-${UI.escapeHtml(std.id)}">
+            <td>${sIdx + 1}</td>
+            <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+            ${inputsHtml}
+            <td style="text-align: center; font-weight: 700; background: #f8fafc;" id="cell-rawsum-${UI.escapeHtml(std.id)}">
+              ${Number(obtainedSum.toFixed(2))} / ${Number(totalMaxWeight.toFixed(2))}
+            </td>
+            <td style="text-align: center; font-weight: 900; font-size: 1rem; color: var(--success); background: #f0fdf4;" id="cell-finalpeng-${UI.escapeHtml(std.id)}">
+              ${finalScore100}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    },
+
+    handleStudentQuestionScoreInput(studentId, qIndex, rawValue, maxWeight) {
+      const wiz = AppState.penilaianWizard;
+      if (!wiz.tempScoresPengetahuan[studentId]) {
+        wiz.tempScoresPengetahuan[studentId] = {};
+      }
+
+      const maxW = parseFloat(maxWeight) || parseFloat(wiz.bobotPerSoal?.[qIndex]) || 1;
+      let val = parseFloat(rawValue);
+      if (isNaN(val) || val < 0) {
+        delete wiz.tempScoresPengetahuan[studentId][`S${qIndex + 1}`];
+        delete wiz.tempScoresPengetahuan[studentId][qIndex];
+      } else {
+        if (val > maxW) {
+          val = maxW;
+          const inpEl = document.querySelector(`.std-qscore-input[data-student-id="${studentId}"][data-qindex="${qIndex}"]`);
+          if (inpEl) inpEl.value = maxW;
+        }
+        wiz.tempScoresPengetahuan[studentId][`S${qIndex + 1}`] = val;
+        wiz.tempScoresPengetahuan[studentId][qIndex] = val;
+      }
+
+      const weights = wiz.bobotPerSoal || [];
+      const totalMaxWeight = weights.reduce((a, b) => a + (parseFloat(b) || 0), 0) || 1;
+      let sumObtained = 0;
+
+      weights.forEach((w, idx) => {
+        const v = wiz.tempScoresPengetahuan[studentId][`S${idx + 1}`] !== undefined
+          ? wiz.tempScoresPengetahuan[studentId][`S${idx + 1}`]
+          : wiz.tempScoresPengetahuan[studentId][idx];
+        const num = parseFloat(v);
+        if (!isNaN(num)) sumObtained += Math.min(parseFloat(w) || 1, Math.max(0, num));
+      });
+
+      const final100 = Math.min(100, Math.round((sumObtained / totalMaxWeight) * 100));
+
+      const rawCell = document.getElementById(`cell-rawsum-${studentId}`);
+      const finalCell = document.getElementById(`cell-finalpeng-${studentId}`);
+      if (rawCell) rawCell.textContent = `${Number(sumObtained.toFixed(2))} / ${Number(totalMaxWeight.toFixed(2))}`;
+      if (finalCell) finalCell.textContent = String(final100);
+
+      this.saveWizardDraft();
+    },
+
+    // 3. Simpan Penilaian Akademik dengan Membaca Langsung Seluruh Input DOM & Langsung Sinkron ke Rekap
+    async saveAcademicAssessment() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      this.captureCurrentWeightsFromDOM();
+      const wiz = AppState.penilaianWizard;
+
+      const mapelSelect = document.getElementById('setup-nilai-mapel');
+      const mapelName = (wiz.mapel || mapelSelect?.value || '').trim();
+      if (!mapelName) {
+        UI.showNotif('Mata Pelajaran Belum Dipilih', 'Silakan pilih Mata Pelajaran pada Tahap 1 terlebih dahulu.', 'warning');
+        return;
+      }
+      wiz.mapel = mapelName;
+
+      const activeDate = wiz.activeDate || DateTimeUtil.getTodayISO();
+      const dayName = DateTimeUtil.getIndonesianDayName(activeDate);
+      const jenisAsesmen = wiz.jenisAsesmen || document.getElementById('setup-nilai-jenis-asesmen')?.value || 'FORMATIF';
+      const skipKet = Boolean(wiz.skipKeterampilan);
+
+      const count = Math.max(1, parseInt(wiz.jumlahSoal, 10) || 5);
+      const weights = Array.from({ length: count }, (_, i) => {
+        const w = parseFloat(wiz.bobotPerSoal?.[i]);
+        return (!isNaN(w) && w > 0) ? w : 1;
+      });
+      const totalMaxWeight = weights.reduce((a, b) => a + b, 0) || 1;
+
+      // Baca langsung semua input skor pengetahuan dari DOM agar tidak ada nilai yang terlewat
+      const domScoreInputs = document.querySelectorAll('#tbody-penilaian-pengetahuan .std-qscore-input');
+      if (domScoreInputs && domScoreInputs.length > 0) {
+        domScoreInputs.forEach(inp => {
+          const sid = inp.getAttribute('data-student-id');
+          const qIdx = parseInt(inp.getAttribute('data-qindex'), 10);
+          const maxW = parseFloat(inp.getAttribute('data-max-weight')) || weights[qIdx] || 1;
+          const v = parseFloat(inp.value);
+          if (sid && !isNaN(qIdx)) {
+            if (!wiz.tempScoresPengetahuan[sid]) wiz.tempScoresPengetahuan[sid] = {};
+            if (!isNaN(v) && v >= 0) {
+              const clamped = Math.min(maxW, Math.max(0, v));
+              wiz.tempScoresPengetahuan[sid][`S${qIdx + 1}`] = clamped;
+              wiz.tempScoresPengetahuan[sid][qIdx] = clamped;
+            }
+          }
+        });
+      }
+
+      const students = Array.isArray(bucket.students) ? bucket.students : [];
+      const bobotPengPolicy = typeof this.getClassRekapWeightPolicy === 'function'
+        ? this.getClassRekapWeightPolicy(bucket).bobotPengetahuan
+        : 70;
+      const bobotKetPolicy = 100 - bobotPengPolicy;
+
+      const scoresRecord = {};
+      students.forEach(std => {
+        const pMap = (wiz.tempScoresPengetahuan && wiz.tempScoresPengetahuan[std.id]) || {};
+        let sumObtained = 0;
+        const perSoalClean = {};
+
+        weights.forEach((maxW, idx) => {
+          const rawV = pMap[`S${idx + 1}`] !== undefined ? pMap[`S${idx + 1}`] : pMap[idx];
+          const num = parseFloat(rawV);
+          const validNum = !isNaN(num) ? Math.min(maxW, Math.max(0, num)) : 0;
+          perSoalClean[`S${idx + 1}`] = validNum;
+          sumObtained += validNum;
+        });
+
+        const nilaiPengetahuan = Math.min(100, Math.round((sumObtained / totalMaxWeight) * 100));
+
+        const kMap = (wiz.tempScoresKeterampilan && wiz.tempScoresKeterampilan[std.id]) || {};
+        const skorProses = parseFloat(kMap.skorProses);
+        const skorHasil = parseFloat(kMap.skorHasil);
+        const nilaiKetManual = parseFloat(kMap.nilaiKeterampilan);
+
+        let nilaiKeterampilan = 0;
+        if (!skipKet) {
+          if (!isNaN(skorProses) && !isNaN(skorHasil)) {
+            nilaiKeterampilan = Math.round((skorProses + skorHasil) / 2);
+          } else if (!isNaN(nilaiKetManual)) {
+            nilaiKeterampilan = Math.round(nilaiKetManual);
+          } else {
+            nilaiKeterampilan = nilaiPengetahuan;
+          }
+        }
+
+        const nilaiRekap = skipKet
+          ? nilaiPengetahuan
+          : Math.round((nilaiPengetahuan * (bobotPengPolicy / 100)) + (nilaiKeterampilan * (bobotKetPolicy / 100)));
+
+        scoresRecord[std.id] = {
+          perSoal: perSoalClean,
+          skorPerolehan: Number(sumObtained.toFixed(2)),
+          skorMaksimal: Number(totalMaxWeight.toFixed(2)),
+          nilaiPengetahuan,
+          skorProses: skipKet ? null : (isNaN(skorProses) ? nilaiKeterampilan : skorProses),
+          skorHasil: skipKet ? null : (isNaN(skorHasil) ? nilaiKeterampilan : skorHasil),
+          nilaiKeterampilan: skipKet ? null : nilaiKeterampilan,
+          skipKeterampilan: skipKet,
+          nilaiRekap,
+          catatan: kMap.catatan || ''
+        };
+      });
+
+      if (!Array.isArray(bucket.penilaian)) {
+        bucket.penilaian = [];
+      }
+
+      const existingIdx = bucket.penilaian.findIndex(r =>
+        r.tanggal === activeDate &&
+        this.normalizeSubjKey(r.mapel) === this.normalizeSubjKey(mapelName) &&
+        r.jenisAsesmen === jenisAsesmen
+      );
+
+      const payload = {
+        id: existingIdx >= 0 ? bucket.penilaian[existingIdx].id : ('NILAI_' + Date.now()),
+        tanggal: activeDate,
+        hari: dayName,
+        jenisAsesmen,
+        mapel: mapelName,
+        tpPengetahuan: wiz.tpPengetahuan || '-',
+        soloLevel: wiz.soloLevel || 'Relational',
+        jenisInstrumen: wiz.jenisInstrumen || 'Pilihan Ganda (PG)',
+        jumlahSoal: count,
+        bobotPerSoal: [...weights],
+        skipKeterampilan: skipKet,
+        jenisKeterampilan: skipKet ? '-' : (wiz.jenisKeterampilan || 'Praktik / Unjuk Kerja'),
+        tpKeterampilan: skipKet ? '-' : (wiz.tpKeterampilan || '-'),
+        scores: scoresRecord,
+        savedAt: DateTimeUtil.getCurrentTimeStr()
+      };
+
+      if (existingIdx >= 0) {
+        bucket.penilaian[existingIdx] = payload;
+      } else {
+        bucket.penilaian.push(payload);
+      }
+
+      await DB.saveImmediate();
+
+      // Sinkronkan filter Rekap Penilaian ke tanggal & jenis asesmen yang baru saja disimpan agar langsung tampil!
+      const datePicker = document.getElementById('rekap-nilai-date-picker');
+      const jenisFilter = document.getElementById('rekap-nilai-filter-jenis');
+      if (datePicker) datePicker.value = activeDate;
+      if (jenisFilter) jenisFilter.value = jenisAsesmen;
+
+      UI.showNotif(
+        'Penilaian Akademik Berhasil Disimpan',
+        `Nilai ${jenisAsesmen} mata pelajaran "${mapelName}" (${students.length} siswa) telah disimpan dengan bobot total ${Number(totalMaxWeight.toFixed(2))} dan langsung ditampilkan pada Rekap Penilaian.`,
+        'success'
+      );
+
+      IntraApp.openSubPillar('rekap_penilaian');
+    }
+  });
+
+  // 4. Patch renderRekapPenilaian: Gabungkan Mapel Jadwal Harian + Mapel yang Memiliki Nilai pada Tanggal Tersebut
+  const _origGetSubjectsForDay = DataKelasApp.getSubjectsForDay ? DataKelasApp.getSubjectsForDay.bind(DataKelasApp) : null;
+
+  Object.assign(DataKelasApp, {
+    getSubjectsForDay(dayName, bucketInput = null) {
+      const bucket = bucketInput || DB.getActiveClassBucket();
+      const baseList = _origGetSubjectsForDay ? _origGetSubjectsForDay(dayName, bucket) : [];
+      if (!bucket) return baseList;
+
+      const selectedDate = document.getElementById('rekap-nilai-date-picker')?.value || DateTimeUtil.getTodayISO();
+      const recordsOnDate = (bucket.penilaian || []).filter(r => r && r.tanggal === selectedDate && r.mapel);
+
+      const merged = [...baseList];
+      recordsOnDate.forEach(rec => {
+        const recKey = PenilaianApp.normalizeSubjKey(rec.mapel);
+        const alreadyExists = merged.some(m => PenilaianApp.normalizeSubjKey(m) === recKey);
+        if (!alreadyExists) {
+          merged.push(rec.mapel.trim());
+        }
+      });
+
+      return merged;
+    }
+  });
+}
+
 // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
