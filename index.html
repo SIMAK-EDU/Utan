@@ -38738,16 +38738,21 @@ if (typeof PenilaianApp !== 'undefined') {
 }
 
     // ============================================================================
-// INOVASI PANEL ADMIN: KONTROL PENUH HAK AKSES HALAMAN & FITUR PER GURU
-// (PILIH 1 GURU, BEBERAPA GURU, ATAU SEMUA GURU + POP-UP SILANG MERAH)
+// INOVASI PANEL ADMIN (V2 — INSTANT RESPONSE & PERSISTENT LOCK):
+// KONTROL PENUH HAK AKSES HALAMAN & FITUR PER GURU (1 GURU / BEBERAPA / SEMUA)
+// + RESPON VISUAL LANGSUNG DI ADMIN + POP-UP TANDA SILANG MERAH PADA GURU
 // ============================================================================
+
+const ACCESS_LOCKS_LOCAL_BACKUP_KEY = 'SIMAK_EDU_TEACHER_ACCESS_LOCKS_V2';
 
 const TeacherAccessControl = {
   selectedTeacherIds: [],
   activeCategoryFilter: 'ALL',
   searchTeacherQuery: '',
+  lastFeedbackMessage: '',
+  lastFeedbackType: 'success',
 
-  // Daftar lengkap seluruh Pilar & Sub-Halaman yang dapat dikunci/dibuka oleh Admin
+  // Katalog lengkap 22 titik akses (Pilar Utama & Sub-Halaman)
   featureCatalog: [
     // PILAR 1: DATA KELAS
     { key: 'pilar:data_kelas', group: 'DATA_KELAS', groupLabel: 'Pilar 1: Data Kelas', title: 'Seluruh Halaman Data Kelas (Kunci Pilar Utama)', isPillar: true },
@@ -38780,80 +38785,101 @@ const TeacherAccessControl = {
     { key: 'ekskul:rekap', group: 'EKSTRAKURIKULER', groupLabel: 'Pilar 4: Ekstrakurikuler', title: '4.2. Halaman Rekap Penilaian Ekstrakurikuler' }
   ],
 
-  // Pastikan struktur penyimpanan izin akses tersedia di DB.data & tersinkronisasi dengan setiap akun guru
+  getLocalBackupStore() {
+    try {
+      const raw = localStorage.getItem(ACCESS_LOCKS_LOCAL_BACKUP_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === 'object' && parsed.byTeacherId) {
+          return parsed;
+        }
+      }
+    } catch (e) {}
+    return null;
+  },
+
+  saveLocalBackupStore(storeObj) {
+    try {
+      if (storeObj && typeof storeObj === 'object') {
+        localStorage.setItem(ACCESS_LOCKS_LOCAL_BACKUP_KEY, JSON.stringify(storeObj));
+      }
+    } catch (e) {}
+  },
+
+  // Pastikan penyimpanan izin akses selalu konsisten dan tidak tertimpa data kosong
   ensureAccessStore() {
-    if (!DB || !DB.data) return { _updatedAt: 0, byTeacherId: {} };
-    if (!DB.data.teacherAccessLocks || typeof DB.data.teacherAccessLocks !== 'object') {
-      DB.data.teacherAccessLocks = {
-        _updatedAt: Date.now(),
-        byTeacherId: {}
-      };
+    if (!DB || !DB.data) {
+      return this.getLocalBackupStore() || { _updatedAt: 0, byTeacherId: {} };
     }
-    if (!DB.data.teacherAccessLocks.byTeacherId) {
+
+    const backup = this.getLocalBackupStore();
+    if (!DB.data.teacherAccessLocks || typeof DB.data.teacherAccessLocks !== 'object') {
+      DB.data.teacherAccessLocks = backup
+        ? JSON.parse(JSON.stringify(backup))
+        : { _updatedAt: 0, byTeacherId: {} };
+    }
+
+    if (backup && Number(backup._updatedAt || 0) > Number(DB.data.teacherAccessLocks._updatedAt || 0)) {
+      DB.data.teacherAccessLocks = JSON.parse(JSON.stringify(backup));
+    }
+
+    if (!DB.data.teacherAccessLocks.byTeacherId || typeof DB.data.teacherAccessLocks.byTeacherId !== 'object') {
       DB.data.teacherAccessLocks.byTeacherId = {};
     }
 
-    // Sinkronkan dua arah antara acc.lockedFeatures dan DB.data.teacherAccessLocks.byTeacherId
     const byId = DB.data.teacherAccessLocks.byTeacherId;
+
     (DB.data.accounts || []).forEach(acc => {
       if (!acc || !acc.id) return;
-      if (acc.lockedFeatures && typeof acc.lockedFeatures === 'object') {
-        if (!byId[acc.id]) {
-          byId[acc.id] = { ...acc.lockedFeatures };
+      const tid = String(acc.id);
+      if (!byId[tid] || typeof byId[tid] !== 'object') {
+        if (acc.lockedFeatures && typeof acc.lockedFeatures === 'object') {
+          byId[tid] = { ...acc.lockedFeatures };
         } else {
-          byId[acc.id] = { ...acc.lockedFeatures, ...byId[acc.id] };
+          byId[tid] = {};
         }
-      } else if (byId[acc.id]) {
-        acc.lockedFeatures = { ...byId[acc.id] };
-      } else {
-        acc.lockedFeatures = {};
-        byId[acc.id] = {};
       }
+      // Sinkronkan dari byId ke acc.lockedFeatures sebagai satu sumber kebenaran
+      acc.lockedFeatures = { ...byId[tid] };
     });
 
     return DB.data.teacherAccessLocks;
   },
 
-  // Ambil daftar seluruh akun Guru (Guru Kelas & Guru Mapel)
   getAllTeacherAccounts() {
     if (!DB || !DB.data || !Array.isArray(DB.data.accounts)) return [];
     return DB.data.accounts.filter(a => a && (a.role === 'GURU_KELAS' || a.role === 'GURU_MAPEL'));
   },
 
-  // Cek apakah sebuah fitur/halaman dikunci untuk guru tertentu
+  // PENTING: Fungsi ini MURNI mengecek apakah suatu fitur dikunci pada guru tertentu
+  // (TIDAK BOLEH diblokir oleh AppState.activeMode === 'ADMIN' agar Panel Admin dapat menampilkan status terkunci!)
   isFeatureLockedForTeacher(teacherId, featureKey) {
     if (!teacherId || !featureKey) return false;
-    // Jika Kepala Sekolah sedang dalam mode supervisi/inspeksi read-only, izinkan melihat
-    if (AppState.isReadOnlyInspection) return false;
-    // Jika sedang berada di mode halaman Admin, jangan kunci Admin
-    if (AppState.activeMode === 'ADMIN') return false;
 
     const store = this.ensureAccessStore();
-    const teacherMap = (store.byTeacherId && store.byTeacherId[teacherId]) || {};
+    const tid = String(teacherId);
+    const teacherMap = (store.byTeacherId && store.byTeacherId[tid]) || {};
 
-    // Cek juga apakah pilar induknya dikunci secara global di DB.data.pillarLocks lama
-    const globalPillarLocks = (DB.data && DB.data.pillarLocks) || {};
+    if (teacherMap[featureKey] === true) return true;
 
-    if (Boolean(teacherMap[featureKey])) return true;
-
-    // Jika sub-halaman yang dicek berada di bawah pilar yang dikunci untuk guru tersebut, otomatis terkunci
-    if (featureKey.startsWith('dk:') && (teacherMap['pilar:data_kelas'] || globalPillarLocks.data_kelas)) return true;
-    if (featureKey.startsWith('intra:') && (teacherMap['pilar:intrakurikuler'] || globalPillarLocks.intrakurikuler)) return true;
-    if (featureKey.startsWith('koku:') && (teacherMap['pilar:kokurikuler'] || globalPillarLocks.kokurikuler)) return true;
-    if (featureKey.startsWith('ekskul:') && (teacherMap['pilar:ekstrakurikuler'] || globalPillarLocks.ekstrakurikuler)) return true;
-
-    if (featureKey === 'pilar:data_kelas' && globalPillarLocks.data_kelas) return true;
-    if (featureKey === 'pilar:intrakurikuler' && globalPillarLocks.intrakurikuler) return true;
-    if (featureKey === 'pilar:kokurikuler' && globalPillarLocks.kokurikuler) return true;
-    if (featureKey === 'pilar:ekstrakurikuler' && globalPillarLocks.ekstrakurikuler) return true;
+    // Jika Pilar Induk dikunci untuk guru ini, maka seluruh sub-halaman di bawahnya otomatis terkunci
+    if (featureKey.startsWith('dk:') && teacherMap['pilar:data_kelas'] === true) return true;
+    if (featureKey.startsWith('intra:') && teacherMap['pilar:intrakurikuler'] === true) return true;
+    if (featureKey.startsWith('koku:') && teacherMap['pilar:kokurikuler'] === true) return true;
+    if (featureKey.startsWith('ekskul:') && teacherMap['pilar:ekstrakurikuler'] === true) return true;
 
     return false;
   },
 
-  // Cek apakah fitur dikunci untuk guru yang sedang login aktif saat ini
+  // Cek apakah guru yang sedang membuka halaman diizinkan mengakses fitur tersebut
   checkCurrentTeacherAccess(featureKey) {
+    // Jika Kepala Sekolah sedang mode supervisi Read-Only, atau sedang di dalam layar Admin Dashboard, izinkan lewat
+    if (AppState.isReadOnlyInspection) return true;
+    if (AppState.activeMode === 'ADMIN') return true;
+
     const teacher = DB.getActiveTeacherAccount();
     if (!teacher) return true;
+
     if (this.isFeatureLockedForTeacher(teacher.id, featureKey)) {
       const meta = this.featureCatalog.find(f => f.key === featureKey);
       this.showAccessDeniedModal(meta ? meta.title : featureKey);
@@ -38862,7 +38888,7 @@ const TeacherAccessControl = {
     return true;
   },
 
-  // Tampilkan Pop-Up Notifikasi Tanda Silang Merah sesuai permintaan pengguna
+  // Pop-Up Tanda Silang Merah Besar sesuai permintaan
   showAccessDeniedModal(featureTitle = '') {
     let modal = document.getElementById('modal-access-denied-red-cross');
     if (!modal) {
@@ -38873,7 +38899,7 @@ const TeacherAccessControl = {
       modal.innerHTML = `
         <div class="modal-box" style="max-width: 460px; text-align: center; padding: 2.1rem 1.75rem; border-top: 6px solid #dc2626; animation: fadeIn 0.2s ease-out;">
           <div style="width: 84px; height: 84px; border-radius: 50%; background: #fef2f2; border: 4px solid #ef4444; color: #dc2626; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.15rem; box-shadow: 0 8px 20px rgba(220, 38, 38, 0.22);">
-            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
@@ -38881,7 +38907,7 @@ const TeacherAccessControl = {
           <span class="badge badge-danger" style="margin-bottom: 0.6rem; font-size: 0.76rem; padding: 0.28rem 0.85rem;">
             AKSES FITUR DIKUNCI ADMIN
           </span>
-          <h3 style="font-size: 1.18rem; font-weight: 800; color: #991b1b; margin-bottom: 0.55rem;" id="access-denied-feature-name">
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: #991b1b; margin-bottom: 0.55rem;" id="access-denied-feature-name">
             Akses Dibatasi
           </h3>
           <p style="font-size: 0.98rem; font-weight: 700; color: #1e293b; line-height: 1.55; margin-bottom: 1.4rem; background: #fff1f2; border: 1px solid #fecdd3; padding: 0.9rem 1rem; border-radius: 10px;">
@@ -38902,20 +38928,22 @@ const TeacherAccessControl = {
     modal.classList.remove('hidden');
   },
 
-  // Mengatur kunci/buka untuk daftar guru yang dipilih di Panel Admin
+  // Eksekusi Kunci / Buka Satu Halaman pada Guru yang Dipilih (Respon Instan 0 Detik)
   async setFeatureLockForSelectedTeachers(featureKey, shouldLock) {
     const teachers = this.getAllTeacherAccounts();
     if (this.selectedTeacherIds.length === 0 && teachers.length > 0) {
-      this.selectedTeacherIds = [teachers[0].id];
+      this.selectedTeacherIds = [String(teachers[0].id)];
     }
 
     const store = this.ensureAccessStore();
     const now = Date.now();
     store._updatedAt = now;
+    DB.lastLocalWriteTimestamp = now;
 
-    // Jika yang dikunci/dibuka adalah Pilar Utama, sinkronkan juga seluruh sub-halaman di bawah pilar tersebut
     const meta = this.featureCatalog.find(f => f.key === featureKey);
     const relatedKeys = [featureKey];
+
+    // Jika mengunci/membuka Pilar Induk, terapkan juga ke semua sub-halaman di bawah pilar tersebut
     if (meta && meta.isPillar) {
       this.featureCatalog
         .filter(f => f.group === meta.group)
@@ -38924,8 +38952,14 @@ const TeacherAccessControl = {
         });
     }
 
-    this.selectedTeacherIds.forEach(tid => {
-      if (!store.byTeacherId[tid]) store.byTeacherId[tid] = {};
+    const affectedTeacherNames = [];
+
+    this.selectedTeacherIds.forEach(rawTid => {
+      const tid = String(rawTid);
+      if (!store.byTeacherId[tid] || typeof store.byTeacherId[tid] !== 'object') {
+        store.byTeacherId[tid] = {};
+      }
+
       relatedKeys.forEach(k => {
         if (shouldLock) {
           store.byTeacherId[tid][k] = true;
@@ -38934,7 +38968,7 @@ const TeacherAccessControl = {
         }
       });
 
-      // Jika membuka sub-halaman, pastikan kunci pilar induknya juga dibuka agar guru bisa masuk ke pilar tersebut
+      // Jika membuka salah satu sub-halaman, pastikan kunci Pilar Induknya ikut dibuka agar guru bisa masuk ke pilar tersebut
       if (!shouldLock && meta && !meta.isPillar) {
         const parentPillar = this.featureCatalog.find(f => f.group === meta.group && f.isPillar);
         if (parentPillar) {
@@ -38942,47 +38976,72 @@ const TeacherAccessControl = {
         }
       }
 
-      const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(tid));
+      // Jika seluruh sub-halaman dalam satu pilar sudah dikunci semua, tandai juga pilar induknya
+      if (shouldLock && meta && !meta.isPillar) {
+        const subItems = this.featureCatalog.filter(f => f.group === meta.group && !f.isPillar);
+        const allSubsLocked = subItems.length > 0 && subItems.every(f => store.byTeacherId[tid][f.key] === true);
+        const parentPillar = this.featureCatalog.find(f => f.group === meta.group && f.isPillar);
+        if (allSubsLocked && parentPillar) {
+          store.byTeacherId[tid][parentPillar.key] = true;
+        }
+      }
+
+      const acc = (DB.data.accounts || []).find(a => a && String(a.id) === tid);
       if (acc) {
         acc.lockedFeatures = { ...store.byTeacherId[tid] };
         acc.updatedTimestamp = now;
+        affectedTeacherNames.push(acc.nama);
       }
     });
 
-    // Pastikan global pillarLocks lama diset false agar tidak memblokir guru lain yang tidak dipilih
-    if (DB.data && DB.data.pillarLocks) {
-      DB.data.pillarLocks = {
-        data_kelas: false,
-        intrakurikuler: false,
-        kokurikuler: false,
-        ekstrakurikuler: false
-      };
-    }
+    // Simpan ke backup lokal & state utama SEKARANG JUGA sebelum render ulang
+    this.saveLocalBackupStore(store);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB.data));
 
+    const featTitle = meta ? meta.title : featureKey;
+    const targetNames = affectedTeacherNames.length > 2
+      ? `${affectedTeacherNames.length} Guru Terpilih`
+      : affectedTeacherNames.join(', ');
+
+    this.lastFeedbackMessage = shouldLock
+      ? `🔒 BERHASIL DIKUNCI: "${featTitle}" kini TERKUNCI untuk ${targetNames}.`
+      : `🔓 BERHASIL DIBUKA: "${featTitle}" kini DIIZINKAN / TERBUKA untuk ${targetNames}.`;
+    this.lastFeedbackType = shouldLock ? 'danger' : 'success';
+
+    // Render ulang Panel Admin secara instan agar perubahan warna & status langsung terlihat!
     this.renderAdminAccessControlPanel();
     if (typeof AdminApp !== 'undefined' && typeof AdminApp.renderAccountsTable === 'function') {
       AdminApp.renderAccountsTable();
     }
+
+    // Kirim ke Supabase Cloud di latar belakang
     await DB.saveImmediate();
   },
 
-  // Kunci atau Buka seluruh fitur dalam satu grup (atau semua grup) untuk guru yang sedang dipilih
+  // Eksekusi Kunci / Buka Massal Satu Kategori atau Semua Halaman pada Guru Terpilih
   async setBulkGroupLockForSelectedTeachers(groupKey, shouldLock) {
     const teachers = this.getAllTeacherAccounts();
     if (this.selectedTeacherIds.length === 0 && teachers.length > 0) {
-      this.selectedTeacherIds = [teachers[0].id];
+      this.selectedTeacherIds = [String(teachers[0].id)];
     }
 
     const store = this.ensureAccessStore();
     const now = Date.now();
     store._updatedAt = now;
+    DB.lastLocalWriteTimestamp = now;
 
     const targetFeatures = groupKey === 'ALL'
       ? this.featureCatalog
       : this.featureCatalog.filter(f => f.group === groupKey);
 
-    this.selectedTeacherIds.forEach(tid => {
-      if (!store.byTeacherId[tid]) store.byTeacherId[tid] = {};
+    const affectedTeacherNames = [];
+
+    this.selectedTeacherIds.forEach(rawTid => {
+      const tid = String(rawTid);
+      if (!store.byTeacherId[tid] || typeof store.byTeacherId[tid] !== 'object') {
+        store.byTeacherId[tid] = {};
+      }
+
       targetFeatures.forEach(f => {
         if (shouldLock) {
           store.byTeacherId[tid][f.key] = true;
@@ -38991,49 +39050,45 @@ const TeacherAccessControl = {
         }
       });
 
-      // Jika membuka sub-halaman grup tertentu, buka juga kunci pilar induk grup tersebut
       if (!shouldLock && groupKey !== 'ALL') {
         const parentPillar = this.featureCatalog.find(f => f.group === groupKey && f.isPillar);
         if (parentPillar) delete store.byTeacherId[tid][parentPillar.key];
       }
 
-      const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(tid));
+      const acc = (DB.data.accounts || []).find(a => a && String(a.id) === tid);
       if (acc) {
         acc.lockedFeatures = { ...store.byTeacherId[tid] };
         acc.updatedTimestamp = now;
+        affectedTeacherNames.push(acc.nama);
       }
     });
 
-    if (DB.data && DB.data.pillarLocks) {
-      DB.data.pillarLocks = {
-        data_kelas: false,
-        intrakurikuler: false,
-        kokurikuler: false,
-        ekstrakurikuler: false
-      };
-    }
+    this.saveLocalBackupStore(store);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(DB.data));
+
+    const targetNames = affectedTeacherNames.length > 2
+      ? `${affectedTeacherNames.length} Guru Terpilih`
+      : affectedTeacherNames.join(', ');
+
+    this.lastFeedbackMessage = shouldLock
+      ? `🔒 SEMUA FITUR DIKUNCI: Seluruh halaman pada kategori terpilih telah DIKUNCI untuk ${targetNames}.`
+      : `🔓 SEMUA FITUR DIBUKA: Seluruh halaman pada kategori terpilih telah DIBUKA kembali untuk ${targetNames}.`;
+    this.lastFeedbackType = shouldLock ? 'danger' : 'success';
 
     this.renderAdminAccessControlPanel();
     if (typeof AdminApp !== 'undefined' && typeof AdminApp.renderAccountsTable === 'function') {
       AdminApp.renderAccountsTable();
     }
-    await DB.saveImmediate();
 
-    const teacherCount = this.selectedTeacherIds.length;
-    UI.showNotif(
-      shouldLock ? 'Halaman Berhasil Dikunci' : 'Halaman Berhasil Dibuka',
-      `Pengaturan akses telah diterapkan pada ${teacherCount} Guru terpilih dan disinkronkan ke Cloud.`,
-      shouldLock ? 'warning' : 'success'
-    );
+    await DB.saveImmediate();
   },
 
-  // Pilih 1 guru secara langsung
   selectSingleTeacher(teacherId) {
     this.selectedTeacherIds = [String(teacherId)];
+    this.lastFeedbackMessage = '';
     this.renderAdminAccessControlPanel();
   },
 
-  // Toggle centang multi-guru (beberapa guru)
   toggleTeacherSelection(teacherId, event) {
     if (event) event.stopPropagation();
     const idStr = String(teacherId);
@@ -39044,10 +39099,10 @@ const TeacherAccessControl = {
     } else {
       this.selectedTeacherIds.push(idStr);
     }
+    this.lastFeedbackMessage = '';
     this.renderAdminAccessControlPanel();
   },
 
-  // Pilih Semua Guru atau Hanya 1 Guru Pertama
   selectAllTeachers(selectAll = true) {
     const allTeachers = this.getAllTeacherAccounts();
     if (selectAll) {
@@ -39055,12 +39110,17 @@ const TeacherAccessControl = {
     } else {
       this.selectedTeacherIds = allTeachers.length > 0 ? [String(allTeachers[0].id)] : [];
     }
+    this.lastFeedbackMessage = '';
     this.renderAdminAccessControlPanel();
   },
 
-  // Pintasan dari Tabel Akun Guru di Bagian 3 ke Panel Kontrol Akses di Bagian 2
   jumpToTeacherAccessConfig(teacherId) {
     this.selectedTeacherIds = [String(teacherId)];
+    const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(teacherId));
+    this.lastFeedbackMessage = acc
+      ? `🎯 Menampilkan pengaturan hak akses halaman untuk Guru: ${acc.nama}`
+      : '';
+    this.lastFeedbackType = 'info';
     this.renderAdminAccessControlPanel();
     const container = document.getElementById('admin-pillar-lock-container');
     if (container) {
@@ -39068,7 +39128,7 @@ const TeacherAccessControl = {
     }
   },
 
-  // Render antarmuka Pusat Kendali Hak Akses Halaman per Guru di Panel Admin (Bagian 2)
+  // Render Panel Kontrol Hak Akses di Halaman Admin (Bagian 2)
   renderAdminAccessControlPanel() {
     const container = document.getElementById('admin-pillar-lock-container');
     if (!container) return;
@@ -39076,7 +39136,6 @@ const TeacherAccessControl = {
     this.ensureAccessStore();
     const allTeachers = this.getAllTeacherAccounts();
 
-    // Validasi daftar guru yang dipilih
     this.selectedTeacherIds = this.selectedTeacherIds.filter(id =>
       allTeachers.some(t => String(t.id) === String(id))
     );
@@ -39084,7 +39143,6 @@ const TeacherAccessControl = {
       this.selectedTeacherIds = [String(allTeachers[0].id)];
     }
 
-    // Ubah judul dan tombol header Bagian 2 agar mencerminkan kontrol penuh per guru
     const parentCard = container.closest('.card');
     if (parentCard) {
       const headerTitle = parentCard.querySelector('.card-title');
@@ -39094,7 +39152,7 @@ const TeacherAccessControl = {
         headerTitle.innerHTML = '2. Pusat Kendali Hak Akses Halaman & Fitur Guru (1 Guru / Beberapa Guru / Semua Guru)';
       }
       if (headerSub) {
-        headerSub.innerHTML = 'Pilih <strong>satu guru</strong>, <strong>beberapa guru</strong>, atau <strong>semua guru</strong> di sebelah kiri, lalu kunci atau buka halaman spesifik (seperti <em>Presensi, DPL, Modul RPM, Penilaian Akademik</em>, dll.) di sebelah kanan.';
+        headerSub.innerHTML = 'Pilih <strong>satu guru</strong>, <strong>beberapa guru</strong>, atau <strong>semua guru</strong> di sebelah kiri, lalu klik tombol <strong>Kunci / Buka Halaman</strong> di sebelah kanan.';
       }
       if (headerBtns) {
         headerBtns.innerHTML = `
@@ -39111,7 +39169,6 @@ const TeacherAccessControl = {
       }
     }
 
-    // Pastikan container menggunakan layout penuh (bukan grid-4 sempit)
     container.className = '';
     container.style.display = 'block';
 
@@ -39143,15 +39200,25 @@ const TeacherAccessControl = {
       ? this.featureCatalog
       : this.featureCatalog.filter(f => f.group === this.activeCategoryFilter);
 
+    const feedbackBannerHtml = this.lastFeedbackMessage
+      ? `
+        <div style="margin-bottom: 1rem; padding: 0.85rem 1.1rem; border-radius: 10px; font-weight: 800; font-size: 0.88rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; background: ${this.lastFeedbackType === 'danger' ? '#fef2f2' : (this.lastFeedbackType === 'info' ? '#eff6ff' : '#f0fdf4')}; color: ${this.lastFeedbackType === 'danger' ? '#991b1b' : (this.lastFeedbackType === 'info' ? '#1e40af' : '#166534')}; border: 2px solid ${this.lastFeedbackType === 'danger' ? '#fca5a5' : (this.lastFeedbackType === 'info' ? '#93c5fd' : '#86efac')};">
+          <span>${UI.escapeHtml(this.lastFeedbackMessage)}</span>
+          <button type="button" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.55rem; font-size: 0.74rem;" onclick="TeacherAccessControl.lastFeedbackMessage=''; TeacherAccessControl.renderAdminAccessControlPanel();">✕</button>
+        </div>
+      `
+      : '';
+
     container.innerHTML = `
+      ${feedbackBannerHtml}
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem; align-items: start;">
         
-        <!-- KOLOM KIRI: DAFTAR GURU (PILIH 1 GURU, BEBERAPA GURU, ATAU SEMUA GURU) -->
+        <!-- KOLOM KIRI: DAFTAR GURU -->
         <div style="background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px; padding: 1.1rem;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
             <div>
               <span class="badge badge-primary" style="margin-bottom: 0.2rem;">LANGKAH 1 — PILIH PENGGUNA (GURU)</span>
-              <h4 style="font-size: 0.98rem; color: var(--dark);">Daftar Guru Kelas & Guru Mapel</h4>
+              <h4 style="font-size: 0.98rem; color: var(--dark);">Daftar Guru Kelas & Guru Mapel (${allTeachers.length})</h4>
             </div>
             <div style="display: flex; gap: 0.35rem;">
               <button type="button" class="btn btn-outline btn-sm" style="padding: 0.25rem 0.55rem; font-size: 0.74rem;" onclick="TeacherAccessControl.selectAllTeachers(true)">
@@ -39173,25 +39240,23 @@ const TeacherAccessControl = {
           >
 
           <div style="font-size: 0.76rem; color: var(--text-muted); margin-bottom: 0.6rem;">
-            💡 <strong>Klik nama guru</strong> untuk mengatur 1 guru, atau <strong>centang kotak</strong> di sebelah kiri nama untuk memilih beberapa guru sekaligus.
+            💡 <strong>Klik kartu nama guru</strong> untuk memilih 1 guru, atau <strong>centang kotak</strong> untuk memilih beberapa guru sekaligus.
           </div>
 
-          <div style="max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; padding-right: 0.2rem;">
+          <div style="max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.55rem; padding-right: 0.2rem;">
             ${filteredTeachers.map(t => {
               const isSelected = this.selectedTeacherIds.includes(String(t.id));
-              const lockedKeys = this.featureCatalog
+              const lockedList = this.featureCatalog
                 .filter(f => this.isFeatureLockedForTeacher(t.id, f.key))
                 .map(f => f.title.replace(/^\d+\.\d+\.\s*/, '').replace(/^Halaman\s+/i, '').replace(/^Tab\s+/i, ''));
 
               const safeId = String(t.id).replace(/'/g, "\\'");
-              const statusHtml = lockedKeys.length === 0
-                ? `<span class="badge badge-success" style="font-size: 0.68rem;">✓ Semua Fitur Terbuka</span>`
-                : `<span class="badge badge-danger" style="font-size: 0.68rem;">🔒 ${lockedKeys.length} Fitur Dikunci</span>`;
+              const hasLocks = lockedList.length > 0;
 
               return `
                 <div
                   onclick="TeacherAccessControl.selectSingleTeacher('${safeId}')"
-                  style="background: ${isSelected ? '#eff6ff' : '#ffffff'}; border: 2px solid ${isSelected ? '#2563eb' : '#e2e8f0'}; border-radius: 10px; padding: 0.75rem 0.85rem; cursor: pointer; transition: all 0.15s ease; box-shadow: ${isSelected ? '0 2px 8px rgba(37, 99, 235, 0.15)' : 'none'};"
+                  style="background: ${isSelected ? '#eff6ff' : (hasLocks ? '#fff1f2' : '#ffffff')}; border: 2px solid ${isSelected ? '#2563eb' : (hasLocks ? '#fca5a5' : '#e2e8f0')}; border-radius: 10px; padding: 0.75rem 0.85rem; cursor: pointer; transition: all 0.15s ease; box-shadow: ${isSelected ? '0 3px 10px rgba(37, 99, 235, 0.18)' : 'none'};"
                 >
                   <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.6rem;">
                     <div style="display: flex; align-items: flex-start; gap: 0.6rem;">
@@ -39209,14 +39274,19 @@ const TeacherAccessControl = {
                         <div style="font-size: 0.76rem; color: var(--text-muted);">
                           ${UI.escapeHtml(t.schoolDisplay || '-')} • ${t.role === 'GURU_MAPEL' ? `Guru Mapel (${UI.escapeHtml(t.mapelDiampu || '-')})` : UI.escapeHtml(t.kelasFase || '-')}
                         </div>
-                        ${lockedKeys.length > 0 ? `
-                          <div style="font-size: 0.72rem; color: #b91c1c; margin-top: 0.25rem; font-weight: 600;">
-                            Dikunci: ${UI.escapeHtml(lockedKeys.slice(0, 3).join(', '))}${lockedKeys.length > 3 ? ` +${lockedKeys.length - 3} lainnya` : ''}
+                        ${hasLocks ? `
+                          <div style="font-size: 0.74rem; color: #991b1b; background: #ffe4e6; border: 1px solid #fecdd3; padding: 0.25rem 0.5rem; border-radius: 6px; margin-top: 0.35rem; font-weight: 700;">
+                            🔒 Terkunci (${lockedList.length}): ${UI.escapeHtml(lockedList.slice(0, 3).join(', '))}${lockedList.length > 3 ? ` +${lockedList.length - 3} lainnya` : ''}
                           </div>
                         ` : ''}
                       </div>
                     </div>
-                    <div>${statusHtml}</div>
+                    <div>
+                      ${hasLocks
+                        ? `<span class="badge badge-danger" style="font-size: 0.7rem;">🔒 ${lockedList.length} Dikunci</span>`
+                        : `<span class="badge badge-success" style="font-size: 0.7rem;">✓ Semua Terbuka</span>`
+                      }
+                    </div>
                   </div>
                 </div>
               `;
@@ -39224,18 +39294,18 @@ const TeacherAccessControl = {
           </div>
         </div>
 
-        <!-- KOLOM KANAN: MATRIKS KONTROL HALAMAN & FITUR (PRESENSI, DPL, RPM, PENILAIAN, DLL.) -->
+        <!-- KOLOM KANAN: MATRIKS KONTROL HALAMAN & FITUR -->
         <div style="background: #ffffff; border: 2px solid #93c5fd; border-radius: 12px; padding: 1.15rem;">
           <div style="background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%); color: #ffffff; padding: 0.9rem 1.1rem; border-radius: 10px; margin-bottom: 1rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
               <span class="badge badge-warning">LANGKAH 2 — ATUR KUNCI / BUKA HALAMAN</span>
               <span class="badge badge-info">${this.selectedTeacherIds.length} Guru Sedang Dipilih</span>
             </div>
-            <div style="font-size: 0.95rem; font-weight: 800; margin-top: 0.35rem;">
-              Target Pengaturan: <span style="color: #fde68a;">${UI.escapeHtml(selectedNamesLabel || '-')}</span>
+            <div style="font-size: 0.96rem; font-weight: 800; margin-top: 0.35rem;">
+              Target Pengaturan: <span style="color: #fde68a; text-decoration: underline;">${UI.escapeHtml(selectedNamesLabel || '-')}</span>
             </div>
-            <div style="font-size: 0.76rem; color: #dbeafe; margin-top: 0.15rem;">
-              Setiap halaman yang berstatus <strong>🔒 TERKUNCI</strong> akan menampilkan pop-up tanda silang merah saat diklik oleh guru di atas.
+            <div style="font-size: 0.76rem; color: #dbeafe; margin-top: 0.2rem;">
+              Klik tombol merah <strong>"🔒 Kunci Halaman Ini"</strong> untuk mengunci akses, atau klik tombol hijau <strong>"🔓 Buka Izin Akses"</strong> untuk membuka kembali.
             </div>
           </div>
 
@@ -39256,7 +39326,6 @@ const TeacherAccessControl = {
           <!-- DAFTAR KONTROL HALAMAN & SUB-FITUR -->
           <div style="max-height: 460px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.55rem; padding-right: 0.25rem;">
             ${visibleFeatures.map(feat => {
-              // Hitung berapa guru terpilih yang terkunci pada fitur ini
               const lockedCount = this.selectedTeacherIds.filter(tid =>
                 this.isFeatureLockedForTeacher(tid, feat.key)
               ).length;
@@ -39264,21 +39333,21 @@ const TeacherAccessControl = {
               const isPartiallyLocked = lockedCount > 0 && lockedCount < this.selectedTeacherIds.length;
 
               return `
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding: 0.7rem 0.9rem; border-radius: 8px; border: 2px solid ${isAllSelectedLocked ? '#fca5a5' : (feat.isPillar ? '#93c5fd' : '#e2e8f0')}; background: ${isAllSelectedLocked ? '#fef2f2' : (feat.isPillar ? '#eff6ff' : '#ffffff')};">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 0.95rem; border-radius: 8px; border: 2px solid ${isAllSelectedLocked ? '#ef4444' : (feat.isPillar ? '#93c5fd' : '#e2e8f0')}; background: ${isAllSelectedLocked ? '#fef2f2' : (feat.isPillar ? '#eff6ff' : '#ffffff')}; transition: all 0.15s ease;">
                   <div style="flex: 1; min-width: 210px;">
                     <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
                       <span class="badge ${feat.isPillar ? 'badge-primary' : 'badge-info'}" style="font-size: 0.66rem;">
                         ${UI.escapeHtml(feat.groupLabel)}
                       </span>
                       ${isAllSelectedLocked
-                        ? `<span class="badge badge-danger" style="font-size: 0.68rem;">🔒 DIKUNCI (${lockedCount}/${this.selectedTeacherIds.length} Guru)</span>`
+                        ? `<span class="badge badge-danger" style="font-size: 0.7rem;">🔒 TERKUNCI (${lockedCount}/${this.selectedTeacherIds.length} Guru)</span>`
                         : isPartiallyLocked
-                          ? `<span class="badge badge-warning" style="font-size: 0.68rem;">⚠️ Terkunci Sebagian (${lockedCount}/${this.selectedTeacherIds.length})</span>`
-                          : `<span class="badge badge-success" style="font-size: 0.68rem;">🔓 DIIZINKAN / TERBUKA</span>`
+                          ? `<span class="badge badge-warning" style="font-size: 0.7rem;">⚠️ Terkunci Sebagian (${lockedCount}/${this.selectedTeacherIds.length})</span>`
+                          : `<span class="badge badge-success" style="font-size: 0.7rem;">🔓 DIIZINKAN / TERBUKA</span>`
                       }
                     </div>
-                    <div style="font-weight: ${feat.isPillar ? '800' : '700'}; font-size: 0.88rem; color: ${isAllSelectedLocked ? '#991b1b' : 'var(--dark)'}; margin-top: 0.2rem;">
-                      ${UI.escapeHtml(feat.title)}
+                    <div style="font-weight: ${feat.isPillar ? '800' : '700'}; font-size: 0.9rem; color: ${isAllSelectedLocked ? '#991b1b' : 'var(--dark)'}; margin-top: 0.25rem;">
+                      ${isAllSelectedLocked ? '🔒 ' : ''}${UI.escapeHtml(feat.title)}
                     </div>
                   </div>
 
@@ -39286,7 +39355,7 @@ const TeacherAccessControl = {
                     <button
                       type="button"
                       class="btn ${isAllSelectedLocked ? 'btn-success' : 'btn-danger'} btn-sm"
-                      style="min-width: 145px; font-weight: 800;"
+                      style="min-width: 155px; font-weight: 800; box-shadow: 0 2px 6px rgba(0,0,0,0.1);"
                       onclick="TeacherAccessControl.setFeatureLockForSelectedTeachers('${feat.key}', ${!isAllSelectedLocked})"
                     >
                       ${isAllSelectedLocked ? '🔓 Buka Izin Akses' : '🔒 Kunci Halaman Ini'}
@@ -39307,7 +39376,6 @@ const TeacherAccessControl = {
     const teacher = DB.getActiveTeacherAccount();
     if (!teacher || AppState.isReadOnlyInspection || AppState.activeMode === 'ADMIN') return;
 
-    // 1. Kartu 4 Pilar di Dashboard Guru
     const pillarMap = [
       { key: 'pilar:data_kelas', cardId: 'pilar-card-data_kelas', badgeId: 'pilar-status-data_kelas' },
       { key: 'pilar:intrakurikuler', cardId: 'pilar-card-intrakurikuler', badgeId: 'pilar-status-intrakurikuler' },
@@ -39331,21 +39399,20 @@ const TeacherAccessControl = {
       }
     });
 
-    // 2. Kartu 7 Sub-Pilar di Halaman Intrakurikuler
     const intraSubMap = {
-      'presensi': 'intra:presensi',
-      'rekap_presensi': 'intra:rekap_presensi',
-      'penilaian_akademik': 'intra:penilaian_akademik',
-      'rekap_penilaian': 'intra:rekap_penilaian',
-      'penilaian_dpl': 'intra:penilaian_dpl',
-      'modul_rpm': 'intra:modul_rpm',
-      'analisis_rapor': 'intra:analisis_rapor'
+      'presensi': { key: 'intra:presensi', defaultBadge: 'REAL-TIME', defaultClass: 'badge badge-success' },
+      'rekap_presensi': { key: 'intra:rekap_presensi', defaultBadge: 'ARSIP & LAMPAU', defaultClass: 'badge badge-info' },
+      'penilaian_akademik': { key: 'intra:penilaian_akademik', defaultBadge: 'TAKSONOMI SOLO', defaultClass: 'badge badge-warning' },
+      'rekap_penilaian': { key: 'intra:rekap_penilaian', defaultBadge: '70% PENG + 30% KET', defaultClass: 'badge badge-primary' },
+      'penilaian_dpl': { key: 'intra:penilaian_dpl', defaultBadge: 'PREDIKAT B / C / M', defaultClass: 'badge badge-success' },
+      'modul_rpm': { key: 'intra:modul_rpm', defaultBadge: 'SISTEM 8-3-3-4', defaultClass: 'badge badge-warning' },
+      'analisis_rapor': { key: 'intra:analisis_rapor', defaultBadge: '60% FORM + 40% SUM', defaultClass: 'badge badge-info' }
     };
     document.querySelectorAll('#view-pilar-intrakurikuler .pillar-card').forEach(card => {
       const onclickAttr = card.getAttribute('onclick') || '';
-      Object.entries(intraSubMap).forEach(([subKey, featKey]) => {
+      Object.entries(intraSubMap).forEach(([subKey, info]) => {
         if (onclickAttr.includes(`'${subKey}'`)) {
-          const isLocked = this.isFeatureLockedForTeacher(teacher.id, featKey);
+          const isLocked = this.isFeatureLockedForTeacher(teacher.id, info.key);
           const badgeEl = card.querySelector('.badge');
           if (isLocked) {
             card.classList.add('pillar-locked');
@@ -39355,6 +39422,10 @@ const TeacherAccessControl = {
             }
           } else {
             card.classList.remove('pillar-locked');
+            if (badgeEl) {
+              badgeEl.textContent = info.defaultBadge;
+              badgeEl.className = info.defaultClass;
+            }
           }
         }
       });
@@ -39363,36 +39434,56 @@ const TeacherAccessControl = {
 };
 
 // ============================================================================
-// INTEGRASI KE ADMIN PANEL, SINKRONISASI CLOUD, & PENCEGATAN AKSES HALAMAN GURU
+// INTEGRASI KE DB CLOUD, ADMIN PANEL, & PENCEGATAN AKSES HALAMAN GURU
 // ============================================================================
 
-// 1. Pastikan DB.mergePayloads mempertahankan pengaturan kunci per guru saat sinkronisasi Cloud
 if (typeof DB !== 'undefined') {
   const _origMergePayloadsAccess = DB.mergePayloads ? DB.mergePayloads.bind(DB) : null;
+  const _origSyncFromCloudSilent = DB.syncFromCloudSilent ? DB.syncFromCloudSilent.bind(DB) : null;
+
   Object.assign(DB, {
     mergePayloads(localData, cloudData) {
       const merged = _origMergePayloadsAccess
         ? _origMergePayloadsAccess(localData, cloudData)
         : (cloudData || localData);
 
-      const locLocks = localData && localData.teacherAccessLocks;
+      const backupLocks = TeacherAccessControl.getLocalBackupStore();
+      const locLocks = (localData && localData.teacherAccessLocks) || backupLocks;
       const cldLocks = cloudData && cloudData.teacherAccessLocks;
 
+      let winningLocks = null;
       if (locLocks && !cldLocks) {
-        merged.teacherAccessLocks = JSON.parse(JSON.stringify(locLocks));
+        winningLocks = locLocks;
       } else if (!locLocks && cldLocks) {
-        merged.teacherAccessLocks = JSON.parse(JSON.stringify(cldLocks));
+        winningLocks = cldLocks;
       } else if (locLocks && cldLocks) {
         const locTime = Number(locLocks._updatedAt || 0);
         const cldTime = Number(cldLocks._updatedAt || 0);
-        merged.teacherAccessLocks = JSON.parse(JSON.stringify(locTime >= cldTime ? locLocks : cldLocks));
+        winningLocks = locTime >= cldTime ? locLocks : cldLocks;
+      }
+
+      if (winningLocks) {
+        merged.teacherAccessLocks = JSON.parse(JSON.stringify(winningLocks));
+        TeacherAccessControl.saveLocalBackupStore(merged.teacherAccessLocks);
       }
       return merged;
+    },
+
+    async syncFromCloudSilent() {
+      const prevLocks = TeacherAccessControl.getLocalBackupStore() || (this.data && this.data.teacherAccessLocks);
+      const res = _origSyncFromCloudSilent ? await _origSyncFromCloudSilent() : false;
+      if (this.data && prevLocks) {
+        const cldLocks = this.data.teacherAccessLocks;
+        if (!cldLocks || Number(prevLocks._updatedAt || 0) >= Number(cldLocks._updatedAt || 0)) {
+          this.data.teacherAccessLocks = JSON.parse(JSON.stringify(prevLocks));
+        }
+        TeacherAccessControl.ensureAccessStore();
+      }
+      return res;
     }
   });
 }
 
-// 2. Hubungkan AdminApp.renderPillarLocksState & Tambahkan Tombol "🔐 Atur Akses" di Tabel Akun Guru
 if (typeof AdminApp !== 'undefined') {
   const _origRenderAccountsTable = AdminApp.renderAccountsTable ? AdminApp.renderAccountsTable.bind(AdminApp) : null;
 
@@ -39403,7 +39494,6 @@ if (typeof AdminApp !== 'undefined') {
 
     renderAccountsTable() {
       if (_origRenderAccountsTable) _origRenderAccountsTable();
-      // Sisipkan tombol pintasan "🔐 Atur Akses" pada setiap baris guru di Tabel 3
       const tbody = document.getElementById('tbody-admin-accounts');
       if (!tbody) return;
       const rows = tbody.querySelectorAll('tr');
@@ -39416,12 +39506,16 @@ if (typeof AdminApp !== 'undefined') {
         const acc = (DB.data.accounts || []).find(a => a && String(a.id) === String(accId));
         if (!acc || (acc.role !== 'GURU_KELAS' && acc.role !== 'GURU_MAPEL')) return;
 
+        const lockedCount = TeacherAccessControl.featureCatalog.filter(f =>
+          TeacherAccessControl.isFeatureLockedForTeacher(accId, f.key)
+        ).length;
+
         const actionContainer = editBtn.parentElement;
         if (actionContainer && !actionContainer.querySelector('.btn-jump-access-lock')) {
           const lockBtn = document.createElement('button');
           lockBtn.type = 'button';
-          lockBtn.className = 'btn btn-secondary btn-sm btn-jump-access-lock';
-          lockBtn.innerHTML = '🔐 Atur Akses';
+          lockBtn.className = `btn ${lockedCount > 0 ? 'btn-danger' : 'btn-secondary'} btn-sm btn-jump-access-lock`;
+          lockBtn.innerHTML = lockedCount > 0 ? `🔒 Akses (${lockedCount} Dikunci)` : '🔐 Atur Akses';
           lockBtn.onclick = () => TeacherAccessControl.jumpToTeacherAccessConfig(accId);
           actionContainer.insertBefore(lockBtn, editBtn);
         }
@@ -39435,7 +39529,6 @@ if (typeof AdminApp !== 'undefined') {
   }
 }
 
-// 3. Pasang Penjaga Akses (Access Guard) pada Seluruh Pilar, Sub-Pilar, Tab, & Perpindahan Halaman
 if (typeof TeacherApp !== 'undefined') {
   const _origRenderTeacherPillarsState = TeacherApp.renderTeacherPillarsState ? TeacherApp.renderTeacherPillarsState.bind(TeacherApp) : null;
   const _origOpenPillar = TeacherApp.openPillar ? TeacherApp.openPillar.bind(TeacherApp) : null;
@@ -39579,7 +39672,6 @@ if (typeof EkskulApp !== 'undefined') {
   });
 }
 
-// 4. Penjaga Lapis Akhir pada UI.switchView (Mencegah Akses Pintasan ke View yang Dikunci)
 if (typeof UI !== 'undefined' && typeof UI.switchView === 'function') {
   const _origUiSwitchView = UI.switchView.bind(UI);
   const viewToFeatureMap = {
