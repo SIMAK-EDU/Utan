@@ -40393,6 +40393,1997 @@ Kembalikan HANYA JSON murni dengan format persis berikut:
   });
 }
 
+  // ============================================================================
+// UPGRADE PROFESIONAL MODUL RPM V5 (NO-QUESTION EDITION):
+// 1. HAPUS FITUR PEMBUATAN SOAL & FOKUS 100% PADA MODUL RPM SISTEM 8-3-3-4
+// 2. 100% FULL INLINE EDITABLE DI SEMUA BAGIAN MODUL RPM (IDENTITAS S.D. TTD)
+// 3. TABEL KRITERIA KETUNTASAN TUJUAN PEMBELAJARAN (KKTP) FLEKSIBEL & EDITABLE
+//    (MODE NILAI 100/90/80/70, MODE PREDIKAT A/B/C/D, & MODE INTERVAL KURIKULUM)
+// 4. GALERI & REPOSITORI BUKTI FISIK GURU (UPLOAD FOTO MODUL PRINT, FOTO
+//    KEGIATAN PEMBELAJARAN, & FILE PDF DENGAN TOMBOL '+' + KETERANGAN)
+// 5. IN-APP PDF READER & PHOTO VIEWER + SUPERVISI LANGSUNG KEPALA SEKOLAH
+// ============================================================================
+
+(function injectRpmPortfolioAndKktpStyles() {
+  if (document.getElementById('simak-rpm-v5-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'simak-rpm-v5-styles';
+  style.textContent = `
+    .rpm-editable-field {
+      outline: none;
+      border-bottom: 1px dashed rgba(37, 99, 235, 0.35);
+      padding: 1px 4px;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+      cursor: text;
+    }
+    .rpm-editable-field:hover {
+      background: #eff6ff;
+      border-bottom-color: #2563eb;
+    }
+    .rpm-editable-field:focus {
+      background: #fef9c3 !important;
+      border-bottom: 2px solid #d97706 !important;
+      box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.25);
+    }
+    .readonly-mode .rpm-editable-field {
+      border-bottom: none !important;
+      pointer-events: none !important;
+      background: transparent !important;
+    }
+    .kktp-preset-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0.65rem 0.9rem;
+      margin-bottom: 0.75rem;
+    }
+    .rpm-portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(275px, 1fr));
+      gap: 1.1rem;
+      margin-top: 1rem;
+    }
+    .rpm-portfolio-card {
+      background: #ffffff;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+      transition: all 0.2s ease;
+    }
+    .rpm-portfolio-card:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.12);
+    }
+    .rpm-portfolio-thumb {
+      height: 175px;
+      width: 100%;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .rpm-portfolio-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.25s ease;
+    }
+    .rpm-portfolio-thumb:hover img {
+      transform: scale(1.04);
+    }
+    .rpm-pdf-thumb-box {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #7f1d1d 0%, #b91c1c 55%, #dc2626 100%);
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      text-align: center;
+    }
+    .rpm-add-media-tile {
+      min-height: 280px;
+      border: 2px dashed #3b82f6;
+      border-radius: 12px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .rpm-add-media-tile:hover {
+      background: #dbeafe;
+      border-color: #1e40af;
+      transform: translateY(-2px);
+    }
+    .rpm-plus-circle {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #2563eb;
+      color: #ffffff;
+      font-size: 2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    @media print {
+      .rpm-editable-field {
+        border-bottom: none !important;
+        padding: 0 !important;
+      }
+      .kktp-preset-toolbar,
+      #rpm-portfolio-section-card {
+        display: none !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ============================================================================
+// 1. BERSIHKAN TOTAL UI SOAL DARI HALAMAN MODUL RPM & PASANG GALERI BUKTI/PDF
+// ============================================================================
+function setupRpmNoQuestionAndPortfolioDOM() {
+  // Sembunyikan/hapus panel pembuatan soal di formulir RPM
+  const enableQCheck = document.getElementById('rpm-enable-auto-questions');
+  if (enableQCheck) {
+    enableQCheck.checked = false;
+    const questionCard = enableQCheck.closest('.card');
+    if (questionCard) questionCard.classList.add('hidden');
+  }
+  const mathBox = document.getElementById('rpm-math-special-config-box');
+  if (mathBox) mathBox.classList.add('hidden');
+
+  const step2Banner = document.getElementById('rpm-step2-question-studio-banner');
+  if (step2Banner) step2Banner.remove();
+
+  const step2Modal = document.getElementById('modal-rpm-step2-question-studio');
+  if (step2Modal) step2Modal.remove();
+
+  const dynPages = document.getElementById('rpm-dynamic-pages-container');
+  if (dynPages) dynPages.innerHTML = '';
+
+  const bottomPager = document.getElementById('rpm-bottom-pager-bar');
+  if (bottomPager) bottomPager.classList.add('hidden');
+
+  const paginationTabs = document.getElementById('rpm-pagination-tabs-bar');
+  if (paginationTabs) paginationTabs.classList.add('hidden');
+
+  // Sembunyikan tombol-tombol khusus soal pada toolbar hasil RPM
+  const hideKeyBtn = document.getElementById('btn-toggle-teacher-key');
+  if (hideKeyBtn) hideKeyBtn.classList.add('hidden');
+
+  const showAllPagesBtn = document.getElementById('btn-show-all-pages-view');
+  if (showAllPagesBtn) showAllPagesBtn.classList.add('hidden');
+
+  const regenQBtn = document.querySelector('button[onclick*="regenerateQuestionsOnlyWithAI"]');
+  if (regenQBtn) regenQBtn.classList.add('hidden');
+
+  // Perbarui judul & tombol formulir agar fokus 100% pada Modul RPM & KKTP
+  const rpmSection = document.getElementById('view-intra-modul-rpm');
+  if (rpmSection) {
+    const heroTitle = rpmSection.querySelector('h2');
+    const heroDesc = rpmSection.querySelector('p');
+    if (heroTitle) {
+      heroTitle.innerHTML = 'Penyusunan Modul Ajar (RPM 8-3-3-4), Tabel KKTP & Portofolio Dokumentasi Guru';
+    }
+    if (heroDesc) {
+      heroDesc.innerHTML = 'Rancang <strong>Modul RPM Sistem 8-3-3-4</strong> yang 100% dapat diedit di setiap bagian, lengkap dengan <strong>Tabel Kriteria Ketuntasan Tujuan Pembelajaran (KKTP)</strong>, serta fitur <strong>Upload Foto Modul Print, Foto Kegiatan Pembelajaran & File PDF</strong> untuk supervisi Kepala Sekolah.';
+    }
+  }
+
+  const formCard = document.getElementById('rpm-builder-form-card');
+  if (formCard) {
+    const cTitle = formCard.querySelector('.card-title');
+    const cSub = formCard.querySelector('.card-subtitle');
+    if (cTitle) cTitle.textContent = 'Formulir Perancangan Modul Ajar (RPM 8-3-3-4) & Kriteria Ketuntasan (KKTP)';
+    if (cSub) cSub.innerHTML = 'Seluruh hasil penyusunan Modul RPM dan Tabel KKTP dapat <strong>diklik dan diedit langsung (Full Editable)</strong> oleh Guru di masing-masing bagian.';
+
+    const submitBtn = formCard.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.innerHTML = '✨ Susun Dokumen Modul RPM & Tabel KKTP Sekarang &rarr;';
+    }
+  }
+
+  // Ubah kolom "Rincian Soal" pada tabel Arsip RPM menjadi "KKTP & Bukti Fisik"
+  const archiveCard = document.getElementById('rpm-saved-archive-card');
+  if (archiveCard) {
+    const ths = archiveCard.querySelectorAll('thead th');
+    if (ths && ths[5]) {
+      ths[5].textContent = 'Skala KKTP & Lampiran';
+    }
+  }
+
+  // Tambahkan Panel Galeri Bukti Modul Print, Foto Kegiatan Pembelajaran, & File PDF
+  if (rpmSection && !document.getElementById('rpm-portfolio-section-card')) {
+    const portfolioCard = document.createElement('div');
+    portfolioCard.id = 'rpm-portfolio-section-card';
+    portfolioCard.className = 'card no-print';
+    portfolioCard.style.cssText = 'margin-top: 1.5rem; border: 2px solid #0d9488; background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 100%);';
+    portfolioCard.innerHTML = `
+      <div class="card-header" style="border-bottom-color: #99f6e4;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+            <span class="badge badge-success">PORTOFOLIO BUKTI FISIK MODUL & DOKUMENTASI PEMBELAJARAN</span>
+            <span class="badge badge-info">✓ Terhubung Langsung ke Monitoring Kepala Sekolah</span>
+          </div>
+          <h3 class="card-title">📸 Galeri Foto Modul RPM Print, Foto Kegiatan Pembelajaran & Dokumen PDF</h3>
+          <p class="card-subtitle">
+            Sudah memiliki Modul RPM yang di-<em>print</em>, dokumen PDF bahan ajar, atau foto kegiatan belajar di kelas? Klik tombol <strong>"➕ Tambah Foto / File PDF"</strong> di bawah untuk mengunggah dan menyertakan keterangan. Kepala Sekolah dapat melihat foto dan membuka file PDF Anda secara langsung.
+          </p>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+          <span id="rpm-portfolio-count-badge" class="badge badge-primary" style="font-size: 0.84rem; padding: 0.4rem 0.85rem;">0 Berkas Diunggah</span>
+          <button type="button" class="btn btn-success write-action-btn" style="font-weight: 800; box-shadow: var(--shadow-sm);" onclick="RpmApp.openUploadPortfolioModal()">
+            ➕ Tambah Foto / File PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- FILTER KATEGORI BUKTI FISIK & DOKUMENTASI -->
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.65rem; margin-bottom: 0.5rem;">
+        <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="rpm-portfolio-filter-bar">
+          <button type="button" class="btn btn-primary btn-sm" onclick="RpmApp.setPortfolioFilter('ALL')">Semua Berkas</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.setPortfolioFilter('MODUL_PRINT')">🖨️ Foto Modul Print</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.setPortfolioFilter('MODUL_PDF')">📄 File PDF Modul / LKPD</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.setPortfolioFilter('FOTO_KEGIATAN')">📸 Foto Kegiatan Belajar</button>
+          <button type="button" class="btn btn-outline btn-sm" onclick="RpmApp.setPortfolioFilter('KARYA_SISWA')">🎨 Foto Karya Siswa</button>
+        </div>
+        <div style="font-size: 0.78rem; color: #0f766e; font-weight: 700;">
+          💡 Klik pada kartu Foto atau PDF untuk membuka tampilan penuh & keterangan lengkap.
+        </div>
+      </div>
+
+      <div id="rpm-portfolio-grid-container" class="rpm-portfolio-grid"></div>
+    `;
+
+    // Letakkan tepat sebelum kartu Arsip atau di akhir section RPM
+    if (archiveCard) {
+      rpmSection.insertBefore(portfolioCard, archiveCard);
+    } else {
+      rpmSection.appendChild(portfolioCard);
+    }
+  }
+
+  // Buat Modal Upload Foto Modul Print / Foto Kegiatan / File PDF (Multi-File + Keterangan)
+  if (!document.getElementById('modal-rpm-upload-portfolio')) {
+    const uploadModal = document.createElement('div');
+    uploadModal.id = 'modal-rpm-upload-portfolio';
+    uploadModal.className = 'modal-overlay hidden';
+    uploadModal.style.zIndex = '9500';
+    uploadModal.innerHTML = `
+      <div class="modal-box" style="max-width: 680px; width: 96%;">
+        <div class="card-header" style="background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%); color: #ffffff; padding: 1.1rem 1.35rem; border-radius: 10px; margin-bottom: 1.15rem;">
+          <div>
+            <span class="badge badge-warning" style="margin-bottom: 0.25rem;">UNGGAH BUKTI FISIK & DOKUMENTASI GURU</span>
+            <h3 style="font-size: 1.18rem; font-weight: 800; color: #ffffff;">
+              ➕ Tambah Foto Modul Print, Foto Kegiatan, atau File PDF
+            </h3>
+            <p style="font-size: 0.8rem; color: #ccfbf1;">
+              Mendukung file Gambar/Foto (JPG, PNG, WEBP) maupun Dokumen PDF yang dapat dibuka langsung di dalam website.
+            </p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="RpmApp.closeUploadPortfolioModal()">
+            ✕ Tutup
+          </button>
+        </div>
+
+        <form id="form-rpm-upload-portfolio" onsubmit="RpmApp.handleSavePortfolioUpload(event)">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="rpm-upload-category">1. Kategori Berkas / Dokumentasi :</label>
+              <select id="rpm-upload-category" class="form-control" style="font-weight: 700; border-color: #0d9488;" required>
+                <option value="MODUL_PRINT">🖨️ Foto Modul RPM yang Sudah Di-Print</option>
+                <option value="MODUL_PDF">📄 Dokumen File PDF (Modul RPM / Bahan Ajar / LKPD)</option>
+                <option value="FOTO_KEGIATAN">📸 Foto Kegiatan Pembelajaran di Kelas</option>
+                <option value="KARYA_SISWA">🎨 Foto Hasil Karya / Praktik Siswa</option>
+                <option value="DOKUMEN_LAIN">📁 File / Dokumen Administrasi Lainnya</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rpm-upload-date">2. Tanggal Kegiatan / Dokumen :</label>
+              <input type="date" id="rpm-upload-date" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="rpm-upload-mapel">3. Mata Pelajaran / Kegiatan Terkait :</label>
+              <input type="text" id="rpm-upload-mapel" class="form-control" placeholder="Contoh: IPAS / Bahasa Indonesia / Matematika" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="rpm-upload-title">4. Judul Foto / Nama Dokumen :</label>
+              <input type="text" id="rpm-upload-title" class="form-control" placeholder="Contoh: Modul Print Bab 1 / Praktik Kelompok Energi" required>
+            </div>
+          </div>
+
+          <div class="form-group" style="background: #eff6ff; border: 2px dashed #3b82f6; padding: 1rem; border-radius: 10px;">
+            <label class="form-label" for="rpm-upload-files-input" style="color: #1e40af; font-size: 0.92rem;">
+              5. Pilih File Foto (JPG/PNG) atau Dokumen PDF (Bisa Pilih Lebih dari 1 File Sekaligus) :
+            </label>
+            <input
+              type="file"
+              id="rpm-upload-files-input"
+              class="form-control"
+              accept="image/*,application/pdf,.pdf"
+              multiple
+              onchange="RpmApp.handlePortfolioFilesPreview(this)"
+              required
+            >
+            <div class="form-hint" style="color: #1e3a8a;">
+              💡 Foto akan dioptimalkan secara otomatis agar jernih dan cepat dimuat. File PDF akan disimpan agar dapat dibuka langsung dengan PDF Viewer bawaan website.
+            </div>
+            <div id="rpm-upload-preview-list" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="rpm-upload-caption">6. Keterangan / Catatan Guru tentang Foto atau File PDF Ini :</label>
+            <textarea
+              id="rpm-upload-caption"
+              class="form-control"
+              rows="3"
+              placeholder="Tuliskan penjelasan mengenai foto modul print, aktivitas siswa pada foto kegiatan, atau isi dokumen PDF ini agar Kepala Sekolah memahami konteksnya saat melakukan monitoring..."
+              required
+            ></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.65rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline" onclick="RpmApp.closeUploadPortfolioModal()">Batal</button>
+            <button type="submit" id="btn-submit-portfolio-upload" class="btn btn-success" style="font-weight: 800; padding: 0.65rem 1.5rem;">
+              💾 Unggah & Simpan ke Portofolio Kelas
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(uploadModal);
+  }
+
+  // Buat Modal Penampil PDF & Foto Interaktif (In-App PDF Reader & Lightbox + Verifikasi Kepala Sekolah)
+  if (!document.getElementById('modal-rpm-media-viewer')) {
+    const viewerModal = document.createElement('div');
+    viewerModal.id = 'modal-rpm-media-viewer';
+    viewerModal.className = 'modal-overlay hidden';
+    viewerModal.style.zIndex = '9800';
+    viewerModal.innerHTML = `
+      <div class="modal-box" style="max-width: 1020px; width: 96%; max-height: 94vh; display: flex; flex-direction: column; padding: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.75rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border); margin-bottom: 0.85rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+              <span id="viewer-media-cat-badge" class="badge badge-primary">KATEGORI</span>
+              <span id="viewer-media-date-badge" class="badge badge-info">Tanggal</span>
+              <span id="viewer-media-verified-badge" class="badge badge-success hidden">✅ Telah Disupervisi Kepala Sekolah</span>
+            </div>
+            <h3 id="viewer-media-title" style="font-size: 1.18rem; font-weight: 800; color: var(--dark);">Judul Dokumen / Foto</h3>
+            <div id="viewer-media-meta" style="font-size: 0.8rem; color: var(--text-muted);">Mata Pelajaran: - | Diunggah oleh: -</div>
+          </div>
+          <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+            <a id="viewer-media-open-newtab" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-sm">
+              ↗️ Buka Layar Penuh
+            </a>
+            <a id="viewer-media-download-btn" href="#" download="dokumen" class="btn btn-secondary btn-sm">
+              ⬇️ Unduh Berkas
+            </a>
+            <button type="button" class="btn btn-danger btn-sm" onclick="RpmApp.closeMediaViewerModal()">
+              ✕ Tutup Penampil
+            </button>
+          </div>
+        </div>
+
+        <!-- AREA TAMPILAN UTAMA (IFRAME PDF ATAU GAMBAR RESOLUSI TINGGI) -->
+        <div id="viewer-media-stage" style="flex: 1; min-height: 440px; max-height: 62vh; background: #0f172a; border-radius: 10px; overflow: auto; display: flex; align-items: center; justify-content: center; margin-bottom: 0.9rem;"></div>
+
+        <!-- KETERANGAN GURU & PANEL SUPERVISI KEPALA SEKOLAH -->
+        <div class="grid-2" style="gap: 0.85rem;">
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #2563eb; border-radius: 8px; padding: 0.85rem 1rem;">
+            <div style="font-size: 0.76rem; font-weight: 800; color: #1e40af; text-transform: uppercase; margin-bottom: 0.25rem;">
+              📝 Keterangan / Catatan Guru (Dapat Diedit Guru):
+            </div>
+            <div
+              id="viewer-media-caption-box"
+              class="rpm-editable-field"
+              style="font-size: 0.88rem; color: var(--dark); line-height: 1.5;"
+              onblur="RpmApp.saveUpdatedMediaCaptionFromViewer(this.innerText)"
+            >-</div>
+          </div>
+
+          <div style="background: #f0fdf4; border: 1px solid #86efac; border-left: 4px solid #16a34a; border-radius: 8px; padding: 0.85rem 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem;">
+              <span style="font-size: 0.76rem; font-weight: 800; color: #14532d; text-transform: uppercase;">
+                👨‍💼 Catatan Monitoring & Supervisi Kepala Sekolah:
+              </span>
+              <button
+                type="button"
+                id="btn-principal-verify-media"
+                class="btn btn-success btn-sm allow-readonly-filter hidden"
+                style="padding: 0.2rem 0.6rem; font-size: 0.73rem;"
+                onclick="RpmApp.savePrincipalMediaSupervision(true)"
+              >
+                ✅ Tandai Sudah Disupervisi
+              </button>
+            </div>
+            <div id="viewer-principal-feedback-display" style="font-size: 0.85rem; color: #166534; line-height: 1.45;">
+              Belum ada catatan supervisi dari Kepala Sekolah.
+            </div>
+            <div id="viewer-principal-feedback-editor" class="hidden" style="margin-top: 0.45rem; display: flex; gap: 0.4rem;">
+              <input
+                type="text"
+                id="viewer-principal-feedback-input"
+                class="form-control allow-readonly-filter"
+                style="font-size: 0.82rem; padding: 0.35rem 0.65rem;"
+                placeholder="Ketik apresiasi atau masukan Kepala Sekolah untuk dokumentasi ini..."
+              >
+              <button type="button" class="btn btn-primary btn-sm allow-readonly-filter" onclick="RpmApp.savePrincipalMediaSupervision(true)">
+                Simpan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(viewerModal);
+  }
+}
+
+// ============================================================================
+// 2. UPGRADE RPMAPP: 100% INLINE EDITING, TABEL KKTP FLEKSIBEL, & UPLOAD PDF/FOTO
+// ============================================================================
+if (typeof RpmApp !== 'undefined') {
+  Object.assign(RpmApp, {
+    activePortfolioFilter: 'ALL',
+    pendingUploadFiles: [],
+    currentViewingMediaId: null,
+    activeBlobUrl: null,
+
+    // Pastikan setiap dokumen Modul RPM memiliki Tabel KKTP (Kriteria Ketuntasan Tujuan Pembelajaran)
+    ensureDocKktpStructure(doc) {
+      if (!doc) return;
+      if (!doc.kktpMode) doc.kktpMode = 'ANGKA_DAN_HURUF';
+      if (!doc.kepsekNama) doc.kepsekNama = '( ................................................. )';
+      if (!doc.kepsekNip) doc.kepsekNip = 'NIP. ............................................';
+      if (!doc.penyusunNip) doc.penyusunNip = `Pendidik ${doc.sekolah || ''}`;
+
+      if (!Array.isArray(doc.kktpRows) || doc.kktpRows.length === 0) {
+        doc.kktpRows = this.buildDefaultKktpRows(doc.kktpMode, doc.materi, doc.mapel, doc.tujuanPembelajaran);
+      }
+    },
+
+    // Generator 3 Preset Skala KKTP (Nilai 100/80, Predikat A/B/C/D, atau Interval Kurikulum Merdeka)
+    buildDefaultKktpRows(mode, materiRaw, mapelRaw, tpList) {
+      const materi = String(materiRaw || 'materi pembelajaran').trim();
+      const mapel = String(mapelRaw || 'mata pelajaran').trim();
+      const mainTp = (Array.isArray(tpList) && tpList[0])
+        ? String(tpList[0]).replace(/^(TP\s*\d+[:\.]?|\d+[\.\)])\s*/i, '').trim()
+        : `memahami dan menerapkan konsep ${materi}`;
+
+      if (mode === 'HURUF_ABCD') {
+        return [
+          {
+            scale: 'A (90 – 100)',
+            category: 'Sangat Baik (SB) — Tuntas Melampaui',
+            description: `Peserta didik sangat mahir dan mandiri dalam ${mainTp}, serta mampu menjelaskan dan mempraktikkan contoh nyata materi "${materi}" secara runtut dan akurat.`,
+            followUp: 'Diberikan pengayaan lanjutan dan menjadi tutor sebaya bagi teman sekelompoknya.'
+          },
+          {
+            scale: 'B (80 – 89)',
+            category: 'Baik (B) — Tuntas Sesuai Standar',
+            description: `Peserta didik sudah mampu menguasai kompetensi dasar dalam ${mainTp} pada materi "${materi}" dengan tepat sesuai harapan.`,
+            followUp: 'Melanjutkan ke materi/sub-bab berikutnya dengan latihan penguatan mandiri.'
+          },
+          {
+            scale: 'C (70 – 79)',
+            category: 'Cukup (C) — Tuntas Sebagian',
+            description: `Peserta didik mulai memahami konsep dasar "${materi}", namun masih memerlukan arahan guru ketika menyelesaikan latihan aplikasi ${mapel}.`,
+            followUp: 'Pendampingan terfokus (scaffolding) pada bagian indikator yang belum konsisten.'
+          },
+          {
+            scale: 'D (< 70)',
+            category: 'Perlu Bimbingan (PB) — Belum Tuntas',
+            description: `Peserta didik belum mencapai ketuntasan pada konsep "${materi}" dan masih mengalami kesulitan dalam ${mainTp}.`,
+            followUp: 'Pembelajaran remedial dan bimbingan khusus menggunakan media konkret/sederhana.'
+          }
+        ];
+      }
+
+      if (mode === 'NILAI_SPESIFIK') {
+        return [
+          {
+            scale: 'Nilai 100 (90 – 100)',
+            category: 'Tuntas Istimewa (Mahir)',
+            description: `Peserta didik menguasai 100% indikator tujuan pembelajaran tentang "${materi}" secara tuntas, kritis, dan mampu memecahkan masalah kontekstual tanpa kesalahan.`,
+            followUp: 'Program pengayaan tantangan proyek/eksplorasi mandiri.'
+          },
+          {
+            scale: 'Nilai 80 (80 – 89)',
+            category: 'Tuntas Baik (Cakap)',
+            description: `Peserta didik memahami konsep utama "${materi}" dengan baik dan mampu menyelesaikan sebagian besar tugas pembelajaran dengan benar.`,
+            followUp: 'Melanjutkan ke tahap pembelajaran berikutnya.'
+          },
+          {
+            scale: 'Nilai 70 (70 – 79)',
+            category: 'Tuntas Minimal (Layak)',
+            description: `Peserta didik telah memahami pengertian dan contoh dasar dari "${materi}", namun masih perlu latihan ketelitian dalam penerapannya.`,
+            followUp: 'Latihan terbimbing dan umpan balik langsung pada bagian yang kurang tepat.'
+          },
+          {
+            scale: 'Nilai < 70 (0 – 69)',
+            category: 'Belum Tuntas (Remedial)',
+            description: `Peserta didik masih memerlukan bimbingan langsung dari guru untuk memahami konsep dasar "${materi}" pada pelajaran ${mapel}.`,
+            followUp: 'Remedial teaching secara individual atau kelompok kecil.'
+          }
+        ];
+      }
+
+      // Default: Gabungan Lengkap Interval Angka + Predikat Huruf Kurikulum Merdeka
+      return [
+        {
+          scale: '86 – 100 (Predikat A)',
+          category: 'Mahir (Sangat Baik — Tuntas)',
+          description: `Peserta didik menunjukkan penguasaan yang sangat matang dalam ${mainTp} serta mampu menerapkan konsep "${materi}" secara mandiri, logis, dan kreatif.`,
+          followUp: 'Diberikan aktivitas pengayaan dan tantangan eksplorasi lebih lanjut.'
+        },
+        {
+          scale: '71 – 85 (Predikat B)',
+          category: 'Cakap (Baik — Tuntas)',
+          description: `Peserta didik mampu memahami dan mempraktikkan materi "${materi}" dengan baik sesuai kriteria Tujuan Pembelajaran yang ditetapkan.`,
+          followUp: 'Dapat melanjutkan ke tujuan pembelajaran berikutnya.'
+        },
+        {
+          scale: '56 – 70 (Predikat C)',
+          category: 'Layak (Cukup — Perlu Penguatan)',
+          description: `Peserta didik memahami sebagian konsep dasar "${materi}", namun masih memerlukan bimbingan guru saat menyelesaikan tugas penerapan.`,
+          followUp: 'Bimbingan penguatan (coaching) pada indikator yang belum dikuasai.'
+        },
+        {
+          scale: '0 – 55 (Predikat D)',
+          category: 'Baru Berkembang (Perlu Intervensi)',
+          description: `Peserta didik belum memahami konsep dasar "${materi}" dan memerlukan pendampingan bertahap dari pendidik.`,
+          followUp: 'Pendampingan remedial intensif dengan penyederhanaan materi dan alat peraga.'
+        }
+      ];
+    },
+
+    applyKktpPreset(modeKey) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+
+      doc.kktpMode = modeKey;
+      doc.kktpRows = this.buildDefaultKktpRows(modeKey, doc.materi, doc.mapel, doc.tujuanPembelajaran);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+
+      UI.showNotif(
+        'Skala & Deskripsi KKTP Diperbarui',
+        'Tabel Kriteria Ketuntasan Tujuan Pembelajaran (KKTP) telah disesuaikan dengan skala pilihan Anda. Klik pada teks di dalam tabel jika ingin mengeditnya.',
+        'success'
+      );
+    },
+
+    addKktpRow() {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+      this.ensureDocKktpStructure(doc);
+
+      doc.kktpRows.push({
+        scale: 'Rentang / Nilai Baru',
+        category: 'Kategori Ketuntasan',
+        description: `Deskripsi capaian peserta didik pada materi "${doc.materi || 'pembelajaran'}"... (Klik untuk mengedit)`,
+        followUp: 'Tindak lanjut guru...'
+      });
+
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    removeKktpRow(rowIndex) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc || !Array.isArray(doc.kktpRows)) return;
+      if (doc.kktpRows.length <= 1) {
+        UI.showNotif('Minimal 1 Baris KKTP', 'Tabel KKTP harus memiliki minimal 1 baris kriteria.', 'warning');
+        return;
+      }
+
+      doc.kktpRows.splice(rowIndex, 1);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    updateKktpCell(rowIndex, fieldKey, newValue) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc || !Array.isArray(doc.kktpRows) || !doc.kktpRows[rowIndex]) return;
+
+      doc.kktpRows[rowIndex][fieldKey] = String(newValue || '').trim();
+      this.syncCurrentDocToArchiveBucket();
+    },
+
+    // Tambah / Hapus TP & Pertanyaan Pemantik langsung dari dokumen hasil RPM
+    addInlineTpItem() {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+      if (!Array.isArray(doc.tujuanPembelajaran)) doc.tujuanPembelajaran = [];
+      doc.tujuanPembelajaran.push(`Peserta didik mampu memahami dan mempraktikkan aspek penting dari ${doc.materi || 'materi ini'} secara tepat.`);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    removeInlineTpItem(tpIndex) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc || !Array.isArray(doc.tujuanPembelajaran)) return;
+      if (doc.tujuanPembelajaran.length <= 1) {
+        UI.showNotif('Minimal 1 Tujuan Pembelajaran', 'Dokumen Modul RPM harus memiliki minimal 1 Tujuan Pembelajaran.', 'warning');
+        return;
+      }
+      doc.tujuanPembelajaran.splice(tpIndex, 1);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    addInlinePemantikItem() {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+      if (!Array.isArray(doc.pertanyaanPemantik)) doc.pertanyaanPemantik = [];
+      doc.pertanyaanPemantik.push(`Apa contoh nyata dari ${doc.materi || 'materi ini'} yang sering kalian jumpai di rumah?`);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    removeInlinePemantikItem(pIdx) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc || !Array.isArray(doc.pertanyaanPemantik)) return;
+      if (doc.pertanyaanPemantik.length <= 1) return;
+      doc.pertanyaanPemantik.splice(pIdx, 1);
+      this.syncCurrentDocToArchiveBucket();
+      this.renderGeneratedRpmDocument();
+    },
+
+    // Menyimpan edit inline pada SELURUH bagian dokumen Modul RPM (termasuk Identitas, Prinsip 3M, Tanda Tangan, dll.)
+    updateDocInlineField(sectionKey, subKeyOrIndex, newValue) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+
+      const cleanVal = String(newValue || '').trim();
+
+      if (sectionKey === 'identitas') {
+        doc[subKeyOrIndex] = cleanVal;
+      } else if (sectionKey === 'capaianPembelajaran') {
+        doc.capaianPembelajaran = cleanVal;
+        const cpInp = document.getElementById('rpm-input-cp');
+        if (cpInp) cpInp.value = cleanVal;
+      } else if (sectionKey === 'tujuanPembelajaran') {
+        if (Array.isArray(doc.tujuanPembelajaran) && doc.tujuanPembelajaran[subKeyOrIndex] !== undefined) {
+          doc.tujuanPembelajaran[subKeyOrIndex] = cleanVal.replace(/^\d+[\.\)]\s*/, '').trim();
+          const tpInp = document.getElementById('rpm-input-tp');
+          if (tpInp) tpInp.value = doc.tujuanPembelajaran.map((t, i) => `${i + 1}. ${t}`).join('\n');
+          if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.receiveRpmModuleSync === 'function') {
+            PenilaianApp.receiveRpmModuleSync(doc, false);
+          }
+        }
+      } else if (sectionKey === 'pertanyaanPemantik') {
+        if (Array.isArray(doc.pertanyaanPemantik) && doc.pertanyaanPemantik[subKeyOrIndex] !== undefined) {
+          doc.pertanyaanPemantik[subKeyOrIndex] = cleanVal;
+        }
+      } else if (sectionKey === 'iceBreaking') {
+        doc.iceBreaking = cleanVal;
+      } else if (sectionKey === 'aktivitasLkpd') {
+        doc.aktivitasLkpd = cleanVal;
+      } else if (sectionKey === 'kerangkaPembelajaran') {
+        if (!doc.kerangkaPembelajaran) doc.kerangkaPembelajaran = {};
+        doc.kerangkaPembelajaran[subKeyOrIndex] = cleanVal;
+      } else if (sectionKey === 'prinsip3') {
+        if (!doc.prinsip3) doc.prinsip3 = {};
+        doc.prinsip3[subKeyOrIndex] = cleanVal;
+      } else if (sectionKey === 'memahami' || sectionKey === 'mengaplikasi' || sectionKey === 'merefleksi') {
+        if (!doc.pengalamanBelajar) doc.pengalamanBelajar = { memahami: [], mengaplikasi: [], merefleksi: [] };
+        if (Array.isArray(doc.pengalamanBelajar[sectionKey])) {
+          doc.pengalamanBelajar[sectionKey][subKeyOrIndex] = cleanVal;
+        }
+        if (doc.pengalaman3 && Array.isArray(doc.pengalaman3[sectionKey])) {
+          doc.pengalaman3[sectionKey][subKeyOrIndex] = cleanVal;
+        }
+      } else if (sectionKey === 'asesmen') {
+        if (!doc.asesmen) doc.asesmen = {};
+        doc.asesmen[subKeyOrIndex] = cleanVal;
+      }
+
+      this.syncCurrentDocToArchiveBucket();
+      this.renderSavedArchiveTable();
+    },
+
+    // Render Halaman Modul RPM yang 100% Editable di Semua Bagian + Tabel KKTP Fleksibel (Tanpa Soal)
+    renderGeneratedRpmDocument() {
+      const doc = AppState.rpmCurrentDoc;
+      const container = document.getElementById('rpm-document-content');
+      if (!doc || !container) return;
+
+      this.ensureDocKktpStructure(doc);
+
+      const editAttr = AppState.isReadOnlyInspection
+        ? ''
+        : 'contenteditable="true" class="rpm-editable-field"';
+
+      const dplArr = Array.isArray(doc.selectedDpl) && doc.selectedDpl.length > 0
+        ? doc.selectedDpl
+        : (Array.isArray(doc.dplList) ? doc.dplList : ['Penalaran Kritis', 'Kolaborasi', 'Komunikasi']);
+
+      const dplBadgesHtml = dplArr
+        .map((d, idx) => `
+          <span class="badge badge-primary" style="margin-right: 0.35rem; margin-bottom: 0.35rem;">
+            <span ${editAttr} onblur="RpmApp.updateDplBadgeText(${idx}, this.innerText)">${UI.escapeHtml(d)}</span>
+          </span>
+        `)
+        .join('');
+
+      const tpArr = Array.isArray(doc.tujuanPembelajaran) ? doc.tujuanPembelajaran : [];
+      const tpListHtml = tpArr
+        .map((tp, idx) => `
+          <li style="margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+            <span style="flex: 1;">
+              <strong>TP ${idx + 1}:</strong>
+              <span ${editAttr} onblur="RpmApp.updateDocInlineField('tujuanPembelajaran', ${idx}, this.innerText)">${UI.escapeHtml(tp)}</span>
+            </span>
+            <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.4rem; font-size: 0.68rem; color: var(--danger); border-color: #fca5a5;" onclick="RpmApp.removeInlineTpItem(${idx})" title="Hapus TP ini">✕</button>
+          </li>
+        `)
+        .join('');
+
+      const getStageSteps = (stageKey) => {
+        if (doc.pengalamanBelajar && Array.isArray(doc.pengalamanBelajar[stageKey]) && doc.pengalamanBelajar[stageKey].length > 0) {
+          return doc.pengalamanBelajar[stageKey];
+        }
+        if (doc.pengalaman3 && Array.isArray(doc.pengalaman3[stageKey])) {
+          return doc.pengalaman3[stageKey];
+        }
+        return [];
+      };
+
+      const renderEditableSteps = (stageKey) => {
+        const arr = getStageSteps(stageKey);
+        return arr
+          .map((s, idx) => `
+            <li style="margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+              <span style="flex: 1;" ${editAttr} onblur="RpmApp.updateDocInlineField('${stageKey}', ${idx}, this.innerText)">${UI.escapeHtml(s)}</span>
+              <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.1rem 0.4rem; font-size: 0.68rem; color: var(--danger); border-color: #fca5a5; flex-shrink: 0;" title="Hapus langkah ini" onclick="RpmApp.removeLearningStepItem('${stageKey}', ${idx})">✕</button>
+            </li>
+          `)
+          .join('');
+      };
+
+      const pemantikListHtml = (doc.pertanyaanPemantik || [])
+        .map((q, idx) => `
+          <li style="margin-bottom: 0.35rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+            <span style="flex: 1;" ${editAttr} onblur="RpmApp.updateDocInlineField('pertanyaanPemantik', ${idx}, this.innerText)">${UI.escapeHtml(q)}</span>
+            <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.08rem 0.38rem; font-size: 0.66rem; color: var(--danger); border-color: #fca5a5;" onclick="RpmApp.removeInlinePemantikItem(${idx})">✕</button>
+          </li>
+        `)
+        .join('');
+
+      const kktpRowsHtml = (doc.kktpRows || [])
+        .map((row, rIdx) => `
+          <tr>
+            <td style="font-weight: 800; color: var(--primary); width: 175px;">
+              <div ${editAttr} onblur="RpmApp.updateKktpCell(${rIdx}, 'scale', this.innerText)">${UI.escapeHtml(row.scale || '-')}</div>
+            </td>
+            <td style="font-weight: 700; width: 195px;">
+              <div ${editAttr} onblur="RpmApp.updateKktpCell(${rIdx}, 'category', this.innerText)">${UI.escapeHtml(row.category || '-')}</div>
+            </td>
+            <td style="line-height: 1.55;">
+              <div ${editAttr} onblur="RpmApp.updateKktpCell(${rIdx}, 'description', this.innerText)">${UI.escapeHtml(row.description || '-')}</div>
+            </td>
+            <td style="width: 220px; font-size: 0.83rem; color: #334155;">
+              <div ${editAttr} onblur="RpmApp.updateKktpCell(${rIdx}, 'followUp', this.innerText)">${UI.escapeHtml(row.followUp || '-')}</div>
+            </td>
+            <td class="no-print write-action-btn" style="width: 60px; text-align: center;">
+              <button type="button" class="btn btn-outline btn-sm" style="padding: 0.15rem 0.45rem; color: var(--danger); border-color: #fca5a5;" onclick="RpmApp.removeKktpRow(${rIdx})" title="Hapus baris kriteria">🗑️</button>
+            </td>
+          </tr>
+        `)
+        .join('');
+
+      const lockedDisplayDate = doc.createdAt || (doc.savedDateISO ? DateTimeUtil.formatIndonesianDate(doc.savedDateISO) : DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO()));
+      const modelPedagogisLabel = doc.modelPedagogis || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+
+      container.innerHTML = `
+        <div style="border: 2px solid var(--dark); border-radius: var(--radius-md); padding: 1.85rem; background: #ffffff;">
+          <!-- PITA PETUNJUK EDIT SEMUA BAGIAN -->
+          <div class="no-print" style="background: linear-gradient(90deg, #f0fdf4 0%, #eff6ff 100%); border: 1px dashed #2563eb; padding: 0.65rem 1rem; border-radius: 8px; margin-bottom: 1.25rem; font-size: 0.81rem; color: #1e3a8a; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+            <span>✏️ <strong>Mode Editor Langsung (100% Full Editable):</strong> Klik pada bagian teks mana pun di bawah ini (Identitas, CP, TP, Kerangka, Kegiatan 3M, Asesmen, Tabel KKTP, hingga Nama Kepala Sekolah) untuk mengedit isinya secara langsung. Perubahan otomatis tersimpan!</span>
+            <div style="display: flex; gap: 0.4rem;">
+              <button type="button" class="btn btn-success btn-sm write-action-btn" onclick="RpmApp.openUploadPortfolioModal()">
+                ➕ Upload Foto Modul Print / Kegiatan / PDF
+              </button>
+            </div>
+          </div>
+
+          <!-- KOP MODUL RPM -->
+          <div style="text-align: center; border-bottom: 3px double var(--dark); padding-bottom: 1rem; margin-bottom: 1.3rem;">
+            <div style="font-size: 0.84rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">
+              DOKUMEN RENCANA PEMBELAJARAN MENDALAM (MODUL AJAR / RPM SISTEM 8-3-3-4)
+            </div>
+            <h2 style="font-size: 1.4rem; font-weight: 900; color: var(--dark); margin-top: 0.25rem;">
+              <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'sekolah', this.innerText)">${UI.escapeHtml(doc.sekolah)}</span>
+            </h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 0.2rem;">
+              Mata Pelajaran: <strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'mapel', this.innerText)">${UI.escapeHtml(doc.mapel)}</span></strong>
+              | Bab: <strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'bab', this.innerText)">${UI.escapeHtml(doc.bab || 'Bab 1')}</span></strong>
+              | Topik: <strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'materi', this.innerText)">${UI.escapeHtml(doc.materi)}</span></strong>
+            </p>
+          </div>
+
+          <!-- I. IDENTITAS MODUL -->
+          <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            I. IDENTITAS MODUL PEMBELAJARAN (KLIK UNTUK MENGEDIT)
+          </h3>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 230px;">Nama Penyusun</th>
+                <td><strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'penyusun', this.innerText)">${UI.escapeHtml(doc.penyusun)}</span></strong></td>
+                <th style="width: 210px;">Satuan Pendidikan</th>
+                <td><strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'sekolah', this.innerText)">${UI.escapeHtml(doc.sekolah)}</span></strong></td>
+              </tr>
+              <tr>
+                <th>Kelas / Fase</th>
+                <td><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'kelasFase', this.innerText)">${UI.escapeHtml(doc.kelasFase)}</span></td>
+                <th>Semester & Alokasi Waktu</th>
+                <td><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'semester', this.innerText)">${UI.escapeHtml(doc.semester)}</span></td>
+              </tr>
+              <tr>
+                <th>Mata Pelajaran</th>
+                <td><strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'mapel', this.innerText)">${UI.escapeHtml(doc.mapel)}</span></strong></td>
+                <th>Topik / Materi Pokok</th>
+                <td><strong><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'materi', this.innerText)">${UI.escapeHtml(doc.materi)}</span></strong></td>
+              </tr>
+              <tr>
+                <th>Model Pembelajaran</th>
+                <td><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'modelPedagogis', this.innerText)">${UI.escapeHtml(modelPedagogisLabel)}</span></td>
+                <th>Target Taksonomi SOLO</th>
+                <td><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'soloLevel', this.innerText)">${UI.escapeHtml(doc.soloLevel)}</span></td>
+              </tr>
+              <tr>
+                <th>Tanggal Penyusunan</th>
+                <td colspan="3"><strong>🔒 <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'createdAt', this.innerText)">${UI.escapeHtml(lockedDisplayDate)}</span></strong></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- II. KOMPONEN INTI: CP, TP, & DPL -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); margin: 0;">
+              II. CAPAIAN PEMBELAJARAN (CP), TUJUAN PEMBELAJARAN (TP) & DIMENSI PROFIL LULUSAN
+            </h3>
+            <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.18rem 0.6rem; font-size: 0.74rem; background: #ffffff;" onclick="RpmApp.addInlineTpItem()">
+              ➕ Tambah Butir TP
+            </button>
+          </div>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 230px;">1. Capaian Pembelajaran (CP)</th>
+                <td>
+                  <div ${editAttr} onblur="RpmApp.updateDocInlineField('capaianPembelajaran', null, this.innerText)">${UI.escapeHtml(doc.capaianPembelajaran || '-')}</div>
+                </td>
+              </tr>
+              <tr>
+                <th>2. Tujuan Pembelajaran (${tpArr.length} TP)</th>
+                <td>
+                  <ol style="padding-left: 1.2rem; margin: 0;">${tpListHtml}</ol>
+                </td>
+              </tr>
+              <tr>
+                <th>3. Dimensi Profil Lulusan (DPL)</th>
+                <td>${dplBadgesHtml}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- III. EMPAT KERANGKA PEMBELAJARAN -->
+          <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            III. EMPAT KERANGKA PEMBELAJARAN MENDALAM (4 KERANGKA)
+          </h3>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 230px;">1. Praktik Pedagogis</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('kerangkaPembelajaran', 'praktikPedagogis', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.praktikPedagogis || doc.kerangka4?.pedagogis || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>2. Kemitraan Pembelajaran</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('kerangkaPembelajaran', 'kemitraanPembelajaran', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.kemitraanPembelajaran || doc.kerangka4?.kemitraan || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>3. Lingkungan Pembelajaran</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('kerangkaPembelajaran', 'lingkunganPembelajaran', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.lingkunganPembelajaran || doc.kerangka4?.lingkungan || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>4. Pemanfaatan Digital</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('kerangkaPembelajaran', 'pemanfaatanDigital', this.innerText)">${UI.escapeHtml(doc.kerangkaPembelajaran?.pemanfaatanDigital || doc.kerangka4?.digital || '-')}</div></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- IV. PERTANYAAN PEMANTIK, ICE BREAKING, & LKPD -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); margin: 0;">
+              IV. APERSEPSI, PERTANYAAN PEMANTIK, ICE BREAKING & AKTIVITAS LKPD
+            </h3>
+            <button type="button" class="btn btn-outline btn-sm no-print write-action-btn" style="padding: 0.18rem 0.6rem; font-size: 0.74rem; background: #ffffff;" onclick="RpmApp.addInlinePemantikItem()">
+              ➕ Tambah Pertanyaan Pemantik
+            </button>
+          </div>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 230px;">1. Pertanyaan Pemantik</th>
+                <td><ol style="padding-left: 1.2rem; margin: 0;">${pemantikListHtml}</ol></td>
+              </tr>
+              <tr>
+                <th>2. Ice Breaking Pembuka</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('iceBreaking', null, this.innerText)">${UI.escapeHtml(doc.iceBreaking || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>3. Aktivitas Kelompok & LKPD</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('aktivitasLkpd', null, this.innerText)">${UI.escapeHtml(doc.aktivitasLkpd || '-')}</div></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- V. TIGA PENGALAMAN BELAJAR (3M) -->
+          <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            V. TIGA PENGALAMAN & PRINSIP PEMBELAJARAN MENDALAM (3M: MINDFUL, MEANINGFUL, JOYFUL)
+          </h3>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <thead>
+              <tr>
+                <th style="width: 230px;">Tahapan Pengalaman Belajar</th>
+                <th>Rincian Langkah Kegiatan Pembelajaran (Klik Kalimat untuk Mengedit)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>1. Memahami (Mindful Learning)</strong>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Berkesadaran penuh, apersepsi & konstruksi konsep dasar</div>
+                </td>
+                <td><ol style="padding-left: 1.2rem; margin: 0;">${renderEditableSteps('memahami')}</ol></td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>2. Mengaplikasi (Meaningful Learning)</strong>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Bermakna, praktik kontekstual & kolaborasi kelompok</div>
+                </td>
+                <td><ol style="padding-left: 1.2rem; margin: 0;">${renderEditableSteps('mengaplikasi')}</ol></td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>3. Merefleksi (Joyful Learning)</strong>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 0.2rem;">Menggembirakan, kesimpulan & tindak lanjut siswa</div>
+                </td>
+                <td><ol style="padding-left: 1.2rem; margin: 0;">${renderEditableSteps('merefleksi')}</ol></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- VI. RENCANA ASESMEN -->
+          <h3 style="font-size: 0.98rem; font-weight: 800; color: var(--primary); background: #eff6ff; padding: 0.5rem 0.85rem; border-left: 4px solid var(--primary); margin-bottom: 0.75rem;">
+            VI. RENCANA ASESMEN PEMBELAJARAN
+          </h3>
+          <table class="academic-table" style="margin-bottom: 1.35rem;">
+            <tbody>
+              <tr>
+                <th style="width: 230px;">Asesmen Awal (Diagnostik)</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('asesmen', 'diagnostik', this.innerText)">${UI.escapeHtml(doc.asesmen?.diagnostik || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>Asesmen Proses (Formatif)</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('asesmen', 'formatif', this.innerText)">${UI.escapeHtml(doc.asesmen?.formatif || '-')}</div></td>
+              </tr>
+              <tr>
+                <th>Asesmen Akhir (Sumatif)</th>
+                <td><div ${editAttr} onblur="RpmApp.updateDocInlineField('asesmen', 'sumatif', this.innerText)">${UI.escapeHtml(doc.asesmen?.sumatif || '-')}</div></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- VII. TABEL KRITERIA KETUNTASAN TUJUAN PEMBELAJARAN (KKTP) FLEKSIBEL & EDITABLE -->
+          <h3 style="font-size: 0.98rem; font-weight: 800; color: #0f766e; background: #f0fdfa; padding: 0.5rem 0.85rem; border-left: 4px solid #0f766e; margin-bottom: 0.65rem;">
+            VII. TABEL KRITERIA KETUNTASAN TUJUAN PEMBELAJARAN (KKTP) & DESKRIPSI CAPAIAN
+          </h3>
+
+          <div class="kktp-preset-toolbar no-print write-action-btn">
+            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+              <span style="font-size: 0.76rem; font-weight: 800; color: var(--dark);">Pilih Format Skala KKTP:</span>
+              <button type="button" class="btn ${doc.kktpMode === 'NILAI_SPESIFIK' ? 'btn-primary' : 'btn-outline'} btn-sm" style="font-size: 0.74rem; padding: 0.25rem 0.6rem;" onclick="RpmApp.applyKktpPreset('NILAI_SPESIFIK')">
+                🔢 Skala Nilai (100 / 80 / 70 / &lt;70)
+              </button>
+              <button type="button" class="btn ${doc.kktpMode === 'HURUF_ABCD' ? 'btn-primary' : 'btn-outline'} btn-sm" style="font-size: 0.74rem; padding: 0.25rem 0.6rem;" onclick="RpmApp.applyKktpPreset('HURUF_ABCD')">
+                🔤 Skala Predikat (A / B / C / D)
+              </button>
+              <button type="button" class="btn ${doc.kktpMode === 'ANGKA_DAN_HURUF' ? 'btn-primary' : 'btn-outline'} btn-sm" style="font-size: 0.74rem; padding: 0.25rem 0.6rem;" onclick="RpmApp.applyKktpPreset('ANGKA_DAN_HURUF')">
+                📊 Interval Lengkap (86-100 / A s.d. D)
+              </button>
+            </div>
+            <button type="button" class="btn btn-success btn-sm" style="font-size: 0.74rem; padding: 0.25rem 0.7rem;" onclick="RpmApp.addKktpRow()">
+              ➕ Tambah Baris Kriteria KKTP
+            </button>
+          </div>
+
+          <div class="table-responsive" style="margin-bottom: 1.75rem;">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="background: #f0fdfa; color: #0f766e;">Rentang Nilai / Predikat</th>
+                  <th style="background: #f0fdfa; color: #0f766e;">Kategori Ketuntasan</th>
+                  <th style="background: #f0fdfa; color: #0f766e;">Deskripsi Capaian Peserta Didik (Klik untuk Mengedit)</th>
+                  <th style="background: #f0fdfa; color: #0f766e;">Tindak Lanjut (Pengayaan / Remedial)</th>
+                  <th class="no-print write-action-btn" style="background: #f0fdfa; width: 60px; text-align: center;">Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${kktpRowsHtml}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- BLOK PENGESAHAN / TANDA TANGAN (DAPAT DIEDIT NAMA & NIP KEPSEK/GURU) -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; padding: 0 1rem;">
+            <div style="text-align: center; min-width: 230px;">
+              <div>Mengetahui,</div>
+              <div style="font-weight: 700; margin-bottom: 3.5rem;">Kepala <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'sekolah', this.innerText)">${UI.escapeHtml(doc.sekolah)}</span></div>
+              <div style="font-weight: 800; text-decoration: underline;">
+                <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'kepsekNama', this.innerText)">${UI.escapeHtml(doc.kepsekNama)}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'kepsekNip', this.innerText)">${UI.escapeHtml(doc.kepsekNip)}</span>
+              </div>
+            </div>
+
+            <div style="text-align: center; min-width: 230px;">
+              <div><span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'createdAt', this.innerText)">${UI.escapeHtml(lockedDisplayDate)}</span></div>
+              <div style="font-weight: 700; margin-bottom: 3.5rem;">Guru Penyusun Modul</div>
+              <div style="font-weight: 800; text-decoration: underline;">
+                <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'penyusun', this.innerText)">${UI.escapeHtml(doc.penyusun)}</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                <span ${editAttr} onblur="RpmApp.updateDocInlineField('identitas', 'penyusunNip', this.innerText)">${UI.escapeHtml(doc.penyusunNip)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    },
+
+    renderPage1RpmDocument() {
+      this.renderGeneratedRpmDocument();
+    },
+
+    renderAllRpmPages() {
+      setupRpmNoQuestionAndPortfolioDOM();
+      this.renderGeneratedRpmDocument();
+      const dynPages = document.getElementById('rpm-dynamic-pages-container');
+      if (dynPages) dynPages.innerHTML = '';
+      const indicatorEl = document.getElementById('rpm-total-pages-indicator');
+      if (indicatorEl) indicatorEl.textContent = 'Dokumen Modul RPM & Tabel KKTP (Full Editable)';
+      this.renderPortfolioGallery();
+    },
+
+    updateDplBadgeText(idx, newText) {
+      if (AppState.isReadOnlyInspection) return;
+      const doc = AppState.rpmCurrentDoc;
+      if (!doc) return;
+      if (!Array.isArray(doc.selectedDpl)) doc.selectedDpl = [...(doc.dplList || [])];
+      doc.selectedDpl[idx] = String(newText || '').trim();
+      doc.dplList = [...doc.selectedDpl];
+      this.syncCurrentDocToArchiveBucket();
+    },
+
+    // =========================================================================
+    // 3. HANDLER PEMBUATAN MODUL RPM MURNI + KKTP (TANPA PEMBUATAN SOAL)
+    // =========================================================================
+    async handleGenerateRpm(event) {
+      if (event) event.preventDefault();
+      if (AppState.isReadOnlyInspection) return;
+
+      if (typeof DB.purgeLegacyDateOnlySignatures === 'function') {
+        DB.purgeLegacyDateOnlySignatures();
+      }
+
+      const penyusun = (document.getElementById('rpm-input-penyusun')?.value || '').trim();
+      const sekolahRaw = (document.getElementById('rpm-input-sekolah')?.value || '').trim();
+      const normSchool = SchoolNormalizer.normalize(sekolahRaw);
+      const sekolah = normSchool.display;
+      const kelasFase = (document.getElementById('rpm-input-kelas-fase')?.value || '').trim();
+      const semester = document.getElementById('rpm-input-semester')?.value || 'Semester 1 (Ganjil) — 2 x 35 Menit';
+      const mapel = (document.getElementById('rpm-input-mapel')?.value || '').trim();
+      const soloLevel = document.getElementById('rpm-input-solo')?.value || 'Relational';
+      const bab = (document.getElementById('rpm-input-bab')?.value || '').trim() || 'Bab 1';
+      const materi = (document.getElementById('rpm-input-materi')?.value || '').trim();
+      const modelPedagogis = document.getElementById('rpm-input-model-pedagogis')?.value || 'Problem-Based Learning (PBL) & Pembelajaran Mendalam';
+      const includePemantikIce = Boolean(document.getElementById('rpm-include-pemantik-icebreaking')?.checked);
+      const tpCount = Math.min(6, Math.max(1, parseInt(document.getElementById('rpm-tp-count-select')?.value, 10) || 3));
+      const tpStyle = document.getElementById('rpm-tp-style-select')?.value || 'SIMPLE_TERUKUR';
+
+      let cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+      let tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+      const customPrompt = (document.getElementById('rpm-input-custom-prompt')?.value || '').trim();
+
+      const tglSusunInp = document.getElementById('rpm-input-tanggal-susun');
+      const chosenDateISO = (tglSusunInp && tglSusunInp.value) ? tglSusunInp.value : DateTimeUtil.getTodayISO();
+      const lockedFormattedDate = DateTimeUtil.formatIndonesianDate(chosenDateISO);
+      const lockedTimeStr = DateTimeUtil.getCurrentTimeStr();
+      const lockedFullTimestamp = `${lockedFormattedDate} (Pukul ${lockedTimeStr})`;
+
+      if (!penyusun || !sekolah || !kelasFase || !mapel || !materi) {
+        UI.showNotif(
+          'Parameter Modul Belum Lengkap',
+          'Harap lengkapi Nama Penyusun, Asal Sekolah, Kelas/Fase, Mata Pelajaran, dan Topik/Materi Pokok.',
+          'warning'
+        );
+        return;
+      }
+
+      const selectedDpl = Array.from(document.querySelectorAll('input[name="rpm_dpl_item"]:checked'))
+        .map(el => el.value);
+
+      if (selectedDpl.length === 0) {
+        UI.showNotif(
+          'Pilih Dimensi Profil Lulusan',
+          'Silakan centang minimal satu Dimensi Profil Lulusan (DPL) untuk diintegrasikan ke dalam modul.',
+          'warning'
+        );
+        return;
+      }
+
+      if (!cpInput || !tpInput) {
+        await this.autoSuggestCpAndTp(!cpInput && !tpInput ? 'BOTH' : (!cpInput ? 'CP_ONLY' : 'TP_ONLY'));
+        cpInput = (document.getElementById('rpm-input-cp')?.value || '').trim();
+        tpInput = (document.getElementById('rpm-input-tp')?.value || '').trim();
+      }
+
+      const baseParams = {
+        penyusun,
+        sekolah,
+        kelasFase,
+        semester,
+        mapel,
+        bab,
+        materi,
+        soloLevel,
+        selectedDpl,
+        modelPedagogis,
+        includePemantikIce,
+        tpCount,
+        tpStyle,
+        cpRaw: cpInput,
+        tpRaw: tpInput,
+        customPrompt
+      };
+
+      DB.isSyncing = true;
+      DB.lastLocalWriteTimestamp = Date.now();
+
+      this.setRpmAiLoading(
+        true,
+        `Menyusun Modul RPM & Tabel KKTP "${mapel} — ${materi}"...`,
+        `AI sedang merancang skenario pembelajaran ${modelPedagogis}, Pertanyaan Pemantik, Ice Breaking, LKPD, serta Tabel Kriteria Ketuntasan Tujuan Pembelajaran (KKTP)...`
+      );
+
+      let blueprint;
+      try {
+        blueprint = AcademicAIEngine.buildRpm8334Blueprint(baseParams);
+        blueprint.bab = bab;
+        blueprint.modelPedagogis = modelPedagogis;
+        blueprint.includePemantikIce = includePemantikIce;
+
+        if (cpInput) blueprint.capaianPembelajaran = cpInput;
+        if (tpInput) {
+          const parsedTp = tpInput
+            .split(/\n+/)
+            .map(line => line.replace(/^\d+[\.\)]\s*/, '').trim())
+            .filter(Boolean);
+          if (parsedTp.length > 0) blueprint.tujuanPembelajaran = parsedTp;
+        }
+
+        blueprint = await this.enrichRpmBlueprintWithPureAI(blueprint, baseParams);
+      } finally {
+        this.setRpmAiLoading(false);
+        DB.isSyncing = false;
+        DB.lastLocalWriteTimestamp = Date.now();
+      }
+
+      const uniqueRpmId = 'RPM_' + Date.now() + '_' + Math.floor(Math.random() * 10000);
+      const kktpRows = this.buildDefaultKktpRows('ANGKA_DAN_HURUF', materi, mapel, blueprint.tujuanPembelajaran);
+
+      const newDoc = {
+        id: uniqueRpmId,
+        ...blueprint,
+        mapel,
+        bab,
+        materi,
+        modelPedagogis,
+        includePemantikIce,
+        tpCount: (blueprint.tujuanPembelajaran || []).length,
+        tpStyle,
+        customPrompt,
+        kktpMode: 'ANGKA_DAN_HURUF',
+        kktpRows,
+        enableQuestions: false,
+        questionSections: [],
+        savedDateISO: chosenDateISO,
+        createdAt: lockedFormattedDate,
+        savedTimestamp: lockedFullTimestamp,
+        isDateLocked: true
+      };
+
+      if (typeof DB.unlockRpmForNewCreation === 'function') {
+        DB.unlockRpmForNewCreation(newDoc);
+      }
+
+      AppState.rpmCurrentDoc = newDoc;
+
+      const freshBucket = DB.getActiveClassBucket();
+      if (freshBucket) {
+        if (!Array.isArray(freshBucket.rpmModules)) freshBucket.rpmModules = [];
+
+        const exactSameIdx = freshBucket.rpmModules.findIndex(m =>
+          m &&
+          String(m.mapel || '').trim().toLowerCase() === mapel.toLowerCase() &&
+          String(m.materi || '').trim().toLowerCase() === materi.toLowerCase() &&
+          String(m.savedDateISO || '') === chosenDateISO
+        );
+
+        if (exactSameIdx >= 0) {
+          newDoc.id = freshBucket.rpmModules[exactSameIdx].id || uniqueRpmId;
+          AppState.rpmCurrentDoc.id = newDoc.id;
+          freshBucket.rpmModules[exactSameIdx] = JSON.parse(JSON.stringify(newDoc));
+        } else {
+          freshBucket.rpmModules.unshift(JSON.parse(JSON.stringify(newDoc)));
+        }
+
+        await DB.saveImmediate();
+      }
+
+      if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.receiveRpmModuleSync === 'function') {
+        PenilaianApp.receiveRpmModuleSync(newDoc, false);
+      }
+
+      const formCard = document.getElementById('rpm-builder-form-card');
+      const resultWrapper = document.getElementById('rpm-result-wrapper');
+      if (formCard) formCard.classList.add('hidden');
+      if (resultWrapper) resultWrapper.classList.remove('hidden');
+
+      this.activePage = 1;
+      this.showAllPagesMode = false;
+      this.renderAllRpmPages();
+      this.renderSavedArchiveTable();
+
+      UI.showNotif(
+        'Modul RPM 8-3-3-4 & Tabel KKTP Selesai Disusun',
+        `Modul "${mapel} — ${materi}" beserta Tabel Kriteria Ketuntasan Tujuan Pembelajaran (KKTP) telah selesai dibuat. Klik bagian mana pun pada dokumen untuk mengeditnya secara langsung.`,
+        'success'
+      );
+    },
+
+    // =========================================================================
+    // 4. SISTEM UPLOAD FOTO MODUL PRINT, FOTO KEGIATAN, & FILE PDF + VIEWER
+    // =========================================================================
+    ensurePortfolioStore(bucket) {
+      if (!bucket) return [];
+      if (!Array.isArray(bucket.rpmPortfolioFiles)) {
+        bucket.rpmPortfolioFiles = [];
+      }
+      return bucket.rpmPortfolioFiles;
+    },
+
+    getCategoryMeta(catCode) {
+      const map = {
+        MODUL_PRINT: { label: '🖨️ Foto Modul RPM Print', badge: 'badge-primary' },
+        MODUL_PDF: { label: '📄 File PDF Modul / Bahan Ajar', badge: 'badge-danger' },
+        FOTO_KEGIATAN: { label: '📸 Foto Kegiatan Pembelajaran', badge: 'badge-success' },
+        KARYA_SISWA: { label: '🎨 Foto Karya / Praktik Siswa', badge: 'badge-warning' },
+        DOKUMEN_LAIN: { label: '📁 Dokumen Administrasi', badge: 'badge-info' }
+      };
+      return map[catCode] || map.FOTO_KEGIATAN;
+    },
+
+    setPortfolioFilter(filterCode) {
+      this.activePortfolioFilter = filterCode || 'ALL';
+      const bar = document.getElementById('rpm-portfolio-filter-bar');
+      if (bar) {
+        const buttons = bar.querySelectorAll('button');
+        buttons.forEach(btn => {
+          const isMatch = (btn.getAttribute('onclick') || '').includes(`'${this.activePortfolioFilter}'`);
+          btn.className = `btn ${isMatch ? 'btn-primary' : 'btn-outline'} btn-sm`;
+        });
+      }
+      this.renderPortfolioGallery();
+    },
+
+    openUploadPortfolioModal(defaultCategory = 'MODUL_PRINT') {
+      if (AppState.isReadOnlyInspection) return;
+      setupRpmNoQuestionAndPortfolioDOM();
+
+      const modal = document.getElementById('modal-rpm-upload-portfolio');
+      if (!modal) return;
+
+      const catSel = document.getElementById('rpm-upload-category');
+      const dateInp = document.getElementById('rpm-upload-date');
+      const mapelInp = document.getElementById('rpm-upload-mapel');
+      const titleInp = document.getElementById('rpm-upload-title');
+      const capInp = document.getElementById('rpm-upload-caption');
+      const fileInp = document.getElementById('rpm-upload-files-input');
+      const prevList = document.getElementById('rpm-upload-preview-list');
+
+      const doc = AppState.rpmCurrentDoc;
+      if (catSel) catSel.value = defaultCategory;
+      if (dateInp) dateInp.value = DateTimeUtil.getTodayISO();
+      if (mapelInp) mapelInp.value = (doc && doc.mapel) || document.getElementById('rpm-input-mapel')?.value || 'Pembelajaran Kelas';
+      if (titleInp) titleInp.value = doc ? `${doc.mapel} — ${doc.materi}` : '';
+      if (capInp) capInp.value = '';
+      if (fileInp) fileInp.value = '';
+      if (prevList) prevList.innerHTML = '';
+
+      this.pendingUploadFiles = [];
+      modal.classList.remove('hidden');
+    },
+
+    closeUploadPortfolioModal() {
+      const modal = document.getElementById('modal-rpm-upload-portfolio');
+      if (modal) modal.classList.add('hidden');
+      this.pendingUploadFiles = [];
+    },
+
+    // Kompresi foto secara otomatis agar tajam namun ringan di Cloud, dan baca PDF sebagai DataURL
+    async handlePortfolioFilesPreview(inputEl) {
+      const files = inputEl && inputEl.files ? Array.from(inputEl.files) : [];
+      const previewContainer = document.getElementById('rpm-upload-preview-list');
+      const catSel = document.getElementById('rpm-upload-category');
+      if (!previewContainer) return;
+
+      this.pendingUploadFiles = [];
+      if (files.length === 0) {
+        previewContainer.innerHTML = '';
+        return;
+      }
+
+      previewContainer.innerHTML = `<div style="font-size: 0.82rem; color: var(--primary); font-weight: 700;">⏳ Memproses ${files.length} berkas...</div>`;
+
+      const processed = [];
+      for (const file of files) {
+        const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+        if (isPdf && catSel && catSel.value === 'MODUL_PRINT') {
+          catSel.value = 'MODUL_PDF';
+        }
+
+        if (isPdf) {
+          // Baca file PDF sebagai DataURL
+          const pdfDataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(file);
+          });
+          if (pdfDataUrl) {
+            processed.push({
+              fileName: file.name,
+              fileType: 'PDF',
+              mimeType: 'application/pdf',
+              sizeKB: Math.round(file.size / 1024),
+              dataUrl: pdfDataUrl
+            });
+          }
+        } else if (file.type.startsWith('image/')) {
+          // Optimalkan resolusi foto menggunakan HTML5 Canvas
+          const imgDataUrl = await new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onload = e => {
+              const img = new Image();
+              img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxDim = 1100;
+                let w = img.width;
+                let h = img.height;
+                if (w > maxDim || h > maxDim) {
+                  if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                  } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                  }
+                }
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.78));
+              };
+              img.onerror = () => resolve(e.target.result);
+              img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+          });
+          if (imgDataUrl) {
+            processed.push({
+              fileName: file.name,
+              fileType: 'IMAGE',
+              mimeType: 'image/jpeg',
+              sizeKB: Math.round((imgDataUrl.length * 0.75) / 1024),
+              dataUrl: imgDataUrl
+            });
+          }
+        }
+      }
+
+      this.pendingUploadFiles = processed;
+      previewContainer.innerHTML = processed
+        .map((p, idx) => `
+          <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.8rem;">
+            <span><strong>${idx + 1}. ${p.fileType === 'PDF' ? '📄 [PDF]' : '🖼️ [FOTO]'}</strong> ${UI.escapeHtml(p.fileName)}</span>
+            <span class="badge badge-success">Siap Diunggah (${p.sizeKB} KB)</span>
+          </div>
+        `)
+        .join('');
+    },
+
+    async handleSavePortfolioUpload(event) {
+      if (event) event.preventDefault();
+      if (AppState.isReadOnlyInspection) return;
+
+      const bucket = DB.getActiveClassBucket();
+      const teacher = DB.getActiveTeacherAccount();
+      if (!bucket || !teacher) return;
+
+      if (!this.pendingUploadFiles || this.pendingUploadFiles.length === 0) {
+        UI.showNotif('Pilih Berkas Dulu', 'Silakan pilih minimal 1 file Foto atau PDF.', 'warning');
+        return;
+      }
+
+      const category = document.getElementById('rpm-upload-category')?.value || 'FOTO_KEGIATAN';
+      const dateISO = document.getElementById('rpm-upload-date')?.value || DateTimeUtil.getTodayISO();
+      const mapel = (document.getElementById('rpm-upload-mapel')?.value || 'Pembelajaran').trim();
+      const baseTitle = (document.getElementById('rpm-upload-title')?.value || 'Dokumentasi Pembelajaran').trim();
+      const caption = (document.getElementById('rpm-upload-caption')?.value || '').trim();
+
+      const store = this.ensurePortfolioStore(bucket);
+
+      this.pendingUploadFiles.forEach((f, idx) => {
+        const itemTitle = this.pendingUploadFiles.length > 1
+          ? `${baseTitle} (${idx + 1})`
+          : baseTitle;
+
+        store.unshift({
+          id: 'PORT_' + Date.now() + '_' + idx + '_' + Math.floor(Math.random() * 1000),
+          category: f.fileType === 'PDF' && category === 'MODUL_PRINT' ? 'MODUL_PDF' : category,
+          fileType: f.fileType,
+          fileName: f.fileName,
+          mimeType: f.mimeType,
+          sizeKB: f.sizeKB,
+          dataUrl: f.dataUrl,
+          title: itemTitle,
+          mapel,
+          caption,
+          dateISO,
+          formattedDate: DateTimeUtil.formatIndonesianDate(dateISO),
+          uploadedTime: DateTimeUtil.getCurrentTimeStr(),
+          teacherId: teacher.id,
+          teacherName: teacher.nama,
+          principalVerified: false,
+          principalFeedback: ''
+        });
+      });
+
+      this.closeUploadPortfolioModal();
+      this.renderPortfolioGallery();
+      this.renderSavedArchiveTable();
+      await DB.saveImmediate();
+
+      UI.showNotif(
+        'Berkas & Dokumentasi Berhasil Diunggah',
+        `Sebanyak ${this.pendingUploadFiles.length || 1} berkas telah disimpan ke Portofolio Kelas dan langsung dapat dipantau serta dibuka oleh Kepala Sekolah.`,
+        'success'
+      );
+    },
+
+    renderPortfolioGallery() {
+      const bucket = DB.getActiveClassBucket();
+      const container = document.getElementById('rpm-portfolio-grid-container');
+      const countBadge = document.getElementById('rpm-portfolio-count-badge');
+      if (!container || !bucket) return;
+
+      const allItems = this.ensurePortfolioStore(bucket);
+      if (countBadge) countBadge.textContent = `${allItems.length} Berkas Tersimpan`;
+
+      const filtered = this.activePortfolioFilter === 'ALL'
+        ? allItems
+        : allItems.filter(it => it && it.category === this.activePortfolioFilter);
+
+      const addTileHtml = AppState.isReadOnlyInspection
+        ? ''
+        : `
+          <div class="rpm-add-media-tile write-action-btn" onclick="RpmApp.openUploadPortfolioModal()">
+            <div class="rpm-plus-circle">+</div>
+            <div style="font-weight: 800; font-size: 0.96rem; margin-bottom: 0.25rem;">
+              Tambah Foto Modul Print / Kegiatan / File PDF
+            </div>
+            <p style="font-size: 0.78rem; color: #475569;">
+              Klik tanda tambah (+) ini untuk mengunggah foto modul cetak, foto kegiatan belajar, atau dokumen PDF beserta keterangannya.
+            </p>
+          </div>
+        `;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          ${addTileHtml}
+          <div style="grid-column: 1 / -1; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; padding: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
+            Belum ada berkas foto atau PDF pada kategori ini. ${AppState.isReadOnlyInspection ? '' : 'Klik kotak tanda <strong>(+)</strong> di atas untuk mulai mengunggah.'}
+          </div>
+        `;
+        return;
+      }
+
+      const cardsHtml = filtered.map(item => {
+        const catMeta = this.getCategoryMeta(item.category);
+        const safeId = String(item.id).replace(/'/g, "\\'");
+        const isPdf = item.fileType === 'PDF';
+
+        const thumbContent = isPdf
+          ? `
+            <div class="rpm-pdf-thumb-box">
+              <div style="font-size: 2.5rem; margin-bottom: 0.3rem;">📄</div>
+              <span class="badge badge-warning" style="margin-bottom: 0.25rem;">DOKUMEN PDF INTERAKTIF</span>
+              <div style="font-weight: 800; font-size: 0.84rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${UI.escapeHtml(item.fileName || 'Modul.pdf')}
+              </div>
+              <div style="font-size: 0.72rem; color: #fecaca; margin-top: 0.2rem;">Klik untuk Membuka & Membaca PDF</div>
+            </div>
+          `
+          : `<img src="${item.dataUrl}" alt="${UI.escapeHtml(item.title)}" loading="lazy">`;
+
+        const verifiedHtml = item.principalVerified
+          ? `<div style="background: #dcfce7; color: #166534; font-size: 0.72rem; font-weight: 800; padding: 0.3rem 0.6rem; border-radius: 6px; margin-top: 0.45rem;">
+               ✅ Disupervisi Kepsek${item.principalFeedback ? `: "${UI.escapeHtml(item.principalFeedback)}"` : ''}
+             </div>`
+          : '';
+
+        return `
+          <div class="rpm-portfolio-card">
+            <div>
+              <div class="rpm-portfolio-thumb" onclick="RpmApp.openMediaViewerModal('${safeId}')">
+                ${thumbContent}
+              </div>
+              <div style="padding: 0.9rem 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+                  <span class="badge ${catMeta.badge}" style="font-size: 0.68rem;">${catMeta.label}</span>
+                  <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">📅 ${UI.escapeHtml(item.formattedDate || item.dateISO)}</span>
+                </div>
+                <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--dark); margin-bottom: 0.2rem;">
+                  ${UI.escapeHtml(item.title)}
+                </h4>
+                <div style="font-size: 0.76rem; font-weight: 700; color: var(--primary); margin-bottom: 0.4rem;">
+                  📚 ${UI.escapeHtml(item.mapel || '-')}
+                </div>
+                <div
+                  style="font-size: 0.82rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.5rem 0.65rem; line-height: 1.45;"
+                  ${AppState.isReadOnlyInspection ? '' : `contenteditable="true" class="rpm-editable-field" onblur="RpmApp.updatePortfolioCaptionInline('${safeId}', this.innerText)"`}
+                  title="${AppState.isReadOnlyInspection ? '' : 'Klik untuk mengedit keterangan'}"
+                >${UI.escapeHtml(item.caption || 'Klik untuk menambahkan keterangan...')}</div>
+                ${verifiedHtml}
+              </div>
+            </div>
+
+            <div style="padding: 0.65rem 1rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; gap: 0.4rem;">
+              <button type="button" class="btn btn-primary btn-sm" style="flex: 1;" onclick="RpmApp.openMediaViewerModal('${safeId}')">
+                ${isPdf ? '👁️ Buka & Baca PDF' : '🔍 Lihat Foto & Detail'}
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.deletePortfolioItem('${safeId}')" title="Hapus Berkas">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = addTileHtml + cardsHtml;
+    },
+
+    async updatePortfolioCaptionInline(itemId, newCaption) {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const store = this.ensurePortfolioStore(bucket);
+      const found = store.find(it => it && String(it.id) === String(itemId));
+      if (!found) return;
+
+      found.caption = String(newCaption || '').trim();
+      await DB.saveImmediate();
+    },
+
+    async deletePortfolioItem(itemId) {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !Array.isArray(bucket.rpmPortfolioFiles)) return;
+
+      if (!window.confirm('Hapus berkas dokumentasi/PDF ini dari Portofolio Kelas?')) return;
+      bucket.rpmPortfolioFiles = bucket.rpmPortfolioFiles.filter(it => it && String(it.id) !== String(itemId));
+      this.renderPortfolioGallery();
+      await DB.saveImmediate();
+      UI.showNotif('Berkas Dihapus', 'Berkas telah dihapus dari portofolio kelas.', 'info');
+    },
+
+    // Konversi DataURL Base64 menjadi Blob URL agar PDF 100% bisa dibuka di semua browser tanpa layar putih
+    dataUrlToBlobUrl(dataUrl, fallbackMime = 'application/pdf') {
+      try {
+        if (this.activeBlobUrl) {
+          URL.revokeObjectURL(this.activeBlobUrl);
+          this.activeBlobUrl = null;
+        }
+        const parts = String(dataUrl || '').split(',');
+        if (parts.length < 2) return dataUrl;
+        const mimeMatch = parts[0].match(/:(.*?);/);
+        const mime = mimeMatch ? mimeMatch[1] : fallbackMime;
+        const bstr = atob(parts[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+          u8arr[n] = bstr.charCodeAt(n);
+        }
+        const blob = new Blob([u8arr], { type: mime });
+        this.activeBlobUrl = URL.createObjectURL(blob);
+        return this.activeBlobUrl;
+      } catch (e) {
+        return dataUrl;
+      }
+    },
+
+    openMediaViewerModal(itemId) {
+      setupRpmNoQuestionAndPortfolioDOM();
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const store = this.ensurePortfolioStore(bucket);
+      const item = store.find(it => it && String(it.id) === String(itemId));
+      if (!item) return;
+
+      this.currentViewingMediaId = item.id;
+      const modal = document.getElementById('modal-rpm-media-viewer');
+      const stage = document.getElementById('viewer-media-stage');
+      const titleEl = document.getElementById('viewer-media-title');
+      const metaEl = document.getElementById('viewer-media-meta');
+      const catBadge = document.getElementById('viewer-media-cat-badge');
+      const dateBadge = document.getElementById('viewer-media-date-badge');
+      const verBadge = document.getElementById('viewer-media-verified-badge');
+      const capBox = document.getElementById('viewer-media-caption-box');
+      const openTabBtn = document.getElementById('viewer-media-open-newtab');
+      const dlBtn = document.getElementById('viewer-media-download-btn');
+      const prinVerifyBtn = document.getElementById('btn-principal-verify-media');
+      const prinDisplay = document.getElementById('viewer-principal-feedback-display');
+      const prinEditor = document.getElementById('viewer-principal-feedback-editor');
+      const prinInp = document.getElementById('viewer-principal-feedback-input');
+
+      const catMeta = this.getCategoryMeta(item.category);
+      if (catBadge) {
+        catBadge.className = `badge ${catMeta.badge}`;
+        catBadge.textContent = catMeta.label;
+      }
+      if (dateBadge) dateBadge.textContent = `📅 ${item.formattedDate || item.dateISO}`;
+      if (verBadge) verBadge.classList.toggle('hidden', !item.principalVerified);
+      if (titleEl) titleEl.textContent = item.title || item.fileName || 'Dokumen Pembelajaran';
+      if (metaEl) metaEl.textContent = `Mata Pelajaran: ${item.mapel || '-'} | Pendidik: ${item.teacherName || '-'} | Ukuran: ${item.sizeKB || 0} KB`;
+      if (capBox) {
+        capBox.textContent = item.caption || '-';
+        capBox.contentEditable = AppState.isReadOnlyInspection ? 'false' : 'true';
+      }
+
+      const blobOrDataUrl = item.fileType === 'PDF'
+        ? this.dataUrlToBlobUrl(item.dataUrl, 'application/pdf')
+        : item.dataUrl;
+
+      if (openTabBtn) openTabBtn.href = blobOrDataUrl;
+      if (dlBtn) {
+        dlBtn.href = item.dataUrl;
+        dlBtn.download = item.fileName || (item.fileType === 'PDF' ? `${item.title || 'Modul'}.pdf` : `${item.title || 'Foto'}.jpg`);
+      }
+
+      if (stage) {
+        if (item.fileType === 'PDF') {
+          stage.innerHTML = `
+            <iframe
+              src="${blobOrDataUrl}"
+              style="width: 100%; height: 58vh; border: none; border-radius: 8px; background: #ffffff;"
+              title="Penampil PDF"
+            ></iframe>
+          `;
+        } else {
+          stage.innerHTML = `
+            <img
+              src="${item.dataUrl}"
+              alt="${UI.escapeHtml(item.title)}"
+              style="max-width: 100%; max-height: 58vh; object-fit: contain; border-radius: 8px;"
+            >
+          `;
+        }
+      }
+
+      // Panel Supervisi Kepala Sekolah (Aktif saat Kepala Sekolah sedang memantau / login sebagai Kepsek)
+      const isPrincipalMode = AppState.activeMode === 'PRINCIPAL' || AppState.isReadOnlyInspection || (AppState.currentUser && AppState.currentUser.role === 'KEPALA_SEKOLAH');
+      if (prinDisplay) {
+        prinDisplay.textContent = item.principalFeedback
+          ? `"${item.principalFeedback}"`
+          : (item.principalVerified ? 'Telah diverifikasi oleh Kepala Sekolah.' : 'Belum ada catatan supervisi dari Kepala Sekolah.');
+      }
+      if (prinVerifyBtn) prinVerifyBtn.classList.toggle('hidden', !isPrincipalMode);
+      if (prinEditor) prinEditor.classList.toggle('hidden', !isPrincipalMode);
+      if (prinInp) prinInp.value = item.principalFeedback || '';
+
+      if (modal) modal.classList.remove('hidden');
+    },
+
+    closeMediaViewerModal() {
+      const modal = document.getElementById('modal-rpm-media-viewer');
+      const stage = document.getElementById('viewer-media-stage');
+      if (modal) modal.classList.add('hidden');
+      if (stage) stage.innerHTML = '';
+      if (this.activeBlobUrl) {
+        URL.revokeObjectURL(this.activeBlobUrl);
+        this.activeBlobUrl = null;
+      }
+    },
+
+    async saveUpdatedMediaCaptionFromViewer(newText) {
+      if (AppState.isReadOnlyInspection || !this.currentViewingMediaId) return;
+      await this.updatePortfolioCaptionInline(this.currentViewingMediaId, newText);
+      this.renderPortfolioGallery();
+    },
+
+    async savePrincipalMediaSupervision(markVerified = true) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !this.currentViewingMediaId) return;
+      const store = this.ensurePortfolioStore(bucket);
+      const item = store.find(it => it && String(it.id) === String(this.currentViewingMediaId));
+      if (!item) return;
+
+      const inp = document.getElementById('viewer-principal-feedback-input');
+      if (markVerified) item.principalVerified = true;
+      if (inp && inp.value.trim()) {
+        item.principalFeedback = inp.value.trim();
+      }
+
+      const verBadge = document.getElementById('viewer-media-verified-badge');
+      const prinDisplay = document.getElementById('viewer-principal-feedback-display');
+      if (verBadge) verBadge.classList.remove('hidden');
+      if (prinDisplay) {
+        prinDisplay.textContent = item.principalFeedback
+          ? `"${item.principalFeedback}"`
+          : '✅ Telah diverifikasi oleh Kepala Sekolah.';
+      }
+
+      this.renderPortfolioGallery();
+      await DB.saveImmediate();
+      UI.showNotif(
+        'Supervisi Kepala Sekolah Tersimpan',
+        'Status verifikasi dan catatan supervisi Kepala Sekolah telah disimpan pada dokumentasi guru ini.',
+        'success'
+      );
+    },
+
+    // Perbarui Tabel Arsip RPM agar menampilkan info KKTP (Tanpa Rincian Soal)
+    renderSavedArchiveTable() {
+      const bucket = DB.getActiveClassBucket();
+      const tbody = document.getElementById('tbody-rpm-saved-archive');
+      const badgeCount = document.getElementById('rpm-saved-archive-badge');
+      const topCount = document.getElementById('rpm-saved-count-top');
+
+      if (!tbody) return;
+
+      const deletedSet = new Set(((DB.data && DB.data.deletedRpmIds) || []).map(String));
+      const deletedSigSet = new Set(((DB.data && DB.data.deletedRpmSignatures) || []).map(String));
+
+      let modules = (bucket && Array.isArray(bucket.rpmModules)) ? bucket.rpmModules : [];
+      modules = modules.filter((mod, idx) => {
+        if (!mod) return false;
+        if (!mod.id) mod.id = 'RPM_ARC_' + idx + '_' + String(mod.mapel || '').replace(/\W/g, '');
+        const sig = DB.getRpmSignature(mod);
+        if (deletedSet.has(String(mod.id))) return false;
+        if (sig && deletedSigSet.has(sig)) return false;
+        return true;
+      });
+
+      if (bucket) bucket.rpmModules = modules;
+      if (badgeCount) badgeCount.textContent = `${modules.length} Modul Tersimpan`;
+      if (topCount) topCount.textContent = String(modules.length);
+
+      if (modules.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.35rem;">
+              Belum ada Modul RPM yang tersimpan di arsip kelas ini. Silakan susun modul baru melalui formulir di atas atau unggah foto/PDF modul di Galeri Portofolio.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = modules.map((mod, idx) => {
+        const lockedDateText = mod.createdAt || (mod.savedDateISO ? DateTimeUtil.formatIndonesianDate(mod.savedDateISO) : 'Tanggal Terkunci');
+        const tpPreview = Array.isArray(mod.tujuanPembelajaran) && mod.tujuanPembelajaran.length > 0
+          ? mod.tujuanPembelajaran[0]
+          : '-';
+        const kktpCount = Array.isArray(mod.kktpRows) ? mod.kktpRows.length : 4;
+        const safeId = String(mod.id).replace(/'/g, "\\'");
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <div style="font-weight: 800; color: var(--dark); font-size: 0.85rem;">🔒 ${UI.escapeHtml(lockedDateText)}</div>
+            </td>
+            <td>
+              <span class="badge badge-primary">${UI.escapeHtml(mod.mapel || '-')}</span>
+              ${mod.bab ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 0.2rem;">${UI.escapeHtml(mod.bab)}</div>` : ''}
+            </td>
+            <td>
+              <div style="font-weight: 800; color: var(--dark);">${UI.escapeHtml(mod.materi || '-')}</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">TP 1: ${UI.escapeHtml(tpPreview)}</div>
+            </td>
+            <td><span class="badge badge-info">${UI.escapeHtml(mod.kelasFase || '-')}</span></td>
+            <td style="text-align: center;">
+              <span class="badge badge-success">✓ ${kktpCount} Kriteria KKTP</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.15rem;">Full Editable</div>
+            </td>
+            <td>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-primary btn-sm" onclick="RpmApp.openSavedRpmFromArchive('${safeId}', ${idx})">
+                  📖 Buka & Edit
+                </button>
+                <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="RpmApp.deleteSavedRpmFromArchive('${safeId}', ${idx})">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  });
+
+  // Pastikan setiap kali halaman Modul RPM dibuka, galeri foto & PDF ikut dirender
+  const _origOpenMainViewRpm = RpmApp.openMainView ? RpmApp.openMainView.bind(RpmApp) : null;
+  RpmApp.openMainView = function() {
+    setupRpmNoQuestionAndPortfolioDOM();
+    if (_origOpenMainViewRpm) _origOpenMainViewRpm();
+    this.renderPortfolioGallery();
+  };
+}
+
+// ============================================================================
+// 3. INTEGRASI MONITORING FOTO MODUL PRINT, FOTO KEGIATAN, & PDF DI PORTAL KEPSEK
+// ============================================================================
+if (typeof PrincipalApp !== 'undefined') {
+  const _origRenderTeachersSync = PrincipalApp.renderTeachersSyncPanel
+    ? PrincipalApp.renderTeachersSyncPanel.bind(PrincipalApp)
+    : null;
+
+  Object.assign(PrincipalApp, {
+    // Pintasan 1-Klik bagi Kepala Sekolah untuk langsung membuka Galeri Foto Modul Print, Kegiatan & PDF Guru
+    inspectTeacherPortfolio(teacherId) {
+      const teacher = (DB.data.accounts || []).find(a => a && String(a.id) === String(teacherId));
+      if (!teacher) return;
+
+      AppState.isReadOnlyInspection = true;
+      AppState.inspectedTeacherId = teacher.id;
+      AppState.mapelOverrideDay = 'AUTO';
+
+      DB.getActiveClassBucket();
+      UI.applyReadOnlyModeState();
+
+      RpmApp.openMainView();
+      setTimeout(() => {
+        const portCard = document.getElementById('rpm-portfolio-section-card');
+        if (portCard) {
+          portCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 250);
+
+      UI.showNotif(
+        'Monitoring Portofolio Foto & PDF Guru',
+        `Menampilkan Modul RPM serta Galeri Foto Modul Print, Kegiatan Pembelajaran, dan Dokumen PDF milik ${teacher.nama}. Klik pada foto atau PDF untuk melihat detail dan memberi verifikasi.`,
+        'info'
+      );
+    },
+
+    renderTeachersSyncPanel() {
+      if (_origRenderTeachersSync) _origRenderTeachersSync();
+
+      // Tambahkan lencana jumlah Foto/PDF & tombol pintasan "📂 Lihat Foto & PDF" pada setiap baris guru
+      const tbody = document.getElementById('tbody-principal-teachers');
+      if (!tbody) return;
+
+      const user = AppState.currentUser;
+      if (!user) return;
+      const teachers = this.getSameSchoolTeachers(user.schoolKey);
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach((tr, idx) => {
+        const t = teachers[idx];
+        if (!t) return;
+        const buckets = this.getBucketsForTeacher(t);
+        const mediaCount = buckets.reduce(
+          (acc, b) => acc + ((b && Array.isArray(b.rpmPortfolioFiles)) ? b.rpmPortfolioFiles.length : 0),
+          0
+        );
+
+        const safeTid = String(t.id).replace(/'/g, "\\'");
+
+        // Tambahkan badge Foto/PDF di kolom ke-6 (Rekam Aktivitas)
+        const activityCell = tr.children[5];
+        if (activityCell && !activityCell.querySelector('.badge-portfolio-count')) {
+          const badgeWrap = activityCell.querySelector('div') || activityCell;
+          const mediaBadge = document.createElement('span');
+          mediaBadge.className = 'badge badge-success badge-portfolio-count';
+          mediaBadge.style.background = '#0d9488';
+          mediaBadge.style.color = '#ffffff';
+          mediaBadge.textContent = `📸 Foto/PDF: ${mediaCount}`;
+          badgeWrap.appendChild(mediaBadge);
+        }
+
+        // Tambahkan tombol pintasan "📂 Lihat Foto & PDF" di kolom ke-7 (Inspeksi Langsung)
+        const actionCell = tr.children[6];
+        if (actionCell && !actionCell.querySelector('.btn-inspect-portfolio')) {
+          const btnWrap = actionCell.querySelector('div') || actionCell;
+          const portBtn = document.createElement('button');
+          portBtn.type = 'button';
+          portBtn.className = 'btn btn-success btn-sm btn-inspect-portfolio';
+          portBtn.style.background = '#0f766e';
+          portBtn.innerHTML = `📂 Foto & PDF (${mediaCount})`;
+          portBtn.onclick = () => PrincipalApp.inspectTeacherPortfolio(safeTid);
+          btnWrap.appendChild(portBtn);
+        }
+      });
+    }
+  });
+}
+
+// Jalankan inisialisasi UI RPM saat halaman selesai dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    setupRpmNoQuestionAndPortfolioDOM();
+  }, 500);
+});
+
     // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
