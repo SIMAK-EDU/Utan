@@ -41822,6 +41822,1715 @@ window.addEventListener('DOMContentLoaded', () => {
   }, 650);
 });
 
+    // ============================================================================
+// UPGRADE PROFESIONAL KOKURIKULER & EKSTRAKURIKULER (V7 — MULTI-PILLAR VAULT):
+// 1. KOKURIKULER: UPLOAD FOTO & PDF DI DALAM HASIL MODUL + JURNAL LOGBOOK PDF
+// 2. EKSTRAKURIKULER: STUDIO UPLOAD FOTO & PDF PENDUKUNG NILAI PER KEGIATAN
+//    (DAPAT DITAUTKAN KE SEMUA PESERTA EKSKUL ATAU PIAGAM SISWA TERTENTU)
+// 3. PENYIMPANAN PERMANEN 4-LAPIS (INDEXEDDB + BUCKET + MODUL + SUPABASE CLOUD)
+//    100% ANTI-HILANG SAAT LOGOUT / PINDAH HALAMAN KECUALI DIHAPUS MANUAL GURU
+// 4. INTEGRASI PENAMPIL PDF/FOTO KE TABEL REKAP, PORTAL SISWA & KEPALA SEKOLAH
+// ============================================================================
+
+(function injectKokuAndEkskulMediaStyles() {
+  if (document.getElementById('simak-koku-ekskul-media-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'simak-koku-ekskul-media-styles';
+  style.textContent = `
+    .ekskul-evidence-studio-box {
+      background: linear-gradient(135deg, #faf5ff 0%, #f5f3ff 55%, #eff6ff 100%);
+      border: 2px solid #a855f7;
+      border-radius: 12px;
+      padding: 1.15rem 1.3rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 3px 12px rgba(109, 40, 217, 0.08);
+    }
+    .koku-evidence-studio-box {
+      background: linear-gradient(135deg, #f0fdfa 0%, #eff6ff 100%);
+      border: 2px solid #0d9488;
+      border-radius: 12px;
+      padding: 1.2rem 1.35rem;
+      margin-top: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 3px 12px rgba(13, 148, 136, 0.08);
+    }
+    .pillar-media-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+      gap: 0.95rem;
+      margin-top: 0.9rem;
+    }
+    .pillar-media-card {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+      transition: all 0.18s ease;
+    }
+    .pillar-media-card:hover {
+      border-color: #6d28d9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 14px rgba(109, 40, 217, 0.12);
+    }
+    .pillar-media-thumb {
+      height: 150px;
+      width: 100%;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+    }
+    .pillar-media-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.22s ease;
+    }
+    .pillar-media-thumb:hover img {
+      transform: scale(1.04);
+    }
+    .pillar-add-tile {
+      min-height: 230px;
+      border: 2px dashed #7c3aed;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.75);
+      color: #5b21b6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1.1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .pillar-add-tile:hover {
+      background: #ede9fe;
+      border-color: #4c1d95;
+      transform: translateY(-2px);
+    }
+    .evidence-mini-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.22rem 0.58rem;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: #f5f3ff;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd;
+      cursor: pointer;
+      margin: 0.12rem 0.15rem 0.12rem 0;
+      transition: all 0.15s ease;
+    }
+    .evidence-mini-chip:hover {
+      background: #6d28d9;
+      color: #ffffff;
+      border-color: #5b21b6;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ============================================================================
+// 1. PERLUAS ENGINE PENYIMPANAN ABADI (RpmMediaPersistenceVault) UNTUK
+//    MENGUNCI FILE KOKURIKULER & EKSTRAKURIKULER DI INDEXEDDB & CLOUD MERGE
+// ============================================================================
+if (typeof RpmMediaPersistenceVault !== 'undefined') {
+  const _origSyncBucketAndMod = RpmMediaPersistenceVault.syncBucketAndModuleAttachments
+    ? RpmMediaPersistenceVault.syncBucketAndModuleAttachments.bind(RpmMediaPersistenceVault)
+    : null;
+  const _origRestoreIdb = RpmMediaPersistenceVault.restoreFromIdbToMemory
+    ? RpmMediaPersistenceVault.restoreFromIdbToMemory.bind(RpmMediaPersistenceVault)
+    : null;
+
+  Object.assign(RpmMediaPersistenceVault, {
+    syncBucketAndModuleAttachments(bucket, bucketKey = '') {
+      if (_origSyncBucketAndMod) _origSyncBucketAndMod(bucket, bucketKey);
+      if (!bucket) return;
+
+      const delSet = new Set(this.getDeletedPortfolioIds());
+
+      // A. Sinkronkan & Amankan Berkas Portofolio + Logbook Kokurikuler
+      if (!bucket.kokurikuler || typeof bucket.kokurikuler !== 'object') {
+        bucket.kokurikuler = {};
+      }
+      const koku = bucket.kokurikuler;
+      let kokuFiles = Array.isArray(koku.portfolioFiles) ? [...koku.portfolioFiles] : [];
+
+      if (Array.isArray(koku.savedModules)) {
+        koku.savedModules.forEach(mod => {
+          if (mod && Array.isArray(mod.attachments)) {
+            mod.attachments.forEach(att => {
+              if (att && att.id && !delSet.has(String(att.id))) {
+                if (!att.kokuModuleId) att.kokuModuleId = mod.id;
+                kokuFiles.push(att);
+              }
+            });
+          }
+        });
+      }
+
+      if (typeof KokuApp !== 'undefined' && KokuApp.currentModulDoc && Array.isArray(KokuApp.currentModulDoc.attachments)) {
+        KokuApp.currentModulDoc.attachments.forEach(att => {
+          if (att && att.id && !delSet.has(String(att.id))) {
+            kokuFiles.push(att);
+          }
+        });
+      }
+
+      koku.portfolioFiles = this.mergePortfolioLists(kokuFiles, [], Array.from(delSet));
+
+      if (Array.isArray(koku.savedModules)) {
+        koku.savedModules.forEach(mod => {
+          if (!mod || !mod.id) return;
+          mod.attachments = koku.portfolioFiles.filter(it => it && String(it.kokuModuleId || '') === String(mod.id));
+        });
+      }
+
+      // Amankan juga foto/PDF pada Jurnal Logbook Kokurikuler ke IndexedDB
+      if (Array.isArray(koku.logbooks)) {
+        koku.logbooks = koku.logbooks.filter(l => l && l.id && !delSet.has(String(l.id)));
+        if (bucketKey) {
+          koku.logbooks.forEach(l => {
+            if (l && (l.photoDataUrl || l.fileDataUrl)) {
+              this.saveItemToIdb(bucketKey, { ...l, _mediaPillar: 'KOKU_LOGBOOK' });
+            }
+          });
+        }
+      }
+
+      if (bucketKey) {
+        koku.portfolioFiles.forEach(it => {
+          this.saveItemToIdb(bucketKey, { ...it, _mediaPillar: 'KOKU_PORTFOLIO' });
+        });
+      }
+
+      // B. Sinkronkan & Amankan Berkas Bukti Fisik Ekstrakurikuler (Foto & PDF Pendukung Nilai)
+      const ekskulFiles = Array.isArray(bucket.ekskulPortfolioFiles) ? bucket.ekskulPortfolioFiles : [];
+      bucket.ekskulPortfolioFiles = this.mergePortfolioLists(ekskulFiles, [], Array.from(delSet));
+
+      if (bucketKey) {
+        bucket.ekskulPortfolioFiles.forEach(it => {
+          this.saveItemToIdb(bucketKey, { ...it, _mediaPillar: 'EKSKUL_PORTFOLIO' });
+        });
+      }
+    },
+
+    async restoreFromIdbToMemory() {
+      if (_origRestoreIdb) await _origRestoreIdb();
+      if (!DB || !DB.data || !DB.data.classData) return;
+
+      const idbItems = await this.getAllItemsFromIdb();
+      if (!Array.isArray(idbItems) || idbItems.length === 0) return;
+
+      const delSet = new Set(this.getDeletedPortfolioIds());
+      let restoredAny = false;
+
+      idbItems.forEach(item => {
+        if (!item || !item.id || delSet.has(String(item.id))) return;
+        const bKey = item._bucketKey;
+        const targetBucket = (bKey && DB.data.classData[bKey])
+          ? DB.data.classData[bKey]
+          : DB.getActiveClassBucket();
+
+        if (!targetBucket) return;
+        const cleanCopy = { ...item };
+        delete cleanCopy._bucketKey;
+        delete cleanCopy._mediaPillar;
+
+        if (item._mediaPillar === 'KOKU_PORTFOLIO') {
+          if (!targetBucket.kokurikuler) targetBucket.kokurikuler = {};
+          if (!Array.isArray(targetBucket.kokurikuler.portfolioFiles)) {
+            targetBucket.kokurikuler.portfolioFiles = [];
+          }
+          const exists = targetBucket.kokurikuler.portfolioFiles.some(x => x && String(x.id) === String(item.id));
+          if (!exists) {
+            targetBucket.kokurikuler.portfolioFiles.unshift(cleanCopy);
+            restoredAny = true;
+          }
+        } else if (item._mediaPillar === 'KOKU_LOGBOOK') {
+          if (!targetBucket.kokurikuler) targetBucket.kokurikuler = {};
+          if (!Array.isArray(targetBucket.kokurikuler.logbooks)) {
+            targetBucket.kokurikuler.logbooks = [];
+          }
+          const existingLog = targetBucket.kokurikuler.logbooks.find(x => x && String(x.id) === String(item.id));
+          if (!existingLog) {
+            targetBucket.kokurikuler.logbooks.unshift(cleanCopy);
+            restoredAny = true;
+          } else if (!existingLog.photoDataUrl && cleanCopy.photoDataUrl) {
+            existingLog.photoDataUrl = cleanCopy.photoDataUrl;
+            existingLog.fileType = cleanCopy.fileType;
+            existingLog.fileName = cleanCopy.fileName;
+            restoredAny = true;
+          }
+        } else if (item._mediaPillar === 'EKSKUL_PORTFOLIO') {
+          if (!Array.isArray(targetBucket.ekskulPortfolioFiles)) {
+            targetBucket.ekskulPortfolioFiles = [];
+          }
+          const exists = targetBucket.ekskulPortfolioFiles.some(x => x && String(x.id) === String(item.id));
+          if (!exists) {
+            targetBucket.ekskulPortfolioFiles.unshift(cleanCopy);
+            restoredAny = true;
+          }
+        }
+      });
+
+      if (restoredAny) {
+        Object.entries(DB.data.classData || {}).forEach(([k, b]) => {
+          this.syncBucketAndModuleAttachments(b, k);
+        });
+      }
+    }
+  });
+}
+
+// Perkuat DB.mergePayloads agar koku.savedModules, koku.portfolioFiles, koku.logbooks, & ekskulPortfolioFiles TIDAK PERNAH TERTIMPA
+if (typeof DB !== 'undefined') {
+  const _prevMergeV7 = DB.mergePayloads ? DB.mergePayloads.bind(DB) : null;
+
+  Object.assign(DB, {
+    mergePayloads(localData, cloudData) {
+      const merged = _prevMergeV7 ? _prevMergeV7(localData, cloudData) : (cloudData || localData);
+      if (!merged || !merged.classData) return merged;
+
+      const delIds = Array.from(new Set([
+        ...RpmMediaPersistenceVault.getDeletedPortfolioIds(),
+        ...((localData && localData.deletedPortfolioIds) || []),
+        ...((cloudData && cloudData.deletedPortfolioIds) || []),
+        ...(this.getDeletedKokuIds ? this.getDeletedKokuIds() : [])
+      ]));
+
+      Object.keys(merged.classData).forEach(bKey => {
+        const locB = (localData && localData.classData) ? localData.classData[bKey] : null;
+        const cldB = (cloudData && cloudData.classData) ? cloudData.classData[bKey] : null;
+        const mrgB = merged.classData[bKey];
+        if (!mrgB) return;
+
+        // 1. Gabungkan Bukti Foto & PDF Ekstrakurikuler
+        const locEksFiles = (locB && Array.isArray(locB.ekskulPortfolioFiles)) ? locB.ekskulPortfolioFiles : [];
+        const cldEksFiles = (cldB && Array.isArray(cldB.ekskulPortfolioFiles)) ? cldB.ekskulPortfolioFiles : [];
+        mrgB.ekskulPortfolioFiles = RpmMediaPersistenceVault.mergePortfolioLists(locEksFiles, cldEksFiles, delIds);
+
+        // 2. Gabungkan Modul Kokurikuler, Lampiran PDF/Foto Kokurikuler, & Jurnal Logbook Kokurikuler
+        if (!mrgB.kokurikuler) mrgB.kokurikuler = {};
+        const locKoku = (locB && locB.kokurikuler) || {};
+        const cldKoku = (cldB && cldB.kokurikuler) || {};
+
+        mrgB.kokurikuler.portfolioFiles = RpmMediaPersistenceVault.mergePortfolioLists(
+          locKoku.portfolioFiles || [],
+          cldKoku.portfolioFiles || [],
+          delIds
+        );
+
+        mrgB.kokurikuler.savedModules = RpmMediaPersistenceVault.mergePortfolioLists(
+          locKoku.savedModules || [],
+          cldKoku.savedModules || [],
+          delIds
+        );
+
+        mrgB.kokurikuler.logbooks = RpmMediaPersistenceVault.mergePortfolioLists(
+          locKoku.logbooks || [],
+          cldKoku.logbooks || [],
+          delIds
+        );
+
+        RpmMediaPersistenceVault.syncBucketAndModuleAttachments(mrgB, bKey);
+      });
+
+      return merged;
+    }
+  });
+}
+
+// ============================================================================
+// 2. STUDIO MEDIA TERPADU (MODAL UPLOAD & UNIVERSAL PDF/PHOTO VIEWER)
+//    Mendukung Kokurikuler (Modul & Logbook) serta Ekstrakurikuler (Pendukung Nilai)
+// ============================================================================
+const PillarMediaStudio = {
+  activePillarContext: 'KOKURIKULER', // 'KOKURIKULER' | 'EKSTRAKURIKULER'
+  pendingFiles: [],
+
+  ensureUploadModalDOM() {
+    if (document.getElementById('modal-pillar-media-upload')) return;
+    const modal = document.createElement('div');
+    modal.id = 'modal-pillar-media-upload';
+    modal.className = 'modal-overlay hidden';
+    modal.style.zIndex = '9600';
+    modal.innerHTML = `
+      <div class="modal-box" style="max-width: 680px; width: 96%;">
+        <div id="pillar-upload-modal-header" class="card-header" style="background: linear-gradient(135deg, #0f172a 0%, #0f766e 100%); color: #ffffff; padding: 1.1rem 1.35rem; border-radius: 10px; margin-bottom: 1.15rem;">
+          <div>
+            <span id="pillar-upload-badge" class="badge badge-warning" style="margin-bottom: 0.25rem;">UNGGAH BUKTI FISIK & DOKUMENTASI</span>
+            <h3 id="pillar-upload-title" style="font-size: 1.15rem; font-weight: 800; color: #ffffff;">
+              ➕ Unggah Foto Kegiatan atau Dokumen PDF
+            </h3>
+            <p id="pillar-upload-subtitle" style="font-size: 0.8rem; color: #ccfbf1;">
+              Tersimpan permanen di Perangkat & Cloud (Anti-Hilang saat pindah halaman atau logout).
+            </p>
+          </div>
+          <button type="button" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.15); color: #ffffff; border-color: rgba(255,255,255,0.35);" onclick="PillarMediaStudio.closeUploadModal()">
+            ✕ Tutup
+          </button>
+        </div>
+
+        <form id="form-pillar-media-upload" onsubmit="PillarMediaStudio.handleSaveUpload(event)">
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="pillar-upload-category">1. Jenis Berkas / Bukti Fisik :</label>
+              <select id="pillar-upload-category" class="form-control" style="font-weight: 700;" required></select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="pillar-upload-date">2. Tanggal Kegiatan / Dokumen :</label>
+              <input type="date" id="pillar-upload-date" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label" for="pillar-upload-context-name" id="pillar-upload-context-label">3. Tema / Program Kegiatan :</label>
+              <input type="text" id="pillar-upload-context-name" class="form-control" required>
+            </div>
+            <div class="form-group" id="pillar-upload-student-target-wrap">
+              <label class="form-label" for="pillar-upload-student-target">4. Cakupan Bukti Pendukung Nilai :</label>
+              <select id="pillar-upload-student-target" class="form-control" style="font-weight: 700; color: var(--primary);">
+                <option value="ALL">👥 Semua Siswa Peserta Kegiatan Ini</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pillar-upload-doc-title">5. Judul Foto / Nama Dokumen Pendukung :</label>
+            <input type="text" id="pillar-upload-doc-title" class="form-control" placeholder="Contoh: Foto Latihan Pramuka / PDF Daftar Hadir & Rubrik / Piagam Lomba" required>
+          </div>
+
+          <div class="form-group" style="background: #f8fafc; border: 2px dashed #3b82f6; padding: 1rem; border-radius: 10px;">
+            <label class="form-label" for="pillar-upload-files-input" style="color: #1e40af; font-size: 0.9rem;">
+              6. Pilih File Foto (JPG/PNG) atau File PDF (Bisa Pilih Lebih dari 1 Berkas Sekaligus) :
+            </label>
+            <input
+              type="file"
+              id="pillar-upload-files-input"
+              class="form-control"
+              accept="image/*,application/pdf,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx"
+              multiple
+              onchange="PillarMediaStudio.handleFilesPreview(this)"
+              required
+            >
+            <div class="form-hint" style="color: #1e3a8a;">
+              💡 File PDF dapat langsung dibuka & dibaca di dalam website oleh Guru maupun Kepala Sekolah.
+            </div>
+            <div id="pillar-upload-preview-list" style="margin-top: 0.7rem; display: flex; flex-direction: column; gap: 0.45rem;"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="pillar-upload-caption">7. Keterangan / Catatan Pendukung Penilaian :</label>
+            <textarea
+              id="pillar-upload-caption"
+              class="form-control"
+              rows="3"
+              placeholder="Tuliskan deskripsi kegiatan, pencapaian siswa pada foto/PDF ini, atau keterangan modul agar tercatat sebagai bukti fisik penilaian..."
+              required
+            ></textarea>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 0.65rem; margin-top: 1rem;">
+            <button type="button" class="btn btn-outline" onclick="PillarMediaStudio.closeUploadModal()">Batal</button>
+            <button type="submit" class="btn btn-success" style="font-weight: 800; padding: 0.65rem 1.5rem;">
+              💾 Unggah & Kunci Permanen di Cloud
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  },
+
+  openUploadModal(pillarType = 'KOKURIKULER', defaultCat = '') {
+    if (AppState.isReadOnlyInspection) return;
+    this.ensureUploadModalDOM();
+    this.activePillarContext = pillarType;
+    this.pendingFiles = [];
+
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return;
+
+    const headerEl = document.getElementById('pillar-upload-modal-header');
+    const badgeEl = document.getElementById('pillar-upload-badge');
+    const titleEl = document.getElementById('pillar-upload-title');
+    const catSel = document.getElementById('pillar-upload-category');
+    const dateInp = document.getElementById('pillar-upload-date');
+    const ctxLabel = document.getElementById('pillar-upload-context-label');
+    const ctxInp = document.getElementById('pillar-upload-context-name');
+    const stdWrap = document.getElementById('pillar-upload-student-target-wrap');
+    const stdSel = document.getElementById('pillar-upload-student-target');
+    const docTitleInp = document.getElementById('pillar-upload-doc-title');
+    const capInp = document.getElementById('pillar-upload-caption');
+    const fileInp = document.getElementById('pillar-upload-files-input');
+    const prevList = document.getElementById('pillar-upload-preview-list');
+
+    if (fileInp) fileInp.value = '';
+    if (prevList) prevList.innerHTML = '';
+    if (capInp) capInp.value = '';
+
+    const students = Array.isArray(bucket.students) ? bucket.students : [];
+    if (stdSel) {
+      stdSel.innerHTML = [
+        `<option value="ALL">👥 Semua Siswa Kelas / Peserta Kegiatan (${students.length} Siswa)</option>`,
+        ...students.map(s => `<option value="${UI.escapeHtml(s.id)}">👤 Khusus Siswa: ${UI.escapeHtml(s.nama)}</option>`)
+      ].join('');
+    }
+
+    if (pillarType === 'KOKURIKULER') {
+      const kokuDoc = KokuApp.currentModulDoc || (bucket.kokurikuler && bucket.kokurikuler.perencanaanDoc);
+      const pInfo = (bucket.kokurikuler && bucket.kokurikuler.projectInfo) || {};
+      const temaText = (kokuDoc && kokuDoc.tema) || pInfo.tema || 'Proyek Kokurikuler Kelas';
+
+      if (headerEl) headerEl.style.background = 'linear-gradient(135deg, #0f172a 0%, #0f766e 100%)';
+      if (badgeEl) badgeEl.textContent = 'LAMPIRAN KOKURIKULER (FOTO & PDF PERMANEN)';
+      if (titleEl) titleEl.textContent = '➕ Unggah Foto Kegiatan, Modul Print, atau PDF Kokurikuler';
+      if (ctxLabel) ctxLabel.textContent = '3. Tema / Kegiatan Kokurikuler :';
+      if (ctxInp) ctxInp.value = temaText;
+      if (dateInp) dateInp.value = (kokuDoc && kokuDoc.savedDateISO) || DateTimeUtil.getTodayISO();
+      if (docTitleInp) docTitleInp.value = `Dokumentasi Kokurikuler — ${temaText}`;
+      if (stdWrap) stdWrap.classList.remove('hidden');
+
+      if (catSel) {
+        catSel.innerHTML = `
+          <option value="KOKU_PDF">📄 Dokumen PDF Kokurikuler (Modul / LKPD / Panduan Proyek)</option>
+          <option value="KOKU_PRINT">🖨️ Foto Modul Kokurikuler yang Sudah Di-Print</option>
+          <option value="KOKU_AKSI">📸 Foto Pelaksanaan Aksi Proyek / Pembiasaan G7KAIH</option>
+          <option value="KOKU_KARYA">🎨 Foto Hasil Karya Kelompok / Pameran Proyek</option>
+        `;
+        if (defaultCat) catSel.value = defaultCat;
+      }
+    } else {
+      // EKSTRAKURIKULER
+      const prog = (bucket.ekskulMaster || []).find(p => p.id === AppState.ekskulSelectedProgramId) || (bucket.ekskulMaster && bucket.ekskulMaster[0]);
+      const progName = prog ? prog.nama : 'Ekstrakurikuler';
+
+      if (headerEl) headerEl.style.background = 'linear-gradient(135deg, #2e1065 0%, #6d28d9 60%, #0f766e 100%)';
+      if (badgeEl) badgeEl.textContent = 'BUKTI FISIK PENDUKUNG NILAI EKSTRAKURIKULER';
+      if (titleEl) titleEl.textContent = `➕ Unggah Foto / PDF Pendukung Nilai: ${progName}`;
+      if (ctxLabel) ctxLabel.textContent = '3. Cabang Kegiatan Ekstrakurikuler :';
+      if (ctxInp) ctxInp.value = progName;
+      if (dateInp) dateInp.value = AppState.ekskulActiveDate || DateTimeUtil.getTodayISO();
+      if (docTitleInp) docTitleInp.value = `Bukti Kegiatan & Nilai ${progName}`;
+      if (stdWrap) stdWrap.classList.remove('hidden');
+
+      if (catSel) {
+        catSel.innerHTML = `
+          <option value="EKSKUL_LATIHAN">📸 Foto Kegiatan Latihan & Praktik Ekstrakurikuler</option>
+          <option value="EKSKUL_PDF">📄 Dokumen PDF (Daftar Hadir / Program Kerja / SK Pembina)</option>
+          <option value="EKSKUL_PIAGAM">🏆 Foto / PDF Piagam Kejuaraan, Sertifikat, atau Karya Siswa</option>
+          <option value="EKSKUL_INSTRUMEN">🖨️ Foto Lembar Penilaian / Rubrik Cetak Ekstrakurikuler</option>
+        `;
+        if (defaultCat) catSel.value = defaultCat;
+      }
+    }
+
+    const modal = document.getElementById('modal-pillar-media-upload');
+    if (modal) modal.classList.remove('hidden');
+  },
+
+  closeUploadModal() {
+    const modal = document.getElementById('modal-pillar-media-upload');
+    if (modal) modal.classList.add('hidden');
+    this.pendingFiles = [];
+  },
+
+  async handleFilesPreview(inputEl) {
+    const files = inputEl && inputEl.files ? Array.from(inputEl.files) : [];
+    const previewContainer = document.getElementById('pillar-upload-preview-list');
+    const catSel = document.getElementById('pillar-upload-category');
+    if (!previewContainer) return;
+
+    this.pendingFiles = [];
+    if (files.length === 0) {
+      previewContainer.innerHTML = '';
+      return;
+    }
+
+    previewContainer.innerHTML = `<div style="font-size: 0.82rem; color: var(--primary); font-weight: 700;">⏳ Memproses & mengoptimalkan ${files.length} berkas...</div>`;
+
+    const processed = [];
+    for (const file of files) {
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name);
+
+      if (isPdf && catSel) {
+        if (this.activePillarContext === 'KOKURIKULER') catSel.value = 'KOKU_PDF';
+        else if (this.activePillarContext === 'EKSTRAKURIKULER' && catSel.value === 'EKSKUL_LATIHAN') catSel.value = 'EKSKUL_PDF';
+      }
+
+      if (isImage) {
+        const imgDataUrl = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const maxDim = 960;
+              let w = img.width;
+              let h = img.height;
+              if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                  h = Math.round((h * maxDim) / w);
+                  w = maxDim;
+                } else {
+                  w = Math.round((w * maxDim) / h);
+                  h = maxDim;
+                }
+              }
+              canvas.width = w;
+              canvas.height = h;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, w, h);
+              resolve(canvas.toDataURL('image/jpeg', 0.74));
+            };
+            img.onerror = () => resolve(e.target.result);
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        });
+
+        if (imgDataUrl) {
+          processed.push({
+            fileName: file.name,
+            fileType: 'IMAGE',
+            mimeType: 'image/jpeg',
+            sizeKB: Math.max(1, Math.round((imgDataUrl.length * 0.75) / 1024)),
+            dataUrl: imgDataUrl
+          });
+        }
+      } else {
+        const fileDataUrl = await new Promise(resolve => {
+          const reader = new FileReader();
+          reader.onload = e => resolve(e.target.result);
+          reader.onerror = () => resolve(null);
+          reader.readAsDataURL(file);
+        });
+
+        if (fileDataUrl) {
+          processed.push({
+            fileName: file.name,
+            fileType: isPdf ? 'PDF' : 'DOCUMENT',
+            mimeType: file.type || (isPdf ? 'application/pdf' : 'application/octet-stream'),
+            sizeKB: Math.max(1, Math.round(file.size / 1024)),
+            dataUrl: fileDataUrl
+          });
+        }
+      }
+    }
+
+    this.pendingFiles = processed;
+    previewContainer.innerHTML = processed.map((p, idx) => {
+      const icon = p.fileType === 'PDF' ? '📄 [PDF]' : (p.fileType === 'IMAGE' ? '🖼️ [FOTO]' : '📁 [DOKUMEN]');
+      return `
+        <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; border: 1px solid #cbd5e1; padding: 0.45rem 0.75rem; border-radius: 6px; font-size: 0.8rem;">
+          <span><strong>${idx + 1}. ${icon}</strong> ${UI.escapeHtml(p.fileName)}</span>
+          <span class="badge badge-success">Siap Disimpan (${p.sizeKB} KB)</span>
+        </div>
+      `;
+    }).join('');
+  },
+
+  async handleSaveUpload(event) {
+    if (event) event.preventDefault();
+    if (AppState.isReadOnlyInspection) return;
+
+    const bucket = DB.getActiveClassBucket();
+    const teacher = DB.getActiveTeacherAccount();
+    if (!bucket || !teacher) return;
+
+    if (!this.pendingFiles || this.pendingFiles.length === 0) {
+      UI.showNotif('Pilih File Terlebih Dahulu', 'Silakan pilih minimal 1 file Foto atau PDF.', 'warning');
+      return;
+    }
+
+    const category = document.getElementById('pillar-upload-category')?.value || '';
+    const dateISO = document.getElementById('pillar-upload-date')?.value || DateTimeUtil.getTodayISO();
+    const contextName = (document.getElementById('pillar-upload-context-name')?.value || '').trim();
+    const studentTargetId = document.getElementById('pillar-upload-student-target')?.value || 'ALL';
+    const baseTitle = (document.getElementById('pillar-upload-doc-title')?.value || 'Dokumentasi Kegiatan').trim();
+    const caption = (document.getElementById('pillar-upload-caption')?.value || '').trim();
+
+    const matchedStd = (bucket.students || []).find(s => s && String(s.id) === String(studentTargetId));
+    const studentTargetName = matchedStd ? matchedStd.nama : 'Semua Siswa Peserta';
+
+    const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === bucket) || '';
+    const nowTs = Date.now();
+    const uploadedCount = this.pendingFiles.length;
+
+    if (this.activePillarContext === 'KOKURIKULER') {
+      KokuApp.ensureKokuDataIntegrity(bucket);
+      if (!Array.isArray(bucket.kokurikuler.portfolioFiles)) {
+        bucket.kokurikuler.portfolioFiles = [];
+      }
+      const activeMod = KokuApp.currentModulDoc || bucket.kokurikuler.perencanaanDoc;
+
+      for (let i = 0; i < uploadedCount; i++) {
+        const f = this.pendingFiles[i];
+        const newItem = {
+          id: 'KOKU_MEDIA_' + nowTs + '_' + i + '_' + Math.floor(Math.random() * 10000),
+          pillar: 'KOKURIKULER',
+          kokuModuleId: activeMod ? activeMod.id : '',
+          category: f.fileType === 'PDF' ? 'KOKU_PDF' : category,
+          fileType: f.fileType,
+          fileName: f.fileName,
+          mimeType: f.mimeType,
+          sizeKB: f.sizeKB,
+          dataUrl: f.dataUrl,
+          title: uploadedCount > 1 ? `${baseTitle} (${i + 1})` : baseTitle,
+          mapel: contextName || 'Kokurikuler',
+          studentTargetId,
+          studentTargetName,
+          caption,
+          dateISO,
+          formattedDate: DateTimeUtil.formatIndonesianDate(dateISO),
+          uploadedTime: DateTimeUtil.getCurrentTimeStr(),
+          updatedTimestamp: nowTs + i,
+          teacherId: teacher.id,
+          teacherName: teacher.nama,
+          principalVerified: false,
+          principalFeedback: ''
+        };
+
+        bucket.kokurikuler.portfolioFiles.unshift(newItem);
+        if (activeMod) {
+          if (!Array.isArray(activeMod.attachments)) activeMod.attachments = [];
+          activeMod.attachments.unshift(newItem);
+        }
+        await RpmMediaPersistenceVault.saveItemToIdb(bucketKey, { ...newItem, _mediaPillar: 'KOKU_PORTFOLIO' });
+      }
+
+      if (typeof KokuApp.syncCurrentKokuDocToArchive === 'function' && KokuApp.currentModulDoc) {
+        await KokuApp.syncCurrentKokuDocToArchive();
+      }
+      this.closeUploadModal();
+      KokuApp.renderKokuPortfolioGallery();
+      KokuApp.renderSavedKokuArchiveTable();
+      await DB.saveImmediate();
+
+      UI.showNotif(
+        'Berkas Kokurikuler Tersimpan Permanen',
+        `Sebanyak ${uploadedCount} berkas Foto/PDF telah dikunci secara permanen pada Kokurikuler dan tidak akan hilang saat pindah halaman atau logout.`,
+        'success'
+      );
+    } else {
+      // EKSTRAKURIKULER
+      if (!Array.isArray(bucket.ekskulPortfolioFiles)) {
+        bucket.ekskulPortfolioFiles = [];
+      }
+      const prog = (bucket.ekskulMaster || []).find(p => p.id === AppState.ekskulSelectedProgramId);
+      const progId = prog ? prog.id : 'EKS_GENERAL';
+      const progName = prog ? prog.nama : (contextName || 'Ekstrakurikuler');
+
+      for (let i = 0; i < uploadedCount; i++) {
+        const f = this.pendingFiles[i];
+        const newItem = {
+          id: 'EKS_MEDIA_' + nowTs + '_' + i + '_' + Math.floor(Math.random() * 10000),
+          pillar: 'EKSTRAKURIKULER',
+          programId: progId,
+          programName: progName,
+          category: f.fileType === 'PDF' && category === 'EKSKUL_LATIHAN' ? 'EKSKUL_PDF' : category,
+          fileType: f.fileType,
+          fileName: f.fileName,
+          mimeType: f.mimeType,
+          sizeKB: f.sizeKB,
+          dataUrl: f.dataUrl,
+          title: uploadedCount > 1 ? `${baseTitle} (${i + 1})` : baseTitle,
+          mapel: `Ekstrakurikuler ${progName}`,
+          studentTargetId,
+          studentTargetName,
+          caption,
+          dateISO,
+          formattedDate: DateTimeUtil.formatIndonesianDate(dateISO),
+          uploadedTime: DateTimeUtil.getCurrentTimeStr(),
+          updatedTimestamp: nowTs + i,
+          teacherId: teacher.id,
+          teacherName: teacher.nama,
+          principalVerified: false,
+          principalFeedback: ''
+        };
+
+        bucket.ekskulPortfolioFiles.unshift(newItem);
+        await RpmMediaPersistenceVault.saveItemToIdb(bucketKey, { ...newItem, _mediaPillar: 'EKSKUL_PORTFOLIO' });
+      }
+
+      this.closeUploadModal();
+      EkskulApp.renderEkskulEvidenceStudio();
+      EkskulApp.renderProgramsGrid();
+      if (!document.getElementById('ekskul-rekap-card')?.classList.contains('hidden')) {
+        EkskulApp.renderRekapTable();
+      }
+      await DB.saveImmediate();
+
+      UI.showNotif(
+        'Bukti Pendukung Nilai Ekstrakurikuler Tersimpan',
+        `Sebanyak ${uploadedCount} berkas Foto/PDF untuk "${progName}" telah disimpan permanen dan terhubung ke Tabel Rekap Nilai.`,
+        'success'
+      );
+    }
+  },
+
+  // Membuka Penampil Universal (Mendukung Foto & In-App PDF Reader untuk RPM, Kokurikuler, Logbook, & Ekstrakurikuler)
+  findMediaItemAcrossAllPillars(itemId) {
+    const bucket = DB.getActiveClassBucket();
+    if (!bucket) return null;
+    const idStr = String(itemId);
+
+    const rpmFiles = Array.isArray(bucket.rpmPortfolioFiles) ? bucket.rpmPortfolioFiles : [];
+    const kokuFiles = (bucket.kokurikuler && Array.isArray(bucket.kokurikuler.portfolioFiles))
+      ? bucket.kokurikuler.portfolioFiles
+      : [];
+    const ekskulFiles = Array.isArray(bucket.ekskulPortfolioFiles) ? bucket.ekskulPortfolioFiles : [];
+
+    let found = rpmFiles.find(x => x && String(x.id) === idStr)
+      || kokuFiles.find(x => x && String(x.id) === idStr)
+      || ekskulFiles.find(x => x && String(x.id) === idStr);
+
+    if (found) return { item: found, sourceList: found.pillar || 'RPM', bucket };
+
+    // Cek juga di dalam Jurnal Logbook Kokurikuler
+    const logbooks = (bucket.kokurikuler && Array.isArray(bucket.kokurikuler.logbooks))
+      ? bucket.kokurikuler.logbooks
+      : [];
+    const foundLog = logbooks.find(l => l && String(l.id) === idStr);
+    if (foundLog && (foundLog.photoDataUrl || foundLog.fileDataUrl)) {
+      return {
+        item: {
+          id: foundLog.id,
+          title: `Jurnal Logbook: ${foundLog.kelompok} (${foundLog.tahap})`,
+          mapel: 'Kokurikuler — Jurnal Kelompok',
+          category: foundLog.fileType === 'PDF' ? 'KOKU_PDF' : 'KOKU_AKSI',
+          fileType: foundLog.fileType || 'IMAGE',
+          fileName: foundLog.fileName || 'Dokumentasi_Logbook',
+          sizeKB: foundLog.sizeKB || 120,
+          dataUrl: foundLog.fileDataUrl || foundLog.photoDataUrl,
+          caption: foundLog.progres || '-',
+          formattedDate: foundLog.tanggal || '-',
+          teacherName: DB.getActiveTeacherAccount()?.nama || 'Guru Kelas',
+          principalVerified: Boolean(foundLog.principalVerified),
+          principalFeedback: foundLog.principalFeedback || ''
+        },
+        sourceList: 'LOGBOOK',
+        rawLogRef: foundLog,
+        bucket
+      };
+    }
+
+    return null;
+  },
+
+  openUniversalViewer(itemId) {
+    setupRpmNoQuestionAndPortfolioDOM();
+    const res = this.findMediaItemAcrossAllPillars(itemId);
+    if (!res || !res.item) return;
+
+    const { item } = res;
+    RpmApp.currentViewingMediaId = item.id;
+
+    const modal = document.getElementById('modal-rpm-media-viewer');
+    const stage = document.getElementById('viewer-media-stage');
+    const titleEl = document.getElementById('viewer-media-title');
+    const metaEl = document.getElementById('viewer-media-meta');
+    const catBadge = document.getElementById('viewer-media-cat-badge');
+    const dateBadge = document.getElementById('viewer-media-date-badge');
+    const verBadge = document.getElementById('viewer-media-verified-badge');
+    const capBox = document.getElementById('viewer-media-caption-box');
+    const openTabBtn = document.getElementById('viewer-media-open-newtab');
+    const dlBtn = document.getElementById('viewer-media-download-btn');
+    const prinVerifyBtn = document.getElementById('btn-principal-verify-media');
+    const prinDisplay = document.getElementById('viewer-principal-feedback-display');
+    const prinEditor = document.getElementById('viewer-principal-feedback-editor');
+    const prinInp = document.getElementById('viewer-principal-feedback-input');
+
+    if (catBadge) {
+      catBadge.className = 'badge badge-primary';
+      catBadge.textContent = item.fileType === 'PDF' ? '📄 DOKUMEN PDF INTERAKTIF' : '📸 DOKUMENTASI VISUAL';
+    }
+    if (dateBadge) dateBadge.textContent = `📅 ${item.formattedDate || item.dateISO || '-'}`;
+    if (verBadge) verBadge.classList.toggle('hidden', !item.principalVerified);
+    if (titleEl) titleEl.textContent = item.title || item.fileName || 'Bukti Fisik Kegiatan';
+    if (metaEl) {
+      const targetInfo = item.studentTargetName ? ` | Sasaran: ${item.studentTargetName}` : '';
+      metaEl.textContent = `Kegiatan: ${item.mapel || '-'} | Pendidik: ${item.teacherName || '-'}${targetInfo}`;
+    }
+    if (capBox) {
+      capBox.textContent = item.caption || '-';
+      capBox.contentEditable = AppState.isReadOnlyInspection ? 'false' : 'true';
+    }
+
+    const blobOrDataUrl = item.fileType === 'PDF'
+      ? RpmApp.dataUrlToBlobUrl(item.dataUrl, 'application/pdf')
+      : item.dataUrl;
+
+    if (openTabBtn) openTabBtn.href = blobOrDataUrl;
+    if (dlBtn) {
+      dlBtn.href = item.dataUrl;
+      dlBtn.download = item.fileName || (item.fileType === 'PDF' ? `${item.title || 'Dokumen'}.pdf` : `${item.title || 'Foto'}.jpg`);
+    }
+
+    if (stage) {
+      if (item.fileType === 'PDF') {
+        stage.innerHTML = `
+          <iframe
+            src="${blobOrDataUrl}"
+            style="width: 100%; height: 58vh; border: none; border-radius: 8px; background: #ffffff;"
+            title="Penampil PDF"
+          ></iframe>
+        `;
+      } else {
+        stage.innerHTML = `
+          <img
+            src="${item.dataUrl}"
+            alt="${UI.escapeHtml(item.title)}"
+            style="max-width: 100%; max-height: 58vh; object-fit: contain; border-radius: 8px;"
+          >
+        `;
+      }
+    }
+
+    const isPrincipalMode = AppState.activeMode === 'PRINCIPAL' || AppState.isReadOnlyInspection || (AppState.currentUser && AppState.currentUser.role === 'KEPALA_SEKOLAH');
+    if (prinDisplay) {
+      prinDisplay.textContent = item.principalFeedback
+        ? `"${item.principalFeedback}"`
+        : (item.principalVerified ? '✅ Telah diverifikasi oleh Kepala Sekolah.' : 'Belum ada catatan supervisi dari Kepala Sekolah.');
+    }
+    if (prinVerifyBtn) prinVerifyBtn.classList.toggle('hidden', !isPrincipalMode);
+    if (prinEditor) prinEditor.classList.toggle('hidden', !isPrincipalMode);
+    if (prinInp) prinInp.value = item.principalFeedback || '';
+
+    if (modal) modal.classList.remove('hidden');
+  }
+};
+
+// Sambungkan fungsi simpan keterangan & supervisi Kepala Sekolah pada Viewer agar berlaku untuk semua pilar
+if (typeof RpmApp !== 'undefined') {
+  Object.assign(RpmApp, {
+    openMediaViewerModal(itemId) {
+      PillarMediaStudio.openUniversalViewer(itemId);
+    },
+
+    async saveUpdatedMediaCaptionFromViewer(newText) {
+      if (AppState.isReadOnlyInspection || !this.currentViewingMediaId) return;
+      const found = PillarMediaStudio.findMediaItemAcrossAllPillars(this.currentViewingMediaId);
+      if (!found) return;
+
+      const clean = String(newText || '').trim();
+      found.item.caption = clean;
+      found.item.updatedTimestamp = Date.now();
+      if (found.rawLogRef) {
+        found.rawLogRef.progres = clean;
+        found.rawLogRef.updatedTimestamp = Date.now();
+      }
+
+      const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === found.bucket) || '';
+      RpmMediaPersistenceVault.syncBucketAndModuleAttachments(found.bucket, bucketKey);
+
+      this.renderPortfolioGallery();
+      if (typeof KokuApp !== 'undefined') {
+        KokuApp.renderKokuPortfolioGallery();
+        KokuApp.renderLogbookList();
+      }
+      if (typeof EkskulApp !== 'undefined') {
+        EkskulApp.renderEkskulEvidenceStudio();
+      }
+      await DB.saveImmediate();
+    },
+
+    async savePrincipalMediaSupervision(markVerified = true) {
+      if (!this.currentViewingMediaId) return;
+      const found = PillarMediaStudio.findMediaItemAcrossAllPillars(this.currentViewingMediaId);
+      if (!found) return;
+
+      const inp = document.getElementById('viewer-principal-feedback-input');
+      const fbText = inp && inp.value.trim() ? inp.value.trim() : '';
+
+      if (markVerified) found.item.principalVerified = true;
+      if (fbText) found.item.principalFeedback = fbText;
+      found.item.updatedTimestamp = Date.now();
+
+      if (found.rawLogRef) {
+        if (markVerified) found.rawLogRef.principalVerified = true;
+        if (fbText) found.rawLogRef.principalFeedback = fbText;
+        found.rawLogRef.updatedTimestamp = Date.now();
+      }
+
+      const verBadge = document.getElementById('viewer-media-verified-badge');
+      const prinDisplay = document.getElementById('viewer-principal-feedback-display');
+      if (verBadge) verBadge.classList.remove('hidden');
+      if (prinDisplay) {
+        prinDisplay.textContent = found.item.principalFeedback
+          ? `"${found.item.principalFeedback}"`
+          : '✅ Telah diverifikasi oleh Kepala Sekolah.';
+      }
+
+      const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === found.bucket) || '';
+      RpmMediaPersistenceVault.syncBucketAndModuleAttachments(found.bucket, bucketKey);
+
+      this.renderPortfolioGallery();
+      if (typeof KokuApp !== 'undefined') KokuApp.renderKokuPortfolioGallery();
+      if (typeof EkskulApp !== 'undefined') EkskulApp.renderEkskulEvidenceStudio();
+      await DB.saveImmediate();
+
+      UI.showNotif('Supervisi Kepala Sekolah Tersimpan', 'Status verifikasi dan catatan Kepala Sekolah telah dikunci di Cloud.', 'success');
+    }
+  });
+}
+
+// ============================================================================
+// 3. UPGRADE PILAR 3 (KOKURIKULER):
+//    A. STUDIO UPLOAD FOTO & PDF DI DALAM HASIL MODUL (#koku-modul-result-wrapper)
+//    B. UPLOAD FOTO & FILE PDF DI JURNAL LOGBOOK (TAB 4) + IN-APP PDF VIEWER
+// ============================================================================
+if (typeof KokuApp !== 'undefined') {
+  const _origRenderKokuPages = KokuApp.renderKokuModulPages ? KokuApp.renderKokuModulPages.bind(KokuApp) : null;
+
+  Object.assign(KokuApp, {
+    activeKokuMediaFilter: 'ALL',
+
+    setupKokuMediaDOM() {
+      // 1. Pasang Panel Upload Foto & PDF di DALAM #koku-modul-result-wrapper (Tidak muncul di form pengaturan depan!)
+      const resWrap = document.getElementById('koku-modul-result-wrapper');
+      if (resWrap && !document.getElementById('koku-portfolio-studio-card')) {
+        const card = document.createElement('div');
+        card.id = 'koku-portfolio-studio-card';
+        card.className = 'koku-evidence-studio-box no-print';
+        card.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.85rem; padding-bottom: 0.85rem; border-bottom: 1px dashed #14b8a6;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                <span class="badge badge-success">PORTOFOLIO BUKTI FISIK & DOKUMEN PDF KOKURIKULER</span>
+                <span class="badge badge-info">☁ Tersimpan Permanen (Anti-Hilang Saat Logout / Pindah Halaman)</span>
+              </div>
+              <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--dark);">
+                📎 Lampiran Foto Kegiatan, Modul Cetak & File PDF Kokurikuler (<span id="koku-portfolio-mod-title" style="color: #0f766e;">Modul Aktif</span>)
+              </h4>
+              <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.15rem;">
+                Unggah file <strong>PDF Modul/LKPD Kokurikuler</strong>, foto modul yang sudah di-<em>print</em>, atau foto aksi proyek siswa. Kepala Sekolah dapat membaca file PDF dan melihat foto ini secara langsung.
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span id="koku-portfolio-count-pill" class="badge badge-primary">0 Berkas</span>
+              <button type="button" class="btn btn-success btn-sm write-action-btn" style="font-weight: 800;" onclick="PillarMediaStudio.openUploadModal('KOKURIKULER', 'KOKU_PDF')">
+                ➕ Upload Foto / File PDF Kokurikuler
+              </button>
+            </div>
+          </div>
+
+          <div id="koku-portfolio-grid" class="pillar-media-grid"></div>
+        `;
+        resWrap.appendChild(card);
+      }
+
+      // 2. Perbarui Input File pada Tab 4 (Jurnal Logbook) agar mendukung Foto (JPG/PNG) SEKALIGUS File PDF!
+      const logFileInp = document.getElementById('logbook-input-foto');
+      if (logFileInp && !logFileInp._upgradedPdfAccept) {
+        logFileInp._upgradedPdfAccept = true;
+        logFileInp.setAttribute('accept', 'image/*,application/pdf,.pdf');
+        const labelEl = document.querySelector('label[for="logbook-input-foto"]');
+        if (labelEl) {
+          labelEl.innerHTML = '3. Unggah Foto Dokumentasi atau File PDF Laporan Kelompok (Opsional) :';
+        }
+      }
+    },
+
+    renderKokuModulPages() {
+      this.setupKokuMediaDOM();
+      if (_origRenderKokuPages) _origRenderKokuPages();
+      this.renderKokuPortfolioGallery();
+    },
+
+    renderKokuPortfolioGallery() {
+      this.setupKokuMediaDOM();
+      const bucket = DB.getActiveClassBucket();
+      const grid = document.getElementById('koku-portfolio-grid');
+      const countPill = document.getElementById('koku-portfolio-count-pill');
+      const modTitleEl = document.getElementById('koku-portfolio-mod-title');
+      if (!bucket || !grid) return;
+
+      this.ensureKokuDataIntegrity(bucket);
+      const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === bucket) || '';
+      RpmMediaPersistenceVault.syncBucketAndModuleAttachments(bucket, bucketKey);
+
+      const doc = this.currentModulDoc || bucket.kokurikuler.perencanaanDoc;
+      if (modTitleEl) modTitleEl.textContent = doc && doc.tema ? doc.tema : 'Kegiatan Kokurikuler Kelas';
+
+      const allFiles = Array.isArray(bucket.kokurikuler.portfolioFiles) ? bucket.kokurikuler.portfolioFiles : [];
+      if (countPill) countPill.textContent = `${allFiles.length} Berkas Tersimpan`;
+
+      const addTileHtml = AppState.isReadOnlyInspection
+        ? ''
+        : `
+          <div class="pillar-add-tile write-action-btn" style="border-color: #0d9488; color: #0f766e; background: #f0fdfa;" onclick="PillarMediaStudio.openUploadModal('KOKURIKULER', 'KOKU_PDF')">
+            <div class="rpm-plus-circle" style="width: 50px; height: 50px; font-size: 1.7rem;">+</div>
+            <div style="font-weight: 800; font-size: 0.9rem; margin-bottom: 0.2rem;">
+              Tambah File PDF / Foto Kokurikuler
+            </div>
+            <p style="font-size: 0.75rem; color: #115e59;">
+              Klik tanda (+) untuk mengunggah PDF Modul/LKPD atau Foto Proyek Kokurikuler.
+            </p>
+          </div>
+        `;
+
+      if (allFiles.length === 0) {
+        grid.innerHTML = `
+          ${addTileHtml}
+          <div style="grid-column: 1 / -1; background: #ffffff; border: 1px dashed #99f6e4; border-radius: 8px; padding: 1.15rem; text-align: center; color: var(--text-muted); font-size: 0.84rem;">
+            Belum ada file PDF atau foto yang dilampirkan pada Modul Kokurikuler ini.
+          </div>
+        `;
+        return;
+      }
+
+      const cardsHtml = allFiles.map(item => {
+        const safeId = String(item.id).replace(/'/g, "\\'");
+        const isPdf = item.fileType === 'PDF';
+        const thumbHtml = isPdf
+          ? `
+            <div class="rpm-pdf-thumb-box">
+              <div style="font-size: 2.2rem;">📄</div>
+              <span class="badge badge-warning" style="margin: 0.2rem 0;">DOKUMEN PDF KOKURIKULER</span>
+              <div style="font-weight: 800; font-size: 0.78rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${UI.escapeHtml(item.fileName || 'Modul_Kokurikuler.pdf')}
+              </div>
+              <div style="font-size: 0.68rem; color: #fecaca; margin-top: 0.15rem;">Klik untuk Membuka & Membaca PDF</div>
+            </div>
+          `
+          : `<img src="${item.dataUrl}" alt="${UI.escapeHtml(item.title)}" loading="lazy">`;
+
+        return `
+          <div class="pillar-media-card">
+            <div>
+              <div class="pillar-media-thumb" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                ${thumbHtml}
+              </div>
+              <div style="padding: 0.8rem 0.9rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem;">
+                  <span class="badge ${isPdf ? 'badge-danger' : 'badge-success'}" style="font-size: 0.66rem;">
+                    ${isPdf ? '📄 FILE PDF' : '📸 FOTO KEGIATAN'}
+                  </span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">📅 ${UI.escapeHtml(item.formattedDate || item.dateISO)}</span>
+                </div>
+                <h5 style="font-size: 0.9rem; font-weight: 800; color: var(--dark); margin-bottom: 0.2rem;">${UI.escapeHtml(item.title)}</h5>
+                <div style="font-size: 0.78rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.45rem 0.6rem; line-height: 1.4;">
+                  ${UI.escapeHtml(item.caption || '-')}
+                </div>
+                ${item.principalVerified ? `<div style="margin-top:0.35rem; font-size:0.7rem; font-weight:800; color:#166534;">✅ Disupervisi Kepala Sekolah</div>` : ''}
+              </div>
+            </div>
+            <div style="padding: 0.55rem 0.9rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 0.4rem;">
+              <button type="button" class="btn btn-primary btn-sm" style="flex: 1;" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                ${isPdf ? '👁️ Buka & Baca PDF' : '🔍 Lihat Foto'}
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.deleteKokuPortfolioItem('${safeId}')" title="Hapus Permanen">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      grid.innerHTML = addTileHtml + cardsHtml;
+    },
+
+    async deleteKokuPortfolioItem(itemId) {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket || !bucket.kokurikuler) return;
+
+      if (!window.confirm('Hapus permanen berkas Foto/PDF Kokurikuler ini?')) return;
+      const idStr = String(itemId);
+
+      RpmMediaPersistenceVault.markPortfolioItemDeleted(idStr);
+      await RpmMediaPersistenceVault.removeItemFromIdb(idStr);
+
+      if (Array.isArray(bucket.kokurikuler.portfolioFiles)) {
+        bucket.kokurikuler.portfolioFiles = bucket.kokurikuler.portfolioFiles.filter(x => x && String(x.id) !== idStr);
+      }
+      if (Array.isArray(bucket.kokurikuler.savedModules)) {
+        bucket.kokurikuler.savedModules.forEach(m => {
+          if (m && Array.isArray(m.attachments)) {
+            m.attachments = m.attachments.filter(a => a && String(a.id) !== idStr);
+          }
+        });
+      }
+      if (this.currentModulDoc && Array.isArray(this.currentModulDoc.attachments)) {
+        this.currentModulDoc.attachments = this.currentModulDoc.attachments.filter(a => a && String(a.id) !== idStr);
+      }
+
+      this.renderKokuPortfolioGallery();
+      this.renderSavedKokuArchiveTable();
+      await DB.saveImmediate();
+      UI.showNotif('Berkas Dihapus Permanen', 'Berkas Kokurikuler telah dihapus secara permanen.', 'info');
+    },
+
+    // Upgrade Preview & Simpan Jurnal Logbook (Tab 4) agar mendukung Foto SEKALIGUS File PDF!
+    previewLogbookPhoto(fileInput) {
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+      const file = fileInput.files[0];
+      const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+      const reader = new FileReader();
+
+      reader.onload = e => {
+        const hiddenInp = document.getElementById('logbook-photo-dataurl');
+        const previewWrap = document.getElementById('logbook-photo-preview-wrap');
+        const previewImg = document.getElementById('logbook-photo-preview-img');
+
+        if (isPdf) {
+          this._pendingLogbookFileMeta = {
+            fileType: 'PDF',
+            fileName: file.name,
+            sizeKB: Math.max(1, Math.round(file.size / 1024))
+          };
+          if (hiddenInp) hiddenInp.value = e.target.result;
+          if (previewImg) {
+            previewImg.style.display = 'none';
+          }
+          if (previewWrap) {
+            previewWrap.classList.remove('hidden');
+            const infoDiv = previewWrap.querySelector('div');
+            if (infoDiv) {
+              infoDiv.innerHTML = `
+                <div style="font-size: 0.85rem; font-weight: 800; color: #b91c1c;">📄 Dokumen PDF Siap Dilampirkan: ${UI.escapeHtml(file.name)}</div>
+                <button type="button" class="btn btn-danger btn-sm" style="margin-top: 0.35rem;" onclick="KokuApp.clearLogbookPhoto()">Hapus Berkas</button>
+              `;
+            }
+          }
+        } else {
+          this._pendingLogbookFileMeta = {
+            fileType: 'IMAGE',
+            fileName: file.name,
+            sizeKB: Math.max(1, Math.round(file.size / 1024))
+          };
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const maxW = 840;
+            const scale = img.width > maxW ? maxW / img.width : 1;
+            canvas.width = Math.round(img.width * scale);
+            canvas.height = Math.round(img.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.74);
+
+            if (hiddenInp) hiddenInp.value = compressedDataUrl;
+            if (previewImg) {
+              previewImg.style.display = 'block';
+              previewImg.src = compressedDataUrl;
+            }
+            if (previewWrap) previewWrap.classList.remove('hidden');
+          };
+          img.src = e.target.result;
+        }
+      };
+      reader.readAsDataURL(file);
+    },
+
+    async handleAddLogbookEntry(event) {
+      if (event) event.preventDefault();
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const koku = this.ensureKokuDataIntegrity(bucket);
+
+      const kelompok = document.getElementById('logbook-input-kelompok')?.value || 'Kelompok 1';
+      const tahap = document.getElementById('logbook-input-tahap')?.value || 'Pelaksanaan Aksi / G7KAIH';
+      const progres = (document.getElementById('logbook-input-progres')?.value || '').trim();
+      const kendala = (document.getElementById('logbook-input-kendala')?.value || '').trim();
+      const photoDataUrl = document.getElementById('logbook-photo-dataurl')?.value || '';
+      const meta = this._pendingLogbookFileMeta || { fileType: 'IMAGE', fileName: 'Dokumentasi.jpg', sizeKB: 80 };
+
+      if (!progres) {
+        UI.showNotif('Isi Ringkasan Progres', 'Silakan tuliskan ringkasan aktivitas atau hasil pengamatan terlebih dahulu.', 'warning');
+        return;
+      }
+
+      const newEntry = {
+        id: 'LOG_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+        tanggal: DateTimeUtil.formatIndonesianDate(DateTimeUtil.getTodayISO()),
+        waktu: DateTimeUtil.getCurrentTimeStr(),
+        updatedTimestamp: Date.now(),
+        kelompok,
+        tahap,
+        progres,
+        kendala: kendala || 'Tidak ada kendala berarti.',
+        photoDataUrl,
+        fileDataUrl: photoDataUrl,
+        fileType: photoDataUrl ? meta.fileType : '',
+        fileName: photoDataUrl ? meta.fileName : '',
+        sizeKB: photoDataUrl ? meta.sizeKB : 0,
+        teacherFeedback: ''
+      };
+
+      koku.logbooks.unshift(newEntry);
+      this._pendingLogbookFileMeta = null;
+
+      const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === bucket) || '';
+      if (photoDataUrl) {
+        await RpmMediaPersistenceVault.saveItemToIdb(bucketKey, { ...newEntry, _mediaPillar: 'KOKU_LOGBOOK' });
+      }
+
+      const progEl = document.getElementById('logbook-input-progres');
+      const kendEl = document.getElementById('logbook-input-kendala');
+      if (progEl) progEl.value = '';
+      if (kendEl) kendEl.value = '';
+      this.clearLogbookPhoto();
+
+      this.renderLogbookList();
+      await DB.saveImmediate();
+
+      UI.showNotif('Jurnal & Dokumentasi Tersimpan Permanen', `Jurnal progres untuk ${kelompok} beserta lampiran telah dikunci di Cloud.`, 'success');
+    },
+
+    renderLogbookList() {
+      const bucket = DB.getActiveClassBucket();
+      const container = document.getElementById('koku-logbook-entries-container');
+      if (!bucket || !container) return;
+
+      const koku = this.ensureKokuDataIntegrity(bucket);
+      const filterVal = document.getElementById('logbook-filter-kelompok')?.value || 'ALL';
+      const allLogs = Array.isArray(koku.logbooks) ? koku.logbooks : [];
+      const filtered = filterVal === 'ALL' ? allLogs : allLogs.filter(l => l.kelompok === filterVal);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="alert-box alert-info" style="margin-top: 0;">
+            Belum ada catatan jurnal logbook untuk filter kelompok ini. Silakan isi formulir jurnal di atas (mendukung lampiran Foto maupun File PDF).
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(log => {
+        const safeId = String(log.id).replace(/'/g, "\\'");
+        const hasMedia = Boolean(log.photoDataUrl || log.fileDataUrl);
+        const isPdf = log.fileType === 'PDF' || String(log.photoDataUrl || '').startsWith('data:application/pdf');
+
+        let mediaHtml = '';
+        if (hasMedia) {
+          if (isPdf) {
+            mediaHtml = `
+              <div style="margin-top: 0.75rem; background: #fef2f2; border: 1px solid #fca5a5; border-left: 4px solid #dc2626; padding: 0.65rem 0.9rem; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                  <span class="badge badge-danger">📄 LAMPIRAN PDF LOGBOOK</span>
+                  <strong style="font-size: 0.85rem; color: #991b1b; margin-left: 0.4rem;">${UI.escapeHtml(log.fileName || 'Laporan_Kelompok.pdf')}</strong>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                  👁️ Buka & Baca PDF
+                </button>
+              </div>
+            `;
+          } else {
+            mediaHtml = `
+              <div style="margin-top: 0.75rem; display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap;">
+                <img
+                  src="${log.photoDataUrl}"
+                  alt="Foto Dokumentasi"
+                  style="max-height: 180px; border-radius: 8px; border: 2px solid #cbd5e1; object-fit: cover; cursor: pointer;"
+                  onclick="PillarMediaStudio.openUniversalViewer('${safeId}')"
+                >
+                <button type="button" class="btn btn-outline btn-sm" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                  🔍 Perbesar Foto
+                </button>
+              </div>
+            `;
+          }
+        }
+
+        return `
+          <div class="card" style="margin-bottom: 1rem; border-left: 5px solid #0f766e;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.65rem;">
+              <div>
+                <span class="badge badge-primary">${UI.escapeHtml(log.kelompok || '-')}</span>
+                <span class="badge badge-info" style="margin-left: 0.35rem;">${UI.escapeHtml(log.tahap || '-')}</span>
+                <span style="font-size: 0.78rem; color: var(--text-muted); margin-left: 0.5rem;">📅 ${UI.escapeHtml(log.tanggal || '-')} (${UI.escapeHtml(log.waktu || '')})</span>
+              </div>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="KokuApp.deleteLogbookEntry('${safeId}')">
+                🗑️ Hapus Jurnal
+              </button>
+            </div>
+
+            <div class="grid-2" style="margin-bottom: 0.5rem;">
+              <div style="background: #f0fdf4; padding: 0.8rem; border-radius: 6px; border: 1px solid #bbf7d0;">
+                <strong style="font-size: 0.8rem; color: #166534; display: block; margin-bottom: 0.25rem;">✓ Aktivitas & Progres Capaian:</strong>
+                <div style="font-size: 0.86rem; color: var(--dark);">${UI.escapeHtml(log.progres || '-')}</div>
+              </div>
+              <div style="background: #fffbeb; padding: 0.8rem; border-radius: 6px; border: 1px solid #fde68a;">
+                <strong style="font-size: 0.8rem; color: #92400e; display: block; margin-bottom: 0.25rem;">⚠️ Catatan Kendala / Evaluasi:</strong>
+                <div style="font-size: 0.86rem; color: var(--dark);">${UI.escapeHtml(log.kendala || '-')}</div>
+              </div>
+            </div>
+
+            ${mediaHtml}
+
+            <div style="margin-top: 0.85rem; padding-top: 0.75rem; border-top: 1px dashed var(--border); display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+              <input
+                type="text"
+                id="log-feedback-inp-${safeId}"
+                class="form-control"
+                style="flex: 1; min-width: 240px; font-size: 0.84rem;"
+                placeholder="Tuliskan umpan balik / apresiasi pembimbingan guru untuk kelompok ini..."
+                value="${UI.escapeHtml(log.teacherFeedback || '')}"
+              >
+              <button type="button" class="btn btn-secondary btn-sm write-action-btn" onclick="KokuApp.saveTeacherFeedback('${safeId}')">
+                💬 Simpan Feedback Guru
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    },
+
+    async deleteLogbookEntry(logId) {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const koku = this.ensureKokuDataIntegrity(bucket);
+
+      if (!window.confirm('Hapus permanen catatan jurnal logbook ini?')) return;
+      const idStr = String(logId);
+      RpmMediaPersistenceVault.markPortfolioItemDeleted(idStr);
+      await RpmMediaPersistenceVault.removeItemFromIdb(idStr);
+
+      koku.logbooks = (koku.logbooks || []).filter(l => String(l.id) !== idStr);
+      this.renderLogbookList();
+      await DB.saveImmediate();
+    }
+  });
+}
+
+// ============================================================================
+// 4. UPGRADE PILAR 4 (EKSTRAKURIKULER):
+//    STUDIO BUKTI FISIK (FOTO & PDF) PENDUKUNG NILAI PER CABANG EKSTRAKURIKULER
+//    + TAUTAN LANGSUNG KE TABEL REKAP NILAI & PORTAL SISWA
+// ============================================================================
+if (typeof EkskulApp !== 'undefined') {
+  const _origOpenAssessmentSheet = EkskulApp.openAssessmentSheet ? EkskulApp.openAssessmentSheet.bind(EkskulApp) : null;
+  const _origRenderProgramsGrid = EkskulApp.renderProgramsGrid ? EkskulApp.renderProgramsGrid.bind(EkskulApp) : null;
+  const _origRenderRekapTable = EkskulApp.renderRekapTable ? EkskulApp.renderRekapTable.bind(EkskulApp) : null;
+
+  Object.assign(EkskulApp, {
+    isEvidencePanelCollapsed: false,
+
+    // Pastikan Kartu Program Ekstrakurikuler di halaman depan menampilkan jumlah Foto/PDF Pendukung Nilai
+    renderProgramsGrid() {
+      if (_origRenderProgramsGrid) _origRenderProgramsGrid();
+      const bucket = DB.getActiveClassBucket();
+      const container = document.getElementById('ekskul-programs-grid');
+      if (!bucket || !container) return;
+
+      const allFiles = Array.isArray(bucket.ekskulPortfolioFiles) ? bucket.ekskulPortfolioFiles : [];
+      const cards = container.querySelectorAll('.card');
+      const programs = bucket.ekskulMaster || [];
+
+      cards.forEach((card, idx) => {
+        const prog = programs[idx];
+        if (!prog) return;
+        const count = allFiles.filter(f => f && (f.programId === prog.id || String(f.programName || '').toLowerCase() === String(prog.nama || '').toLowerCase())).length;
+        const topRow = card.querySelector('div');
+        if (topRow && !topRow.querySelector('.ekskul-media-count-pill')) {
+          const pill = document.createElement('span');
+          pill.className = 'badge badge-info ekskul-media-count-pill';
+          pill.style.cssText = 'background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd;';
+          pill.textContent = `📎 ${count} Foto/PDF`;
+          topRow.appendChild(pill);
+        }
+      });
+    },
+
+    openAssessmentSheet(programId) {
+      if (_origOpenAssessmentSheet) _origOpenAssessmentSheet(programId);
+      this.ensureEkskulEvidenceDOM();
+      this.renderEkskulEvidenceStudio();
+    },
+
+    openProgramAssessmentSheet(programId) {
+      this.openAssessmentSheet(programId);
+    },
+
+    ensureEkskulEvidenceDOM() {
+      const sheetCard = document.getElementById('ekskul-assessment-sheet-card');
+      if (!sheetCard || document.getElementById('ekskul-evidence-studio-container')) return;
+
+      const studioDiv = document.createElement('div');
+      studioDiv.id = 'ekskul-evidence-studio-container';
+      studioDiv.className = 'ekskul-evidence-studio-box no-print';
+
+      // Tempatkan secara ergonomis tepat di atas tabel penilaian siswa
+      const tableWrap = sheetCard.querySelector('.table-responsive');
+      if (tableWrap && tableWrap.parentElement === sheetCard) {
+        sheetCard.insertBefore(studioDiv, tableWrap);
+      } else {
+        sheetCard.appendChild(studioDiv);
+      }
+    },
+
+    toggleEvidenceCollapse() {
+      this.isEvidencePanelCollapsed = !this.isEvidencePanelCollapsed;
+      this.renderEkskulEvidenceStudio();
+    },
+
+    renderEkskulEvidenceStudio() {
+      this.ensureEkskulEvidenceDOM();
+      const container = document.getElementById('ekskul-evidence-studio-container');
+      const bucket = DB.getActiveClassBucket();
+      if (!container || !bucket) return;
+
+      const bucketKey = Object.keys((DB.data && DB.data.classData) || {}).find(k => DB.data.classData[k] === bucket) || '';
+      RpmMediaPersistenceVault.syncBucketAndModuleAttachments(bucket, bucketKey);
+
+      const prog = (bucket.ekskulMaster || []).find(p => p.id === AppState.ekskulSelectedProgramId);
+      const progName = prog ? prog.nama : 'Ekstrakurikuler';
+      const allFiles = Array.isArray(bucket.ekskulPortfolioFiles) ? bucket.ekskulPortfolioFiles : [];
+      const progFiles = prog
+        ? allFiles.filter(f => f && (f.programId === prog.id || String(f.programName || '').toLowerCase() === String(prog.nama || '').toLowerCase()))
+        : allFiles;
+
+      const addTileHtml = AppState.isReadOnlyInspection
+        ? ''
+        : `
+          <div class="pillar-add-tile write-action-btn" onclick="PillarMediaStudio.openUploadModal('EKSTRAKURIKULER', 'EKSKUL_LATIHAN')">
+            <div class="rpm-plus-circle" style="width: 48px; height: 48px; font-size: 1.6rem; background: #6d28d9;">+</div>
+            <div style="font-weight: 800; font-size: 0.88rem; margin-bottom: 0.2rem;">
+              Unggah Foto / PDF Pendukung Nilai ${UI.escapeHtml(progName)}
+            </div>
+            <p style="font-size: 0.74rem; color: #4c1d95;">
+              Lampirkan foto latihan, PDF daftar hadir, atau piagam kejuaraan siswa.
+            </p>
+          </div>
+        `;
+
+      const cardsHtml = progFiles.map(item => {
+        const safeId = String(item.id).replace(/'/g, "\\'");
+        const isPdf = item.fileType === 'PDF';
+        const thumbHtml = isPdf
+          ? `
+            <div class="rpm-pdf-thumb-box" style="background: linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%);">
+              <div style="font-size: 2.1rem;">📄</div>
+              <span class="badge badge-warning" style="margin: 0.2rem 0;">DOKUMEN PDF EKSKUL</span>
+              <div style="font-weight: 800; font-size: 0.76rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${UI.escapeHtml(item.fileName || 'Bukti_Ekskul.pdf')}
+              </div>
+              <div style="font-size: 0.68rem; color: #ddd6fe; margin-top: 0.1rem;">Klik untuk Membuka PDF</div>
+            </div>
+          `
+          : `<img src="${item.dataUrl}" alt="${UI.escapeHtml(item.title)}" loading="lazy">`;
+
+        const targetBadge = item.studentTargetId && item.studentTargetId !== 'ALL'
+          ? `<span class="badge badge-warning" style="font-size: 0.65rem;">🏅 Khusus: ${UI.escapeHtml(item.studentTargetName || 'Siswa')}</span>`
+          : `<span class="badge badge-info" style="font-size: 0.65rem;">👥 Semua Peserta ${UI.escapeHtml(progName)}</span>`;
+
+        return `
+          <div class="pillar-media-card">
+            <div>
+              <div class="pillar-media-thumb" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                ${thumbHtml}
+              </div>
+              <div style="padding: 0.75rem 0.85rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.3rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+                  ${targetBadge}
+                  <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;">📅 ${UI.escapeHtml(item.formattedDate || item.dateISO)}</span>
+                </div>
+                <h5 style="font-size: 0.88rem; font-weight: 800; color: var(--dark); margin-bottom: 0.2rem;">${UI.escapeHtml(item.title)}</h5>
+                <div style="font-size: 0.76rem; color: #334155; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.4rem 0.55rem; line-height: 1.4;">
+                  ${UI.escapeHtml(item.caption || '-')}
+                </div>
+                ${item.principalVerified ? `<div style="margin-top:0.3rem; font-size:0.68rem; font-weight:800; color:#166534;">✅ Disupervisi Kepala Sekolah</div>` : ''}
+              </div>
+            </div>
+            <div style="padding: 0.5rem 0.85rem; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 0.4rem;">
+              <button type="button" class="btn btn-primary btn-sm" style="flex: 1; background: #6d28d9;" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')">
+                ${isPdf ? '👁️ Buka PDF' : '🔍 Lihat Foto'}
+              </button>
+              <button type="button" class="btn btn-danger btn-sm write-action-btn" onclick="EkskulApp.deleteEkskulPortfolioItem('${safeId}')" title="Hapus Permanen">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+              <span class="badge badge-primary" style="background: #6d28d9;">PORTOFOLIO BUKTI PENDUKUNG NILAI EKSTRAKURIKULER</span>
+              <span class="badge badge-success">☁ Tersimpan Permanen (${progFiles.length} Foto/PDF pada ${UI.escapeHtml(progName)})</span>
+            </div>
+            <h4 style="font-size: 1rem; font-weight: 800; color: #3b0764;">
+              📸 Dokumentasi Kegiatan, Piagam & File PDF Pendukung Nilai: <span style="color: #6d28d9;">${UI.escapeHtml(progName)}</span>
+            </h4>
+          </div>
+          <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary btn-sm write-action-btn" style="background: #6d28d9; font-weight: 800;" onclick="PillarMediaStudio.openUploadModal('EKSTRAKURIKULER', 'EKSKUL_LATIHAN')">
+              ➕ Tambah Foto / PDF Pendukung Nilai
+            </button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="EkskulApp.toggleEvidenceCollapse()">
+              ${this.isEvidencePanelCollapsed ? '▼ Tampilkan Galeri Bukti' : '▲ Sembunyikan Galeri'}
+            </button>
+          </div>
+        </div>
+
+        ${this.isEvidencePanelCollapsed ? '' : `
+          <div class="pillar-media-grid">
+            ${addTileHtml}
+            ${cardsHtml}
+          </div>
+        `}
+      `;
+    },
+
+    async deleteEkskulPortfolioItem(itemId) {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      if (!window.confirm('Hapus permanen bukti Foto/PDF Ekstrakurikuler ini?')) return;
+      const idStr = String(itemId);
+
+      RpmMediaPersistenceVault.markPortfolioItemDeleted(idStr);
+      await RpmMediaPersistenceVault.removeItemFromIdb(idStr);
+
+      if (Array.isArray(bucket.ekskulPortfolioFiles)) {
+        bucket.ekskulPortfolioFiles = bucket.ekskulPortfolioFiles.filter(x => x && String(x.id) !== idStr);
+      }
+
+      this.renderEkskulEvidenceStudio();
+      this.renderProgramsGrid();
+      if (!document.getElementById('ekskul-rekap-card')?.classList.contains('hidden')) {
+        this.renderRekapTable();
+      }
+      await DB.saveImmediate();
+      UI.showNotif('Bukti Ekstrakurikuler Dihapus', 'Berkas telah dihapus secara permanen.', 'info');
+    },
+
+    // Tampilkan Lencana / Tombol Pembuka Foto & PDF Pendukung Nilai langsung di Tabel Rekap Ekstrakurikuler!
+    renderRekapTable() {
+      if (_origRenderRekapTable) _origRenderRekapTable();
+      const bucket = DB.getActiveClassBucket();
+      const tbody = document.getElementById('tbody-ekskul-rekap');
+      if (!bucket || !tbody) return;
+
+      const allFiles = Array.isArray(bucket.ekskulPortfolioFiles) ? bucket.ekskulPortfolioFiles : [];
+      if (allFiles.length === 0) return;
+
+      const filterProgEl = document.getElementById('ekskul-rekap-filter-program');
+      const filterDateEl = document.getElementById('ekskul-rekap-filter-date');
+      const filterProgId = filterProgEl ? filterProgEl.value : 'ALL';
+      const filterDateVal = filterDateEl ? filterDateEl.value : '';
+
+      const list = (bucket.ekskulAssessments || []).filter(item => {
+        if (filterProgId !== 'ALL' && item.programId !== filterProgId) return false;
+        if (filterDateVal && item.dateISO !== filterDateVal) return false;
+        return true;
+      }).sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1));
+
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach((tr, idx) => {
+        const rec = list[idx];
+        if (!rec || tr.children.length < 6) return;
+
+        // Cari bukti foto/PDF yang cocok dengan cabang ekskul ini (baik bukti umum semua peserta maupun bukti khusus siswa ini)
+        const matchedEvidences = allFiles.filter(f => {
+          if (!f) return false;
+          const sameProg = f.programId === rec.programId || String(f.programName || '').toLowerCase() === String(rec.programName || '').toLowerCase();
+          if (!sameProg) return false;
+          return !f.studentTargetId || f.studentTargetId === 'ALL' || String(f.studentTargetId) === String(rec.studentId);
+        });
+
+        if (matchedEvidences.length > 0) {
+          const descCell = tr.children[5];
+          if (descCell && !descCell.querySelector('.ekskul-rekap-evidence-wrap')) {
+            const wrap = document.createElement('div');
+            wrap.className = 'ekskul-rekap-evidence-wrap no-print';
+            wrap.style.marginTop = '0.4rem';
+            wrap.innerHTML = matchedEvidences.slice(0, 4).map(ev => {
+              const safeId = String(ev.id).replace(/'/g, "\\'");
+              const icon = ev.fileType === 'PDF' ? '📄 PDF:' : '📸 Foto:';
+              return `
+                <span class="evidence-mini-chip" onclick="PillarMediaStudio.openUniversalViewer('${safeId}')" title="Klik untuk membuka bukti pendukung nilai">
+                  ${icon} ${UI.escapeHtml(ev.title || ev.fileName)}
+                </span>
+              `;
+            }).join('');
+            descCell.appendChild(wrap);
+          }
+        }
+      });
+    }
+  });
+}
+
+// ============================================================================
+// 5. UPDATE MONITORING KEPALA SEKOLAH & PORTAL SISWA AGAR MENGHITUNG &
+//    MENAMPILKAN BUKTI FOTO/PDF DARI KETIGA PILAR (RPM + KOKU + EKSKUL)
+// ============================================================================
+if (typeof PrincipalApp !== 'undefined') {
+  const _origRenderSyncV7 = PrincipalApp.renderTeachersSyncPanel
+    ? PrincipalApp.renderTeachersSyncPanel.bind(PrincipalApp)
+    : null;
+
+  Object.assign(PrincipalApp, {
+    renderTeachersSyncPanel() {
+      if (_origRenderSyncV7) _origRenderSyncV7();
+      const tbody = document.getElementById('tbody-principal-teachers');
+      const user = AppState.currentUser;
+      if (!tbody || !user) return;
+
+      const teachers = this.getSameSchoolTeachers(user.schoolKey);
+      const rows = tbody.querySelectorAll('tr');
+
+      rows.forEach((tr, idx) => {
+        const t = teachers[idx];
+        if (!t) return;
+        const buckets = this.getBucketsForTeacher(t);
+        const totalAllPillarMedia = buckets.reduce((acc, b) => {
+          if (!b) return acc;
+          const rpmC = Array.isArray(b.rpmPortfolioFiles) ? b.rpmPortfolioFiles.length : 0;
+          const kokuC = (b.kokurikuler && Array.isArray(b.kokurikuler.portfolioFiles)) ? b.kokurikuler.portfolioFiles.length : 0;
+          const kokuLogC = (b.kokurikuler && Array.isArray(b.kokurikuler.logbooks))
+            ? b.kokurikuler.logbooks.filter(l => l && (l.photoDataUrl || l.fileDataUrl)).length
+            : 0;
+          const eksC = Array.isArray(b.ekskulPortfolioFiles) ? b.ekskulPortfolioFiles.length : 0;
+          return acc + rpmC + kokuC + kokuLogC + eksC;
+        }, 0);
+
+        const badgeEl = tr.querySelector('.badge-portfolio-count');
+        if (badgeEl) {
+          badgeEl.textContent = `📸 Bukti 3 Pilar: ${totalAllPillarMedia}`;
+        }
+        const btnEl = tr.querySelector('.btn-inspect-portfolio');
+        if (btnEl) {
+          btnEl.innerHTML = `📂 Foto & PDF (${totalAllPillarMedia})`;
+        }
+      });
+    }
+  });
+}
+
+// Pulihkan otomatis seluruh berkas 3 Pilar dari IndexedDB saat aplikasi dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(async () => {
+    if (typeof RpmMediaPersistenceVault !== 'undefined') {
+      await RpmMediaPersistenceVault.restoreFromIdbToMemory();
+    }
+    if (typeof KokuApp !== 'undefined' && typeof KokuApp.setupKokuMediaDOM === 'function') {
+      KokuApp.setupKokuMediaDOM();
+    }
+  }, 750);
+});
+
     // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
   DateTimeUtil.startRealtimeClock();
