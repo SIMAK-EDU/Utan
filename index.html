@@ -44020,6 +44020,2204 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   }, 600);
 });
+
+  // ============================================================================
+// UPGRADE INOVASI V9: PENILAIAN SUMATIF AKHIR SEMESTER (SAS — INPUT NILAI UTUH)
+// & KALKULATOR REKAP 3 BOBOT DINAMIS (FORMATIF % + SUMATIF % + SAS % = 100%)
+// 1. MODE 1-KLIK SAS: LANGSUNG INPUT NILAI UTUH (0-100) TANPA SETUP SOAL/TP
+// 2. PANEL BOBOT 3 JENIS PENILAIAN DI HALAMAN REKAP PENILAIAN & ANALISIS RAPOR
+// 3. MODE TABEL REKAP SAS & REKAP GABUNGAN 3 KOMPONEN OTOMATIS SESUAI BOBOT
+// 4. 100% NON-DESTRUCTIVE (TIDAK MENGGANGGU FITUR LAIN YANG SUDAH ADA)
+// ============================================================================
+
+(function injectSasAndThreeWeightStyles() {
+  if (document.getElementById('simak-sas-v9-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'simak-sas-v9-styles';
+  style.textContent = `
+    .sas-mode-switcher-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .sas-mode-card-btn {
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 0.9rem 1.1rem;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.35rem;
+    }
+    .sas-mode-card-btn:hover {
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+    }
+    .sas-mode-card-btn.active-mode-FORMATIF {
+      background: #eff6ff;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+    .sas-mode-card-btn.active-mode-SUMATIF {
+      background: #f0fdfa;
+      border-color: #0d9488;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+    }
+    .sas-mode-card-btn.active-mode-SAS {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+      border-color: #d97706;
+      box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.22);
+    }
+    .sas-direct-workspace-card {
+      background: #ffffff;
+      border: 2px solid #f59e0b;
+      border-radius: 16px;
+      padding: 1.4rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 6px 20px rgba(217, 119, 6, 0.08);
+    }
+    .sas-score-input {
+      width: 105px !important;
+      margin: 0 auto;
+      text-align: center;
+      font-size: 1.05rem !important;
+      font-weight: 800 !important;
+      color: #0f172a !important;
+      border: 2px solid #94a3b8 !important;
+      border-radius: 8px !important;
+      padding: 0.42rem 0.5rem !important;
+      transition: all 0.15s ease;
+    }
+    .sas-score-input:focus {
+      border-color: #d97706 !important;
+      background: #fef9c3 !important;
+      box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25) !important;
+    }
+    .rekap-3weight-box {
+      background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 45%, #f0fdf4 100%);
+      border: 2px solid #f59e0b;
+      border-radius: 14px;
+      padding: 1.15rem 1.35rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.06);
+    }
+    .weight3-pill-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: #ffffff;
+      border: 2px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 0.25rem 0.65rem;
+    }
+    .weight3-pill-group input {
+      border: none;
+      width: 58px;
+      font-size: 1.02rem;
+      font-weight: 800;
+      text-align: center;
+      outline: none;
+      background: transparent;
+    }
+    .sas-stat-mini-box {
+      background: #ffffff;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 0.65rem 0.9rem;
+      text-align: center;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// ============================================================================
+// 1. ENGINE KEBIJAKAN BOBOT 3 KOMPONEN (FORMATIF + SUMATIF + SAS = 100%)
+//    Tersinkronisasi Otomatis antara Rekap Penilaian, Analisis Rapor & Siswa
+// ============================================================================
+if (typeof RaporApp !== 'undefined') {
+  Object.assign(RaporApp, {
+    getWeightPolicy(bucket = null) {
+      const targetBucket = bucket || DB.getActiveClassBucket();
+      if (!targetBucket) {
+        return {
+          bobotFormatif: 40,
+          bobotSumatif: 30,
+          bobotSas: 30,
+          emptyMode: 'ADAPTIVE_100'
+        };
+      }
+
+      if (!targetBucket.raporWeightPolicy) {
+        targetBucket.raporWeightPolicy = {
+          bobotFormatif: 40,
+          bobotSumatif: 30,
+          bobotSas: 30,
+          emptyMode: 'ADAPTIVE_100'
+        };
+      }
+
+      const raw = targetBucket.raporWeightPolicy;
+      let bf = parseFloat(raw.bobotFormatif);
+      let bs = parseFloat(raw.bobotSumatif);
+      let bSas = parseFloat(raw.bobotSas);
+
+      if (isNaN(bf) || bf < 0 || bf > 100) bf = 40;
+      if (isNaN(bs) || bs < 0 || bs > 100) bs = 30;
+      // Migrasi mulus: jika data lama belum memiliki properti bobotSas
+      if (isNaN(bSas) || bSas < 0 || bSas > 100) {
+        bSas = Math.max(0, Math.round((100 - (bf + bs)) * 10) / 10);
+      }
+
+      return {
+        bobotFormatif: Math.round(bf * 10) / 10,
+        bobotSumatif: Math.round(bs * 10) / 10,
+        bobotSas: Math.round(bSas * 10) / 10,
+        emptyMode: raw.emptyMode === 'STRICT_WEIGHT' ? 'STRICT_WEIGHT' : 'ADAPTIVE_100'
+      };
+    },
+
+    // Pastikan UI di halaman Analisis Nilai Rapor memiliki input Bobot SAS (%) ke-3
+    ensureRaporThreeWeightDOM() {
+      const formInp = document.getElementById('rapor-input-bobot-formatif');
+      const sumInp = document.getElementById('rapor-input-bobot-sumatif');
+      if (!formInp || !sumInp) return;
+
+      const flexRow = sumInp.closest('div[style*="display: flex; align-items: center"]');
+      if (flexRow && !document.getElementById('rapor-input-bobot-sas')) {
+        const plusDiv = document.createElement('div');
+        plusDiv.style.cssText = 'font-weight: 900; font-size: 1.1rem; color: var(--text-muted); padding-top: 1rem;';
+        plusDiv.textContent = '+';
+
+        const sasWrap = document.createElement('div');
+        sasWrap.style.cssText = 'flex: 1; min-width: 115px;';
+        sasWrap.innerHTML = `
+          <label for="rapor-input-bobot-sas" style="font-size: 0.74rem; font-weight: 700; color: #b45309; display: block; margin-bottom: 0.2rem;">
+            Bobot SAS (%)
+          </label>
+          <div class="rapor-weight-input-wrap" style="border-color: #d97706; background: #fffbeb;">
+            <input
+              type="number"
+              id="rapor-input-bobot-sas"
+              class="allow-readonly-filter"
+              style="color: #b45309;"
+              min="0"
+              max="100"
+              value="30"
+              oninput="RaporApp.handleWeightInputChange('SAS', this.value)"
+            >
+            <span style="font-weight: 800; color: #92400e;">%</span>
+          </div>
+        `;
+
+        flexRow.appendChild(plusDiv);
+        flexRow.appendChild(sasWrap);
+      }
+
+      // Perbarui chip preset di halaman Analisis Nilai Rapor agar mendukung 3 komponen
+      const presetSample = document.querySelector('.rapor-preset-chip');
+      if (presetSample && presetSample.parentElement && !presetSample.parentElement._upgraded3Preset) {
+        const bar = presetSample.parentElement;
+        bar._upgraded3Preset = true;
+        bar.innerHTML = `
+          <span style="font-size: 0.76rem; font-weight: 700; color: var(--dark); margin-right: 0.2rem;">Preset 3 Komponen:</span>
+          <button type="button" class="rapor-preset-chip" onclick="RaporApp.applyWeightPreset(40, 30, 30)">40% Form : 30% Sum : 30% SAS</button>
+          <button type="button" class="rapor-preset-chip" onclick="RaporApp.applyWeightPreset(50, 25, 25)">50% Form : 25% Sum : 25% SAS</button>
+          <button type="button" class="rapor-preset-chip" onclick="RaporApp.applyWeightPreset(30, 40, 30)">30% Form : 40% Sum : 30% SAS</button>
+          <button type="button" class="rapor-preset-chip" onclick="RaporApp.applyWeightPreset(33.3, 33.3, 33.4)">Setara (1:1:1)</button>
+          <button type="button" class="rapor-preset-chip" onclick="RaporApp.applyWeightPreset(60, 40, 0)">60% Form : 40% Sum : 0% SAS</button>
+        `;
+      }
+
+      // Tambahkan Kartu ke-4 (Nilai SAS) pada Modal Historis Rapor jika belum ada
+      const modalFormEl = document.getElementById('modal-rapor-avg-formatif');
+      if (modalFormEl) {
+        const gridEl = modalFormEl.closest('.grid-3');
+        if (gridEl && !document.getElementById('modal-rapor-avg-sas')) {
+          gridEl.className = 'grid-4';
+          const sasCard = document.createElement('div');
+          sasCard.className = 'card';
+          sasCard.style.cssText = 'margin-bottom: 0; padding: 0.95rem; background: #fffbeb; border-color: #fde68a;';
+          sasCard.innerHTML = `
+            <div class="card-subtitle" id="modal-rapor-label-sas">Nilai SAS (Bobot 30%)</div>
+            <div id="modal-rapor-avg-sas" style="font-size: 1.45rem; font-weight: 800; color: #d97706;">0</div>
+            <div class="form-hint" id="modal-rapor-contrib-sas">Kontribusi Rapor: 0</div>
+          `;
+          const finalCard = document.getElementById('modal-rapor-final-score')?.closest('.card');
+          if (finalCard) {
+            gridEl.insertBefore(sasCard, finalCard);
+          } else {
+            gridEl.appendChild(sasCard);
+          }
+        }
+      }
+    },
+
+    syncPolicyControlsUI() {
+      this.ensureRaporThreeWeightDOM();
+      const bucket = DB.getActiveClassBucket();
+      const policy = this.getWeightPolicy(bucket);
+
+      // Sinkronkan input di halaman Analisis Rapor
+      const inpForm = document.getElementById('rapor-input-bobot-formatif');
+      const inpSum = document.getElementById('rapor-input-bobot-sumatif');
+      const inpSas = document.getElementById('rapor-input-bobot-sas');
+      const modeSel = document.getElementById('rapor-empty-component-mode');
+      const badgeFormula = document.getElementById('rapor-active-formula-badge');
+      const displayFormula = document.getElementById('rapor-formula-display-text');
+      const subtextMode = document.getElementById('rapor-formula-mode-subtext');
+
+      if (inpForm && document.activeElement !== inpForm) inpForm.value = policy.bobotFormatif;
+      if (inpSum && document.activeElement !== inpSum) inpSum.value = policy.bobotSumatif;
+      if (inpSas && document.activeElement !== inpSas) inpSas.value = policy.bobotSas;
+      if (modeSel) modeSel.value = policy.emptyMode;
+
+      // Sinkronkan juga input di halaman Rekap Penilaian Akademik
+      const rekForm = document.getElementById('rekap3-input-bobot-formatif');
+      const rekSum = document.getElementById('rekap3-input-bobot-sumatif');
+      const rekSas = document.getElementById('rekap3-input-bobot-sas');
+      const rekMode = document.getElementById('rekap3-empty-mode-select');
+      const rekBadge = document.getElementById('rekap3-active-formula-pill');
+
+      if (rekForm && document.activeElement !== rekForm) rekForm.value = policy.bobotFormatif;
+      if (rekSum && document.activeElement !== rekSum) rekSum.value = policy.bobotSumatif;
+      if (rekSas && document.activeElement !== rekSas) rekSas.value = policy.bobotSas;
+      if (rekMode) rekMode.value = policy.emptyMode;
+
+      const totalPct = Math.round((policy.bobotFormatif + policy.bobotSumatif + policy.bobotSas) * 10) / 10;
+      const formulaStr = `${policy.bobotFormatif}% Formatif + ${policy.bobotSumatif}% Sumatif + ${policy.bobotSas}% SAS`;
+
+      if (badgeFormula) {
+        badgeFormula.textContent = `Rumus: ${policy.bobotFormatif}%F + ${policy.bobotSumatif}%S + ${policy.bobotSas}%SAS`;
+        badgeFormula.className = Math.abs(totalPct - 100) <= 0.5 ? 'badge badge-primary' : 'badge badge-danger';
+      }
+      if (displayFormula) displayFormula.textContent = formulaStr;
+      if (rekBadge) {
+        rekBadge.textContent = `Bobot 3 Jenis: ${policy.bobotFormatif}% Form + ${policy.bobotSumatif}% Sum + ${policy.bobotSas}% SAS (Total: ${totalPct}%)`;
+        rekBadge.className = Math.abs(totalPct - 100) <= 0.5 ? 'badge badge-success' : 'badge badge-danger';
+      }
+      if (subtextMode) {
+        subtextMode.textContent = policy.emptyMode === 'ADAPTIVE_100'
+          ? 'Mode Proporsional Cerdas (Menyesuaikan otomatis dari jenis penilaian yang sudah terisi)'
+          : 'Mode Bobot Murni Ketat (Komponen yang belum diinput dihitung 0)';
+      }
+    },
+
+    handleWeightInputChange(changedField, rawVal) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const policy = this.getWeightPolicy(bucket);
+      let num = parseFloat(rawVal);
+      if (isNaN(num) || num < 0) num = 0;
+      if (num > 100) num = 100;
+      num = Math.round(num * 10) / 10;
+
+      if (changedField === 'FORMATIF') {
+        policy.bobotFormatif = num;
+        const rem = Math.max(0, Math.round((100 - num) * 10) / 10);
+        if (policy.bobotSumatif + policy.bobotSas !== rem) {
+          policy.bobotSumatif = Math.min(rem, policy.bobotSumatif);
+          policy.bobotSas = Math.max(0, Math.round((rem - policy.bobotSumatif) * 10) / 10);
+        }
+      } else if (changedField === 'SUMATIF') {
+        policy.bobotSumatif = num;
+        const rem = Math.max(0, Math.round((100 - policy.bobotFormatif - num) * 10) / 10);
+        policy.bobotSas = rem;
+      } else if (changedField === 'SAS') {
+        policy.bobotSas = num;
+        const rem = Math.max(0, Math.round((100 - policy.bobotFormatif - num) * 10) / 10);
+        policy.bobotSumatif = rem;
+      }
+
+      bucket.raporWeightPolicy = policy;
+      this.syncPolicyControlsUI();
+      this.renderRaporMatrixTable();
+      if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.renderRekapPenilaian === 'function') {
+        PenilaianApp.renderRekapPenilaian(PenilaianApp.activeRekapSheetIndex || 1);
+      }
+    },
+
+    applyWeightPreset(formatifPct, sumatifPct, sasPct = 0) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const policy = this.getWeightPolicy(bucket);
+      policy.bobotFormatif = Number(formatifPct) || 0;
+      policy.bobotSumatif = Number(sumatifPct) || 0;
+      policy.bobotSas = Number(sasPct) || 0;
+      bucket.raporWeightPolicy = policy;
+
+      DB.save();
+      this.syncPolicyControlsUI();
+      this.renderRaporMatrixTable();
+      if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.renderRekapPenilaian === 'function') {
+        PenilaianApp.renderRekapPenilaian(PenilaianApp.activeRekapSheetIndex || 1);
+      }
+
+      UI.showNotif(
+        'Preset Bobot 3 Jenis Penilaian Diterapkan',
+        `Rumus penilaian diatur menjadi: ${policy.bobotFormatif}% Formatif + ${policy.bobotSumatif}% Sumatif + ${policy.bobotSas}% SAS.`,
+        'success'
+      );
+    },
+
+    handleCalculationModeChange(modeVal) {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const policy = this.getWeightPolicy(bucket);
+      policy.emptyMode = modeVal === 'STRICT_WEIGHT' ? 'STRICT_WEIGHT' : 'ADAPTIVE_100';
+      bucket.raporWeightPolicy = policy;
+
+      DB.save();
+      this.syncPolicyControlsUI();
+      this.renderRaporMatrixTable();
+      if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.renderRekapPenilaian === 'function') {
+        PenilaianApp.renderRekapPenilaian(PenilaianApp.activeRekapSheetIndex || 1);
+      }
+    },
+
+    async saveWeightPolicy() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const policy = this.getWeightPolicy(bucket);
+      bucket.raporWeightPolicy = policy;
+
+      await DB.saveImmediate();
+      this.syncPolicyControlsUI();
+      this.renderRaporMatrixTable();
+      if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.renderRekapPenilaian === 'function') {
+        PenilaianApp.renderRekapPenilaian(PenilaianApp.activeRekapSheetIndex || 1);
+      }
+
+      UI.showNotif(
+        'Bobot Formatif, Sumatif & SAS Tersimpan ke Cloud',
+        `Konfigurasi bobot ${policy.bobotFormatif}% Formatif + ${policy.bobotSumatif}% Sumatif + ${policy.bobotSas}% SAS berhasil dikunci untuk kelas ${bucket.kelasFaseLabel || bucket.classKey}.`,
+        'success'
+      );
+    },
+
+    // Perhitungan Akurat 3 Jenis Penilaian (Formatif, Sumatif, & SAS) per Siswa per Mata Pelajaran
+    calculateStudentSubjectRapor(bucket, studentId, subjectName) {
+      const assessments = this.getConsolidatedAssessments(bucket);
+      const students = bucket.students || [];
+      const studentIndex = students.findIndex(s => s.id === studentId);
+      const studentObj = studentIndex >= 0 ? students[studentIndex] : { id: studentId, nama: '' };
+
+      const targetSubjKey = this.normalizeSubjectKey(subjectName);
+      const policy = this.getWeightPolicy(bucket);
+      const wForm = policy.bobotFormatif / 100;
+      const wSum = policy.bobotSumatif / 100;
+      const wSas = policy.bobotSas / 100;
+
+      const formatifScores = [];
+      const sumatifScores = [];
+      const sasScores = [];
+
+      assessments.forEach(rec => {
+        if (!rec || this.normalizeSubjectKey(rec.mapel) !== targetSubjKey) return;
+
+        const scEntry = this.extractStudentScoreEntry(rec, studentObj, studentIndex, students);
+        const val = this.computeDailyScoreValue(scEntry);
+        if (val === null || isNaN(val)) return;
+
+        const jenisUpper = String(rec.jenisAsesmen || 'FORMATIF').toUpperCase().trim();
+        if (jenisUpper === 'SAS' || jenisUpper === 'SUMATIF_AKHIR_SEMESTER') {
+          sasScores.push(val);
+        } else if (jenisUpper === 'SUMATIF') {
+          sumatifScores.push(val);
+        } else {
+          formatifScores.push(val);
+        }
+      });
+
+      const hasFormatif = formatifScores.length > 0;
+      const hasSumatif = sumatifScores.length > 0;
+      const hasSas = sasScores.length > 0;
+      const hasAny = hasFormatif || hasSumatif || hasSas;
+
+      const avgFormatif = hasFormatif
+        ? Math.round((formatifScores.reduce((a, b) => a + b, 0) / formatifScores.length) * 10) / 10
+        : 0;
+      const avgSumatif = hasSumatif
+        ? Math.round((sumatifScores.reduce((a, b) => a + b, 0) / sumatifScores.length) * 10) / 10
+        : 0;
+      const avgSas = hasSas
+        ? Math.round((sasScores.reduce((a, b) => a + b, 0) / sasScores.length) * 10) / 10
+        : 0;
+
+      let finalRapor = null;
+      let contribFormatif = 0;
+      let contribSumatif = 0;
+      let contribSas = 0;
+      let formulaUsedLabel = `${policy.bobotFormatif}%F + ${policy.bobotSumatif}%S + ${policy.bobotSas}%SAS`;
+
+      if (hasAny) {
+        if (policy.emptyMode === 'STRICT_WEIGHT') {
+          contribFormatif = hasFormatif ? Math.round(avgFormatif * wForm * 10) / 10 : 0;
+          contribSumatif = hasSumatif ? Math.round(avgSumatif * wSum * 10) / 10 : 0;
+          contribSas = hasSas ? Math.round(avgSas * wSas * 10) / 10 : 0;
+          finalRapor = Math.round((contribFormatif + contribSumatif + contribSas) * 10) / 10;
+        } else {
+          // Mode ADAPTIVE_100 (Proporsional Cerdas berdasarkan bobot komponen yang sudah memiliki nilai)
+          const activeWeightSum =
+            (hasFormatif ? policy.bobotFormatif : 0) +
+            (hasSumatif ? policy.bobotSumatif : 0) +
+            (hasSas ? policy.bobotSas : 0);
+
+          if (activeWeightSum > 0) {
+            const effWForm = hasFormatif ? (policy.bobotFormatif / activeWeightSum) : 0;
+            const effWSum = hasSumatif ? (policy.bobotSumatif / activeWeightSum) : 0;
+            const effWSas = hasSas ? (policy.bobotSas / activeWeightSum) : 0;
+
+            contribFormatif = Math.round(avgFormatif * effWForm * 10) / 10;
+            contribSumatif = Math.round(avgSumatif * effWSum * 10) / 10;
+            contribSas = Math.round(avgSas * effWSas * 10) / 10;
+            finalRapor = Math.round(((avgFormatif * effWForm) + (avgSumatif * effWSum) + (avgSas * effWSas)) * 10) / 10;
+
+            const activeParts = [];
+            if (hasFormatif) activeParts.push(`${Math.round(effWForm * 100)}% Form`);
+            if (hasSumatif) activeParts.push(`${Math.round(effWSum * 100)}% Sum`);
+            if (hasSas) activeParts.push(`${Math.round(effWSas * 100)}% SAS`);
+            formulaUsedLabel = activeParts.join(' + ');
+          } else {
+            // Fallback rata-rata dari komponen yang tersedia
+            const availableVals = [
+              ...(hasFormatif ? [avgFormatif] : []),
+              ...(hasSumatif ? [avgSumatif] : []),
+              ...(hasSas ? [avgSas] : [])
+            ];
+            finalRapor = Math.round((availableVals.reduce((a, b) => a + b, 0) / availableVals.length) * 10) / 10;
+          }
+        }
+      }
+
+      return {
+        hasAny,
+        hasFormatif,
+        hasSumatif,
+        hasSas,
+        countFormatif: formatifScores.length,
+        countSumatif: sumatifScores.length,
+        countSas: sasScores.length,
+        avgFormatif,
+        avgSumatif,
+        avgSas,
+        contribFormatif,
+        contribSumatif,
+        contribSas,
+        finalRapor,
+        formulaUsedLabel,
+        bobotFormatif: policy.bobotFormatif,
+        bobotSumatif: policy.bobotSumatif,
+        bobotSas: policy.bobotSas
+      };
+    },
+
+    // Perbarui Tabel Matriks Rapor agar menampilkan rincian F, S, dan SAS
+    renderRaporMatrixTable() {
+      this.ensureRaporThreeWeightDOM();
+      const bucket = DB.getActiveClassBucket();
+      const thead = document.getElementById('thead-analisis-rapor');
+      const tbody = document.getElementById('tbody-analisis-rapor');
+      const classTitleEl = document.getElementById('rapor-class-title-label');
+      const subjCountBadge = document.getElementById('rapor-subjects-count-badge');
+      const syncedCountEl = document.getElementById('rapor-synced-records-count');
+
+      if (!bucket || !thead || !tbody) return;
+
+      const assessments = this.getConsolidatedAssessments(bucket);
+      const policy = this.getWeightPolicy(bucket);
+      const subjects = this.getAllSubjectsForRapor(bucket);
+      const students = bucket.students || [];
+
+      if (classTitleEl) classTitleEl.textContent = bucket.kelasFaseLabel || bucket.classKey;
+      if (subjCountBadge) subjCountBadge.textContent = `${subjects.length} Mata Pelajaran`;
+      if (syncedCountEl) syncedCountEl.textContent = `${assessments.length} Sesi Penilaian Tersinkron`;
+
+      const subjectHeadersHtml = subjects.map(subj => {
+        const hasDataForSubj = assessments.some(
+          a => a && this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(subj)
+        );
+        return `
+          <th style="text-align: center; min-width: 140px;">
+            <div>${UI.escapeHtml(subj)}</div>
+            <div style="font-size: 0.66rem; color: ${hasDataForSubj ? 'var(--success)' : 'var(--text-muted)'}; font-weight: 700;">
+              ${hasDataForSubj ? `(${policy.bobotFormatif}%F+${policy.bobotSumatif}%S+${policy.bobotSas}%SAS)` : '(Belum Ada Nilai)'}
+            </div>
+          </th>
+        `;
+      }).join('');
+
+      const rankingHeaderHtml = AppState.raporShowRanking
+        ? `<th style="text-align: center; width: 145px; background: #fef3c7; color: #92400e;">Analisis Ranking</th>`
+        : '';
+
+      thead.innerHTML = `
+        <tr>
+          <th style="width: 50px;">No</th>
+          <th style="min-width: 205px;">Nama Siswa (Klik untuk Historis)</th>
+          ${subjectHeadersHtml}
+          <th style="text-align: center; width: 130px; background: #eff6ff;">Jumlah Nilai</th>
+          <th style="text-align: center; width: 135px; background: #f0fdf4;">Rata-Rata Rapor</th>
+          ${rankingHeaderHtml}
+        </tr>
+      `;
+
+      if (students.length === 0) {
+        const colSpanCount = subjects.length + (AppState.raporShowRanking ? 5 : 4);
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="${colSpanCount}" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              Belum ada data siswa terdaftar pada kelas ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      const studentRowsData = students.map((std, originalIndex) => {
+        const perSubjectResults = {};
+        let totalScore = 0;
+        let assessedSubjectCount = 0;
+
+        subjects.forEach(subj => {
+          const calc = this.calculateStudentSubjectRapor(bucket, std.id, subj);
+          perSubjectResults[subj] = calc;
+          if (calc.hasAny && calc.finalRapor !== null) {
+            totalScore += calc.finalRapor;
+            assessedSubjectCount++;
+          }
+        });
+
+        const averageScore = assessedSubjectCount > 0
+          ? Math.round((totalScore / assessedSubjectCount) * 10) / 10
+          : 0;
+
+        return {
+          student: std,
+          originalIndex,
+          perSubjectResults,
+          totalScore: Math.round(totalScore * 10) / 10,
+          averageScore,
+          assessedSubjectCount,
+          rank: 0
+        };
+      });
+
+      const sortedForRank = [...studentRowsData].sort((a, b) => {
+        if (b.averageScore !== a.averageScore) return b.averageScore - a.averageScore;
+        return b.totalScore - a.totalScore;
+      });
+
+      sortedForRank.forEach((item, idx) => {
+        item.rank = idx + 1;
+      });
+
+      const displayList = AppState.raporShowRanking ? sortedForRank : studentRowsData;
+
+      tbody.innerHTML = displayList.map((row, idx) => {
+        const std = row.student;
+        const subjectCellsHtml = subjects.map(subj => {
+          const res = row.perSubjectResults[subj];
+          const escapedSubj = UI.escapeHtml(subj).replace(/'/g, "\\'");
+
+          if (!res || !res.hasAny || res.finalRapor === null) {
+            return `
+              <td style="text-align: center; color: var(--text-muted);">
+                <span style="cursor: pointer;" onclick="RaporApp.openRaporHistoryModal('${std.id}', '${escapedSubj}')">-</span>
+              </td>
+            `;
+          }
+
+          const detailTooltip = `Formatif: ${res.hasFormatif ? res.avgFormatif : '-'} | Sumatif: ${res.hasSumatif ? res.avgSumatif : '-'} | SAS: ${res.hasSas ? res.avgSas : '-'} | Rumus: ${res.formulaUsedLabel}`;
+
+          return `
+            <td style="text-align: center;">
+              <span
+                class="clickable-score"
+                style="font-size: 0.95rem;"
+                title="${UI.escapeHtml(detailTooltip)}"
+                onclick="RaporApp.openRaporHistoryModal('${std.id}', '${escapedSubj}')"
+              >
+                ${res.finalRapor}
+              </span>
+              <div style="font-size: 0.66rem; color: var(--text-muted); margin-top: 0.1rem;">
+                F:${res.hasFormatif ? res.avgFormatif : '-'} | S:${res.hasSumatif ? res.avgSumatif : '-'} | SAS:${res.hasSas ? res.avgSas : '-'}
+              </div>
+            </td>
+          `;
+        }).join('');
+
+        let rankBadgeClass = 'badge-info';
+        if (row.rank === 1) rankBadgeClass = 'badge-warning';
+        else if (row.rank === 2 || row.rank === 3) rankBadgeClass = 'badge-success';
+
+        const rankingCellHtml = AppState.raporShowRanking
+          ? `
+            <td style="text-align: center; background: #fffbeb;">
+              <span class="badge ${rankBadgeClass}" style="font-size: 0.86rem; padding: 0.32rem 0.75rem;">
+                Peringkat #${row.rank}
+              </span>
+            </td>
+          `
+          : '';
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <span
+                class="clickable-score"
+                style="color: var(--dark); font-weight: 800;"
+                onclick="RaporApp.openRaporHistoryModal('${std.id}', 'ALL')"
+              >
+                ${UI.escapeHtml(std.nama)}
+              </span>
+            </td>
+            ${subjectCellsHtml}
+            <td style="text-align: center; font-weight: 800; background: #f8fafc;">${row.totalScore}</td>
+            <td style="text-align: center; background: #f0fdf4;">
+              <span class="badge badge-success" style="font-size: 0.92rem; padding: 0.32rem 0.75rem;">
+                ${row.averageScore}
+              </span>
+            </td>
+            ${rankingCellHtml}
+          </tr>
+        `;
+      }).join('');
+    },
+
+    filterModalHistoryBySubject(subjectFilterValue) {
+      this.ensureRaporThreeWeightDOM();
+      const bucket = DB.getActiveClassBucket();
+      const studentId = AppState.raporModalStudentId;
+      if (!bucket || !studentId) return;
+
+      const students = bucket.students || [];
+      const studentIndex = students.findIndex(s => s.id === studentId);
+      const studentObj = studentIndex >= 0 ? students[studentIndex] : { id: studentId, nama: '' };
+
+      const policy = this.getWeightPolicy(bucket);
+      const wForm = policy.bobotFormatif / 100;
+      const wSum = policy.bobotSumatif / 100;
+      const wSas = policy.bobotSas / 100;
+
+      const selectedSubjLabel = document.getElementById('modal-rapor-selected-subject');
+      const labelFormEl = document.getElementById('modal-rapor-label-formatif');
+      const labelSumEl = document.getElementById('modal-rapor-label-sumatif');
+      const labelSasEl = document.getElementById('modal-rapor-label-sas');
+      const labelFinalEl = document.getElementById('modal-rapor-label-final');
+      const avgFormEl = document.getElementById('modal-rapor-avg-formatif');
+      const contribFormEl = document.getElementById('modal-rapor-contrib-formatif');
+      const avgSumEl = document.getElementById('modal-rapor-avg-sumatif');
+      const contribSumEl = document.getElementById('modal-rapor-contrib-sumatif');
+      const avgSasEl = document.getElementById('modal-rapor-avg-sas');
+      const contribSasEl = document.getElementById('modal-rapor-contrib-sas');
+      const finalScoreEl = document.getElementById('modal-rapor-final-score');
+      const finalHintEl = document.getElementById('modal-rapor-final-formula-hint');
+      const tbody = document.getElementById('tbody-modal-rapor-history');
+
+      if (selectedSubjLabel) {
+        selectedSubjLabel.textContent = subjectFilterValue === 'ALL' ? 'Semua Mata Pelajaran' : subjectFilterValue;
+      }
+      if (labelFormEl) labelFormEl.textContent = `Rata-Rata Formatif (Bobot ${policy.bobotFormatif}%)`;
+      if (labelSumEl) labelSumEl.textContent = `Rata-Rata Sumatif (Bobot ${policy.bobotSumatif}%)`;
+      if (labelSasEl) labelSasEl.textContent = `Nilai Akhir SAS (Bobot ${policy.bobotSas}%)`;
+      if (labelFinalEl) labelFinalEl.textContent = `Nilai Akhir Rapot (${policy.bobotFormatif}%+${policy.bobotSumatif}%+${policy.bobotSas}%)`;
+
+      const allAssessments = this.getConsolidatedAssessments(bucket);
+      const matchedRows = [];
+
+      allAssessments.forEach(rec => {
+        if (!rec) return;
+        if (subjectFilterValue !== 'ALL' && this.normalizeSubjectKey(rec.mapel) !== this.normalizeSubjectKey(subjectFilterValue)) {
+          return;
+        }
+        const scEntry = this.extractStudentScoreEntry(rec, studentObj, studentIndex, students);
+        const valHarian = this.computeDailyScoreValue(scEntry);
+        if (scEntry && valHarian !== null) {
+          matchedRows.push({ rec, scEntry, valHarian });
+        }
+      });
+
+      const formList = matchedRows.filter(item => {
+        const j = String(item.rec.jenisAsesmen || 'FORMATIF').toUpperCase();
+        return j !== 'SUMATIF' && j !== 'SAS';
+      });
+      const sumList = matchedRows.filter(item => String(item.rec.jenisAsesmen || '').toUpperCase() === 'SUMATIF');
+      const sasList = matchedRows.filter(item => String(item.rec.jenisAsesmen || '').toUpperCase() === 'SAS');
+
+      const avgForm = formList.length > 0 ? Math.round((formList.reduce((a, r) => a + r.valHarian, 0) / formList.length) * 10) / 10 : 0;
+      const avgSum = sumList.length > 0 ? Math.round((sumList.reduce((a, r) => a + r.valHarian, 0) / sumList.length) * 10) / 10 : 0;
+      const avgSas = sasList.length > 0 ? Math.round((sasList.reduce((a, r) => a + r.valHarian, 0) / sasList.length) * 10) / 10 : 0;
+
+      const hasForm = formList.length > 0;
+      const hasSum = sumList.length > 0;
+      const hasSas = sasList.length > 0;
+
+      let contribForm = Math.round(avgForm * wForm * 10) / 10;
+      let contribSum = Math.round(avgSum * wSum * 10) / 10;
+      let contribSas = Math.round(avgSas * wSas * 10) / 10;
+      let finalVal = 0;
+      let hintText = `Rumus: ${policy.bobotFormatif}%F + ${policy.bobotSumatif}%S + ${policy.bobotSas}%SAS`;
+
+      if (hasForm || hasSum || hasSas) {
+        if (policy.emptyMode === 'STRICT_WEIGHT') {
+          finalVal = Math.round(((hasForm ? contribForm : 0) + (hasSum ? contribSum : 0) + (hasSas ? contribSas : 0)) * 10) / 10;
+        } else {
+          const activeW = (hasForm ? policy.bobotFormatif : 0) + (hasSum ? policy.bobotSumatif : 0) + (hasSas ? policy.bobotSas : 0);
+          if (activeW > 0) {
+            contribForm = hasForm ? Math.round(avgForm * (policy.bobotFormatif / activeW) * 10) / 10 : 0;
+            contribSum = hasSum ? Math.round(avgSum * (policy.bobotSumatif / activeW) * 10) / 10 : 0;
+            contribSas = hasSas ? Math.round(avgSas * (policy.bobotSas / activeW) * 10) / 10 : 0;
+            finalVal = Math.round((contribForm + contribSum + contribSas) * 10) / 10;
+          }
+        }
+      }
+
+      if (avgFormEl) avgFormEl.textContent = avgForm;
+      if (contribFormEl) contribFormEl.textContent = `Kontribusi: ${contribForm} (${formList.length}x)`;
+      if (avgSumEl) avgSumEl.textContent = avgSum;
+      if (contribSumEl) contribSumEl.textContent = `Kontribusi: ${contribSum} (${sumList.length}x)`;
+      if (avgSasEl) avgSasEl.textContent = avgSas;
+      if (contribSasEl) contribSasEl.textContent = `Kontribusi: ${contribSas} (${sasList.length}x)`;
+      if (finalScoreEl) finalScoreEl.textContent = finalVal;
+      if (finalHintEl) finalHintEl.textContent = hintText;
+
+      if (!tbody) return;
+      if (matchedRows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              Belum ada riwayat penilaian yang tercatat untuk filter mata pelajaran ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = matchedRows.map((item, idx) => {
+        const { rec, scEntry, valHarian } = item;
+        const jUpper = String(rec.jenisAsesmen || 'FORMATIF').toUpperCase();
+        let jenisBadge = `<span class="badge badge-primary">FORMATIF (${policy.bobotFormatif}%)</span>`;
+        if (jUpper === 'SUMATIF') {
+          jenisBadge = `<span class="badge badge-info">SUMATIF (${policy.bobotSumatif}%)</span>`;
+        } else if (jUpper === 'SAS') {
+          jenisBadge = `<span class="badge badge-warning">SAS — AKHIR SEMESTER (${policy.bobotSas}%)</span>`;
+        }
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <strong>${UI.escapeHtml(rec.dateISO)}</strong>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">${UI.escapeHtml(DateTimeUtil.getDayNameFromISO(rec.dateISO))}</div>
+            </td>
+            <td><strong>${UI.escapeHtml(rec.mapel)}</strong></td>
+            <td>${jenisBadge}</td>
+            <td>
+              <div style="font-size: 0.84rem; font-weight: 600;">${UI.escapeHtml(rec.tpPengetahuan || 'Penilaian Sumatif Akhir Semester (SAS)')}</div>
+              <div style="font-size: 0.74rem; color: var(--secondary);">${jUpper === 'SAS' ? 'Mode Input Nilai Utuh Langsung (0–100)' : `SOLO: ${UI.escapeHtml(rec.soloLevel || '-')} | Instrumen: ${UI.escapeHtml(rec.jenisInstrumen || '-')}`}</div>
+            </td>
+            <td style="text-align: center;"><span class="badge badge-info" style="font-size: 0.88rem;">${scEntry.murniPengetahuan ?? valHarian}</span></td>
+            <td style="text-align: center;">${rec.skipKeterampilan || jUpper === 'SAS' ? '<span style="font-size:0.75rem; color:var(--text-muted);">Nilai Utuh / 100%</span>' : `<span class="badge badge-warning" style="font-size: 0.88rem;">${scEntry.murniKeterampilan ?? valHarian}</span>`}</td>
+            <td style="text-align: center;"><span class="badge badge-success" style="font-size: 0.92rem;">${valHarian}</span></td>
+          </tr>
+        `;
+      }).join('');
+    }
+  });
+}
+
+// ============================================================================
+// 2. UPGRADE PENILAIANAPP:
+//    A. INPUT LANGSUNG NILAI UTUH SAS (0–100) TANPA SETUP BERTAHAP
+//    B. PANEL BOBOT 3 KOMPONEN & REKAP GABUNGAN (FORMATIF + SUMATIF + SAS)
+// ============================================================================
+if (typeof PenilaianApp !== 'undefined') {
+  const _origOpenSetupWizardV9 = PenilaianApp.openSetupWizard ? PenilaianApp.openSetupWizard.bind(PenilaianApp) : null;
+  const _origRenderRekapV9 = PenilaianApp.renderRekapPenilaian ? PenilaianApp.renderRekapPenilaian.bind(PenilaianApp) : null;
+
+  Object.assign(PenilaianApp, {
+    sasTempScores: {},
+    sasTempNotes: {},
+
+    // Pastikan seluruh dropdown dan panel di Penilaian Akademik & Rekap memiliki opsi SAS & Panel Bobot 3 Jenis
+    ensureSasAndThreeWeightDOM() {
+      // 1. Tambahkan opsi SAS pada dropdown Jenis Penilaian di Tahap 1
+      const jenisSel = document.getElementById('setup-nilai-jenis-asesmen');
+      if (jenisSel && !Array.from(jenisSel.options).some(o => o.value === 'SAS')) {
+        const opt = document.createElement('option');
+        opt.value = 'SAS';
+        opt.textContent = 'Penilaian Sumatif Akhir Semester (SAS) — Input Nilai Utuh Langsung (0–100)';
+        jenisSel.appendChild(opt);
+      }
+
+      // 2. Tambahkan opsi SAS pada dropdown Rekap Ulang Masa Lampau
+      const ulangJenisSel = document.getElementById('rekap-ulang-jenis-select');
+      if (ulangJenisSel && !Array.from(ulangJenisSel.options).some(o => o.value === 'SAS')) {
+        const opt = document.createElement('option');
+        opt.value = 'SAS';
+        opt.textContent = 'Penilaian Sumatif Akhir Semester (SAS — Nilai Utuh)';
+        ulangJenisSel.appendChild(opt);
+      }
+
+      // 3. Tambahkan opsi SAS & Rekap Gabungan 3 Komponen pada dropdown Filter Rekap Penilaian
+      const rekapFilterSel = document.getElementById('rekap-nilai-filter-jenis');
+      if (rekapFilterSel && !Array.from(rekapFilterSel.options).some(o => o.value === 'SAS')) {
+        rekapFilterSel.innerHTML = `
+          <option value="FORMATIF">1. Rekap Penilaian Formatif (Proses)</option>
+          <option value="SUMATIF">2. Rekap Penilaian Sumatif (Lingkup Materi)</option>
+          <option value="SAS">3. Rekap Sumatif Akhir Semester (SAS — Nilai Utuh)</option>
+          <option value="GABUNGAN_3_KOMPONEN">📊 4. Rekap Nilai Akhir Gabungan (Formatif + Sumatif + SAS Sesuai Bobot %)</option>
+          <option value="ALL">Semua Sesi Penilaian Pada Tanggal Ini</option>
+        `;
+      }
+
+      // 4. Pasang Pita Tombol Pemilih Cepat (Formatif / Sumatif / SAS) & Workspace SAS di Halaman Penilaian Akademik
+      const step1Card = document.getElementById('penilaian-step-1-card');
+      if (step1Card && !document.getElementById('sas-quick-mode-switcher')) {
+        const switcher = document.createElement('div');
+        switcher.id = 'sas-quick-mode-switcher';
+        switcher.className = 'sas-mode-switcher-bar';
+        switcher.innerHTML = `
+          <button type="button" id="btn-mode-card-FORMATIF" class="sas-mode-card-btn active-mode-FORMATIF" onclick="PenilaianApp.selectAssessmentTypeMode('FORMATIF')">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="badge badge-primary">1. FORMATIF</span>
+              <span style="font-size: 0.72rem; font-weight: 700; color: #1e40af;">Setup 3 Tahap (SOLO)</span>
+            </div>
+            <div style="font-weight: 800; font-size: 0.94rem; color: var(--dark);">Penilaian Formatif</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">Penilaian proses belajar harian (per butir soal S1..Sn & keterampilan).</div>
+          </button>
+
+          <button type="button" id="btn-mode-card-SUMATIF" class="sas-mode-card-btn" onclick="PenilaianApp.selectAssessmentTypeMode('SUMATIF')">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="badge badge-info">2. SUMATIF MATERI</span>
+              <span style="font-size: 0.72rem; font-weight: 700; color: #0f766e;">Setup 3 Tahap (SOLO)</span>
+            </div>
+            <div style="font-weight: 800; font-size: 0.94rem; color: var(--dark);">Penilaian Sumatif</div>
+            <div style="font-size: 0.76rem; color: var(--text-muted);">Evaluasi akhir lingkup materi / bab berbasis Taksonomi SOLO.</div>
+          </button>
+
+          <button type="button" id="btn-mode-card-SAS" class="sas-mode-card-btn" onclick="PenilaianApp.selectAssessmentTypeMode('SAS')">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+              <span class="badge badge-warning">3. SAS (AKHIR SEMESTER)</span>
+              <span class="badge badge-success" style="font-size: 0.68rem;">⚡ Langsung Nilai Utuh</span>
+            </div>
+            <div style="font-weight: 800; font-size: 0.94rem; color: #78350f;">Sumatif Akhir Semester (SAS)</div>
+            <div style="font-size: 0.76rem; color: #92400e;">Tanpa setting soal/TP! Klik untuk langsung menginput nilai utuh (0–100) tiap siswa.</div>
+          </button>
+        `;
+        step1Card.parentElement.insertBefore(switcher, step1Card);
+      }
+
+      if (step1Card && !document.getElementById('penilaian-sas-direct-card')) {
+        const sasCard = document.createElement('div');
+        sasCard.id = 'penilaian-sas-direct-card';
+        sasCard.className = 'sas-direct-workspace-card hidden';
+        sasCard.innerHTML = `
+          <div class="card-header" style="border-bottom-color: #fde68a; margin-bottom: 1rem; padding-bottom: 0.85rem;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.3rem;">
+                <span class="badge badge-warning">MODE INPUT CEPAT — SUMATIF AKHIR SEMESTER (SAS)</span>
+                <span class="badge badge-success">✓ Tanpa Setup Soal & Keterampilan (Nilai Utuh 0–100)</span>
+              </div>
+              <h3 class="card-title" style="color: #78350f; font-size: 1.18rem;">
+                Lembar Input Nilai Utuh Sumatif Akhir Semester (SAS) — <span id="sas-direct-mapel-title" style="color: var(--primary);">Mata Pelajaran</span>
+              </h3>
+              <p class="card-subtitle">
+                Pilih Mata Pelajaran di bawah, lalu ketik langsung <strong>Nilai Utuh SAS (0–100)</strong> untuk masing-masing siswa. Tekan <code>Enter</code> pada keyboard untuk pindah cepat ke baris siswa berikutnya.
+              </p>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button type="button" class="btn btn-outline btn-sm" onclick="PenilaianApp.selectAssessmentTypeMode('FORMATIF')">
+                &larr; Kembali ke Mode Formatif/Sumatif
+              </button>
+              <button type="button" class="btn btn-success write-action-btn" style="font-weight: 800;" onclick="PenilaianApp.saveSasDirectAssessment()">
+                💾 Simpan Nilai SAS ke Rekap & Cloud
+              </button>
+            </div>
+          </div>
+
+          <!-- BARIS KONTROL MATA PELAJARAN, TANGGAL SAS, & QUICK-FILL NILAI SERAGAM -->
+          <div class="grid-3" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 1rem; margin-bottom: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="sas-direct-mapel-select" style="color: #78350f;">1. Pilih Mata Pelajaran yang Dinilai SAS :</label>
+              <select id="sas-direct-mapel-select" class="form-control" style="font-weight: 800; border-color: #d97706;" onchange="PenilaianApp.handleSasMapelChange(this.value)"></select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="sas-direct-date-input" style="color: #78350f;">2. Tanggal Pelaksanaan SAS :</label>
+              <input type="date" id="sas-direct-date-input" class="form-control" style="font-weight: 700;" onchange="PenilaianApp.handleSasDateChange(this.value)">
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: #78350f;">3. Fitur Isi Cepat Nilai Awal (Quick-Fill) :</span>
+              <div class="write-action-btn" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <input type="number" id="sas-quickfill-input" class="form-control" style="width: 82px; text-align: center; font-weight: 800;" min="0" max="100" value="85" placeholder="Nilai">
+                <button type="button" class="btn btn-warning btn-sm" style="flex: 1; font-weight: 800;" onclick="PenilaianApp.applySasQuickFillScore()">
+                  ⚡ Isi ke Semua Siswa
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATISTIK REAL-TIME NILAI SAS KELAS -->
+          <div class="grid-4" style="margin-bottom: 1rem;">
+            <div class="sas-stat-mini-box">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Siswa Dinilai SAS</div>
+              <div id="sas-stat-count" style="font-size: 1.3rem; font-weight: 900; color: var(--primary);">0 Siswa</div>
+            </div>
+            <div class="sas-stat-mini-box">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Rata-Rata SAS Kelas</div>
+              <div id="sas-stat-avg" style="font-size: 1.3rem; font-weight: 900; color: var(--success);">0</div>
+            </div>
+            <div class="sas-stat-mini-box">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nilai SAS Tertinggi</div>
+              <div id="sas-stat-max" style="font-size: 1.3rem; font-weight: 900; color: #0284c7;">0</div>
+            </div>
+            <div class="sas-stat-mini-box">
+              <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Nilai SAS Terendah</div>
+              <div id="sas-stat-min" style="font-size: 1.3rem; font-weight: 900; color: #b45309;">0</div>
+            </div>
+          </div>
+
+          <!-- TABEL INPUT LANGSUNG NILAI UTUH SAS PER SISWA -->
+          <div class="table-responsive">
+            <table class="academic-table">
+              <thead>
+                <tr>
+                  <th style="width: 52px;">No</th>
+                  <th style="min-width: 210px;">Nama Siswa & Status Kehadiran</th>
+                  <th style="width: 190px; text-align: center; background: #fffbeb; color: #78350f;">Input Nilai Utuh SAS (0–100)</th>
+                  <th style="width: 185px; text-align: center;">Predikat & Ketuntasan</th>
+                  <th>Catatan / Keterangan SAS (Opsional)</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-sas-direct-students"></tbody>
+            </table>
+          </div>
+
+          <div class="write-action-btn" style="margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <span style="font-size: 0.8rem; color: #78350f; font-weight: 600;">
+              💡 Nilai SAS yang disimpan otomatis terhubung ke perhitungan Bobot Persentase (Formatif + Sumatif + SAS) di Rekap & Rapor.
+            </span>
+            <button type="button" class="btn btn-success" style="font-weight: 800; padding: 0.7rem 1.65rem;" onclick="PenilaianApp.saveSasDirectAssessment()">
+              💾 Simpan Nilai Utuh SAS Sekarang &rarr;
+            </button>
+          </div>
+        `;
+        step1Card.parentElement.insertBefore(sasCard, step1Card);
+      }
+
+      // 5. Tambahkan Panel Pengaturan Bobot 3 Jenis Penilaian (Formatif % + Sumatif % + SAS %) di Halaman Rekap Penilaian Akademik
+      const rekapWeightBox = document.querySelector('#view-intra-rekap-penilaian .rekap-weight-config-box');
+      if (rekapWeightBox && !document.getElementById('rekap-3component-weight-panel')) {
+        const panel3 = document.createElement('div');
+        panel3.id = 'rekap-3component-weight-panel';
+        panel3.className = 'rekap-3weight-box no-print';
+        panel3.innerHTML = `
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.85rem; padding-bottom: 0.75rem; border-bottom: 1px dashed #f59e0b;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; margin-bottom: 0.2rem;">
+                <span class="badge badge-warning">PENGATURAN BOBOT 3 JENIS PENILAIAN (FORMATIF + SUMATIF + SAS = 100%)</span>
+                <span class="badge badge-success">✓ Tersinkronisasi Otomatis dengan Rapor</span>
+              </div>
+              <h3 style="font-size: 1.02rem; font-weight: 800; color: var(--dark);">
+                Tentukan Persentase Bobot Nilai yang Diambil dari Formatif, Sumatif, dan Sumatif Akhir Semester (SAS)
+              </h3>
+              <p style="font-size: 0.8rem; color: #78350f;">
+                Atur berapa persen (%) kontribusi dari masing-masing jenis penilaian. Pilih filter <strong>"📊 4. Rekap Nilai Akhir Gabungan"</strong> di bawah untuk melihat tabel kalkulasi otomatis ketiga jenis penilaian ini.
+              </p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+              <span style="font-size: 0.74rem; font-weight: 800; color: #78350f;">Preset Cepat:</span>
+              <button type="button" class="rekap-preset-btn" onclick="RaporApp.applyWeightPreset(40, 30, 30)">40% Form : 30% Sum : 30% SAS</button>
+              <button type="button" class="rekap-preset-btn" onclick="RaporApp.applyWeightPreset(50, 25, 25)">50% Form : 25% Sum : 25% SAS</button>
+              <button type="button" class="rekap-preset-btn" onclick="RaporApp.applyWeightPreset(30, 40, 30)">30% Form : 40% Sum : 30% SAS</button>
+              <button type="button" class="rekap-preset-btn" onclick="RaporApp.applyWeightPreset(33.3, 33.3, 33.4)">Setara (1:1:1)</button>
+              <button type="button" class="rekap-preset-btn" onclick="RaporApp.applyWeightPreset(60, 40, 0)">60% Form : 40% Sum : 0% SAS</button>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.65rem; flex-wrap: wrap;">
+              <div>
+                <label for="rekap3-input-bobot-formatif" style="font-size: 0.73rem; font-weight: 800; color: var(--primary); display: block; margin-bottom: 0.2rem;">
+                  1. Bobot Formatif (%)
+                </label>
+                <div class="weight3-pill-group" style="border-color: var(--primary-light);">
+                  <input
+                    type="number"
+                    id="rekap3-input-bobot-formatif"
+                    class="allow-readonly-filter"
+                    style="color: var(--primary);"
+                    min="0"
+                    max="100"
+                    value="40"
+                    oninput="RaporApp.handleWeightInputChange('FORMATIF', this.value)"
+                  >
+                  <span style="font-weight: 800; color: var(--text-muted);">%</span>
+                </div>
+              </div>
+
+              <div style="font-weight: 900; font-size: 1.1rem; color: var(--text-muted); padding-top: 1rem;">+</div>
+
+              <div>
+                <label for="rekap3-input-bobot-sumatif" style="font-size: 0.73rem; font-weight: 800; color: var(--secondary); display: block; margin-bottom: 0.2rem;">
+                  2. Bobot Sumatif (%)
+                </label>
+                <div class="weight3-pill-group" style="border-color: var(--secondary);">
+                  <input
+                    type="number"
+                    id="rekap3-input-bobot-sumatif"
+                    class="allow-readonly-filter"
+                    style="color: var(--secondary);"
+                    min="0"
+                    max="100"
+                    value="30"
+                    oninput="RaporApp.handleWeightInputChange('SUMATIF', this.value)"
+                  >
+                  <span style="font-weight: 800; color: var(--text-muted);">%</span>
+                </div>
+              </div>
+
+              <div style="font-weight: 900; font-size: 1.1rem; color: var(--text-muted); padding-top: 1rem;">+</div>
+
+              <div>
+                <label for="rekap3-input-bobot-sas" style="font-size: 0.73rem; font-weight: 800; color: #b45309; display: block; margin-bottom: 0.2rem;">
+                  3. Bobot SAS (%)
+                </label>
+                <div class="weight3-pill-group" style="border-color: #d97706;">
+                  <input
+                    type="number"
+                    id="rekap3-input-bobot-sas"
+                    class="allow-readonly-filter"
+                    style="color: #b45309;"
+                    min="0"
+                    max="100"
+                    value="30"
+                    oninput="RaporApp.handleWeightInputChange('SAS', this.value)"
+                  >
+                  <span style="font-weight: 800; color: var(--text-muted);">%</span>
+                </div>
+              </div>
+
+              <div style="min-width: 215px;">
+                <label for="rekap3-empty-mode-select" style="font-size: 0.73rem; font-weight: 800; color: var(--dark); display: block; margin-bottom: 0.2rem;">
+                  Jika Ada Jenis yang Belum Diisi :
+                </label>
+                <select
+                  id="rekap3-empty-mode-select"
+                  class="form-control allow-readonly-filter"
+                  style="padding: 0.38rem 0.65rem; font-size: 0.8rem; font-weight: 700;"
+                  onchange="RaporApp.handleCalculationModeChange(this.value)"
+                >
+                  <option value="ADAPTIVE_100">Proporsional Cerdas (Otomatis)</option>
+                  <option value="STRICT_WEIGHT">Bobot Murni Ketat (Kosong = 0)</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+              <span id="rekap3-active-formula-pill" class="badge badge-success" style="font-size: 0.8rem; padding: 0.42rem 0.85rem;">
+                Bobot 3 Jenis: 40% Form + 30% Sum + 30% SAS
+              </span>
+              <button type="button" class="btn btn-warning btn-sm" style="font-weight: 800; color: #0f172a;" onclick="PenilaianApp.openCombinedThreeWeightRekap()">
+                📊 Lihat Tabel Gabungan 3 Jenis
+              </button>
+              <button type="button" class="btn btn-success btn-sm write-action-btn" onclick="RaporApp.saveWeightPolicy()">
+                💾 Simpan Bobot 3 Jenis
+              </button>
+            </div>
+          </div>
+        `;
+        rekapWeightBox.parentElement.insertBefore(panel3, rekapWeightBox.nextSibling);
+      }
+    },
+
+    openCombinedThreeWeightRekap() {
+      const sel = document.getElementById('rekap-nilai-filter-jenis');
+      if (sel) {
+        sel.value = 'GABUNGAN_3_KOMPONEN';
+      }
+      this.renderRekapPenilaian(this.activeRekapSheetIndex || 1);
+    },
+
+    // Mengganti mode antara Formatif, Sumatif, dan SAS (Langsung Nilai Utuh)
+    selectAssessmentTypeMode(jenisCode) {
+      this.ensureSasAndThreeWeightDOM();
+      const wz = AppState.penilaianWizard;
+      wz.jenisAsesmen = jenisCode;
+
+      const jenisSel = document.getElementById('setup-nilai-jenis-asesmen');
+      if (jenisSel) jenisSel.value = jenisCode;
+
+      ['FORMATIF', 'SUMATIF', 'SAS'].forEach(k => {
+        const btn = document.getElementById(`btn-mode-card-${k}`);
+        if (btn) {
+          btn.className = `sas-mode-card-btn ${k === jenisCode ? `active-mode-${k}` : ''}`;
+        }
+      });
+
+      const sasCard = document.getElementById('penilaian-sas-direct-card');
+      const step1Card = document.getElementById('penilaian-step-1-card');
+      const step2Card = document.getElementById('penilaian-step-2-card');
+      const step3Card = document.getElementById('penilaian-step-3-card');
+      const sheetPeng = document.getElementById('penilaian-sheet-pengetahuan-card');
+      const sheetKet = document.getElementById('penilaian-sheet-keterampilan-card');
+
+      if (jenisCode === 'SAS') {
+        [step1Card, step2Card, step3Card, sheetPeng, sheetKet].forEach(el => {
+          if (el) el.classList.add('hidden');
+        });
+        if (sasCard) sasCard.classList.remove('hidden');
+        this.openSasDirectSheet(wz.mapel, wz.activeDate);
+      } else {
+        if (sasCard) sasCard.classList.add('hidden');
+        if (step1Card) step1Card.classList.remove('hidden');
+      }
+
+      if (typeof this.saveDraftState === 'function') {
+        this.saveDraftState();
+      }
+    },
+
+    handleStep1FieldChange() {
+      const wz = AppState.penilaianWizard;
+      const jenisEl = document.getElementById('setup-nilai-jenis-asesmen');
+      const mapelEl = document.getElementById('setup-nilai-mapel');
+      const tpEl = document.getElementById('setup-nilai-tp-pengetahuan');
+
+      if (jenisEl) wz.jenisAsesmen = jenisEl.value;
+      if (mapelEl) wz.mapel = mapelEl.value;
+      if (tpEl) wz.tpPengetahuan = tpEl.value;
+
+      if (wz.jenisAsesmen === 'SAS') {
+        this.selectAssessmentTypeMode('SAS');
+        return;
+      }
+
+      ['FORMATIF', 'SUMATIF', 'SAS'].forEach(k => {
+        const btn = document.getElementById(`btn-mode-card-${k}`);
+        if (btn) btn.className = `sas-mode-card-btn ${k === wz.jenisAsesmen ? `active-mode-${k}` : ''}`;
+      });
+
+      if (typeof this.saveDraftState === 'function') {
+        this.saveDraftState();
+      }
+    },
+
+    openSetupWizard(forceReset = false, customDateISO = null) {
+      this.ensureSasAndThreeWeightDOM();
+      if (_origOpenSetupWizardV9) {
+        _origOpenSetupWizardV9(forceReset, customDateISO);
+      }
+      const wz = AppState.penilaianWizard;
+      ['FORMATIF', 'SUMATIF', 'SAS'].forEach(k => {
+        const btn = document.getElementById(`btn-mode-card-${k}`);
+        if (btn) btn.className = `sas-mode-card-btn ${k === (wz.jenisAsesmen || 'FORMATIF') ? `active-mode-${k}` : ''}`;
+      });
+      if (wz.jenisAsesmen === 'SAS') {
+        this.selectAssessmentTypeMode('SAS');
+      }
+    },
+
+    // Membuka Lembar Input Nilai Utuh SAS (0–100) Tanpa Setup Bertahap
+    openSasDirectSheet(targetMapel = null, targetDateISO = null) {
+      this.ensureSasAndThreeWeightDOM();
+      const bucket = DB.getActiveClassBucket();
+      const teacher = DB.getActiveTeacherAccount();
+      if (!bucket) return;
+
+      const wz = AppState.penilaianWizard;
+      if (targetDateISO) wz.activeDate = targetDateISO;
+      if (!wz.activeDate) wz.activeDate = DateTimeUtil.getTodayISO();
+
+      const allSubj = this.getAvailableSubjectsForTeacher(null);
+      const mapelSelect = document.getElementById('sas-direct-mapel-select');
+      const mainMapelSelect = document.getElementById('setup-nilai-mapel');
+
+      const chosenMapel = targetMapel || wz.mapel || (mainMapelSelect && mainMapelSelect.value) || allSubj[0] || 'Matematika';
+      wz.mapel = chosenMapel;
+
+      if (mapelSelect) {
+        if (!allSubj.includes(chosenMapel)) allSubj.unshift(chosenMapel);
+        mapelSelect.innerHTML = allSubj
+          .map(s => `<option value="${UI.escapeHtml(s)}" ${this.normalizeSubjectKey(s) === this.normalizeSubjectKey(chosenMapel) ? 'selected' : ''}>${UI.escapeHtml(s)}</option>`)
+          .join('');
+        mapelSelect.disabled = Boolean(teacher && teacher.role === 'GURU_MAPEL');
+      }
+
+      const dateInp = document.getElementById('sas-direct-date-input');
+      if (dateInp) dateInp.value = wz.activeDate;
+
+      const titleEl = document.getElementById('sas-direct-mapel-title');
+      if (titleEl) titleEl.textContent = chosenMapel;
+
+      // Cari apakah sudah ada data SAS yang pernah disimpan untuk mata pelajaran ini
+      const existingSas = (bucket.academicAssessments || []).find(a =>
+        a &&
+        String(a.jenisAsesmen || '').toUpperCase() === 'SAS' &&
+        this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(chosenMapel) &&
+        a.dateISO === wz.activeDate
+      ) || (bucket.academicAssessments || []).find(a =>
+        a &&
+        String(a.jenisAsesmen || '').toUpperCase() === 'SAS' &&
+        this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(chosenMapel)
+      );
+
+      this.sasTempScores = {};
+      this.sasTempNotes = {};
+
+      const scoreMap = (existingSas && (existingSas.scores || existingSas.records)) || {};
+      (bucket.students || []).forEach(std => {
+        const sc = scoreMap[std.id];
+        if (sc && sc.nilaiAkhir !== undefined && sc.nilaiAkhir !== null) {
+          this.sasTempScores[std.id] = parseFloat(sc.nilaiAkhir);
+          this.sasTempNotes[std.id] = sc.note || sc.catatan || '';
+        } else if (sc && sc.murniPengetahuan !== undefined && sc.murniPengetahuan !== null) {
+          this.sasTempScores[std.id] = parseFloat(sc.murniPengetahuan);
+          this.sasTempNotes[std.id] = sc.note || sc.catatan || '';
+        } else {
+          this.sasTempScores[std.id] = 85;
+          this.sasTempNotes[std.id] = '';
+        }
+      });
+
+      this.renderPresensiStatusBanner();
+      this.renderSasDirectStudentsTable();
+    },
+
+    handleSasMapelChange(newMapel) {
+      AppState.penilaianWizard.mapel = newMapel;
+      const mainMapelSelect = document.getElementById('setup-nilai-mapel');
+      if (mainMapelSelect) mainMapelSelect.value = newMapel;
+      this.openSasDirectSheet(newMapel, AppState.penilaianWizard.activeDate);
+    },
+
+    handleSasDateChange(newDateISO) {
+      if (!newDateISO) return;
+      const wz = AppState.penilaianWizard;
+      wz.activeDate = newDateISO;
+      wz.isPastMode = newDateISO !== DateTimeUtil.getTodayISO();
+      const dateLabel = document.getElementById('penilaian-active-date-label');
+      if (dateLabel) dateLabel.textContent = DateTimeUtil.formatIndonesianDate(newDateISO);
+      this.openSasDirectSheet(wz.mapel, newDateISO);
+    },
+
+    applySasQuickFillScore() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const inp = document.getElementById('sas-quickfill-input');
+      let val = parseFloat(inp ? inp.value : 85);
+      if (isNaN(val) || val < 0) val = 0;
+      if (val > 100) val = 100;
+      val = Math.round(val * 10) / 10;
+
+      (bucket.students || []).forEach(std => {
+        this.sasTempScores[std.id] = val;
+      });
+      this.renderSasDirectStudentsTable();
+      UI.showNotif('Nilai Awal SAS Diisikan', `Seluruh siswa telah diisi dengan nilai awal ${val}. Silakan sesuaikan nilai masing-masing siswa.`, 'info');
+    },
+
+    getSasPredicateBadgeHtml(scoreVal) {
+      const n = parseFloat(scoreVal);
+      if (isNaN(n)) return `<span class="badge badge-warning">Belum Diisi</span>`;
+      if (n >= 86) return `<span class="badge badge-success">A (Sangat Baik • Tuntas)</span>`;
+      if (n >= 71) return `<span class="badge badge-primary">B (Baik • Tuntas)</span>`;
+      if (n >= 60) return `<span class="badge badge-warning">C (Cukup • Tuntas Minimal)</span>`;
+      return `<span class="badge badge-danger">D (Perlu Remedial)</span>`;
+    },
+
+    updateSasLiveStats() {
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+      const wz = AppState.penilaianWizard;
+      const students = bucket.students || [];
+
+      const validScores = [];
+      students.forEach(std => {
+        const att = typeof this.getStudentAttendanceOnDate === 'function'
+          ? this.getStudentAttendanceOnDate(std.id, wz.activeDate)
+          : { isAbsentExcluded: false };
+        if (att.isAbsentExcluded) return;
+        const v = parseFloat(this.sasTempScores[std.id]);
+        if (!isNaN(v)) validScores.push(v);
+      });
+
+      const countEl = document.getElementById('sas-stat-count');
+      const avgEl = document.getElementById('sas-stat-avg');
+      const maxEl = document.getElementById('sas-stat-max');
+      const minEl = document.getElementById('sas-stat-min');
+
+      if (countEl) countEl.textContent = `${validScores.length} / ${students.length} Siswa`;
+      if (validScores.length === 0) {
+        if (avgEl) avgEl.textContent = '0';
+        if (maxEl) maxEl.textContent = '0';
+        if (minEl) minEl.textContent = '0';
+      } else {
+        const avg = Math.round((validScores.reduce((a, b) => a + b, 0) / validScores.length) * 10) / 10;
+        const max = Math.max(...validScores);
+        const min = Math.min(...validScores);
+        if (avgEl) avgEl.textContent = String(avg);
+        if (maxEl) maxEl.textContent = String(max);
+        if (minEl) minEl.textContent = String(min);
+      }
+    },
+
+    renderSasDirectStudentsTable() {
+      const bucket = DB.getActiveClassBucket();
+      const tbody = document.getElementById('tbody-sas-direct-students');
+      if (!bucket || !tbody) return;
+
+      const wz = AppState.penilaianWizard;
+      const students = bucket.students || [];
+
+      if (students.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              Belum ada siswa terdaftar di kelas ini. Silakan tambahkan siswa pada menu Data Kelas.
+            </td>
+          </tr>
+        `;
+        this.updateSasLiveStats();
+        return;
+      }
+
+      tbody.innerHTML = students.map((std, idx) => {
+        const att = typeof this.getStudentAttendanceOnDate === 'function'
+          ? this.getStudentAttendanceOnDate(std.id, wz.activeDate)
+          : { isAbsentExcluded: false, status: 'H', isOverriddenForSusulan: false };
+
+        if (att.isAbsentExcluded) {
+          return `
+            <tr style="background: #fff1f2;">
+              <td>${idx + 1}</td>
+              <td>
+                <div style="font-weight: 800; color: #991b1b;">${UI.escapeHtml(std.nama)}</div>
+                <div style="margin-top: 0.25rem; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                  ${this.getAbsentBadgeHtml(att.status)}
+                  <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; background: #ffffff;" onclick="PenilaianApp.toggleSusulanStudent('${std.id}', true); PenilaianApp.renderSasDirectStudentsTable();">
+                    🔓 Ikut SAS Susulan
+                  </button>
+                </div>
+              </td>
+              <td style="text-align: center; background: #f1f5f9;">
+                <input type="text" class="form-control" style="width: 90px; margin: 0 auto; text-align: center; background: #e2e8f0; color: #94a3b8; font-weight: 700;" value="-" disabled>
+              </td>
+              <td style="text-align: center;">${this.getAbsentBadgeHtml(att.status)}</td>
+              <td>
+                <input type="text" class="form-control" value="Tidak hadir saat pelaksanaan SAS (${att.status})" disabled>
+              </td>
+            </tr>
+          `;
+        }
+
+        const scoreVal = this.sasTempScores[std.id] !== undefined ? this.sasTempScores[std.id] : 85;
+        const noteVal = this.sasTempNotes[std.id] || '';
+
+        const susulanTag = att.isOverriddenForSusulan
+          ? `<div style="margin-top: 0.2rem; display: flex; align-items: center; gap: 0.35rem;">
+              <span class="badge badge-warning" style="font-size: 0.68rem;">📝 SAS Susulan (${att.status})</span>
+              <button type="button" class="btn btn-outline btn-sm write-action-btn" style="padding: 0.1rem 0.4rem; font-size: 0.68rem;" onclick="PenilaianApp.toggleSusulanStudent('${std.id}', false); PenilaianApp.renderSasDirectStudentsTable();">🔒 Kunci</button>
+            </div>`
+          : '';
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>
+              <strong>${UI.escapeHtml(std.nama)}</strong>
+              ${susulanTag}
+            </td>
+            <td style="text-align: center; background: #fffbeb;">
+              <input
+                type="number"
+                id="sas-score-inp-${std.id}"
+                data-sas-row="${idx}"
+                class="form-control sas-score-input"
+                min="0"
+                max="100"
+                step="0.5"
+                value="${scoreVal}"
+                onfocus="this.select()"
+                oninput="PenilaianApp.handleSasScoreInput('${std.id}', this.value)"
+                onkeydown="PenilaianApp.handleSasInputKeydown(event, ${idx})"
+              >
+            </td>
+            <td style="text-align: center;" id="sas-pred-cell-${std.id}">
+              ${this.getSasPredicateBadgeHtml(scoreVal)}
+            </td>
+            <td>
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Catatan hasil SAS siswa (opsional)..."
+                value="${UI.escapeHtml(noteVal)}"
+                oninput="PenilaianApp.handleSasNoteInput('${std.id}', this.value)"
+              >
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      this.updateSasLiveStats();
+    },
+
+    handleSasScoreInput(studentId, rawVal) {
+      let num = parseFloat(rawVal);
+      if (isNaN(num) || num < 0) num = 0;
+      if (num > 100) num = 100;
+      num = Math.round(num * 10) / 10;
+
+      this.sasTempScores[studentId] = num;
+      const predCell = document.getElementById(`sas-pred-cell-${studentId}`);
+      if (predCell) {
+        predCell.innerHTML = this.getSasPredicateBadgeHtml(num);
+      }
+      this.updateSasLiveStats();
+    },
+
+    handleSasNoteInput(studentId, noteStr) {
+      this.sasTempNotes[studentId] = noteStr;
+    },
+
+    handleSasInputKeydown(event, currentRowIdx) {
+      if (event.key === 'Enter' || event.key === 'ArrowDown') {
+        event.preventDefault();
+        const nextEl = document.querySelector(`input[data-sas-row="${currentRowIdx + 1}"]`);
+        if (nextEl) {
+          nextEl.focus();
+          nextEl.select();
+        }
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        const prevEl = document.querySelector(`input[data-sas-row="${currentRowIdx - 1}"]`);
+        if (prevEl) {
+          prevEl.focus();
+          prevEl.select();
+        }
+      }
+    },
+
+    async saveSasDirectAssessment() {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      const teacher = DB.getActiveTeacherAccount() || AppState.currentUser;
+      if (!bucket || !teacher) return;
+
+      const students = bucket.students || [];
+      if (students.length === 0) {
+        UI.showNotif('Daftar Siswa Kosong', 'Tambahkan siswa terlebih dahulu pada menu Data Kelas.', 'warning');
+        return;
+      }
+
+      const wz = AppState.penilaianWizard;
+      const mapelSelect = document.getElementById('sas-direct-mapel-select');
+      const dateInp = document.getElementById('sas-direct-date-input');
+
+      const targetMapel = String((mapelSelect && mapelSelect.value) || wz.mapel || 'Mata Pelajaran').trim();
+      const targetDate = (dateInp && dateInp.value) || wz.activeDate || DateTimeUtil.getTodayISO();
+      wz.mapel = targetMapel;
+      wz.activeDate = targetDate;
+      wz.jenisAsesmen = 'SAS';
+
+      const studentRecords = {};
+      const absentRecords = {};
+      let assessedCount = 0;
+
+      students.forEach(std => {
+        const att = typeof this.getStudentAttendanceOnDate === 'function'
+          ? this.getStudentAttendanceOnDate(std.id, targetDate)
+          : { isAbsentExcluded: false, status: 'H', note: '' };
+
+        if (att.isAbsentExcluded) {
+          absentRecords[std.id] = {
+            studentId: std.id,
+            studentName: std.nama,
+            status: att.status,
+            note: att.note || `Tidak mengikuti SAS (${att.status})`
+          };
+          return;
+        }
+
+        assessedCount++;
+        const rawScore = this.sasTempScores[std.id] !== undefined ? parseFloat(this.sasTempScores[std.id]) : 85;
+        const cleanScore = isNaN(rawScore) ? 0 : Math.min(100, Math.max(0, Math.round(rawScore * 10) / 10));
+        const noteText = String(this.sasTempNotes[std.id] || '').trim();
+
+        studentRecords[std.id] = {
+          studentId: std.id,
+          studentName: std.nama,
+          questionScores: [cleanScore],
+          qScores: [cleanScore],
+          murniPengetahuan: cleanScore,
+          nilaiPengetahuan: cleanScore,
+          ketProses: null,
+          ketHasil: null,
+          murniKeterampilan: null,
+          nilaiKeterampilan: null,
+          nilaiAkhir: cleanScore,
+          note: noteText,
+          catatan: noteText,
+          isSasDirect: true,
+          isSusulan: Boolean(att.isOverriddenForSusulan)
+        };
+      });
+
+      if (!Array.isArray(bucket.academicAssessments)) {
+        bucket.academicAssessments = [];
+      }
+
+      const existingIdx = bucket.academicAssessments.findIndex(a =>
+        a &&
+        a.dateISO === targetDate &&
+        this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(targetMapel) &&
+        String(a.jenisAsesmen || '').toUpperCase() === 'SAS'
+      );
+
+      const recordPayload = {
+        id: existingIdx >= 0 ? bucket.academicAssessments[existingIdx].id : ('ASM_SAS_' + Date.now() + '_' + Math.floor(Math.random() * 1000)),
+        dateISO: targetDate,
+        savedAt: DateTimeUtil.getCurrentDateTimeStr(),
+        timeStr: DateTimeUtil.getCurrentTimeStr(),
+        updatedTimestamp: Date.now(),
+        teacherId: teacher.id,
+        teacherName: teacher.nama,
+        jenisAsesmen: 'SAS',
+        isSasDirect: true,
+        mapel: targetMapel,
+        tpPengetahuan: `Sumatif Akhir Semester (SAS) — Evaluasi Komprehensif Mata Pelajaran ${targetMapel}`,
+        soloLevel: 'Sumatif Akhir Semester (SAS)',
+        jenisInstrumen: 'Nilai Utuh Akhir Semester (0–100)',
+        jumlahSoal: 1,
+        bobotPerSoal: [100],
+        skipKeterampilan: true,
+        bobotPengetahuan: 100,
+        bobotKeterampilan: 0,
+        jenisKeterampilan: 'Nilai Utuh SAS (100%)',
+        tpKeterampilan: '-',
+        scores: studentRecords,
+        records: studentRecords,
+        absentRecords: absentRecords
+      };
+
+      if (existingIdx >= 0) {
+        bucket.academicAssessments[existingIdx] = recordPayload;
+      } else {
+        bucket.academicAssessments.push(recordPayload);
+      }
+
+      this.openRekapView(targetDate, 'SAS', targetMapel);
+
+      UI.showNotif(
+        'Nilai Sumatif Akhir Semester (SAS) Tersimpan',
+        `Nilai utuh SAS mata pelajaran "${targetMapel}" (${assessedCount} siswa dinilai) telah disimpan dan diintegrasikan ke Rekap & Analisis Rapor.`,
+        'success'
+      );
+
+      setTimeout(async () => {
+        await DB.saveImmediate();
+      }, 30);
+    },
+
+    // Upgrade Pintasan Tanggal Tersimpan agar menampilkan label Formatif, Sumatif, maupun SAS
+    renderSavedDatesShortcutBar(activeDateISO) {
+      const bucket = DB.getActiveClassBucket();
+      const wrapEl = document.getElementById('rekap-saved-dates-chips-wrap');
+      const totalBadgeEl = document.getElementById('rekap-total-saved-sessions-badge');
+      if (!bucket || !wrapEl) return;
+
+      const allAssessments = bucket.academicAssessments || [];
+      if (totalBadgeEl) {
+        totalBadgeEl.textContent = `${allAssessments.length} Total Lembar Penilaian Tersimpan`;
+      }
+
+      if (allAssessments.length === 0) {
+        wrapEl.innerHTML = `<span style="font-size: 0.78rem; color: var(--text-muted);">Belum ada tanggal penilaian yang disimpan di kelas ini.</span>`;
+        return;
+      }
+
+      const dateMap = new Map();
+      allAssessments.forEach(a => {
+        if (!a || !a.dateISO) return;
+        if (!dateMap.has(a.dateISO)) dateMap.set(a.dateISO, []);
+        const jUpper = String(a.jenisAsesmen || '').toUpperCase();
+        const shortTag = jUpper === 'SAS' ? 'SAS' : (jUpper === 'SUMATIF' ? 'Sum' : 'Form');
+        dateMap.get(a.dateISO).push(`${a.mapel} (${shortTag})`);
+      });
+
+      const sortedDates = Array.from(dateMap.keys()).sort().reverse();
+      wrapEl.innerHTML = sortedDates.slice(0, 8).map(dISO => {
+        const isAct = dISO === activeDateISO;
+        const subjSummary = dateMap.get(dISO).join(', ');
+        const dayName = DateTimeUtil.getDayNameFromISO(dISO);
+        return `
+          <button
+            type="button"
+            class="rekap-saved-date-chip ${isAct ? 'active-date-chip' : ''}"
+            title="Lihat lembar penilaian pada ${dISO}: ${UI.escapeHtml(subjSummary)}"
+            onclick="PenilaianApp.selectSavedDateChip('${dISO}')"
+          >
+            <span>📅 ${UI.escapeHtml(dayName)}, ${UI.escapeHtml(dISO)}</span>
+            <span class="badge ${isAct ? 'badge-warning' : 'badge-success'}" style="font-size: 0.68rem; padding: 0.1rem 0.4rem;">
+              ${dateMap.get(dISO).length} Sesi
+            </span>
+          </button>
+        `;
+      }).join('');
+    },
+
+    // Upgrade Render Rekap Penilaian untuk mendukung Mode SAS (Nilai Utuh) & Mode GABUNGAN_3_KOMPONEN
+    renderRekapPenilaian(targetSheetIndex = 1) {
+      this.ensureSasAndThreeWeightDOM();
+      if (typeof RaporApp !== 'undefined' && typeof RaporApp.syncPolicyControlsUI === 'function') {
+        RaporApp.syncPolicyControlsUI();
+      }
+
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const jenisSelect = document.getElementById('rekap-nilai-filter-jenis');
+      const datePicker = document.getElementById('rekap-nilai-date-picker');
+      const filterJenis = jenisSelect ? jenisSelect.value : 'FORMATIF';
+      const selectedDate = datePicker && datePicker.value ? datePicker.value : DateTimeUtil.getTodayISO();
+
+      // KASUS 1: JIKA PENGGUNA MEMILIH MODE "GABUNGAN_3_KOMPONEN" (FORMATIF + SUMATIF + SAS SESUAI BOBOT %)
+      if (filterJenis === 'GABUNGAN_3_KOMPONEN') {
+        this.renderCombinedThreeWeightRekapSheets(targetSheetIndex, selectedDate);
+        return;
+      }
+
+      // KASUS 2: JIKA PENGGUNA MEMILIH MODE "SAS" (REKAP NILAI UTUH SUMATIF AKHIR SEMESTER)
+      if (filterJenis === 'SAS') {
+        this.renderSasOnlyRekapSheets(targetSheetIndex, selectedDate);
+        return;
+      }
+
+      // KASUS 3: FORMATIF / SUMATIF / ALL (Jalankan renderer asli + percantik jika lembar berisi SAS)
+      if (_origRenderRekapV9) {
+        _origRenderRekapV9(targetSheetIndex);
+      }
+    },
+
+    renderSasOnlyRekapSheets(targetSheetIndex = 1, selectedDate = '') {
+      const bucket = DB.getActiveClassBucket();
+      const container = document.getElementById('rekap-nilai-tables-container');
+      if (!bucket || !container) return;
+
+      this.renderSavedDatesShortcutBar(selectedDate);
+      const subjectsToday = this.getSubjectsForRekapDate(selectedDate, 'SAS');
+      this.rekapSheetSubjects = subjectsToday;
+
+      const dayEl = document.getElementById('rekap-nilai-detected-day');
+      const dateEl = document.getElementById('rekap-nilai-detected-date');
+      const subjEl = document.getElementById('rekap-nilai-detected-subjects');
+      if (dayEl) dayEl.textContent = DateTimeUtil.getDayNameFromISO(selectedDate);
+      if (dateEl) dateEl.textContent = DateTimeUtil.formatIndonesianDate(selectedDate);
+      if (subjEl) subjEl.textContent = subjectsToday.map((s, i) => `[Lembar ${i + 1}] ${s}`).join('  •  ');
+
+      const students = bucket.students || [];
+      const totalSheets = Math.max(1, subjectsToday.length);
+      if (targetSheetIndex < 1) targetSheetIndex = 1;
+      if (targetSheetIndex > totalSheets) targetSheetIndex = totalSheets;
+      this.activeRekapSheetIndex = targetSheetIndex;
+
+      const raporPolicy = RaporApp.getWeightPolicy(bucket);
+
+      container.innerHTML = subjectsToday.map((subjName, sIdx) => {
+        const sheetNumber = sIdx + 1;
+        // Cari sesi SAS pada tanggal terpilih (atau sesi SAS terbaru untuk mapel tersebut)
+        const matchingOnDate = (bucket.academicAssessments || []).filter(a =>
+          a && a.dateISO === selectedDate &&
+          String(a.jenisAsesmen || '').toUpperCase() === 'SAS' &&
+          this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(subjName)
+        );
+        const matchingAnyDate = (bucket.academicAssessments || []).filter(a =>
+          a && String(a.jenisAsesmen || '').toUpperCase() === 'SAS' &&
+          this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(subjName)
+        );
+
+        const latestRecord = matchingOnDate.length > 0
+          ? matchingOnDate[matchingOnDate.length - 1]
+          : (matchingAnyDate.length > 0 ? matchingAnyDate[matchingAnyDate.length - 1] : null);
+
+        const escapedMapel = UI.escapeHtml(subjName).replace(/'/g, "\\'");
+        const rowsHtml = students.length === 0
+          ? `<tr><td colspan="5" style="text-align:center; padding:1.25rem; color:var(--text-muted);">Belum ada siswa terdaftar.</td></tr>`
+          : students.map((std, idx) => {
+              const stdScore = latestRecord && latestRecord.scores && latestRecord.scores[std.id];
+              const valSas = stdScore && stdScore.nilaiAkhir !== undefined
+                ? parseFloat(stdScore.nilaiAkhir)
+                : (stdScore && stdScore.murniPengetahuan !== undefined ? parseFloat(stdScore.murniPengetahuan) : null);
+              const noteText = (stdScore && (stdScore.note || stdScore.catatan)) || '-';
+
+              return `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+                  <td style="text-align: center; background: #fffbeb;">
+                    ${valSas !== null && !isNaN(valSas)
+                      ? `<span class="clickable-score" style="font-size: 1rem; color: #b45309;" onclick="PenilaianApp.openHistoryModal('${std.id}', '${escapedMapel}', 'SAS')">${valSas}</span>`
+                      : '<span style="color:var(--text-muted);">-</span>'}
+                  </td>
+                  <td style="text-align: center;">
+                    ${valSas !== null && !isNaN(valSas) ? this.getSasPredicateBadgeHtml(valSas) : '<span class="badge badge-warning">Belum Diinput</span>'}
+                  </td>
+                  <td style="font-size: 0.83rem; color: var(--text-muted);">${UI.escapeHtml(noteText)}</td>
+                </tr>
+              `;
+            }).join('');
+
+        const deleteBtnHtml = latestRecord
+          ? `<button type="button" class="btn btn-danger btn-sm write-action-btn no-print" onclick="PenilaianApp.deleteAssessmentSession('${latestRecord.id}')">🗑️ Hapus Nilai SAS Ini</button>`
+          : '';
+
+        const isHiddenClass = sheetNumber === this.activeRekapSheetIndex ? '' : 'hidden';
+
+        return `
+          <div id="rekap-sheet-page-${sheetNumber}" class="card rekap-single-sheet-page ${isHiddenClass}" style="border-top: 5px solid #d97706;">
+            <div class="card-header">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+                  <span class="badge badge-warning">LEMBAR ${sheetNumber} DARI ${totalSheets} — SUMATIF AKHIR SEMESTER (SAS)</span>
+                  <span class="badge badge-info">Nilai Utuh Langsung (Bobot Rapor: ${raporPolicy.bobotSas}%)</span>
+                  ${latestRecord
+                    ? `<span class="badge badge-success">✓ Tersimpan (${UI.escapeHtml(latestRecord.dateISO)})</span>`
+                    : `<span class="badge badge-danger">Belum Ada Nilai SAS</span>`}
+                </div>
+                <h3 class="card-title">Rekap Nilai SAS Mata Pelajaran: ${UI.escapeHtml(subjName)}</h3>
+                <p class="card-subtitle">Menampilkan Nilai Utuh Sumatif Akhir Semester (SAS) siswa tanpa perlu pemisahan soal/keterampilan.</p>
+              </div>
+              <div class="write-action-btn no-print" style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-warning btn-sm" style="font-weight: 800; color: #0f172a;" onclick="PenilaianApp.quickAssessSubject('${escapedMapel}', '${selectedDate}', 'SAS')">
+                  ✏️ ${latestRecord ? 'Ubah / Edit Nilai SAS Mapel Ini' : '+ Input Nilai Utuh SAS Mapel Ini'}
+                </button>
+                ${deleteBtnHtml}
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="academic-table">
+                <thead>
+                  <tr>
+                    <th style="width: 50px;">No</th>
+                    <th style="width: 240px;">Nama Siswa</th>
+                    <th style="width: 210px; text-align: center; background: #fffbeb; color: #78350f;">Nilai Utuh SAS (0–100)</th>
+                    <th style="width: 210px; text-align: center;">Predikat & Ketuntasan</th>
+                    <th>Catatan / Keterangan SAS</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      this.renderRekapSheetPaginationControls(this.activeRekapSheetIndex, totalSheets, false, selectedDate, 'SAS');
+    },
+
+    // Merender Tabel Rekap Gabungan 3 Jenis Penilaian (Formatif + Sumatif + SAS Sesuai Bobot %)
+    renderCombinedThreeWeightRekapSheets(targetSheetIndex = 1, selectedDate = '') {
+      const bucket = DB.getActiveClassBucket();
+      const container = document.getElementById('rekap-nilai-tables-container');
+      if (!bucket || !container) return;
+
+      this.renderSavedDatesShortcutBar(selectedDate);
+      const subjectsAll = RaporApp.getAllSubjectsForRapor(bucket);
+      this.rekapSheetSubjects = subjectsAll;
+
+      const dayEl = document.getElementById('rekap-nilai-detected-day');
+      const dateEl = document.getElementById('rekap-nilai-detected-date');
+      const subjEl = document.getElementById('rekap-nilai-detected-subjects');
+      if (dayEl) dayEl.textContent = 'Akumulasi Semester';
+      if (dateEl) dateEl.textContent = 'Semua Tanggal Tersimpan';
+      if (subjEl) subjEl.textContent = subjectsAll.map((s, i) => `[Lembar ${i + 1}] ${s}`).join('  •  ');
+
+      const students = bucket.students || [];
+      const totalSheets = Math.max(1, subjectsAll.length);
+      if (targetSheetIndex < 1) targetSheetIndex = 1;
+      if (targetSheetIndex > totalSheets) targetSheetIndex = totalSheets;
+      this.activeRekapSheetIndex = targetSheetIndex;
+
+      const policy = RaporApp.getWeightPolicy(bucket);
+
+      container.innerHTML = subjectsAll.map((subjName, sIdx) => {
+        const sheetNumber = sIdx + 1;
+        const escapedMapel = UI.escapeHtml(subjName).replace(/'/g, "\\'");
+        const isHiddenClass = sheetNumber === this.activeRekapSheetIndex ? '' : 'hidden';
+
+        const rowsHtml = students.length === 0
+          ? `<tr><td colspan="7" style="text-align:center; padding:1.25rem; color:var(--text-muted);">Belum ada siswa terdaftar.</td></tr>`
+          : students.map((std, idx) => {
+              const res = RaporApp.calculateStudentSubjectRapor(bucket, std.id, subjName);
+              const formText = res.hasFormatif
+                ? `<span class="clickable-score" onclick="PenilaianApp.openHistoryModal('${std.id}', '${escapedMapel}', 'FORMATIF')">${res.avgFormatif}</span><div style="font-size:0.68rem; color:var(--text-muted);">Bobot: ${res.contribFormatif} (${res.countFormatif}x)</div>`
+                : '<span style="color:var(--text-muted);">-</span>';
+
+              const sumText = res.hasSumatif
+                ? `<span class="clickable-score" onclick="PenilaianApp.openHistoryModal('${std.id}', '${escapedMapel}', 'SUMATIF')">${res.avgSumatif}</span><div style="font-size:0.68rem; color:var(--text-muted);">Bobot: ${res.contribSumatif} (${res.countSumatif}x)</div>`
+                : '<span style="color:var(--text-muted);">-</span>';
+
+              const sasText = res.hasSas
+                ? `<span class="clickable-score" style="color:#b45309;" onclick="PenilaianApp.openHistoryModal('${std.id}', '${escapedMapel}', 'SAS')">${res.avgSas}</span><div style="font-size:0.68rem; color:#92400e;">Bobot: ${res.contribSas} (${res.countSas}x)</div>`
+                : '<span style="color:var(--text-muted);">-</span>';
+
+              const finalDisplay = res.hasAny && res.finalRapor !== null
+                ? `<span class="clickable-score" style="font-size: 1.02rem; background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 999px; display: inline-block;" onclick="RaporApp.openRaporHistoryModal('${std.id}', '${escapedMapel}')">${res.finalRapor}</span>`
+                : '<span style="color:var(--text-muted);">-</span>';
+
+              return `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${UI.escapeHtml(std.nama)}</strong></td>
+                  <td style="text-align: center; background: #eff6ff;">${formText}</td>
+                  <td style="text-align: center; background: #f0fdfa;">${sumText}</td>
+                  <td style="text-align: center; background: #fffbeb;">${sasText}</td>
+                  <td style="text-align: center; background: #f0fdf4;">${finalDisplay}</td>
+                  <td style="text-align: center;">
+                    ${res.hasAny && res.finalRapor !== null ? this.getSasPredicateBadgeHtml(res.finalRapor) : '<span class="badge badge-warning">Belum Ada Nilai</span>'}
+                  </td>
+                </tr>
+              `;
+            }).join('');
+
+        return `
+          <div id="rekap-sheet-page-${sheetNumber}" class="card rekap-single-sheet-page ${isHiddenClass}" style="border-top: 5px solid #16a34a;">
+            <div class="card-header">
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.35rem;">
+                  <span class="badge badge-success">LEMBAR ${sheetNumber} DARI ${totalSheets} — REKAP GABUNGAN 3 JENIS PENILAIAN</span>
+                  <span class="badge badge-primary">Rumus Aktif: ${policy.bobotFormatif}% Formatif + ${policy.bobotSumatif}% Sumatif + ${policy.bobotSas}% SAS</span>
+                </div>
+                <h3 class="card-title">Mata Pelajaran: ${UI.escapeHtml(subjName)}</h3>
+                <p class="card-subtitle">
+                  Menampilkan kalkulasi otomatis nilai akhir mata pelajaran dari penggabungan <strong>Formatif (${policy.bobotFormatif}%)</strong>, <strong>Sumatif (${policy.bobotSumatif}%)</strong>, dan <strong>SAS (${policy.bobotSas}%)</strong>.
+                </p>
+              </div>
+              <div class="write-action-btn no-print" style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-outline btn-sm" onclick="PenilaianApp.quickAssessSubject('${escapedMapel}', '${selectedDate}', 'FORMATIF')">
+                  + Formatif
+                </button>
+                <button type="button" class="btn btn-outline btn-sm" onclick="PenilaianApp.quickAssessSubject('${escapedMapel}', '${selectedDate}', 'SUMATIF')">
+                  + Sumatif
+                </button>
+                <button type="button" class="btn btn-warning btn-sm" style="font-weight: 800; color: #0f172a;" onclick="PenilaianApp.quickAssessSubject('${escapedMapel}', '${selectedDate}', 'SAS')">
+                  ⚡ Input / Edit Nilai SAS
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="academic-table">
+                <thead>
+                  <tr>
+                    <th style="width: 48px;">No</th>
+                    <th style="min-width: 200px;">Nama Siswa</th>
+                    <th style="text-align: center; background: #eff6ff; color: #1e40af;">1. Rata-Rata Formatif (${policy.bobotFormatif}%)</th>
+                    <th style="text-align: center; background: #f0fdfa; color: #0f766e;">2. Rata-Rata Sumatif (${policy.bobotSumatif}%)</th>
+                    <th style="text-align: center; background: #fffbeb; color: #92400e;">3. Nilai Utuh SAS (${policy.bobotSas}%)</th>
+                    <th style="text-align: center; background: #dcfce7; color: #166534;">Nilai Akhir Gabungan (0–100)</th>
+                    <th style="text-align: center; width: 170px;">Predikat & Ketuntasan</th>
+                  </tr>
+                </thead>
+                <tbody>${rowsHtml}</tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      this.renderRekapSheetPaginationControls(this.activeRekapSheetIndex, totalSheets, false, selectedDate, 'GABUNGAN_3_KOMPONEN');
+    },
+
+    // Jika Guru mengklik "+ Input / Edit Nilai SAS" dari Rekap, langsung buka Lembar Input Nilai Utuh SAS!
+    quickAssessSubject(subjectName, dateISO, jenisAsesmen = 'FORMATIF') {
+      if (AppState.isReadOnlyInspection) return;
+      const bucket = DB.getActiveClassBucket();
+      if (!bucket) return;
+
+      const targetDate = dateISO || DateTimeUtil.getTodayISO();
+      const upperJenis = String(jenisAsesmen || 'FORMATIF').toUpperCase();
+
+      if (upperJenis === 'SAS') {
+        const wz = AppState.penilaianWizard;
+        wz.activeDate = targetDate;
+        wz.isPastMode = targetDate !== DateTimeUtil.getTodayISO();
+        wz.mapel = subjectName;
+        wz.jenisAsesmen = 'SAS';
+
+        this.openSetupWizard(false, targetDate);
+        this.selectAssessmentTypeMode('SAS');
+        this.openSasDirectSheet(subjectName, targetDate);
+        UI.switchView('view-intra-penilaian-akademik');
+        return;
+      }
+
+      const effectiveJenis = (upperJenis === 'ALL' || upperJenis === 'GABUNGAN_3_KOMPONEN') ? 'FORMATIF' : upperJenis;
+      const existing = (bucket.academicAssessments || []).find(a =>
+        a && a.dateISO === targetDate &&
+        this.normalizeSubjectKey(a.mapel) === this.normalizeSubjectKey(subjectName) &&
+        a.jenisAsesmen === effectiveJenis
+      );
+
+      const wz = AppState.penilaianWizard;
+      wz.activeDate = targetDate;
+      wz.isPastMode = targetDate !== DateTimeUtil.getTodayISO();
+      wz.mapel = subjectName;
+      wz.jenisAsesmen = existing ? existing.jenisAsesmen : effectiveJenis;
+
+      if (existing) {
+        wz.tpPengetahuan = existing.tpPengetahuan || '';
+        wz.soloLevel = existing.soloLevel || 'Relational (Menghubungkan & Mengintegrasikan Konsep)';
+        wz.jenisInstrumen = existing.jenisInstrumen || 'Pilihan Ganda (PG)';
+        wz.jumlahSoal = existing.jumlahSoal || 5;
+        wz.bobotPerSoal = Array.isArray(existing.bobotPerSoal) && existing.bobotPerSoal.length > 0
+          ? [...existing.bobotPerSoal]
+          : Array.from({ length: wz.jumlahSoal }, () => 20);
+        wz.bobotSeragamNilai = wz.bobotPerSoal[0] || 20;
+        wz.skorSeragam = wz.bobotPerSoal.every(w => w === wz.bobotPerSoal[0]);
+        wz.skipKeterampilan = Boolean(existing.skipKeterampilan);
+        wz.jenisKeterampilan = existing.jenisKeterampilan || 'Praktik / Unjuk Kerja (Performance)';
+        wz.tpKeterampilan = existing.tpKeterampilan || '';
+
+        wz.tempScoresPengetahuan = {};
+        wz.tempScoresKeterampilan = {};
+
+        const scoreMap = existing.scores || existing.records || {};
+        (bucket.students || []).forEach(std => {
+          const sc = scoreMap[std.id];
+          if (sc) {
+            const qArr = Array.isArray(sc.questionScores)
+              ? sc.questionScores
+              : (Array.isArray(sc.qScores) ? sc.qScores : wz.bobotPerSoal.map(w => w));
+            wz.tempScoresPengetahuan[std.id] = [...qArr];
+            wz.tempScoresKeterampilan[std.id] = {
+              proses: sc.ketProses !== undefined && sc.ketProses !== null ? sc.ketProses : (sc.proses !== undefined ? sc.proses : 85),
+              hasil: sc.ketHasil !== undefined && sc.ketHasil !== null ? sc.ketHasil : (sc.hasil !== undefined ? sc.hasil : 85),
+              catatan: sc.note || sc.catatan || '',
+              note: sc.note || sc.catatan || ''
+            };
+          } else {
+            wz.tempScoresPengetahuan[std.id] = wz.bobotPerSoal.map(w => w);
+            wz.tempScoresKeterampilan[std.id] = { proses: 85, hasil: 85, catatan: '', note: '' };
+          }
+        });
+
+        this.saveDraftState();
+        this.openSetupWizard(false, targetDate);
+        this.selectAssessmentTypeMode(wz.jenisAsesmen);
+        this.openPengetahuanSheet();
+        UI.switchView('view-intra-penilaian-akademik');
+      } else {
+        delete bucket.penilaianDraft;
+        wz.tpPengetahuan = '';
+        wz.step = 1;
+        wz.activeSheetView = 'STEP_1';
+        this.openSetupWizard(true, targetDate);
+        this.selectAssessmentTypeMode(effectiveJenis);
+        this.handleMapelSelectionChange(subjectName);
+        this.saveDraftState();
+        UI.switchView('view-intra-penilaian-akademik');
+      }
+    }
+  });
+}
+
+// ============================================================================
+// 3. SINKRONISASI PORTAL SISWA AGAR MENGHITUNG BOBOT 3 JENIS (FORM + SUM + SAS)
+// ============================================================================
+if (typeof StudentApp !== 'undefined') {
+  Object.assign(StudentApp, {
+    renderAcademicGradesTab(ctx) {
+      const allRecords = this.getConsolidatedStudentAssessments(ctx);
+      const subjects = this.getStudentAllSubjects(ctx, allRecords);
+
+      const raporPolicy = (typeof RaporApp !== 'undefined' && typeof RaporApp.getWeightPolicy === 'function')
+        ? RaporApp.getWeightPolicy(ctx.mainBucket)
+        : { bobotFormatif: 40, bobotSumatif: 30, bobotSas: 30, emptyMode: 'ADAPTIVE_100' };
+
+      const wForm = raporPolicy.bobotFormatif / 100;
+      const wSum = raporPolicy.bobotSumatif / 100;
+      const wSas = raporPolicy.bobotSas / 100;
+
+      let totalAssessedMapel = 0;
+      let sumAllFinalScores = 0;
+
+      const rowsData = subjects.map(subj => {
+        const normSubj = this.normalizeTextKey(subj);
+        const subjRecords = allRecords.filter(r => this.normalizeTextKey(r.mapel) === normSubj);
+
+        if (subjRecords.length === 0) {
+          return {
+            mapel: subj,
+            count: 0,
+            avgForm: null,
+            avgSum: null,
+            avgSas: null,
+            avgPeng: null,
+            avgKet: null,
+            finalScore: null
+          };
+        }
+
+        const formRecs = subjRecords.filter(r => {
+          const j = String(r.jenisAsesmen || 'FORMATIF').toUpperCase();
+          return j !== 'SUMATIF' && j !== 'SAS';
+        });
+        const sumRecs = subjRecords.filter(r => String(r.jenisAsesmen || '').toUpperCase() === 'SUMATIF');
+        const sasRecs = subjRecords.filter(r => String(r.jenisAsesmen || '').toUpperCase() === 'SAS');
+        const ketRecs = subjRecords.filter(r => !r.skipKeterampilan && r.murniKeterampilan !== null && String(r.jenisAsesmen || '').toUpperCase() !== 'SAS');
+
+        const avgForm = formRecs.length > 0 ? Math.round((formRecs.reduce((a, b) => a + b.nilaiAkhir, 0) / formRecs.length) * 10) / 10 : null;
+        const avgSum = sumRecs.length > 0 ? Math.round((sumRecs.reduce((a, b) => a + b.nilaiAkhir, 0) / sumRecs.length) * 10) / 10 : null;
+        const avgSas = sasRecs.length > 0 ? Math.round((sasRecs.reduce((a, b) => a + b.nilaiAkhir, 0) / sasRecs.length) * 10) / 10 : null;
+
+        const avgPeng = Math.round((subjRecords.reduce((a, b) => a + b.murniPengetahuan, 0) / subjRecords.length) * 10) / 10;
+        const avgKet = ketRecs.length > 0 ? Math.round((ketRecs.reduce((a, b) => a + b.murniKeterampilan, 0) / ketRecs.length) * 10) / 10 : null;
+
+        let finalScore = 0;
+        if (raporPolicy.emptyMode === 'STRICT_WEIGHT') {
+          finalScore = Math.round((((avgForm || 0) * wForm) + ((avgSum || 0) * wSum) + ((avgSas || 0) * wSas)) * 10) / 10;
+        } else {
+          const activeW =
+            (avgForm !== null ? raporPolicy.bobotFormatif : 0) +
+            (avgSum !== null ? raporPolicy.bobotSumatif : 0) +
+            (avgSas !== null ? raporPolicy.bobotSas : 0);
+          if (activeW > 0) {
+            finalScore = Math.round((
+              ((avgForm || 0) * (avgForm !== null ? raporPolicy.bobotFormatif / activeW : 0)) +
+              ((avgSum || 0) * (avgSum !== null ? raporPolicy.bobotSumatif / activeW : 0)) +
+              ((avgSas || 0) * (avgSas !== null ? raporPolicy.bobotSas / activeW : 0))
+            ) * 10) / 10;
+          } else {
+            finalScore = avgPeng;
+          }
+        }
+
+        totalAssessedMapel++;
+        sumAllFinalScores += finalScore;
+
+        return {
+          mapel: subj,
+          count: subjRecords.length,
+          avgForm,
+          avgSum,
+          avgSas,
+          avgPeng,
+          avgKet,
+          finalScore
+        };
+      });
+
+      const overallAverage = totalAssessedMapel > 0
+        ? Math.round((sumAllFinalScores / totalAssessedMapel) * 10) / 10
+        : 0;
+
+      const statMapelEl = document.getElementById('student-grades-stat-mapel');
+      const statRecEl = document.getElementById('student-grades-stat-records');
+      const statAvgEl = document.getElementById('student-grades-stat-average');
+      const tabBadge = document.getElementById('std-tab-badge-akademik');
+      const tbody = document.getElementById('tbody-student-subject-grades');
+
+      if (statMapelEl) statMapelEl.textContent = `${subjects.length} Mapel (${totalAssessedMapel} Dinilai)`;
+      if (statRecEl) statRecEl.textContent = `${allRecords.length} Penilaian`;
+      if (statAvgEl) statAvgEl.textContent = overallAverage;
+      if (tabBadge) tabBadge.textContent = `${allRecords.length} Nilai`;
+
+      if (!tbody) return;
+
+      // Perbarui header tabel siswa agar memuat kolom SAS
+      const theadTr = tbody.parentElement.querySelector('thead tr');
+      if (theadTr && theadTr.children.length === 9) {
+        const sasTh = document.createElement('th');
+        sasTh.style.cssText = 'text-align: center; background: #fffbeb; color: #92400e;';
+        sasTh.textContent = 'Nilai SAS';
+        theadTr.insertBefore(sasTh, theadTr.children[5]);
+      }
+
+      tbody.innerHTML = rowsData.map((row, idx) => {
+        const safeMapel = UI.escapeHtml(row.mapel).replace(/'/g, "\\'");
+
+        if (row.count === 0) {
+          return `
+            <tr>
+              <td>${idx + 1}</td>
+              <td><strong>${UI.escapeHtml(row.mapel)}</strong></td>
+              <td style="text-align: center;"><span class="badge badge-warning">Belum Ada Nilai</span></td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td style="text-align: center; color: var(--text-muted);">-</td>
+              <td class="no-print">
+                <button type="button" class="btn btn-outline btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')">
+                  Cek Riwayat
+                </button>
+              </td>
+            </tr>
+          `;
+        }
+
+        return `
+          <tr>
+            <td>${idx + 1}</td>
+            <td><strong>${UI.escapeHtml(row.mapel)}</strong></td>
+            <td style="text-align: center;"><span class="badge badge-info">${row.count}x Penilaian</span></td>
+            <td style="text-align: center;">${row.avgForm !== null ? `<strong>${row.avgForm}</strong>` : '-'}</td>
+            <td style="text-align: center;">${row.avgSum !== null ? `<strong>${row.avgSum}</strong>` : '-'}</td>
+            <td style="text-align: center; background: #fffbeb;">${row.avgSas !== null ? `<strong style="color:#b45309;">${row.avgSas}</strong>` : '-'}</td>
+            <td style="text-align: center;">${row.avgPeng !== null ? row.avgPeng : '-'}</td>
+            <td style="text-align: center;">${row.avgKet !== null ? row.avgKet : '<span style="font-size:0.75rem; color:var(--text-muted);">Nilai Utuh / 100%</span>'}</td>
+            <td style="text-align: center; background: #f0fdf4;">
+              <span
+                class="clickable-score"
+                style="font-size: 1rem; background: #dcfce7; color: #166534; padding: 0.25rem 0.75rem; border-radius: 999px; display: inline-block;"
+                onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')"
+              >
+                ${row.finalScore}
+              </span>
+            </td>
+            <td class="no-print">
+              <button type="button" class="btn btn-primary btn-sm" onclick="StudentApp.openSubjectGradeHistoryModal('${safeMapel}')">
+                Lihat Detail Nilai
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  });
+}
+
+// Inisialisasi otomatis elemen SAS & Panel 3 Bobot saat halaman selesai dimuat
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    if (typeof PenilaianApp !== 'undefined' && typeof PenilaianApp.ensureSasAndThreeWeightDOM === 'function') {
+      PenilaianApp.ensureSasAndThreeWeightDOM();
+    }
+    if (typeof RaporApp !== 'undefined' && typeof RaporApp.ensureRaporThreeWeightDOM === 'function') {
+      RaporApp.ensureRaporThreeWeightDOM();
+      RaporApp.syncPolicyControlsUI();
+    }
+  }, 650);
+});
     
       // 4. Inisialisasi Utama Aplikasi dengan AWAIT penuh ke Supabase Cloud
 window.addEventListener('DOMContentLoaded', async () => {
